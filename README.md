@@ -1,5 +1,9 @@
 # Assign documentation
 
-Public documentation for Assign 3.0 will live here. The machine-readable HTTP contract is maintained separately in `openapi-spec` and is the source for generated SDKs.
+Public documentation for Assign 3.0 will live here. The machine-readable HTTP
+contract is maintained separately in `openapi-spec` and is the source for
+generated SDKs.
 
-Assign uses **Workspace** for its tenant and collaboration boundary and **Task** for its work resource. Public product endpoints use `/api/v1`; deployment probes such as `/health` and `/ready` are not public API resources.
+Assign uses **Workspace** for its tenant and collaboration boundary and **Task**
+for its work resource. Public product endpoints use `/api/v1`; deployment probes
+such as `/health` and `/ready` are not public API resources.

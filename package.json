@@ -1,0 +1,11 @@
+{
+  "name": "@assignso/docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "lint": "markdownlint-cli2"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "0.23.2"
+  }
+}
