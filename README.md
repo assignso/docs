@@ -7,3 +7,6 @@ generated SDKs.
 Assign uses **Workspace** for its tenant and collaboration boundary and **Task**
 for its work resource. Public product endpoints use `/api/v1`; deployment probes
 such as `/health` and `/ready` are not public API resources.
+
+- [API conventions](api/conventions.md)
+- [Browser authentication](api/authentication.md)
