@@ -10,6 +10,8 @@ Assign's public product API uses JSON over HTTPS beneath `/api/v1`.
 - Retryable create operations identify their idempotency contract with `Idempotency-Key`.
 - Concurrent edits use entity tags and `If-Match` where required by the operation.
 - Errors contain a stable machine-readable code, a safe message, and, when available, the request ID.
+- Error responses use `Cache-Control: no-store`; clients and intermediaries must
+  not retain them.
 - A resource outside the caller's workspace is never discoverable merely by knowing its identifier.
 
 The OpenAPI contract defines the exact requirements for each operation. No
