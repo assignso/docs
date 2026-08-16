@@ -10,3 +10,7 @@ such as `/health` and `/ready` are not public API resources.
 
 - [API conventions](api/conventions.md)
 - [Browser authentication](api/authentication.md)
+- [Account and Workspaces](api/account.md)
+- [Projects and Statuses](api/projects.md)
+- [Tasks](api/tasks.md)
+- [Frontend prototype](frontend-prototype.md)

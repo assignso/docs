@@ -14,6 +14,7 @@ Assign's public product API uses JSON over HTTPS beneath `/api/v1`.
   not retain them.
 - A resource outside the caller's workspace is never discoverable merely by knowing its identifier.
 
-The OpenAPI contract defines the exact requirements for each operation. No
-public domain-resource operations have been released yet; browser-session
-logout is the first public authentication operation.
+The OpenAPI contract defines the exact requirements for each operation. See
+[Browser authentication](authentication.md), [Account and Workspaces](account.md),
+[Projects and Statuses](projects.md), and [Tasks](tasks.md) for the currently
+released operations; most domain-resource operations remain unreleased.
