@@ -30,6 +30,10 @@ that has no object storage configured does not serve the attachment operations
 at all, and no attachment is scanned for malware — `scan_state` is always
 `not_scanned`, and nothing in Assign should be read as saying otherwise.
 
+**Password sign-in and the TOTP second factor** are implemented; see
+[Browser authentication](authentication.md). **Passkey operations are not in the
+contract at all** and are not planned for a fixed date.
+
 Operations that remain contract-only are the two document collaboration-session
 endpoints and everything else not documented on the pages listed above; calling
 them will fail.
