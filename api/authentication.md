@@ -169,7 +169,97 @@ requires **both** the current password and a current code (TOTP or recovery):
 either on its own would let a stolen session or a stolen phone take the
 protection off by itself. An account with no confirmed factor receives `409`.
 
-Passkeys are not available.
+## Passkeys
+
+A passkey is strong authentication on its own. Signing in with one **never**
+asks for a second factor, even on an account that has TOTP enabled — the
+authenticator already verified the user, which is the assurance the second
+factor exists to add.
+
+Passkey operations are served only by a deployment with a configured relying
+party. Where none is configured they return `404` like any other unrouted path,
+so check before building against them.
+
+Every ceremony has two steps: ask Assign for options, hand them to the browser,
+send the result back with the ceremony token. The token is single-use and
+expires after five minutes.
+
+### Sign in
+
+```http
+POST /api/v1/auth/passkeys/login/options HTTP/1.1
+Host: api.assign.so
+```
+
+Returns `201` with `ceremony_token` and `options`. Pass `options` to
+`navigator.credentials.get()` unchanged — it is the WebAuthn structure defined
+by the specification, not a shape this API invents, so a WebAuthn client library
+will handle the base64url decoding for you.
+
+The ceremony names no account and lists no allowed credentials: sign-in is
+usernameless, the authenticator proposes the account, and as a result this
+endpoint cannot be used to find out whether an account or credential exists.
+
+```http
+POST /api/v1/auth/passkeys/login/verify HTTP/1.1
+Host: api.assign.so
+Content-Type: application/json
+
+{"ceremony_token": "<token>", "response": { ... }}
+```
+
+On success this returns `200` with the account and sets both session cookies.
+Every failure is `401` and says nothing more — unknown or expired ceremony, an
+already-used one, or an assertion that did not verify all look alike. Start a
+new ceremony and try again.
+
+### Register
+
+```http
+POST /api/v1/auth/passkeys/register/options HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+```
+
+Returns `201` with a ceremony for `navigator.credentials.create()`. The options
+require a discoverable credential and user verification, which is what makes the
+resulting passkey usable for usernameless sign-in. Credentials already on the
+account are excluded, so an authenticator that is already enrolled declines
+rather than making a duplicate. An account at the ten-passkey limit gets `409`.
+
+```http
+POST /api/v1/auth/passkeys/register/verify HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Content-Type: application/json
+
+{"ceremony_token": "<token>", "name": "Work laptop", "response": { ... }}
+```
+
+Returns `201` with the stored passkey. `name` is the user's own label for the
+device — ask for something they will recognize in a list a year from now.
+
+### Manage
+
+`GET /api/v1/auth/passkeys` lists the account's passkeys. `PATCH
+/api/v1/auth/passkeys/{passkey_id}` renames one, and `DELETE` on the same path
+removes it. Deleting removes Assign's side only; the user clears the
+authenticator's copy in their own platform settings.
+
+Two response fields are worth surfacing in a UI. `backup_eligible` and
+`backup_state` together say whether the passkey is synced to the user's
+provider account or bound to one device — the difference between losing a phone
+being an inconvenience and being a lockout. And `disabled` is `true` when Assign
+took the credential out of use because its signature counter failed to advance,
+which indicates a second copy of the private key exists. A disabled passkey
+cannot sign in and cannot be re-enabled: tell the user plainly, and have them
+remove it and register a new one.
+
+Deleting the account's **last remaining sign-in method** is refused with `409
+last_sign_in_method`. A password, a linked identity provider, or another working
+passkey each count; a disabled one does not.
 
 ## Sign in with a provider
 
