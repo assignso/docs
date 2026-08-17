@@ -13,4 +13,5 @@ such as `/health` and `/ready` are not public API resources.
 - [Account and Workspaces](api/account.md)
 - [Projects and Statuses](api/projects.md)
 - [Tasks](api/tasks.md)
+- [Writing in Assign](editor.md)
 - [Frontend prototype](frontend-prototype.md)

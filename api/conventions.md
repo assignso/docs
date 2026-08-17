@@ -22,10 +22,17 @@ released operations; most domain-resource operations remain unreleased.
 ## Published but not yet served
 
 The contract is published ahead of the server for some resources, so the
-generated SDKs expose methods before the API answers them. As of 2026-08-17
-this applies to **comments**, **documents**, and **attachments**: their
-operations appear in the OpenAPI description and in the TypeScript and PHP
-SDKs, but no deployment serves them yet, and calling them will fail.
+generated SDKs expose methods before the API answers them.
+
+**Comments**, **documents**, and **attachments** are now implemented and no
+longer fall into this category. Two caveats apply to attachments: a deployment
+that has no object storage configured does not serve the attachment operations
+at all, and no attachment is scanned for malware — `scan_state` is always
+`not_scanned`, and nothing in Assign should be read as saying otherwise.
+
+Operations that remain contract-only are the two document collaboration-session
+endpoints and everything else not documented on the pages listed above; calling
+them will fail.
 
 Treat an operation as available only once it is documented on one of the pages
 listed above. Contract-only operations are published early so client authors
