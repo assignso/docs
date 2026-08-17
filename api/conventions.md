@@ -18,3 +18,17 @@ The OpenAPI contract defines the exact requirements for each operation. See
 [Browser authentication](authentication.md), [Account and Workspaces](account.md),
 [Projects and Statuses](projects.md), and [Tasks](tasks.md) for the currently
 released operations; most domain-resource operations remain unreleased.
+
+## Published but not yet served
+
+The contract is published ahead of the server for some resources, so the
+generated SDKs expose methods before the API answers them. As of 2026-08-17
+this applies to **comments**, **documents**, and **attachments**: their
+operations appear in the OpenAPI description and in the TypeScript and PHP
+SDKs, but no deployment serves them yet, and calling them will fail.
+
+Treat an operation as available only once it is documented on one of the pages
+listed above. Contract-only operations are published early so client authors
+can review shapes and plan work, not as an availability promise; their request
+and response schemas are accepted and are not expected to change
+incompatibly before release, but their release date is not fixed.
