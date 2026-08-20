@@ -164,8 +164,10 @@ Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 ```
 
 The provider's subject identifier is never returned. `provider_email` is the
-address the provider disclosed, if any, and may be `null`; it never
-establishes ownership of an Assign account on its own.
+address the provider disclosed, if any, and may be `null`. During ordinary
+provider sign-in, a verified provider email matching the account's normalized
+address can establish ownership and attach a previously unseen provider
+identity. An unverified address cannot.
 
 ## Link an external identity
 
@@ -194,9 +196,12 @@ callback, which completes the link and redirects to the identity settings
 page rather than issuing a new session.
 
 An identity already linked to a different account is refused with
-`409 identity_already_linked` and is never transferred; matching email
-addresses never establish ownership. Linking an identity already linked to
-the caller changes nothing.
+`409 identity_already_linked` and is never transferred. This explicit ceremony
+is bound to the already authenticated account and does not choose its target
+from the provider email. Linking an identity already linked to the caller
+changes nothing. Ordinary sign-in may separately attach a previously unseen
+identity when its provider verifies the same normalized account email; see
+[Sign in with an identity provider](authentication.md#sign-in-with-an-identity-provider).
 
 This operation requires authentication within the last 15 minutes; see
 [Recent authentication](#recent-authentication).

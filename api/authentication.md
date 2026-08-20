@@ -13,6 +13,26 @@ also expires after 7 days without activity. Expired, invalid, and revoked
 sessions receive `401 authentication_required` and both cookies are expired by
 the response.
 
+## Sign in with an identity provider
+
+Start Google, GitHub, or Apple sign-in at
+`GET /api/v1/auth/providers/{provider}/authorize`. Assign validates the
+provider callback, creates a fresh browser session, sets both cookies, and
+redirects back to the application.
+
+Assign first resolves an identity by its provider and immutable provider
+subject. If this is the first sign-in from that provider identity and the
+provider reports a **verified** email matching an existing Assign account,
+Assign attaches the identity and signs in that existing account automatically.
+The user does not need to connect the provider beforehand, and no duplicate
+account is created. Matching is case-normalized; an absent or unverified
+provider email cannot attach to an account.
+
+After attachment, future sign-ins resolve the immutable provider identity, not
+the provider's mutable email. A provider email change therefore does not move
+the identity to another account. Apple private-relay addresses match only that
+exact normalized relay address.
+
 ## Register and sign in with a password
 
 ```http
@@ -70,10 +90,12 @@ registered; treat it as "we will act if there is anything to act on", never as
 confirmation that an account exists.
 
 `POST /api/v1/auth/password/forgot` and `POST /api/v1/auth/password/reset`
-request and redeem a reset token; forgot answers `202` and empty on the same
-reasoning as resend. A reset **revokes every session**, including the one that
-performed it, because a reset is what someone whose account was taken over
-performs and the attacker's session must not survive it.
+request and redeem a reset token. The forgot operation emails a clickable
+`/reset-password?token=...` link that remains valid for four hours; it answers
+`202` and empty on the same reasoning as resend. A reset **revokes every
+session**, including the one that performed it, because a reset is what someone
+whose account was taken over performs and the attacker's session must not
+survive it.
 
 `POST /api/v1/auth/password/change` replaces the password for a signed-in user
 and requires `current_password`, since an unattended browser must not be enough
