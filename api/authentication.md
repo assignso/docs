@@ -18,7 +18,8 @@ the response.
 Start Google, GitHub, or Apple sign-in at
 `GET /api/v1/auth/providers/{provider}/authorize`. Assign validates the
 provider callback, creates a fresh browser session, sets both cookies, and
-redirects back to the application.
+redirects directly to the signed-in Workspace. An account that does not yet
+belong to a Workspace is redirected to Workspace creation instead.
 
 Assign first resolves an identity by its provider and immutable provider
 subject. If this is the first sign-in from that provider identity and the
@@ -315,7 +316,8 @@ unrecognized provider, a rejected code exchange — does not leak details:
 the browser is redirected (`302`) to the web application's login page with
 an opaque `?error=authentication_failed` query parameter and no cookies are
 set. On success, both browser-session cookies are set and the browser is
-redirected to the web application root.
+redirected to that account's current Workspace project list. An account-only
+session is redirected to Workspace creation.
 
 ## Cross-site request protection
 

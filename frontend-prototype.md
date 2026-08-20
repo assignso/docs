@@ -24,8 +24,11 @@ Explicit fixture mode simulates the same transitions without storing an
 account. Google and GitHub hand off to Assign Core when those providers are
 configured.
 
-The authenticated product prototype lives under `/app/*`, with the interaction
-lab at `/__lab`. The default local workflow uses a persistent PostgreSQL
+The authenticated product prototype lives under `/app/*`. Opening `/app`
+verifies the browser session and forwards a signed-in account to its current
+Workspace, sends an account without a Workspace to first-Workspace setup, or
+returns an unauthenticated visitor to login. The interaction lab is at
+`/__lab`. The default local workflow uses a persistent PostgreSQL
 database and the public generated SDK for the implemented Workspace, Project,
 Status, Task, Document, and Comment operations. The separate fixture workflow
 remains generated and non-persistent.
