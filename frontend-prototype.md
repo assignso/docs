@@ -7,9 +7,12 @@ The current Assign 3.0 web build is an interaction prototype. Its public pages a
 - `/pricing` — pricing principles and a clear pre-launch notice
 - `/about` — product thesis and principles
 - `/login` — prototype login
+- `/forgot-password` — request password reset instructions
+- `/reset-password` — redeem a reset token and choose a new password
 - `/signup` — prototype signup
+- `/create-workspace` — guarded first-Workspace onboarding
 
-In the default local API mode, login and signup call Assign Core, establish its browser session, and open the Workspace returned by the server. In explicit fixture mode, the forms accept fixture input and open the generated Workspace without storing an account. Google and GitHub hand off to Assign Core when those providers are configured.
+In the default local API mode, login and signup call Assign Core and establish its browser session. Existing password users can request reset instructions from login and redeem the single-use token with a new 12–128-character password; the request confirmation does not reveal whether an address is registered, and a successful reset signs out every existing session. Accounts without a Workspace continue to the guarded first-Workspace page, where the editable path is filled automatically from the name; accounts with one open it directly. Explicit fixture mode simulates the same transitions without storing an account. Google and GitHub hand off to Assign Core when those providers are configured.
 
 The authenticated product prototype lives under `/app/*`, with the interaction lab at `/__lab`. The default local workflow uses a persistent PostgreSQL database and the public generated SDK for the implemented Workspace, Project, Status, Task, Document, and Comment operations. The separate fixture workflow remains generated and non-persistent.
 

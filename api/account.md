@@ -12,8 +12,8 @@ Host: api.assign.so
 Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 ```
 
-Returns the authenticated user, the session's current Workspace, the
-caller's Actor within it, and their role:
+Returns the authenticated user and, when selected, the session's current
+Workspace, the caller's Actor within it, and their role:
 
 ```json
 {
@@ -34,6 +34,10 @@ caller's Actor within it, and their role:
 [Roles](workspaces.md#roles). To act in a different
 Workspace the caller belongs to, switch the session first — see
 [Switch the session's Workspace](authentication.md#switch-the-sessions-workspace).
+
+A newly registered account-only session has no selected Workspace. Its response
+contains only `id`, `email`, and `display_name`; `workspace`, `actor_id`, and
+`role` are omitted until the first Workspace is created.
 
 ## Update the current profile
 
@@ -90,7 +94,8 @@ Revoked and expired sessions are omitted:
 ```
 
 Sessions carry no IP address, user agent, device name, or location: none is
-recorded. Distinguish them by Workspace and `last_seen_at`, and use `current`
+recorded. An account-only onboarding session omits `workspace_id`. Otherwise,
+distinguish sessions by Workspace and `last_seen_at`, and use `current`
 to identify the session making the request.
 
 `authenticated_at` is when credentials were last actually presented. Staying

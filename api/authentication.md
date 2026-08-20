@@ -20,15 +20,15 @@ POST /api/v1/auth/register HTTP/1.1
 Host: api.assign.so
 Content-Type: application/json
 
-{"email": "person@example.com", "password": "<passphrase>", "display_name": "Person", "workspace_name": "Acme", "workspace_url": "acme"}
+{"email": "person@example.com", "password": "<passphrase>", "display_name": "Person"}
 ```
 
 Registration returns `201` with the account and sets both browser-session
-cookies, so the account is usable immediately. It creates the supplied
-Workspace with the new user as its owner. `workspace_url` is its unique URL
-segment and must contain 1–63 lowercase letters, numbers, and interior
-hyphens. Workspace owners and admins can later change it through Workspace
-governance. A taken Workspace URL returns `409 workspace_url_taken`.
+cookies. It creates account data only: no Workspace, membership, or Actor is
+created, and the response omits all Workspace fields. The resulting
+account-only session can read account-level resources and create the first
+Workspace, but cannot use Workspace-scoped operations. Continue with
+[Create the first Workspace](workspaces.md#create-the-first-workspace).
 Passwords must be 12–128 characters and are refused if they appear in a
 known-breach list; a rejected password returns `400` with a message describing
 the rule it failed. A taken address returns `409` — registration necessarily
@@ -319,8 +319,10 @@ A successful logout returns `204 No Content` with `Cache-Control: no-store`.
 
 ## Switch the session's Workspace
 
-A browser session is scoped to exactly one Workspace at a time (see
+A browser session is normally scoped to exactly one Workspace at a time (see
 `workspace` on [`GET /api/v1/me`](account.md#read-the-current-user-and-workspace)).
+A newly registered account may temporarily have an account-only session until
+it creates its first Workspace.
 Moving to a different Workspace the caller actively belongs to requires a
 new session — there is no in-place reauthorization of an existing session
 onto a new scope:

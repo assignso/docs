@@ -30,6 +30,35 @@ else; every write, including comments, is refused.
 
 ## Create a Workspace
 
+### Create the first Workspace
+
+A newly registered account uses a dedicated bootstrap operation before it has
+any Workspace membership:
+
+```http
+POST /api/v1/workspaces/bootstrap HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Content-Type: application/json
+
+{"name": "Acme", "slug": "acme"}
+```
+
+The caller must be signed in with an account-only session and have no active
+Workspace membership. `name` is trimmed and must be 1–100 characters. `slug`
+is the unique canonical URL segment and must use 1–63 lowercase letters,
+numbers, and interior hyphens.
+
+Success returns the created Workspace, creates the owner membership and Actor
+in the same transaction, and replaces both browser-session cookies with a
+session scoped to the new Workspace. Concurrent bootstrap attempts are
+serialized per account, so only one can create the first Workspace. A caller
+that already has a Workspace receives `409 workspace_already_exists` and
+should list its Workspaces and use the normal session-switch operation.
+
+### Create another Workspace
+
 ```http
 POST /api/v1/workspaces HTTP/1.1
 Host: api.assign.so
