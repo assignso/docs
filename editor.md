@@ -22,10 +22,10 @@ Type Markdown and it becomes formatting as you go:
 
 | Type this | To get |
 | --- | --- |
-| `# `, `## `, `### ` | Headings |
-| `- ` or `* ` | A bulleted list |
-| `1. ` | A numbered list |
-| `> ` | A quote |
+| `#`, `##`, `###`, followed by a space | Headings |
+| `-` or `*`, followed by a space | A bulleted list |
+| `1.`, followed by a space | A numbered list |
+| `>`, followed by a space | A quote |
 | ` ``` ` | A code block |
 | `**bold**` | **Bold** |
 | `*italic*` | *Italic* |
@@ -33,9 +33,8 @@ Type Markdown and it becomes formatting as you go:
 | `` `code` `` | `Inline code` |
 | `---` | A divider (documents only) |
 
-Keyboard shortcuts work too: <kbd>Ctrl/Cmd</kbd>+<kbd>B</kbd> for bold,
-<kbd>Ctrl/Cmd</kbd>+<kbd>I</kbd> for italic, <kbd>Ctrl/Cmd</kbd>+<kbd>E</kbd> for
-inline code, and <kbd>Ctrl/Cmd</kbd>+<kbd>K</kbd> for a link.
+Keyboard shortcuts work too: `Ctrl/Cmd+B` for bold, `Ctrl/Cmd+I` for italic,
+`Ctrl/Cmd+E` for inline code, and `Ctrl/Cmd+K` for a link.
 
 Selecting text opens a small formatting toolbar. If you would rather keep the
 controls visible all the time, turn on **Formatting controls** on a document
@@ -66,7 +65,7 @@ shows as unavailable rather than pretending the target is still there.
   reference to that document or task.
 - Paste any other link and it stays a normal link.
 
-One <kbd>Ctrl/Cmd</kbd>+<kbd>Z</kbd> undoes the conversion. Nothing about a
+One `Ctrl/Cmd+Z` undoes the conversion. Nothing about a
 paste blocks typing: if a link's title cannot be looked up, you are left with a
 working link.
 

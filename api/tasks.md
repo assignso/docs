@@ -59,7 +59,13 @@ X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"status_id": "<status-id>", "title": "Wire the Projects endpoint", "description": {"type": "doc", "content": []}, "due_on": "2026-09-01", "label_ids": ["<label-id>"]}
+{
+  "status_id": "<status-id>",
+  "title": "Wire the Projects endpoint",
+  "description": {"type": "doc", "content": []},
+  "due_on": "2026-09-01",
+  "label_ids": ["<label-id>"]
+}
 ```
 
 Creates a Task with an atomically allocated project-local number and
