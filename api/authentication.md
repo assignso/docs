@@ -20,17 +20,20 @@ POST /api/v1/auth/register HTTP/1.1
 Host: api.assign.so
 Content-Type: application/json
 
-{"email": "person@example.com", "password": "<passphrase>", "display_name": "Person"}
+{"email": "person@example.com", "password": "<passphrase>", "display_name": "Person", "workspace_name": "Acme", "workspace_url": "acme"}
 ```
 
 Registration returns `201` with the account and sets both browser-session
-cookies, so the account is usable immediately. It also creates a personal
-Workspace with the new user as its owner. Passwords must be 12–128 characters
-and are refused if they appear in a known-breach list; a rejected password
-returns `400` with a message describing the rule it failed. A taken address
-returns `409` — registration necessarily reveals whether an address can be
-registered, and a vague failure would only strand someone who already has an
-account.
+cookies, so the account is usable immediately. It creates the supplied
+Workspace with the new user as its owner. `workspace_url` is its unique URL
+segment and must contain 1–63 lowercase letters, numbers, and interior
+hyphens. Workspace owners and admins can later change it through Workspace
+governance. A taken Workspace URL returns `409 workspace_url_taken`.
+Passwords must be 12–128 characters and are refused if they appear in a
+known-breach list; a rejected password returns `400` with a message describing
+the rule it failed. A taken address returns `409` — registration necessarily
+reveals whether an address can be registered, and a vague failure would only
+strand someone who already has an account.
 
 The address starts unverified and a verification message is sent. **Verification
 gates recovery, not access**: the account works right away, but no password

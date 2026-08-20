@@ -16,7 +16,7 @@ Assign's public product API uses JSON over HTTPS beneath `/api/v1`.
 
 The OpenAPI contract defines the exact requirements for each operation. See
 [Browser authentication](authentication.md), [Account and Workspaces](account.md),
-[Projects and Statuses](projects.md), and [Tasks](tasks.md) for the currently
+[Projects and Statuses](projects.md), [Tasks](tasks.md), and [Search](search.md) for the currently
 released operations; most domain-resource operations remain unreleased.
 
 ## Published but not yet served
@@ -34,6 +34,14 @@ at all, and no attachment is scanned for malware — `scan_state` is always
 [Browser authentication](authentication.md). Passkey operations are the one
 group whose availability depends on the deployment: they are served only where a
 WebAuthn relying party is configured, and return `404` elsewhere.
+
+The seven **current-user profile, session, and identity** operations under
+`/api/v1/me` are served as of 2026-08-18: updating your profile, listing your
+sessions, revoking one or all of them, and listing, linking, or unlinking an
+external identity. See [Account and Workspaces](account.md).
+
+The Workspace **search** operation is served for Project and Task titles. Its
+bounded result shape and current limitations are documented in [Search](search.md).
 
 Operations that remain contract-only are the two document collaboration-session
 endpoints and everything else not documented on the pages listed above; calling

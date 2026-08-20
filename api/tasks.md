@@ -27,6 +27,11 @@ Returns one page ordered by the Task's immutable project-local number:
       "assignee_actor_id": null,
       "title": "Wire the Projects endpoint",
       "priority": "medium",
+      "description": {"type": "doc", "content": []},
+      "description_text": "",
+      "due_on": null,
+      "milestone_id": null,
+      "label_ids": [],
       "revision": 1,
       "created_at": "2026-08-15T12:00:00Z",
       "updated_at": "2026-08-15T12:00:00Z"
@@ -40,6 +45,9 @@ Returns one page ordered by the Task's immutable project-local number:
 `priority` is one of `none`, `low`, `medium`, `high`, or `urgent`. The
 Project's ticket reference (for example `ASSIGN-42`) is formed by combining
 its `key` with `task_number` — see [Projects](projects.md).
+The web application uses that code in the canonical Workspace-scoped URL
+`/app/{workspaceSlug}/tasks/ASSIGN-42`; browser URLs do not expose or nest the
+Task below the Project's opaque ID.
 
 ## Create a Task
 
@@ -51,7 +59,7 @@ X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"status_id": "<status-id>", "title": "Wire the Projects endpoint"}
+{"status_id": "<status-id>", "title": "Wire the Projects endpoint", "description": {"type": "doc", "content": []}, "due_on": "2026-09-01", "label_ids": ["<label-id>"]}
 ```
 
 Creates a Task with an atomically allocated project-local number and
@@ -59,7 +67,9 @@ returns `201` with the created Task and its `ETag`. `status_id` must
 reference a Status visible to the Project (see
 [List Project Statuses](projects.md#list-project-statuses)); `priority`
 defaults to `none` when omitted, and `assignee_actor_id` defaults to
-unassigned.
+unassigned. `description` is Assign rich-text JSON; `due_on`, `milestone_id`,
+and `label_ids` are optional. Labels must be Task labels visible to the
+Project.
 
 ## Read a Task
 
@@ -86,8 +96,11 @@ Content-Type: application/json
 {"status_id": "<new-status-id>"}
 ```
 
-Applies an optimistic compare-and-swap on `status_id`, `assignee_actor_id`,
-`title`, and `priority`. Every field is optional: an omitted field keeps its
-current value, while an explicit `"assignee_actor_id": null` clears the
-assignee — the two are not equivalent. `If-Match` must carry the revision
-last observed by the client; a stale revision returns `409`.
+Applies an optimistic compare-and-swap on `project_id`, `status_id`,
+`assignee_actor_id`, `title`, `priority`, `description`, `due_on`, and
+`milestone_id`. Every field is optional: an omitted field keeps its current
+value, while an explicit `null` clears nullable fields. Supplying a different
+`project_id` transfers the Task after validating its destination workflow and
+membership. `If-Match` must carry the revision last observed by the client; a
+stale revision returns `409`. Label assignment is replaced as a complete set
+through the target-label endpoint in the OpenAPI contract.

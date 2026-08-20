@@ -4,6 +4,18 @@ Assign has one editor. Documents, task descriptions, and comments all use it, so
 the same shortcuts, formatting, mentions, and Markdown behave the same way
 everywhere.
 
+## Finding documents
+
+The **Documents** page lists top-level documents with the most recently edited
+first. Search checks both the title and document text. You can combine it with
+the **Project** and **scope** filters to narrow the list further.
+
+Your filters and current page are kept in the URL, so browser back/forward and
+copied links return to the same view. Changing a filter returns to page one.
+Each page shows up to ten documents, with the visible result range beside the
+Previous and Next controls. If nothing matches, choose **Clear filters** to
+return to the complete list.
+
 ## Formatting
 
 Type Markdown and it becomes formatting as you go:
@@ -82,9 +94,11 @@ when the content comes home.
 
 ## Saving
 
-Documents and task descriptions save on their own as you write. The state beside
-the title tells you where you are: *Unsaved changes*, *Saving…*, or *Saved*.
-**Saved** means the server has confirmed it, not just that you stopped typing.
+Documents save on their own as you write. The state beside the title tells you
+where you are: *Unsaved changes*, *Saving…*, or *Saved*. **Saved** means the
+server has confirmed it, not just that you stopped typing. Task descriptions use
+the same editing surface, but the current public Task API does not yet persist
+them; API-mode clients must not present a task description as server-saved.
 
 If someone else saved the same document while you were editing, Assign does not
 overwrite their work or silently merge it. You keep your draft and choose:
