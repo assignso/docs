@@ -24,6 +24,14 @@ Explicit fixture mode simulates the same transitions without storing an
 account. Google and GitHub hand off to Assign Core when those providers are
 configured.
 
+Compatible browsers also show **Sign in with a passkey** on the login page.
+Signed-in users manage passkeys under Account settings → Passkeys: they can add
+a device credential, rename or remove it, review whether it is synced or
+device-bound, and see when Assign disabled an unsafe credential. Keep a
+password or connected Google, GitHub, or Apple account as a recovery method if
+an authenticator is lost; Assign refuses removal of the last usable sign-in
+method.
+
 The authenticated product prototype lives under `/app/*`. Opening `/app`
 verifies the browser session and forwards a signed-in account to its current
 Workspace, sends an account without a Workspace to first-Workspace setup, or
@@ -33,8 +41,9 @@ database and the public generated SDK for the implemented Workspace, Project,
 Status, Task, Document, and Comment operations. The separate fixture workflow
 remains generated and non-persistent.
 
-Workspace settings provide dedicated General, Labels, and Project shortcuts
-routes. Labels are separated into editable global Project, Document, and Task
+Workspace settings provide dedicated General, Members, Labels, and Project shortcuts
+routes. Authorized member managers can invite people, change membership roles,
+and revoke pending invitations from Members. Labels are separated into editable global Project, Document, and Task
 panels. Project shortcuts assign the sidebar numbers `1` through `9`
 permanently for a Workspace in the current browser; reordering Projects does
 not renumber them, and each assignment can be changed or cleared from settings.
@@ -42,10 +51,16 @@ Project settings show an immutable Project key plus Project-local Task labels
 and, in fixture mode, allow a Project-specific name and color override for a
 global Task label without changing its shared identity. Account settings
 provide keyboard-accessible route navigation for Profile, Notifications,
-Connected accounts, Subscription, and MCP access. Connected accounts use the
-server-driven linking flow in API mode. Notification preference controls,
+Connected accounts, Passkeys, Subscription, and MCP access. Connected accounts
+use the server-driven linking flow in API mode. Notification preference controls,
 Project shortcut synchronization across devices, and Project Task-label
 overrides are not persisted through the public API yet.
+
+Task, Project, and Document properties share a compact label picker. It supports
+selecting several labels and creating a missing applicable label from the search
+results. When several labels are selected, the closed control stays the same
+size and shows their color indicators and count instead of one chip per label;
+the picker does not maintain a frequently-used section.
 
 Projects also have a readable path generated from their name. Authorized
 members can edit it in Project settings; Project links use
@@ -69,7 +84,13 @@ from the creation title; duplicate titles receive `-1`, `-2`, and subsequent
 numeric suffixes. In API mode, Document metadata and versioned content load
 from and save to Assign Core, including stale-version recovery, direct-child
 loading, labels, search indexing, and published-document links. Task comments
-load when a Task is opened and post idempotently to the server. Task
+load when a Task is opened, post idempotently, and expose revision-gated edit
+and tombstone deletion to authorized actors. Task details also create and remove
+typed Task relations. The Project Milestones view links to dedicated create and
+edit pages; its progress cards open the existing Project List with a shareable
+milestone filter, while card overflow actions copy the filtered link or archive
+the milestone. Project List can also group Tasks by milestone and bulk-assign
+selected Tasks. Milestones continue to appear in the Task property selector. Task
 descriptions use the same editor and persist through the Task create and update
 contract, while unchanged property selections perform no update. See
 [Writing in Assign](editor.md) for editor behavior.

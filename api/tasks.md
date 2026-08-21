@@ -110,3 +110,20 @@ value, while an explicit `null` clears nullable fields. Supplying a different
 membership. `If-Match` must carry the revision last observed by the client; a
 stale revision returns `409`. Label assignment is replaced as a complete set
 through the target-label endpoint in the OpenAPI contract.
+
+## Manage Task relations
+
+`GET` and `POST /api/v1/tasks/{task_id}/relations` list and create `blocks`,
+`duplicates`, `relates`, or `parent` relations. `DELETE
+/api/v1/task-relations/{relation_id}` removes one. Both Tasks must belong to the
+same Project; the API rejects self-relations, duplicates, invalid parent depth,
+and cycles with distinct validation codes. Repeating an existing create returns
+the existing relation, which makes optimistic retries safe.
+
+## Edit or delete a comment
+
+Comment authors update their existing comment with `PATCH
+/api/v1/comments/{comment_id}` and the last observed revision in `If-Match`.
+Authors and Workspace administrators may `DELETE` it. Deletion keeps an inline
+tombstone for thread continuity while removing the comment body; comments are
+not restorable.

@@ -35,7 +35,15 @@ page. The page shows a drop indicator, keeps queued, uploading, and verifying
 files visible, allows cancellation and retry, and gives one success
 notification for a multi-file selection or drop.
 
-Saved files have a download action. Each action requests a fresh short-lived
-URL; applications must not store that URL. SVG is allowed as an attachment but
-is always a download—never an inline preview or content embedded in an
+Saved Project files appear as a centered responsive grid: one column on smaller
+screens and two columns on desktop, with cards filling their grid cells.
+Raster-image cards load a short-lived thumbnail near the viewport; SVG
+and non-image files remain icon-only. Activating a raster-image or PDF title
+displays it in a new browser tab through a separately authorized inline URL.
+The card-wide action and separate labelled icon still force a download; another
+labelled icon globally deletes the
+attachment. Global deletion hides every Task and Project link under the existing
+soft-delete rules; it is not a current-parent unlink. Each open, preview, or
+download flow uses a short-lived URL that applications must not store. SVG is
+always a download—never an inline preview or content embedded in an
 authenticated Assign page.

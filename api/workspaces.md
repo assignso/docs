@@ -258,10 +258,12 @@ carries the archive power and the last-owner invariant, and is conferred by a
 deliberate membership change on somebody already present, not by whoever opens
 a link in a mailbox.
 
-`token` is returned **once**; only its hash is stored, so this response is the
-only place it will ever appear. Deliver it to the invited address. A retried
-request carrying the same `Idempotency-Key` replays this same body, token
-included, so a network failure does not strand the invitation.
+`token` is returned **once**; only its hash is stored. Assign also sends the
+one-time token to the invited address through the configured email provider.
+The mutation fails if delivery fails, rather than reporting an invitation that
+never reached its recipient. A retried request carrying the same
+`Idempotency-Key` replays the same body, token included, without sending a
+duplicate message.
 
 A pending invitation for the same address is refused `409 invitation_pending`
 rather than silently reissued — revoke it and invite again. An address that
