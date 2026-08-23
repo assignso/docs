@@ -5,6 +5,10 @@ Assign provides a remote Model Context Protocol server at
 supported client. The client opens Assign in a browser, where you choose a
 Workspace and approve read and, when needed, write access.
 
+Codex users only need that server URL. Assign discovers Codex through its
+published client metadata and accepts the temporary localhost callback port
+that Codex opens for the sign-in. No client ID or client secret is required.
+
 Every request uses current Assign permissions. Disconnecting a client,
 revoking a service credential, disabling Workspace AI access, or losing
 Workspace membership takes effect immediately.
@@ -78,6 +82,12 @@ create a replacement when rotating access.
 ## Troubleshooting
 
 - Use the exact HTTPS endpoint, including the trailing slash.
+- If Codex reports a registration error before opening the browser, remove and
+  re-add the server using exactly `https://mcp.assign.so/`; older Assign
+  deployments did not advertise Codex client-metadata support.
+- If the browser opens at Assign login, finish signing in in that tab. Assign
+  returns to the pending consent screen automatically; do not copy the callback
+  URL or any token between windows.
 - Complete browser approval with an active Assign Workspace, or use a live
   Workspace service credential in the bearer header.
 - Request both `assign:read` and `assign:write` when a workflow needs to inspect

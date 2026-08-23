@@ -141,14 +141,19 @@ server has confirmed it, not just that you stopped typing. Task descriptions use
 the same editing surface, but the current public Task API does not yet persist
 them; API-mode clients must not present a task description as server-saved.
 
-If someone else saved the same document while you were editing, Assign does not
-overwrite their work or silently merge it. You keep your draft and choose:
+Documents support live co-editing after the **Live** connection state appears.
+While Assign is connecting or reconnecting, the last server-saved body remains
+visible and readable, including on mobile, but stays read-only until the live
+session has safely synchronized. If the page shows **Reload required**, reload
+before continuing to edit so Assign can reconcile the durable document with the
+live session.
+
+Metadata changes such as title or properties remain revision-checked. If
+someone else saved conflicting metadata while you were editing, Assign does not
+overwrite their work. You keep your draft and choose:
 
 - **Keep my version and save** — your text wins, saved on top of theirs.
-- **Load their version** — their text replaces what is in your editor.
-
-Documents are not yet co-editable in real time. Two people editing the same
-document at the same time will meet the choice above.
+- **Load their version** — their saved version replaces your conflicting draft.
 
 ## Comments
 
