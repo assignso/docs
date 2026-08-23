@@ -2,7 +2,10 @@
 
 Inbox is the caller's personal, Workspace-scoped notification feed. It uses
 browser-session authentication and the shared [API conventions](conventions.md).
-The server never returns another user's Inbox items.
+The published native OAuth contract also defines native-bearer access for this
+read and update, but that alternative is not yet served; mobile clients must
+keep Inbox API mode disabled until it is released. The server never returns
+another user's Inbox items.
 
 ## List Inbox items
 
@@ -60,3 +63,9 @@ Content-Type: application/json
 response is the updated Inbox item and includes its current `ETag`. Repeating the
 same state is idempotent. A stale revision returns `409 revision_conflict`; an
 absent item or one owned by another user returns `404 not_found`.
+
+When native bearer admission is released, the request instead uses
+`Authorization: Bearer <native-access-token>` and omits browser cookies and
+`X-CSRF-Token`. It has the same caller-only ownership, ETag, pagination, and
+error behavior; an invalid native credential never falls back to a browser
+session.

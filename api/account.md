@@ -102,6 +102,41 @@ to identify the session making the request.
 signed in does not move it, and it is the value the 15-minute
 recent-authentication window below is measured against.
 
+## Manage personal API tokens
+
+Personal API tokens authorize non-interactive API and CLI use in the one
+Workspace selected by the current browser session. They are separate from
+browser sessions and MCP connections. A token stops working if it expires, is
+revoked, the user loses that Workspace membership, or the Workspace is
+archived.
+
+List active tokens with `GET /api/v1/me/api-tokens`. The response contains
+only metadata (name, scopes, prefix, creation, last-use, and expiry times),
+never a token secret.
+
+Create one with recent authentication and CSRF protection:
+
+```http
+POST /api/v1/me/api-tokens HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Content-Type: application/json
+
+{"name":"terminal","scopes":["assign:read"]}
+```
+
+The `201` response is the only time the raw `token` is returned. Store it in a
+secret manager or `ASSIGN_TOKEN`; do not place it in a URL, terminal command,
+or checked-in file. The default expiry is 90 days and the maximum requested
+expiry is one year. `assign:read` permits the shipped CLI My Work view;
+`assign:write` is reserved for future authorized CLI mutations.
+
+Revoke a token with `DELETE /api/v1/me/api-tokens/{token_id}` and the same
+CSRF header. It returns `204`; future API-host bearer requests fail
+immediately. Revoke a token rather than sharing it or trying to rename its
+scope or Workspace (those properties are immutable).
+
 ## Sign out everywhere else
 
 ```http
@@ -236,6 +271,32 @@ not satisfied the response is `403` with the code
 `reauthentication_required`, which is deliberately distinct from an ordinary
 permission error — prompt for the password or passkey and retry rather than
 telling the user they lack access.
+
+## Manage connected MCP clients
+
+```http
+GET /api/v1/me/mcp/grants?limit=50 HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+```
+
+Returns a cursor-bounded list of the current user's active MCP connections,
+including the reviewed client family, granted scopes, authorized Workspaces,
+last use, and refresh-grant expiry. Assign clients refresh short-lived access
+tokens silently, so an active connection does not require frequent browser
+reauthorization.
+
+```http
+DELETE /api/v1/me/mcp/grants/{grant_id} HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+```
+
+Answers `204` and immediately revokes the connection's access and refresh
+tokens. A grant belonging to another user reports the same `404` as an absent
+grant. See [Connect an MCP client](../mcp.md) for the client authorization and
+session lifecycle.
 
 ## List current-user Workspaces
 

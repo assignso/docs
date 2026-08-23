@@ -3,7 +3,7 @@
 These operations require an authenticated browser session (see
 [Browser authentication](authentication.md)) and follow the shared
 [API conventions](conventions.md), including `Idempotency-Key` on creates and
-`If-Match`/`ETag` on updates.
+`If-Match`/`ETag` on updates. The anonymous public-status read is the explicit exception described below.
 
 ## List Workspace Projects
 
@@ -13,7 +13,7 @@ Host: api.assign.so
 Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 ```
 
-Returns one page of the Workspace's Projects, ordered by name. `workspace_id`
+Returns one page of the Workspace's Projects in their shared manual order. `workspace_id`
 must match the caller's current session Workspace; any other value reports
 the same `404` used for an absent Workspace.
 
@@ -30,7 +30,8 @@ the same `404` used for an absent Workspace.
       "next_task_number": 43,
       "revision": 1,
       "created_at": "2026-08-15T12:00:00Z",
-      "updated_at": "2026-08-15T12:00:00Z"
+      "updated_at": "2026-08-15T12:00:00Z",
+      "archived_at": null
     }
   ],
   "next_cursor": null,
@@ -110,19 +111,87 @@ Send `{"visual_identity":null}` to restore the default folder marker. The
 marker supplements the Project name and never replaces it. New Projects have
 `visual_identity: null`.
 
-The icon values in this API version are: `archive`, `book-open`, `bookmark`,
-`box`, `boxes`, `briefcase`, `building-2`, `calendar`, `circuit-board`,
-`code-2`, `database`, `file-text`, `flag`, `flask-conical`, `folder`,
-`folder-kanban`, `gamepad-2`, `git-branch`, `globe-2`, `heart`, `home`,
-`image`, `layers-3`, `lightbulb`, `link-2`, `list-todo`, `megaphone`,
-`message-square`, `music-2`, `package`, `palette`, `pen-tool`, `pie-chart`,
-`puzzle`, `rocket`, `scale`, `search`, `settings`, `shield`, `shopping-bag`,
-`smile`, `sparkles`, `star`, `tags`, `target`, `terminal`, `timer`, `trophy`,
-`users`, `video`, `wallet`, `wand-sparkles`, and `zap`.
+The icon values in this API version are: `activity`, `alarm-clock`, `anchor`,
+`archive`, `award`, `badge-check`, `bell`, `bike`, `blocks`, `book-open`,
+`bookmark`, `box`, `boxes`, `briefcase`, `bug`, `building-2`, `calendar`,
+`camera`, `castle`, `chart-column`, `circle-check-big`, `circuit-board`,
+`cloud`, `code-2`, `coffee`, `compass`, `construction`, `cpu`, `credit-card`,
+`crown`, `database`, `diamond`, `dumbbell`, `earth`, `eye`, `factory`,
+`feather`, `file-text`, `flag`, `flame`, `flask-conical`, `flower-2`, `folder`,
+`folder-kanban`, `gamepad-2`, `gauge`, `gem`, `gift`, `git-branch`, `globe-2`,
+`graduation-cap`, `hammer`, `handshake`, `headphones`, `heart`, `home`, `image`,
+`key-round`, `landmark`, `laptop`, `layers-3`, `leaf`, `library`, `lightbulb`,
+`link-2`, `list-todo`, `mail`, `map`, `map-pin`, `medal`, `megaphone`,
+`message-square`, `microscope`, `monitor`, `mountain`, `music-2`, `package`,
+`palette`, `pen-tool`, `pie-chart`, `puzzle`, `rocket`, `scale`, `search`,
+`settings`, `shield`, `shopping-bag`, `smile`, `sparkles`, `star`, `tags`,
+`target`, `terminal`, `timer`, `trophy`, `users`, `video`, `wallet`,
+`wand-sparkles`, and `zap`.
 
 In the app, members with Project write access can change this marker from
 Project settings. It is shown with the Project name in cards, navigation,
 headers, search results, and Project selectors.
+
+## Move a Project
+
+Move a Project between its current neighbours using opaque Project IDs. The
+manual order is shared by the Workspace: one member's move changes the list
+for every other member. The server owns the fractional rank, so clients must
+not send a position or rank.
+
+```http
+POST /api/v1/projects/{project_id}/move HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <opaque-client-key>
+Content-Type: application/json
+
+{"after_id":"<preceding-project-id>","before_id":"<following-project-id>","expected_revision":4}
+```
+
+Either anchor may be `null` to place the Project at an end. With both anchors
+`null`, the server places it at the head of a non-empty collection. The
+response is `200` with the moved Project and its new `ETag`. A stale
+`expected_revision` returns `409 revision_conflict` and a missing, archived,
+or foreign-workspace anchor returns `409 anchor_not_found`; both `409`
+responses carry the current Project and `ETag` so a client can re-anchor
+without a separate read. Anchors in reverse order return `422
+invalid_anchors`. Retrying the same request with the same `Idempotency-Key`
+replays the original result.
+
+## Publish a read-only Project status
+
+Every Project response identifies its immutable creating `owner_actor_id`, its
+`workspace` or `public` visibility, nullable opaque `public_id`, and explicit
+`permissions.can_publish`. Only the Project owner or a current Workspace
+owner/admin may publish or unpublish; clients must use the permission response
+rather than infer this from a locally cached role.
+
+Publish with the existing revisioned Project update:
+
+```http
+PATCH /api/v1/projects/{project_id} HTTP/1.1
+Host: api.assign.so
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <opaque-client-key>
+If-Match: "4"
+Content-Type: application/json
+
+{"visibility":"public"}
+```
+
+The returned `public_id` forms the app URL `/p/{public_id}` and the anonymous
+`GET /api/v1/public/projects/{public_id}` API read. The public representation
+contains the Project name, optional visual identity, updated time, and ordered
+workflow Status labels with aggregate non-archived Task counts. It does not
+expose the Workspace or owner, members, Task content, Documents, attachments,
+labels, milestones, revisions, or audit data. The route is anonymously
+rate-limited and returns `Cache-Control: no-store`.
+
+Unpublish with `{"visibility":"workspace"}`. Unpublish and archive revoke the
+opaque link immediately; publishing again creates a different link. Invalid,
+private, revoked, and archived links all return the same `404`.
 
 ## List Project Statuses
 
@@ -148,7 +217,8 @@ the Workspace-wide Statuses applicable to it:
       "is_required": true,
       "revision": 1,
       "created_at": "2026-08-15T12:00:00Z",
-      "updated_at": "2026-08-15T12:00:00Z"
+      "updated_at": "2026-08-15T12:00:00Z",
+      "archived_at": null
     }
   ],
   "next_cursor": null,
@@ -158,8 +228,49 @@ the Workspace-wide Statuses applicable to it:
 
 `project_id` is `null` for a Workspace-wide Status applicable to every
 Project. `category` is one of `backlog`, `todo`, `in_progress`, `in_review`,
-or `done`. Creating, updating, deleting, or reordering a Status is not yet a
-public operation.
+or `done`. Active lists omit archived Statuses; an individual archived Status
+remains readable so a historical Task can retain its workflow label.
+
+## Archive, restore, and reorder Statuses
+
+Archive a Status with its current `ETag`:
+
+```http
+DELETE /api/v1/statuses/{status_id} HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+If-Match: "4"
+Idempotency-Key: <opaque-client-key>
+```
+
+Archival is reversible and never repoints Tasks. It returns `409 status_in_use`
+when non-archived Tasks still reference the Status and `409 required_status`
+when it would remove the final active `todo`, `in_progress`, or `done` Status
+from its Workspace-wide or Project-specific workflow. Restore an archived
+Status with the normal revisioned update:
+
+```json
+{"archived":false}
+```
+
+Move a Status using neighbour anchors, not numeric positions:
+
+```http
+POST /api/v1/statuses/{status_id}/move HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <opaque-client-key>
+Content-Type: application/json
+
+{"after_id":"<preceding-status-id>","before_id":"<following-status-id>","expected_revision":4}
+```
+
+Either anchor may be `null` to place the Status at an end. Anchors must belong
+to the same Workspace-wide or Project-specific workflow; a stale, absent, or
+cross-scope anchor returns `409 anchor_not_found`. Invalid anchor order returns
+`422 invalid_anchors`.
 
 ## Manage milestones
 

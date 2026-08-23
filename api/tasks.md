@@ -5,6 +5,35 @@ These operations require an authenticated browser session (see
 [API conventions](conventions.md), including `Idempotency-Key` on creates and
 `If-Match`/`ETag` on updates.
 
+## My Work (published native-bearer contract; not yet served)
+
+`GET /api/v1/workspaces/{workspace_id}/work?view=assigned|overdue|today|upcoming|completed`
+is the bounded caller-scoped My Work projection. It uses the signed-in actor's
+persisted IANA timezone for date buckets, returns the server's `as_of_date`,
+defaults to 50 rows, and caps a page at 100. The browser-session route is
+already contracted; its native-bearer alternative is published but unavailable
+until the mobile credential backend is released. Mobile apps must not derive
+these buckets from a general Task listing while they wait.
+
+## List Workspace Tasks
+
+```http
+<!-- markdownlint-disable-next-line MD013 -->
+GET /api/v1/workspaces/{workspace_id}/tasks?status_category=todo&status_category=in_progress&limit=50 HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+```
+
+Returns a cursor-bounded activity page ordered by `updated_at` descending,
+then Task ID descending. The default page size is 50 and the maximum is 100.
+Active Tasks are returned by default; set `include_archived=true` to include
+archived Tasks. Repeated `project_id` and `status_category` parameters apply
+OR filters. `assignee_actor_id`, `milestone_id`, and RFC 3339
+`updated_since` further narrow the page. A Project identifier outside the
+Workspace contributes no rows, so this endpoint cannot reveal whether that
+Project exists. This is not a text-search endpoint; use
+[Workspace search](search.md) for matching and ranking.
+
 ## List Project Tasks
 
 ```http
@@ -44,7 +73,10 @@ Returns one page ordered by the Task's immutable project-local number:
 
 `priority` is one of `none`, `low`, `medium`, `high`, or `urgent`. The
 Project's ticket reference (for example `ASSIGN-42`) is formed by combining
-its `key` with `task_number` — see [Projects](projects.md).
+its `key` with `task_number` — see [Projects](projects.md). This exact
+immutable value is also the canonical Task code for the bearer-authenticated
+CLI contract: `{PROJECT_KEY}-{TASK_NUMBER}`, with a positive decimal number
+and no leading zeroes.
 The web application uses that code in the canonical Workspace-scoped URL
 `/app/{workspaceSlug}/tasks/ASSIGN-42`; browser URLs do not expose or nest the
 Task below the Project's opaque ID.
@@ -110,6 +142,30 @@ value, while an explicit `null` clears nullable fields. Supplying a different
 membership. `If-Match` must carry the revision last observed by the client; a
 stale revision returns `409`. Label assignment is replaced as a complete set
 through the target-label endpoint in the OpenAPI contract.
+
+## Move a Task on the board
+
+```http
+POST /api/v1/tasks/{task_id}/move HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <opaque-client-key>
+Content-Type: application/json
+
+{"status_id":"<destination-status-id>","after_task_id":"<optional-preceding-task-id>","before_task_id":null,"expected_revision":7}
+```
+
+Moves the Task to a Status and between its optional neighbour anchors in one
+atomic operation. Do not send a rank or split the move into a Task update and
+a separate reorder. A stale revision returns `409 revision_conflict`; a
+missing, archived, or out-of-column anchor returns `409 anchor_not_found`.
+Both responses include the current Task representation and `ETag`, so the
+client can re-anchor and retry without a preliminary read. Task representations
+include the server-owned `rank` and `revision`; render the rank as canonical
+order but continue to submit only neighbour anchors. The Workspace event
+for a successful move contains an `operation_id` that identifies the optimistic
+mutation in the realtime stream.
 
 ## Manage Task relations
 

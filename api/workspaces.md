@@ -28,6 +28,134 @@ route.
 `viewer` is read-only. It can read the Workspace and its work and nothing
 else; every write, including comments, is refused.
 
+## Control AI and MCP access
+
+```http
+GET /api/v1/workspaces/{workspace_id}/ai-access-policy HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+```
+
+Any active member may read whether AI and MCP access is enabled. The response
+includes a revision in its `ETag`; enabled is the default until an owner or
+admin changes the policy.
+
+```http
+PUT /api/v1/workspaces/{workspace_id}/ai-access-policy HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+If-Match: "2"
+Content-Type: application/json
+
+{"enabled":false}
+```
+
+Changing the policy requires `workspace:manage`. Disabling it immediately
+prevents new authorizations and existing MCP grants from accessing that
+Workspace, without disconnecting the same grant from other authorized
+Workspaces. Re-enabling access restores eligible existing grants. A stale
+revision returns `409 revision_conflict`.
+
+## Workspace-wide workflow Statuses
+
+Workspace-wide Statuses are the shared workflow catalog: each has a null
+`project_id` and can be used by Tasks in every Project. Any active member can
+read a cursor-bounded page; only an owner or admin with `workspace:manage` can
+create one, because a new shared Status changes the Workspace's vocabulary for
+work rather than one Project's board.
+
+```http
+GET /api/v1/workspaces/{workspace_id}/statuses?limit=50 HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+```
+
+Set `include_archived=true` to include archived catalog entries. The response
+uses the standard cursor page envelope. A Workspace ID other than the current
+session Workspace, a non-member, or an absent Workspace all return `404`.
+
+```http
+POST /api/v1/workspaces/{workspace_id}/statuses HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
+Content-Type: application/json
+
+{"label":"Ready for review","category":"in_review"}
+```
+
+The new Status appends to the Workspace-wide workflow and returns `201` with
+its `ETag`. Clients do not supply a position. Labels are 1–100 characters and
+categories are `backlog`, `todo`, `in_progress`, `in_review`, or `done`.
+Creation is safely retryable with the same `Idempotency-Key`; callers without
+`workspace:manage` are refused.
+
+Shared Statuses use the same `GET`, revisioned `PATCH`, archival `DELETE`, and
+neighbour-anchor `POST /api/v1/statuses/{status_id}/move` operations documented
+in [Projects and Statuses](projects.md#archive-restore-and-reorder-statuses).
+Those operations require `workspace:manage` for a Workspace-wide Status.
+
+## Realtime Workspace events
+
+```http
+GET /api/v1/workspaces/{workspace_id}/events HTTP/1.1
+Host: api.assign.so
+Accept: text/event-stream
+Cookie: __Host-assign_session=<session>
+Last-Event-ID: <cursor-from-a-previous-frame>
+```
+
+Any active Workspace member can open this authenticated Server-Sent Events
+stream. It begins with a `hello` frame that declares envelope version `1`, an
+opaque stream epoch, a signed current cursor, and heartbeat/retry hints. Send
+`envelope_version=1` on supported clients and echo the epoch on reconnect when
+available. Each `workspace_event` frame has a signed, opaque SSE `id` that the
+client must preserve unchanged through the standard `Last-Event-ID` header or
+the `cursor` query parameter. Connections close normally before the request
+timeout; reconnecting is expected.
+
+If a cursor is invalid or expired, the requested version is unsupported, or
+the epoch no longer matches, the server sends a terminal `resync_required`
+frame containing a machine code, a replacement cursor, and the affected
+invalidation scopes. Stop applying queued events, reload the current
+authorized data for those scopes, replace stale local state, and then
+reconnect from the supplied cursor. Do not replay mutations automatically.
+
+The JSON frame contains `id`, `type`, `subject_type`, `subject_id`, optional
+`actor_id`, `occurred_at`, `operation_id`, `payload`, and, for versioned
+aggregates, a positive `aggregate_version`. The payload is a bounded
+reconciliation hint, not a permission grant or complete resource
+representation. Apply only deterministic patches the client understands;
+otherwise reload the named resource once and reject stale data using
+`aggregate_version` when it is present. Treat `operation_id` as opaque
+correlation data. Clients must tolerate events without `aggregate_version`
+while retained historical events are upgraded.
+
+## My Work
+
+My Work is a personal, read-only Task projection. It always uses the signed-in
+member; clients cannot supply another member or actor identifier.
+
+```http
+GET /api/v1/workspaces/{workspace_id}/work?view=today&limit=50 HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>
+```
+
+`view` is one of `assigned`, `overdue`, `today`, `upcoming`, or `completed`.
+Due dates are date-only values, classified in the persisted IANA timezone
+returned by the response. `as_of_date` makes the calendar boundary explicit;
+completed Tasks carry the server-written `completed_at` instant and remain in
+the completed view for fourteen calendar days. Archived or no-longer-readable
+Tasks are never returned.
+
+The response is bounded to 50 Tasks by default and 100 at most. It contains
+`items`, `next_cursor`, `has_more`, `as_of_date`, and `timezone`; clients must
+use the opaque cursor unchanged and must not rebuild Work buckets from a
+general Task collection.
+
 ## Create a Workspace
 
 ### Create the first Workspace

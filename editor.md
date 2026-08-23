@@ -6,8 +6,8 @@ everywhere.
 
 ## Finding documents
 
-The **Documents** page lists top-level documents with the most recently edited
-first. Search checks both the title and document text. You can combine it with
+The **Documents** page lists top-level documents in a stable title order.
+Search checks both the title and document text. You can combine it with
 the **Project** and **scope** filters to narrow the list further.
 
 Your filters and current page are kept in the URL, so browser back/forward and

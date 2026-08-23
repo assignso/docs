@@ -1,4 +1,4 @@
-# Browser authentication
+# Browser and native authentication
 
 Assign authenticates browser requests with two host-only cookies:
 
@@ -12,6 +12,49 @@ Browser sessions expire after 30 days even if continuously active. A session
 also expires after 7 days without activity. Expired, invalid, and revoked
 sessions receive `401 authentication_required` and both cookies are expired by
 the response.
+
+## CLI browser authentication
+
+The first-party `assign` CLI uses a credential family separate from browser
+cookies, personal API tokens, native mobile credentials, and MCP OAuth.
+`assign login` binds an ephemeral callback at `http://127.0.0.1:{port}/callback`
+before opening `GET /api/v1/cli/oauth/authorize` in the system browser. The
+fixed public client is `assign-cli`; it has no secret and must use PKCE `S256`,
+an opaque state value, and the exact loopback callback. `localhost`, non-loopback
+hosts, alternate paths, custom schemes, query-bearing callbacks, and PKCE
+downgrade are rejected.
+
+The five-minute authorization code is single-use. The token endpoint returns a
+15-minute opaque API access token and a rotating refresh token with 90-day idle
+and one-year absolute family expiry. Consumed-refresh replay revokes the whole
+family. `POST /api/v1/cli/oauth/revoke` revokes the current interactive CLI
+family. These tokens are accepted only at API-host CLI operations and are never
+accepted by the MCP resource host.
+
+## Native mobile OAuth (published contract; not yet served)
+
+The native mobile OAuth and push-device operations are published in OpenAPI so
+SDK and client work can be prepared, but are **not yet available from the API**.
+Until the backend implementation is released, a mobile app must keep native
+sign-in, refresh, browser handoff, and push registration disabled.
+
+When available, mobile sign-in starts only in the system browser at
+`GET /api/v1/mobile/oauth/authorize`. The request uses a registered public
+client, exact callback URI, high-entropy state and installation identifier,
+and PKCE `S256`; there is no mobile client secret. Production returns through
+the Assign universal/app link at
+`https://api.assign.so/mobile/oauth/callback`. The app exchanges the returned
+five-minute one-time code and PKCE verifier at
+`POST /api/v1/mobile/oauth/token` for a 15-minute opaque bearer access token
+and a rotating refresh token. Both tokens belong only in platform-secure
+storage, never a URL, log, analytics event, or ordinary application storage.
+
+Each refresh rotates the refresh token. A consumed-token replay revokes the
+credential family and requires a fresh browser sign-in. `POST
+/api/v1/mobile/oauth/revoke` revokes the calling device credential and its
+push registration; browser account security can list or revoke native
+credentials under `/api/v1/me/mobile-credentials`. See the machine-readable
+contract for the exact request/response schemas.
 
 ## Sign in with an identity provider
 

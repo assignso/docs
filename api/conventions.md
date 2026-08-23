@@ -43,12 +43,16 @@ external identity. See [Account and Workspaces](account.md).
 The Workspace **search** operation is served for Project and Task titles. Its
 bounded result shape and current limitations are documented in [Search](search.md).
 
-Operations that remain contract-only are the two document collaboration-session
-endpoints and everything else not documented on the pages listed above; calling
-them will fail.
+The native mobile OAuth, native-bearer Inbox/My Work, credential-management,
+and push-device methods are intentionally published **contract-only**. Their
+schemas are stable for SDK planning, but they are not an availability promise;
+clients must not enable those workflows until the backend release is announced.
 
-Treat an operation as available only once it is documented on one of the pages
-listed above. Contract-only operations are published early so client authors
+Everything not documented on the pages listed above remains contract-only and
+will fail if called.
+
+Treat an operation as available only once its documentation explicitly marks it
+served. Contract-only operations are published early so client authors
 can review shapes and plan work, not as an availability promise; their request
 and response schemas are accepted and are not expected to change
 incompatibly before release, but their release date is not fixed.

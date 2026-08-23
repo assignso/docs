@@ -2,12 +2,16 @@
 
 Files can be attached to Tasks and Projects. The browser first reserves a direct
 upload, sends file bytes to a short-lived object-storage URL, completes server
-verification, and then links the completed attachment to the chosen resource.
+verification and malware scanning, and then links the completed clean attachment to the chosen resource.
 File bytes never pass through Assign's API servers.
 
-There is no client-side MIME allowlist. Server-side byte inspection still
+There is no client-side MIME allowlist. Server-side byte inspection and private ClamAV scanning still
 rejects executable, script, HTML, and XHTML content. SVG files are supported as
 forced downloads only and are never previewed or rendered inside Assign.
+
+Uploads fail closed if the scanner is unavailable. A detected file is kept in
+private quarantine for incident handling, reports `scan_state: quarantined`,
+and cannot be linked, previewed, or downloaded.
 
 ## Attach a completed upload
 
