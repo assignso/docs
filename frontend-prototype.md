@@ -75,9 +75,27 @@ not persisted through the public API yet.
 
 Task, Project, and Document properties share a compact label picker. It supports
 selecting several labels and creating a missing applicable label from the search
-results. When several labels are selected, the closed control stays the same
-size and shows their color indicators and count instead of one chip per label;
-the picker does not maintain a frequently-used section.
+results. One selected label shows its color circle and name. When several labels
+are selected, the closed control stays the same size and shows overlapping color
+circles and a count instead of one chip per label; the picker does not maintain
+a frequently-used section.
+Authenticated breadcrumbs retain the v2-style `Assign` home action. On compact
+desktop widths, the path to a Project or Document remains clickable. Project
+collection pages end at the Project path and omit the redundant view label such
+as List or Board; other pages retain a non-interactive current-page label. On
+narrow phones intermediate path segments collapse before the header controls do.
+Task detail retains its narrow centered reading canvas. Its 24px property controls,
+including Log time when enabled, use intrinsic widths, share a solid visible
+border, and wrap together as an inline row; they do not stretch into full-width
+fields. The assignee mark is smaller
+than the standard property icon so its circular identity treatment does not
+appear oversized.
+Document scope, Project, parent, and Labels use the same compact 24px,
+intrinsic-width, visibly bordered inline presentation without changing the
+Document canvas.
+Project settings show Visual identity as a 64px square selector with one enlarged
+selected icon or emoji; its accessible name identifies the marker without
+repeating it visually.
 
 Projects also have a readable path generated from their name. Authorized
 members can edit it in Project settings; Project links use

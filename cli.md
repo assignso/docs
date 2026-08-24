@@ -48,3 +48,84 @@ projection. `assign start|done|reopen <TASK-CODE> --revision <n>` uses the
 canonical revision-checked, idempotent Task workflow. `assign logout` revokes
 the interactive refresh family and removes the local credential; it never
 revokes `ASSIGN_TOKEN` personal tokens.
+
+## Workspace, Project, and Document navigation
+
+Interactive login is bound to one Workspace at a time. List memberships and
+rotate the credential safely when switching:
+
+```sh
+assign workspace current
+assign workspace list
+assign workspace show
+assign workspace switch another-workspace
+```
+
+`workspace switch` validates the membership, revokes the old access/refresh
+family, stores a new Workspace-bound credential, and prints the selected slug.
+Personal API tokens remain bound to the Workspace in which they were created,
+so `workspace list` and `workspace switch` require interactive login.
+
+Projects use their immutable uppercase key. Selecting one stores only a local
+hint, partitioned by API host and Workspace; every later read is authorized by
+the server again.
+
+```sh
+assign project list
+assign project show PRO
+assign project switch PRO
+assign project current
+assign project tasks PRO
+assign project documents PRO
+```
+
+When a Project argument is omitted from `project show`, `project tasks`, or
+`project documents`, the selected Project is used. Lists show at most the first
+100 rows and report on stderr when more are available.
+
+Documents are read-only in this CLI slice and use their canonical path:
+
+```sh
+assign document list
+assign document list --project PRO
+assign document show release-plan
+```
+
+`document show` prints metadata followed by server-extracted text. Responses
+are bounded to 65,536 characters and carry a visible truncation marker when the
+Document is longer. The CLI never prints internal Workspace, Project, Task, or
+Document UUIDs.
+
+## Command aliases
+
+Aliases are concise spellings of the same command. They use the same arguments,
+permissions, API operations, output, errors, and exit codes as the canonical
+form. Scripts may use aliases, but the canonical form is usually clearer in
+shared automation. Run `assign aliases` for the table shipped by the installed
+binary or `assign <command> --help` to inspect one command.
+
+| Alias | Canonical command |
+| --- | --- |
+| `signin` | `login` |
+| `signout` | `logout` |
+| `find` | `search` |
+| `t` | `task` |
+| `ws` | `workspace` |
+| `p` | `project` |
+| `doc` | `document` |
+| `completions` | `completion` |
+| `v` | `version` |
+| `diag`, `diagnose` | `doctor` |
+
+The current Task namespace exposes the implemented lifecycle actions, so these
+forms are equivalent:
+
+```sh
+assign done PRO-123 --revision 7
+assign task done PRO-123 --revision 7
+assign t done PRO-123 --revision 7
+```
+
+One-letter verbs such as `s` are intentionally not aliases because they are
+ambiguous across `search`, `show`, `start`, and `switch`. Resource nouns stay
+predictable: `workspace/ws`, `project/p`, `task/t`, and `document/doc`.

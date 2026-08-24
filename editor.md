@@ -4,6 +4,10 @@ Assign has one editor. Documents, task descriptions, and comments all use it, so
 the same shortcuts, formatting, mentions, and Markdown behave the same way
 everywhere.
 
+Editor body text uses a compact, consistent size across Documents, Task
+descriptions, and Comments. Headings remain proportionally larger so the
+document structure stays easy to scan.
+
 ## Finding documents
 
 The **Documents** page lists top-level documents in a stable title order.

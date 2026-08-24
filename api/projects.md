@@ -26,6 +26,8 @@ the same `404` used for an absent Workspace.
       "name": "Assign",
       "key": "ASSIGN",
       "path": "assign",
+      "description": null,
+      "url": null,
       "visual_identity": null,
       "next_task_number": 43,
       "revision": 1,
@@ -89,12 +91,18 @@ Content-Type: application/json
 {"name": "Assign Core"}
 ```
 
-Send exactly one of `name`, `path`, or `visual_identity`. A path change uses the same request with,
+Send exactly one of `name`, `path`, `description`, `url`, or `visual_identity`. A path change uses the same request with,
 for example, `{"path":"assign-core"}`. `path` must match
 `^[a-z0-9]+(?:-[a-z0-9]+)*$`, be at most 63 characters, and be unique within
 the Workspace. `key` cannot be changed by this or any other operation.
 `If-Match` must carry the revision last observed by the client; a stale
 revision returns `409`.
+
+`description` is optional plain text, capped at 500 characters. `url` is an
+optional absolute HTTP or HTTPS link, capped at 2,048 characters. Send either
+field as `null` (or an empty string) to clear it. Both are returned only to
+authenticated Project readers; they never appear in the anonymous public
+Project status response.
 
 Set a decorative Project marker with either an allowlisted icon or one
 fully-qualified Unicode Emoji 17.0 sequence:
