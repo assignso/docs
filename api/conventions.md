@@ -14,6 +14,11 @@ Assign's public product API uses JSON over HTTPS beneath `/api/v1`.
   not retain them.
 - A resource outside the caller's workspace is never discoverable merely by knowing its identifier.
 
+API v1 spans independent server, client, and SDK releases; additive changes stay
+in v1, while broad incompatible changes require a new API major. See
+[API and client versioning](versioning.md) for compatibility, SDK releases,
+capabilities, and deprecation.
+
 The OpenAPI contract defines the exact requirements for each operation. See
 [Browser authentication](authentication.md), [Account and Workspaces](account.md),
 [Projects and Statuses](projects.md), [Tasks](tasks.md), and [Search](search.md) for the currently

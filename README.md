@@ -1,5 +1,8 @@
 # Assign documentation
 
+Public API consumers should start with [API conventions](api/conventions.md)
+and [API and client versioning](api/versioning.md).
+
 Public documentation for Assign 3.0 will live here. The machine-readable HTTP
 contract is maintained separately in `openapi-spec` and is the source for
 generated SDKs.
