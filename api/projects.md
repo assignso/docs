@@ -92,7 +92,9 @@ Content-Type: application/json
 ```
 
 Send exactly one of `name`, `path`, `description`, `url`, or
-`visual_identity`. A path change uses the same request with, for example,
+`visual_identity`, `owner_actor_id`, or send the complete nullable
+`start_on`/`target_on` pair.
+A path change uses the same request with, for example,
 `{"path":"assign-core"}`. `path` must match
 `^[a-z0-9]+(?:-[a-z0-9]+)*$`, be at most 63 characters, and be unique within
 the Workspace. `key` cannot be changed by this or any other operation.
@@ -104,6 +106,11 @@ optional absolute HTTP or HTTPS link, capped at 2,048 characters. Send either
 field as `null` (or an empty string) to clear it. Both are returned only to
 authenticated Project readers; they never appear in the anonymous public
 Project status response.
+
+`start_on` and `target_on` are date-only planning metadata. Send both keys in
+one revision-checked update, each as an ISO date or `null`; a target date may
+not precede a start date. They are authenticated-only and never appear in the
+anonymous public Project-status response.
 
 Set a decorative Project marker with either an allowlisted icon or one
 fully-qualified Unicode Emoji 17.0 sequence:
@@ -141,6 +148,21 @@ In the app, members with Project write access can change this marker from
 Project settings. It is shown with the Project name in cards, navigation,
 headers, search results, and Project selectors.
 
+## Archive a Project
+
+```http
+DELETE /api/v1/projects/{project_id} HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+If-Match: "4"
+Idempotency-Key: <opaque-client-key>
+```
+
+Archives the Project and returns `204`. Supply the Project revision most
+recently returned in its `ETag`; stale revisions return `409`. Retrying the
+same request with the same idempotency key replays the original result.
+
 ## Move a Project
 
 Move a Project between its current neighbours using opaque Project IDs. The
@@ -171,11 +193,21 @@ replays the original result.
 
 ## Publish a read-only Project status
 
-Every Project response identifies its immutable creating `owner_actor_id`, its
-`workspace` or `public` visibility, nullable opaque `public_id`, and explicit
-`permissions.can_publish`. Only the Project owner or a current Workspace
-owner/admin may publish or unpublish; clients must use the permission response
-rather than infer this from a locally cached role.
+Every Project response identifies its current `owner_actor_id`, its `workspace`
+or `public` visibility, nullable opaque `public_id`, and explicit
+`permissions.can_publish`. The creating owner is initially the Project lead;
+a later audited transfer may change this identifier. Only the current Project
+owner or a current Workspace owner/admin may publish or unpublish; clients
+must use the permission response rather than infer this from a locally cached
+role.
+
+Transfer ownership (and therefore the Project lead) with the same revisioned
+update. The current owner or a Workspace owner/admin may nominate an active
+Workspace member; the recipient becomes a Project manager atomically:
+
+```json
+{"owner_actor_id":"<active-workspace-actor-id>"}
+```
 
 Publish with the existing revisioned Project update:
 
@@ -240,7 +272,36 @@ Project. `category` is one of `backlog`, `todo`, `in_progress`, `in_review`,
 or `done`. Active lists omit archived Statuses; an individual archived Status
 remains readable so a historical Task can retain its workflow label.
 
+## Create a Project Status
+
+```http
+POST /api/v1/projects/{project_id}/statuses HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <opaque-client-key>
+Content-Type: application/json
+
+{"label":"Ready for review","category":"in_review","position":5}
+```
+
+Creates a Project-scoped Status and returns `201` with the Status and its
+`ETag`. The caller needs `work:write` access in the Workspace. The server
+validates the lifecycle category and position; repeating the same idempotency
+key replays the original response.
+
 ## Archive, restore, and reorder Statuses
+
+Read one active or archived Status when rendering a historical Task:
+
+```http
+GET /api/v1/statuses/{status_id} HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+```
+
+The response includes the Status and its current `ETag`. A Status outside the
+caller's Workspace is indistinguishable from an absent one (`404`).
 
 Archive a Status with its current `ETag`:
 
@@ -262,6 +323,33 @@ Status with the normal revisioned update:
 ```json
 {"archived":false}
 ```
+
+When active Tasks must move with the retiring Status, use the deliberate
+replacement command instead. It checks the source revision, moves every
+non-archived Task to the active replacement in the same Workspace-wide or
+Project-specific workflow, and then archives the source in one transaction:
+
+```http
+POST /api/v1/statuses/{status_id}/archive-and-replace HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+If-Match: "4"
+Idempotency-Key: <opaque-client-key>
+Content-Type: application/json
+
+{"replacement_status_id":"<active-status-id>"}
+```
+
+The replacement cannot be the source, archived, absent, or in another
+workflow scope; those cases return `409 replacement_status_unavailable`.
+The required-category safeguard still applies, so a replacement cannot remove
+the final active `todo`, `in_progress`, or `done` Status. Archived Tasks retain
+their existing historical Status.
+
+Update a Status label or category with `PATCH /api/v1/statuses/{status_id}`
+and its current `If-Match`, `X-CSRF-Token`, and `Idempotency-Key` headers.
+The response is the revised Status and a new `ETag`.
 
 Move a Status using neighbour anchors, not numeric positions:
 

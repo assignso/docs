@@ -51,9 +51,13 @@ every command stays available from the keyboard and the `/` menu either way.
 ## Inserting blocks
 
 Press `/` anywhere to search the blocks you can insert: text, headings, lists,
-checklists, quote, code block, divider, images, files, and references. The `/`
+checklists, quote, code block, equation, divider, images, files, and references. The `/`
 menu only offers what the surface you are writing in supports — a comment, for
 example, has no headings.
+
+When you drag a block, an accent line shows exactly where it will land before
+you release it. Keyboard and touch block movement remain available when dragging
+isn't practical.
 
 ### Checklists
 
@@ -63,6 +67,10 @@ cursor, so you can keep typing, and checklists nest like any other list.
 
 Checklists are ordinary content: they export to Markdown as `- [ ]` and `- [x]`,
 and anything that reads GFM Markdown reads them correctly.
+
+At the start of a list or checklist item, press `Backspace` to lift it out of
+the list. This works the same way for bulleted, numbered, and checklist items,
+and you can undo it normally.
 
 ### Images and files
 
@@ -81,6 +89,21 @@ showing a broken image. Nothing is silently removed from the document.
 Images must be attachments. Pasting a link to an image hosted somewhere else
 leaves you with a normal link — Assign does not load pictures from other sites
 into your documents.
+
+### Equations and code
+
+Choose **Equation** to add a display equation, then enter its LaTeX source.
+Equations use KaTeX for their on-page rendering and export as:
+
+```markdown
+$$
+\\frac{a}{b}
+$$
+```
+
+Code blocks recognize common languages automatically and remain ordinary
+copyable code if the language is not recognized. Empty headings, lists, quotes,
+code blocks, and equations keep a visible format-specific hint until you type.
 
 ## Mentioning people and linking work
 
@@ -110,8 +133,8 @@ Pasting Markdown keeps its structure. Copying from the editor gives you Markdown
 back, which is also what the Assign MCP server and API-based tools read and
 write.
 
-Assign's Markdown is CommonMark, plus strikethrough, task lists, and automatic
-linking of bare URLs. Imported `- [ ]` and `- [x]` items become checkboxes;
+Assign's Markdown is CommonMark, plus strikethrough, task lists, display
+equations, and automatic linking of bare URLs. Imported `- [ ]` and `- [x]` items become checkboxes;
 clicking a checkbox while editing updates the document, and Markdown export
 preserves its open or completed state.
 
@@ -151,6 +174,11 @@ visible and readable, including on mobile, but stays read-only until the live
 session has safely synchronized. If the page shows **Reload required**, reload
 before continuing to edit so Assign can reconcile the durable document with the
 live session.
+
+When another person is actively editing the same live document, their colored
+caret, selection, and name appear where they are writing. These indicators are
+temporary: they disappear during a reconnect or when that collaborator leaves,
+and they are never saved into the document or included in exports.
 
 Metadata changes such as title or properties remain revision-checked. If
 someone else saved conflicting metadata while you were editing, Assign does not

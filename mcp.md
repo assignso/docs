@@ -9,6 +9,22 @@ Codex users only need that server URL. Assign discovers Codex through its
 published client metadata and accepts the temporary localhost callback port
 that Codex opens for the sign-in. No client ID or client secret is required.
 
+With the Codex CLI, register the server and complete browser authorization:
+
+```sh
+codex mcp add assign --url https://mcp.assign.so/
+codex mcp login assign --scopes assign:read,assign:write
+codex mcp list
+```
+
+Use only `assign:read` in the login command when the client should remain
+read-only. Codex desktop, the Codex CLI, and the Codex IDE integration share
+the same MCP configuration. A trusted repository may instead declare the
+remote server in `.codex/config.toml`; do not commit a bearer value. For a
+non-interactive service, reference an environment variable with
+`bearer_token_env_var` and store the secret in the service's approved secret
+manager.
+
 Every request uses current Assign permissions. Disconnecting a client,
 revoking a service credential, disabling Workspace AI access, or losing
 Workspace membership takes effect immediately.

@@ -1,19 +1,21 @@
 # Search
 
-`GET /api/v1/workspaces/{workspace_id}/search` searches Project and Task
-titles in the caller's current Workspace. Browser-session authentication is
+`GET /api/v1/workspaces/{workspace_id}/search` searches Project, Task,
+Document, Comment, and active workspace People in the caller's current
+Workspace. Browser-session authentication is
 required. The Workspace boundary and read authorization are enforced by the
 server, so a result never confirms the existence of an inaccessible resource.
 
 ## Request
 
-The `q` query parameter is required. It accepts 1–200 characters after leading
+The `q` query parameter is required. It accepts 2–200 characters after leading
 and trailing whitespace are ignored. The operation supports the standard
-bounded pagination parameters `limit` (1–100) and `cursor`, plus two optional
+bounded pagination parameters `limit` (1–50) and `cursor`, plus two optional
 filters:
 
 - `project_id` limits results to one Project.
-- `resource_type` is either `project` or `task`.
+- `resource_type` is `project`, `task`, `document`, `comment`, or `person`.
+  Person results include the workspace role as `subtitle`, never email.
 
 For example:
 
@@ -44,8 +46,6 @@ same Workspace, query, and filters that produced it.
 
 ## Current scope
 
-Results are ordered by most recently updated, then identifier. This is a
-bounded asynchronous projection, not a relevance-ranked index: it does not
-return a score or exact total, and newly written content can take a short time
-to appear. Documents, comments, snippets, fuzzy matching, relevance ranking,
-and archived-content exclusion are not part of this operation yet.
+Results are bounded and do not return a score or exact total. Content results
+are backed by the search projection; People are a live active-membership
+projection, so removed members do not remain discoverable through search.

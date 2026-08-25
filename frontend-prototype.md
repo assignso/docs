@@ -129,8 +129,19 @@ typed Task relations. The Project Milestones view links to dedicated create and
 edit pages; its progress cards open the existing Project List with a shareable
 milestone filter, while card overflow actions copy the filtered link or archive
 the milestone. Project List can group Tasks by Status, assignee, or milestone;
-the selected grouping is shareable in the URL, and selected Tasks can still be
-bulk-assigned to a milestone. Milestones continue to appear in the Task property selector. Task
-descriptions use the same editor and persist through the Task create and update
-contract, while unchanged property selections perform no update. See
+Status is the default, while selecting another grouping or no grouping remains
+shareable in the URL. List and Backlog rows reuse the same compact Status and
+assignee controls as Task properties. Their title-edit pencil appears on row
+hover or focus, including after a touch activates the row. Selected Tasks can
+still be bulk-assigned to a milestone. Milestones continue to appear in the
+Task property selector. Task descriptions use the same editor and persist
+through the Task create and update contract, while unchanged property
+selections perform no update. See
 [Writing in Assign](editor.md) for editor behavior.
+
+Browser printing uses a print-only document layout on Task detail, Project
+List, the Documents listing, and Document detail. The header identifies Assign,
+the active Workspace, and the current User ID. Navigation, editing controls,
+menus, and action buttons are omitted; property inputs and editor content print
+as plain text. Project List prints the complete current result with its active
+grouping and filter context rather than only the rows visible on screen.
