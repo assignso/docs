@@ -9,6 +9,7 @@ The current Assign 3.0 web build is an interaction prototype. Its public pages a
 - `/login` — prototype login
 - `/forgot-password` — request password reset instructions
 - `/reset-password` — redeem a reset token and choose a new password
+- `/verify-email` — redeem the token from a verification email link
 - `/signup` — prototype signup
 - `/create-workspace` — guarded first-Workspace onboarding
 

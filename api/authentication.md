@@ -99,9 +99,10 @@ the rule it failed. A taken address returns `409` — registration necessarily
 reveals whether an address can be registered, and a vague failure would only
 strand someone who already has an account.
 
-The address starts unverified and a verification message is sent. **Verification
-gates recovery, not access**: the account works right away, but no password
-reset will ever be issued for an unverified address.
+The address starts unverified and a verification message is sent. The message
+contains a clickable `/verify-email?token=...` link rather than a standalone
+token to copy. **Verification gates recovery, not access**: the account works
+right away, but no password reset is issued until the address is verified.
 
 ```http
 POST /api/v1/auth/login HTTP/1.1
@@ -127,7 +128,8 @@ Every sign-in failure returns the same `401 invalid_credentials` — unknown
 address, no password on the account, wrong password — and takes comparable time,
 so the endpoint cannot be used to find out which addresses are registered.
 
-`POST /api/v1/auth/email/verify` redeems a verification token, and
+`POST /api/v1/auth/email/verify` redeems the token carried by the verification
+email link, and
 `POST /api/v1/auth/email/resend-verification` sends a new one. Resend answers
 `202` with an empty body whatever happens, including for an address that is not
 registered; treat it as "we will act if there is anything to act on", never as
@@ -140,6 +142,11 @@ request and redeem a reset token. The forgot operation emails a clickable
 session**, including the one that performed it, because a reset is what someone
 whose account was taken over performs and the attacker's session must not
 survive it.
+
+If the account's email is not yet verified, the forgot operation does not issue
+a reset token. It sends a fresh clickable verification link instead; after
+following that link, request another password reset email. This still returns
+the same empty `202` response as every other outcome.
 
 `POST /api/v1/auth/password/change` replaces the password for a signed-in user
 and requires `current_password`, since an unattended browser must not be enough

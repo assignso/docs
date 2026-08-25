@@ -91,8 +91,9 @@ Content-Type: application/json
 {"name": "Assign Core"}
 ```
 
-Send exactly one of `name`, `path`, `description`, `url`, or `visual_identity`. A path change uses the same request with,
-for example, `{"path":"assign-core"}`. `path` must match
+Send exactly one of `name`, `path`, `description`, `url`, or
+`visual_identity`. A path change uses the same request with, for example,
+`{"path":"assign-core"}`. `path` must match
 `^[a-z0-9]+(?:-[a-z0-9]+)*$`, be at most 63 characters, and be unique within
 the Workspace. `key` cannot be changed by this or any other operation.
 `If-Match` must carry the revision last observed by the client; a stale
