@@ -90,9 +90,20 @@ narrow phones intermediate path segments collapse before the header controls do.
 Task detail retains its narrow centered reading canvas. Its 24px property controls,
 including Log time when enabled, use intrinsic widths, share a solid visible
 border, and wrap together as an inline row; they do not stretch into full-width
-fields. The assignee mark is smaller
+fields. An authorized Project change lists only Projects in the current Workspace
+and moves the Task to its updated canonical URL. The Due date calendar provides
+**Clear** to unset the date and **Now** to choose today's local calendar date.
+The assignee mark is smaller
 than the standard property icon so its circular identity treatment does not
 appear oversized.
+The Task page surrounds that unchanged property row with a simpler document
+hierarchy: a linked Project and copyable Task code lead into the title, while
+Description, attachments, relations, and comments stay compact when empty.
+The top bar's **Current task** control selects at most one active, in-progress
+Task assigned to you across all of your Workspaces. Choosing another Task
+replaces the selection, clearing removes it, and the Task page offers the same
+action when that Task is eligible. A short **Undo** action follows a successful
+change. Assign automatically clears a selection that stops being eligible.
 Document scope, Project, parent, and Labels use the same compact 24px,
 intrinsic-width, visibly bordered inline presentation without changing the
 Document canvas.
@@ -121,7 +132,10 @@ Status alongside its code, title, and view-relevant due date.
 The Search control in the application header (or `/` when focus is not in a
 text field) opens a Workspace-scoped modal. It queries the server after a short
 debounce, shows Project, Task, and Document title matches, and opens the
-selected resource. Search never performs a client-side scan of Workspace
+selected resource. People matches appear when that server capability is
+available; a People-only failure does not hide otherwise valid results. On
+phones, the Search dialog and its internally scrolling results remain inside
+the visible viewport. Search never performs a client-side scan of Workspace
 content in API mode.
 
 Documents are available at `/app/{workspace}/documents`;

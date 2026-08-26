@@ -21,6 +21,7 @@ such as `/health` and `/ready` are not public API resources.
 - [Integrations and Rich Entities](api/integrations.md)
 - [Documents](api/documents.md)
 - [Attachments](api/attachments.md)
+- [Current work](api/current-work.md)
 - [Search](api/search.md)
 - [People profiles](api/people.md)
 - [Inbox](api/inbox.md)

@@ -37,7 +37,9 @@ a Project, they appear in the **Attachments** tab immediately after
 **Documents**. Use **Add files** or drop files anywhere over the applicable
 page. The page shows a drop indicator, keeps queued, uploading, and verifying
 files visible, allows cancellation and retry, and gives one success
-notification for a multi-file selection or drop.
+notification for a multi-file selection or drop. If the saved-file list cannot
+be loaded, the Attachments region shows a contextual **Try again** action while
+the rest of the Task or Project page remains usable.
 
 Saved Project files appear as a centered responsive grid: one column on smaller
 screens and two columns on desktop, with cards filling their grid cells.
