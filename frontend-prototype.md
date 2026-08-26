@@ -57,10 +57,12 @@ separated into editable global Project, Document, and Task panels. Project
 shortcuts assign the sidebar numbers `1` through `9`
 permanently for a Workspace in the current browser; reordering Projects does
 not renumber them, and each assignment can be changed or cleared from settings.
-Project settings show an immutable Project key plus Project-local Task labels
+Project settings show an immutable Project key, an owner-first Members page
+with manager/contributor/viewer controls, plus Project-local Task labels
 and, in fixture mode, allow a Project-specific name and color override for a
-global Task label without changing its shared identity. Project settings also
-let the explicit Project owner or a Workspace administrator
+global Task label without changing its shared identity. Project managers can
+switch between Workspace and private access. The explicit Project owner or a
+Workspace administrator can
 publish an unlisted read-only status link after confirmation. Visitors see only
 the Project name/marker and aggregate workflow Task counts; unpublishing or
 archiving revokes the link immediately. Account settings
@@ -97,6 +99,12 @@ Document canvas.
 Project settings show Visual identity as a 64px square selector with one enlarged
 selected icon or emoji; its accessible name identifies the marker without
 repeating it visually.
+The Project tab strip places Overview after List while keeping List as the bare
+Project-route default. Overview makes one bounded API request for Project health,
+owner-first membership, lifecycle-aware Task and Milestone progress, Status
+distribution, and capped recent resources. Current Tasks in the authoritative
+In progress and In review categories appear under Ongoing work; immutable recent
+Activity remains a separate section.
 
 Projects also have a readable path generated from their name. Authorized
 members can edit it in Project settings; Project links use

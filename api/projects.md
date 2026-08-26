@@ -28,6 +28,7 @@ the same `404` used for an absent Workspace.
       "path": "assign",
       "description": null,
       "url": null,
+      "project_state_id": null,
       "visual_identity": null,
       "next_task_number": 43,
       "revision": 1,
@@ -77,6 +78,31 @@ Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 Returns the Project with its current `ETag`. A Project outside the caller's
 Workspace is indistinguishable from an absent one (`404`).
 
+## Read a Project overview
+
+```http
+GET /api/v1/projects/{project_id}/overview HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+```
+
+Returns one private, non-cacheable Project summary for overview screens. The
+response combines Project metadata, the first three owner-first Project
+members and exact member count, lifecycle-aware Task counts, Milestone
+progress, the authoritative Status distribution, and bounded recent data.
+Recent Tasks, Activity items, Documents, and files each contain at most five
+items. Ongoing work contains at most five active Tasks in each of the stored
+`in_progress` and `in_review` Status categories; Status display names do not
+control that classification, and ongoing work is separate from historical
+Activity.
+
+`freshness` reports when the projection was generated and the newest source
+update it observed. If a nonessential section is unavailable, `degradation`
+names it so a client can show a partial state without downloading full
+collections. Clients should use this operation once rather than listing and
+aggregating Tasks, members, events, Documents, or files themselves. A Project
+that is absent or unreadable returns the same `404` response.
+
 ## Update Project identity
 
 ```http
@@ -91,8 +117,8 @@ Content-Type: application/json
 {"name": "Assign Core"}
 ```
 
-Send exactly one of `name`, `path`, `description`, `url`, or
-`visual_identity`, `owner_actor_id`, or send the complete nullable
+Send exactly one of `name`, `path`, `description`, `url`, `visual_identity`,
+`owner_actor_id`, or `project_state_id`, or send the complete nullable
 `start_on`/`target_on` pair.
 A path change uses the same request with, for example,
 `{"path":"assign-core"}`. `path` must match
@@ -148,6 +174,43 @@ In the app, members with Project write access can change this marker from
 Project settings. It is shown with the Project name in cards, navigation,
 headers, search results, and Project selectors.
 
+## Project lifecycle and states
+
+Project lifecycle is an optional Workspace capability. It starts disabled and
+does not replace Project archive, trash, restore, or purge. Read its policy with
+`GET /api/v1/workspaces/{workspace_id}/project-lifecycle`; Workspace owners and
+administrators update it with revision headers and
+`PATCH /api/v1/workspaces/{workspace_id}/project-lifecycle`:
+
+```json
+{"enabled":true}
+```
+
+When enabled, `GET`/`POST
+/api/v1/workspaces/{workspace_id}/project-states` reads or appends to the
+maximum-100 custom-label catalog. `PATCH` and `DELETE
+/api/v1/project-states/{state_id}` rename, restore with `{"archived":false}`,
+or archive a state; `POST /api/v1/project-states/{state_id}/move` uses neighbour
+anchors and an expected revision. Labels are 1–80 characters and have no
+required defaults or semantic categories.
+
+An in-use state cannot be archived alone. Move its active Projects atomically
+and archive it with:
+
+```http
+POST /api/v1/project-states/{state_id}/archive-and-replace
+If-Match: "4"
+Idempotency-Key: <opaque-client-key>
+
+{"replacement_state_id":"<active-state-id>"}
+```
+
+Set or clear a Project's state through the normal revision-checked Project
+update with `{"project_state_id":"<active-state-id>"}` or
+`{"project_state_id":null}`. Disabling the capability preserves the catalog
+and existing selections, but refuses catalog/selection mutations and clients
+hide the selector until it is enabled again.
+
 ## Archive a Project
 
 ```http
@@ -191,11 +254,56 @@ without a separate read. Anchors in reverse order return `422
 invalid_anchors`. Retrying the same request with the same `Idempotency-Key`
 replays the original result.
 
+## Manage Project members and visibility
+
+Project visibility is `workspace`, `private`, or `public`. Workspace Projects
+follow normal Workspace capabilities. Private Projects are returned only to
+their explicit Project members, Project owner, and Workspace owners/admins;
+denied Projects and their Tasks, Documents, attachments, search/reference
+results, My Work entries, and Inbox items are omitted or use the same `404` as
+an absent resource. Public affects only the sanitized anonymous status view
+described below.
+
+List the actual Project roster, owner first, in pages of at most 100:
+
+```http
+GET /api/v1/projects/{project_id}/members?limit=50 HTTP/1.1
+```
+
+The response includes `items`, `next_cursor`, `has_more`, and exact
+`total_count`. Each member has `actor_id`, `display_name`, a `manager`,
+`contributor`, or `viewer` role, `is_owner`, and a revision. Project managers
+and Workspace owners/admins may add an active Workspace Actor:
+
+```http
+POST /api/v1/projects/{project_id}/members HTTP/1.1
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <opaque-client-key>
+Content-Type: application/json
+
+{"actor_id":"<active-workspace-actor-id>","role":"contributor"}
+```
+
+Change a non-owner role with `PATCH
+/api/v1/projects/{project_id}/members/{actor_id}` and `If-Match`, or remove it
+with `DELETE` and the same revision header. The current owner remains a manager
+and cannot be demoted or removed before ownership is transferred. These
+operations change only Project access; they never create or remove Workspace
+membership.
+
+Project responses expose `permissions.can_manage_members`. A manager can use
+the revisioned Project update to switch between Workspace and private access:
+
+```json
+{"visibility":"private"}
+```
+
 ## Publish a read-only Project status
 
-Every Project response identifies its current `owner_actor_id`, its `workspace`
-or `public` visibility, nullable opaque `public_id`, and explicit
-`permissions.can_publish`. The creating owner is initially the Project lead;
+Every Project response identifies its current `owner_actor_id`, its `workspace`,
+`private`, or `public` visibility, nullable opaque `public_id`, and explicit
+`permissions.can_publish` and `permissions.can_manage_members`. The creating
+owner is initially the Project lead;
 a later audited transfer may change this identifier. Only the current Project
 owner or a current Workspace owner/admin may publish or unpublish; clients
 must use the permission response rather than infer this from a locally cached
