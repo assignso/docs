@@ -72,6 +72,10 @@ GET /api/v1/public/documents/{public_id} HTTP/1.1
 Host: api.assign.so
 ```
 
+The Assign web reader is available at `https://assign.so/d/{public_id}`. It
+renders the same public-safe title and body for people without an Assign
+account; it has no editing, Workspace navigation, or identity metadata.
+
 This endpoint has no browser-session requirement, is rate limited, and returns
 `Cache-Control: no-store`. Its response contains only `public_id`, `title`,
 `content`, and `updated_at`; it does not reveal Workspace, Project, parent,
