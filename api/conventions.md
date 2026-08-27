@@ -32,8 +32,11 @@ generated SDKs expose methods before the API answers them.
 **Comments**, **documents**, and **attachments** are now implemented and no
 longer fall into this category. Two caveats apply to attachments: a deployment
 that has no object storage configured does not serve the attachment operations
-at all, and no attachment is scanned for malware — `scan_state` is always
-`not_scanned`, and nothing in Assign should be read as saying otherwise.
+at all, and the current pre-launch acceptance environment does not scan files
+for malware. Those files truthfully report `scan_state: not_scanned`; they may be
+linked to Tasks/Projects and force-downloaded, but cannot be previewed inline or
+embedded in rich text. Scanner-required fail-closed behavior returns before
+public launch.
 
 **Password sign-in, the TOTP second factor, and passkeys** are implemented; see
 [Browser authentication](authentication.md). Passkey operations are the one

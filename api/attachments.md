@@ -2,16 +2,21 @@
 
 Files can be attached to Tasks and Projects. The browser first reserves a direct
 upload, sends file bytes to a short-lived object-storage URL, completes server
-verification and malware scanning, and then links the completed clean attachment to the chosen resource.
+verification, and then links the attachment to the chosen resource.
 File bytes never pass through Assign's API servers.
 
-There is no client-side MIME allowlist. Server-side byte inspection and private ClamAV scanning still
+> **Pre-launch safety notice:** the current production-configured acceptance
+> environment does not malware-scan uploaded files. They report
+> `scan_state: not_scanned`; treat them as untrusted. Inline preview and rich-text
+> embedding remain disabled, while Task/Project linking and forced download are available.
+
+There is no client-side MIME allowlist. Server-side byte inspection still
 rejects executable, script, HTML, and XHTML content. SVG files are supported as
 forced downloads only and are never previewed or rendered inside Assign.
 
-Uploads fail closed if the scanner is unavailable. A detected file is kept in
-private quarantine for incident handling, reports `scan_state: quarantined`,
-and cannot be linked, previewed, or downloaded.
+Before public launch, Assign will require private malware scanning again. Scanner
+unavailability will fail closed; a detected file will be quarantined and cannot
+be linked, previewed, or downloaded.
 
 ## Attach a completed upload
 
@@ -43,7 +48,7 @@ the rest of the Task or Project page remains usable.
 
 Saved Project files appear as a centered responsive grid: one column on smaller
 screens and two columns on desktop, with cards filling their grid cells.
-Raster-image cards load a short-lived thumbnail near the viewport; SVG
+Clean raster-image cards load a short-lived thumbnail near the viewport; unscanned files, SVG,
 and non-image files remain icon-only. Activating a raster-image or PDF title
 displays it in a new browser tab through a separately authorized inline URL.
 The card-wide action and separate labelled icon still force a download; another
