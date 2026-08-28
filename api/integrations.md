@@ -111,9 +111,12 @@ Provider marks may use version-pinned Simple Icons
 assets or separately reviewed checked-in provider SVGs as a visual aid across
 catalog, provider, installation, and Rich Entity surfaces. Slack uses its
 reviewed four-color inline mark; the provider name remains visible and brand
-color does not communicate health or trust. Connect opens a single-use provider
-authorization flow; the catalog never collects provider credentials directly or
-treats visibility as authorization.
+color does not communicate health or trust. Connect normally opens a single-use
+provider authorization flow. Toggl Track is the documented exception because
+its API exposes no scoped OAuth grant: its dedicated provider page accepts a
+personal API token through the authenticated completion operation, never a URL
+or browser store. Catalog cards never collect credentials or treat visibility
+as authorization.
 
 **Connected accounts** shows the same safe personal integration identity and
 authorization state grouped by eligible Workspace installation. It can
@@ -155,6 +158,11 @@ The lifecycle operations are:
   where required. OAuth callbacks provide `code`; a provider-native installation
   callback, such as a GitHub App installation, instead provides its matching
   `installation_id` while retaining the same one-use state;
+- `POST /api/v1/workspaces/{workspace_id}/integration-authorizations/credential`
+  for providers such as Toggl Track that expose no scoped OAuth grant. The
+  CSRF-protected JSON body carries the one-use state and credential, both bound
+  to the initiating Workspace Actor; neither value is returned, logged, placed
+  in a URL, or saved by the browser;
 - `DELETE /api/v1/integration-installations/{installation_id}` and
   `DELETE /api/v1/me/integration-identities/{identity_id}` for Workspace or
   self-only authority removal;
@@ -189,6 +197,23 @@ discards the raw body, stores only a bounded normalized envelope, deduplicates
 deliveries, retries transient failures durably, dead-letters exhausted work, and
 reconciles missed state. The webhook receiver is for configured providers, not
 for browser clients to invoke.
+
+### Toggl Track preview
+
+An Owner or Admin copies the personal API token from their Toggl Track profile
+into the dedicated provider page. The token carries that person's effective
+Toggl permissions rather than a limited Assign scope. Assign validates the
+identity and default Toggl Workspace, stores the credential in the encrypted
+integration vault, and returns only display-safe installation data. Rotate the
+token in Toggl if the person's access changes or any other copy may exist.
+
+Discovery lists at most 100 active Projects per page. A Project binding is
+inert until a member requests and confirms `toggl.time_entry.create`, which
+creates one completed entry of at most 24 hours against the exact bound Toggl
+Project. No history, running timer, webhook, report, subscription, or timesheet
+synchronization is enabled by installation or binding. Disconnecting removes
+Assign's vault reference; Toggl does not offer per-application revocation for a
+personal API token.
 
 ### Telegram preview
 
@@ -264,6 +289,37 @@ request uses `POST /api/v1/integration-actions` with a unique
 whether a remote create succeeded, it reports
 `integration.action_outcome_unknown` and does not retry the create
 automatically, avoiding an invisible duplicate.
+
+### Clockify project time entries
+
+Clockify is installed as a CAKE Marketplace external add-on. Assign receives a
+provider-issued add-on token through the authorization continuation and stores
+it only in the encrypted installation credential vault. The browser never
+collects or displays a Clockify API key or add-on token.
+
+The Marketplace connection must grant `PROJECT_READ`, `TIME_ENTRY_WRITE`,
+`USER_READ`, and `WORKSPACE_READ`. These permissions let Assign identify the
+connected Workspace, list projects, and create the explicitly confirmed time
+entry; the initial integration requests no report, timer, approval, or webhook
+permission.
+
+An explicit resource refresh discovers active Clockify projects in bounded
+pages. An administrator may bind one of those projects to an Assign Project;
+installation and binding import no historical time entries and start no timer,
+webhook, report transfer, or background synchronization.
+
+The bound installation exposes the confirmed `clockify.time_entry.create`
+action. Its input contains `description`, RFC 3339 `start` and `end`, and the
+optional string `billable` (`true` or `false`). Assign requires a positive
+duration of at most 24 hours and targets the exact bound Clockify project. The
+successful result returns display-safe entry, Workspace, Project, and acting
+user identifiers. Clockify remains authoritative for the entry, billable
+settings, rates, approval, reports, edits, and deletion. Provider failure does
+not block Assign's own time tracking or Task operations.
+
+Clockify setup, resources, and actions remain REST/browser-only for this slice.
+MCP exposure is deferred until the shared integration scope/schema, security,
+idempotency, and supported-client qualification gates pass.
 
 ### Sentry errors and alert-created Tasks
 

@@ -24,6 +24,24 @@ then choose a bounded date range, review your reportable and exact totals, and
 download the same range as CSV. The CSV includes the work date, Project, Task,
 reportable and exact seconds, and optional note.
 
+## Toggl Track integration
+
+A Workspace Owner or Admin can open **Integrations → Toggl Track** and connect
+the default Toggl Track Workspace with the personal API token shown on their
+Toggl Track profile. Toggl does not provide a limited Assign OAuth scope for
+this API, so the page clearly identifies that the token carries the connecting
+person's Toggl permissions. Assign validates it directly with Toggl, sends it
+only in the authenticated connection request, and stores it in the encrypted
+server vault; it is never placed in a URL or saved in browser storage.
+
+After connecting, select an active Toggl Project and bind it to an Assign
+Project. A confirmed integration action can then create one completed Toggl
+time entry of at most 24 hours against that exact binding. Connecting or binding
+does not import history, start a timer, enable a webhook, or synchronize
+timesheets. Disconnecting removes Assign's encrypted copy. Rotate the token in
+Toggl Track if it may exist anywhere else or if the connecting person's access
+changes.
+
 ## API
 
 The public API provides Workspace policy, Task-entry, Task/Project-total,
@@ -35,5 +53,5 @@ Before a Workspace has stored its first policy, the policy read reports
 bootstrap revision `0`; use `If-Match: "0"` for that first policy update.
 Later updates use the positive revision returned by the preceding read.
 
-Running timers, payroll workflows, approvals, and automatic Agent-written
-entries are not part of this manual-entry release.
+Running timers, payroll workflows, approvals, automatic Agent-written entries,
+and provider report synchronization are not part of this release.

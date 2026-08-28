@@ -35,7 +35,7 @@ The initial catalog is intentionally bounded:
 
 - Read authorized Workspaces, Projects, Tasks, and Documents with cursor
   pagination.
-- Search Projects, Tasks, Documents, and comments inside one authorized
+- Search Projects, Tasks, Documents, comments, and active People inside one authorized
   Workspace.
 - Create Documents and replace Document content with revision checks.
 - Create and update Tasks, assign or unassign them, and add Task comments.
@@ -44,9 +44,16 @@ Write tools require a caller-generated idempotency key. Reuse the same key only
 when retrying the exact same request. Task and Document updates also require the
 current revision so a retry cannot overwrite a newer human change.
 
-Task descriptions, Document content, and Task comments use Assign's structured
-editor JSON objects. Search accepts at most 50 results per page; continue with
-the opaque cursor when another page is available.
+`task_update` supports partial edits: supply only the Task fields you want to
+change and Assign preserves the rest. To clear a due date or Milestone, supply
+an empty string for `due_on` or `milestone_id` respectively.
+
+Task descriptions and Task comments use Assign's structured editor JSON
+objects. Document reads and writes may use either that structural content or
+Assign's documented Markdown profile; a mutation must supply exactly one, and
+both representations pass through the same authorization, validation, and
+revision checks. Search accepts at most 50 results per page; continue with the
+opaque relevance cursor when another page is available.
 
 The catalog does not expose deletion, billing, member administration,
 credential management, arbitrary HTTP, SQL, filesystem, or shell access.

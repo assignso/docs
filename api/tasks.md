@@ -365,11 +365,14 @@ mutation in the realtime stream.
 ## Manage Task relations
 
 `GET` and `POST /api/v1/tasks/{task_id}/relations` list and create `blocks`,
-`duplicates`, `relates`, or `parent` relations. `DELETE
-/api/v1/task-relations/{relation_id}` removes one. Both Tasks must belong to the
-same Project; the API rejects self-relations, duplicates, invalid parent depth,
-and cycles with distinct validation codes. Repeating an existing create returns
-the existing relation, which makes optimistic retries safe.
+`duplicates`, `relates`, or `parent` relations. `PATCH
+/api/v1/task-relations/{relation_id}` changes only the relation type and keeps
+both related Tasks fixed. `DELETE /api/v1/task-relations/{relation_id}` removes
+one. Both mutations require CSRF and idempotency headers. Both Tasks must belong
+to the same Project; the API rejects self-relations, duplicates, invalid parent
+depth, and cycles with distinct validation codes. Repeating an existing create
+returns the existing relation, and repeating a delete returns `204`, which makes
+optimistic retries safe.
 
 For a `parent` relation, the request path Task is the parent and the request
 body's `target_task_id` is its child. A child has at most one parent and nesting

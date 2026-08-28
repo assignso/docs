@@ -50,13 +50,16 @@ window and can reopen its interface after a short network interruption. Your
 Workspace data, uploads, and account actions still require a connection; Assign
 does not store authenticated data or upload credentials for offline use.
 
-Workspace settings provide dedicated General, Members, Labels, and Project
-shortcuts routes. Authorized member managers can invite people, change
+Workspace settings provide dedicated General, Members, and Labels routes.
+Authorized member managers can invite people, change
 membership roles, and revoke pending invitations from Members. Labels are
 separated into editable global Project, Document, and Task panels. Project
-shortcuts assign the sidebar numbers `1` through `9`
-permanently for a Workspace in the current browser; reordering Projects does
-not renumber them, and each assignment can be changed or cleared from settings.
+shortcuts assign the sidebar numbers `1` through `9` permanently for a
+Workspace in the current browser; reordering Projects does not renumber them.
+Account settings provide the numbered Project-shortcut manager for the selected
+Workspace, also reachable from the sidebar Project-section settings action. A
+new Project takes the first open number without changing existing assignments
+or restoring Projects the user intentionally left unassigned.
 Project settings show an immutable Project key, an owner-first Members page
 with manager/contributor/viewer controls, plus Project-local Task labels
 and, in fixture mode, allow a Project-specific name and color override for a
@@ -87,35 +90,65 @@ desktop widths, the path to a Project or Document remains clickable. Project
 collection pages end at the Project path and omit the redundant view label such
 as List or Board; other pages retain a non-interactive current-page label. On
 narrow phones intermediate path segments collapse before the header controls do.
-Task detail retains its narrow centered reading canvas. Its 24px property controls,
+Task detail retains its narrow centered reading canvas. Its 28px property controls,
 including Log time when enabled, use intrinsic widths, share a solid visible
 border, and wrap together as an inline row; they do not stretch into full-width
-fields. An authorized Project change lists only Projects in the current Workspace
+fields. Project, Status, and Assignee remain visible. Populated Priority,
+Milestone, Due date, and Labels remain directly editable, while empty optional
+properties are available through one compact **Add property** menu. Task creation
+continues to show the complete property row. An authorized Project change lists only Projects in the current Workspace
 and moves the Task to its updated canonical URL. The Due date calendar provides
 **Clear** to unset the date and **Now** to choose today's local calendar date.
 The assignee mark is smaller
 than the standard property icon so its circular identity treatment does not
 appear oversized.
-The Task page surrounds that unchanged property row with a simpler document
-hierarchy: a linked Project and copyable Task code lead into the title, while
-Description, attachments, relations, and comments stay compact when empty.
+The Task page surrounds that compact property row with a simpler document
+hierarchy: **Assign → Project name → Task name**. Assign links to Workspace Home,
+the Project name links to its List, and the Task name identifies the current page.
+An adjacent labelled copy action preserves access to the immutable Task code. These share a line with the
+avatar-only **Participants** group, Follow control, and compact outlined
+Task-actions menu; these lead into the title. The participant group appears
+before Follow and shows up to three avatars plus `+N`, with no visible label or
+surrounding border; the actions menu is wide enough to keep its labels on one
+line. Description, attachments, relations, and comments stay compact when empty.
+On Task detail, Attachments and Relations are flat separator rows with counts and
+Add actions rather than rounded panels. Each saved relation is one inline row;
+Add opens one inline relation-type dropdown and Task picker with a cancel control
+instead of a modal or collapsible list. Once both selections are available, Assign
+creates the relation automatically without a separate save action. Comments uses an unpanelled heading and
+full-width composer; its submit action appears after the composer receives focus
+or content.
 The top bar's **Current task** control selects at most one active, in-progress
 Task assigned to you across all of your Workspaces. Choosing another Task
 replaces the selection, clearing removes it, and the Task page offers the same
 action when that Task is eligible. A short **Undo** action follows a successful
-change. Assign automatically clears a selection that stops being eligible.
+change. When selected, it shows the Task title and code without a visible
+**Current** prefix, plus a colorful focus icon; its accessible name still
+identifies the current-task state. Assign automatically clears a selection that
+stops being eligible.
 Document scope, Project, parent, and Labels use the same compact 24px,
 intrinsic-width, visibly bordered inline presentation without changing the
 Document canvas.
 Project settings show Visual identity as a 64px square selector with one enlarged
 selected icon or emoji; its accessible name identifies the marker without
 repeating it visually.
-The Project tab strip places Overview after List while keeping List as the bare
-Project-route default. Overview makes one bounded API request for Project health,
+The Project tab strip keeps List as the bare Project-route default and omits
+Overview. **Project overview** is the first item in the top-right Project-actions
+menu and retains its direct URL without displaying or handling an `O` shortcut. Overview makes one bounded API request for Project health,
 owner-first membership, lifecycle-aware Task and Milestone progress, Status
 distribution, and capped recent resources. Current Tasks in the authoritative
 In progress and In review categories appear under Ongoing work; immutable recent
 Activity remains a separate section.
+Every authenticated Project route starts with the same compact header: one
+Project icon and one-line name, the Create task action and Project-actions menu,
+a description summary of at most two lines, then Project key, Task count,
+owner-first member avatars, and a shortened external hostname. **More** appears
+only when the summary overflows; the full description remains available with
+**Less** after its final text. On the narrowest phones Create task is shown as an
+accessible `+`, and the metadata and tab strips scroll horizontally instead of
+wrapping or pushing actions off screen. Project settings and Copy Project link
+are available from the end-aligned Project-actions menu rather than a separate
+gear. The menu sizes to its item content and keeps every item on one line.
 
 Projects also have a readable path generated from their name. Authorized
 members can edit it in Project settings; Project links use
@@ -146,8 +179,8 @@ numeric suffixes. In API mode, Document metadata and versioned content load
 from and save to Assign Core, including stale-version recovery, direct-child
 loading, labels, search indexing, and published-document links. Task comments
 load when a Task is opened, post idempotently, and expose revision-gated edit
-and tombstone deletion to authorized actors. Task details also create and remove
-typed Task relations. The Project Milestones view links to dedicated create and
+and tombstone deletion to authorized actors. Task details also create, change
+the type of, and remove typed Task relations. The Project Milestones view links to dedicated create and
 edit pages; its progress cards open the existing Project List with a shareable
 milestone filter, while card overflow actions copy the filtered link or archive
 the milestone. Project List can group Tasks by Status, assignee, or milestone;
@@ -155,10 +188,16 @@ Status is the default, while selecting another grouping or no grouping remains
 shareable in the URL. List and Backlog rows reuse the same compact Status and
 assignee controls as Task properties. Their title-edit pencil appears on row
 hover or focus, including after a touch activates the row. Selected Tasks can
-still be bulk-assigned to a milestone. Milestones continue to appear in the
-Task property selector. Task descriptions use the same editor and persist
-through the Task create and update contract, while unchanged property
-selections perform no update. See
+be managed from the shared bottom bar on both views: it shows the selected
+count, stays centered against the browser viewport, opens Actions with its
+visible `A` keycap, and clears selection with its labelled control and visible
+Backspace keycap. Actions retain the existing Status, assignee, and milestone
+changes and add selected-Task CSV export, archive, and recoverable delete.
+Archive and delete ask for confirmation; successful Tasks leave the selection,
+while failures remain selected for review or retry. Milestones continue to
+appear in the Task property selector. Task descriptions use the same editor
+and persist through the Task create and update contract, while unchanged
+property selections perform no update. See
 [Writing in Assign](editor.md) for editor behavior.
 
 Browser printing uses a print-only document layout on Task detail, Project

@@ -17,6 +17,9 @@ title-ordered page of active root Documents. Use `q` (up to 200 characters) to
 match titles and extracted text, `project_id` to restrict the Project, and
 `scope` for `workspace`, `project`, or `public`. A returned `next_cursor` is
 valid only with the same filters; start a new request when a filter changes.
+Set `archived_only=true` to browse the same bounded, authorized collection of
+archived roots for recovery; active and archived Documents are never mixed in
+one traversal.
 
 ## Collaboration admission and browser relay
 
@@ -61,6 +64,42 @@ replace their complete label set.
 Creates require `Idempotency-Key`; metadata and content updates require the
 current `If-Match` value. A stale revision returns `409`, so clients should
 reload and let the person decide how to reconcile their changes.
+
+## Revision history and recovery
+
+Every successful create, metadata edit, content replacement, collaboration
+checkpoint, archive, and restore records an immutable snapshot. List snapshots
+newest first with `GET /api/v1/documents/{document_id}/revisions`, read one at
+`GET /api/v1/documents/{document_id}/revisions/{revision}`, or compare two with
+`GET /api/v1/documents/{document_id}/revisions/compare?from=4&to=9`. Comparison
+returns both authorized snapshots and a stable list of changed fields; it does
+not expose the collaboration update log.
+
+Restore a snapshot with
+`POST /api/v1/documents/{document_id}/revisions/{revision}/restore`. The source
+snapshot remains immutable and its contents become a new active revision, so
+the restore itself can be reviewed or reversed. Send the current Document ETag
+in `If-Match`; a concurrent change returns `409 revision_conflict`.
+
+Archiving removes a Document from ordinary navigation and search without
+deleting its content or history. Recover it with
+`POST /api/v1/documents/{document_id}/restore` and the archived Document's
+current ETag. Authorization is re-evaluated for history, comparison, and every
+recovery operation.
+
+## Markdown interchange
+
+`GET /api/v1/documents/{document_id}/markdown` exports the current canonical
+content as deterministic UTF-8 Markdown. Add `?revision={revision}` to export a
+historical snapshot. `PUT /api/v1/documents/{document_id}/markdown` imports up
+to 2 MiB and replaces the current content under `If-Match`.
+
+The interchange format is a safe CommonMark/GFM subset covering paragraphs,
+headings, emphasis, inline and fenced code, block quotes, ordered and unordered
+lists, task lists, and horizontal rules. Raw HTML, external images, tables,
+footnotes, and definition lists are rejected with `400 invalid_markdown` rather
+than executed or silently flattened. Assign attachments are omitted from
+Markdown export because signed download URLs must not become portable content.
 
 ## Published Documents
 

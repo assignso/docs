@@ -1,5 +1,23 @@
 # Assign CLI
 
+## Install and update
+
+Homebrew-managed macOS/Linux installations use `brew upgrade --cask assign`.
+After signed stable releases are available, direct user-scoped installers are
+also available: macOS/Linux use
+`curl https://assign.so/install.sh | sh`,
+and Windows PowerShell uses
+`irm https://github.com/assignso/assign-cli/releases/latest/download/install.ps1 | iex`.
+Both installers verify the published SHA-256 archive checksum and reject an
+unsigned macOS or Windows executable. Run `assign update check` to compare the
+installed SemVer release with the latest release in its channel. The CLI does
+not scan during ordinary interactive or scripted commands, and it never updates
+itself without an explicit command.
+
+`https://assign.so/install.sh` is an Assign-owned macOS/Linux wrapper. It
+checks the operating system and runs the verified GitHub Release installer; the
+release asset remains the only installer implementation.
+
 Sign in interactively with the system browser:
 
 ```sh

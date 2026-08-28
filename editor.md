@@ -10,15 +10,30 @@ document structure stays easy to scan.
 
 ## Finding documents
 
-The **Documents** page lists top-level documents in a stable title order.
-Search checks both the title and document text. You can combine it with
-the **Project** and **scope** filters to narrow the list further.
+The **Documents** page uses the same wide layout as Home, My Work, and Projects
+and lists top-level documents with the most recently modified first. Up to five
+top-level or nested documents also appear in a horizontally scrollable
+**Recent documents** row above the list. Recent documents stays independent of
+the table filters. Search, Project, and scope filters sit directly above the
+table. The table keeps a fixed **Name**, **Modified**, **Scope**, and **Actions**
+order; select Name, Modified, or Scope to change sorting. Modified uses your
+browser's long date-and-time format.
 
-Your filters and current page are kept in the URL, so browser back/forward and
-copied links return to the same view. Changing a filter returns to page one.
+Your filters, table sort, direction, and current page are kept in the URL, so
+browser back/forward and copied links return to the same view. Changing a filter
+or sort returns to page one.
 Each page shows up to ten documents, with the visible result range beside the
 Previous and Next controls. If nothing matches, choose **Clear filters** to
 return to the complete list.
+
+Use a row's Actions menu to copy its link or archive it. The Archive page keeps
+the same filters, recent row, table, and paging layout and offers Restore for
+recoverable documents. Permanent deletion is not currently available.
+
+If live collaboration cannot start for a newly opened document, Assign switches
+to **Versioned editing** after two attempts. Your edits then use the same
+revision-checked autosave and conflict recovery, and collaboration is tried again
+the next time the document is opened.
 
 ## Formatting
 

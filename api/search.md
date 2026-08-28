@@ -49,3 +49,18 @@ same Workspace, query, and filters that produced it.
 Results are bounded and do not return a score or exact total. Content results
 are backed by the search projection; People are a live active-membership
 projection, so removed members do not remain discoverable through search.
+
+Exact immutable identifiers and exact titles rank first, followed by title
+prefixes, weighted full-text relevance, typo-tolerant matches, and recency.
+Documents and Comments use their authorized extracted text as well as titles;
+People match active members by display name and return only their Workspace
+role. Result snippets are plain text, centered near a matching term when
+possible, stripped of control characters, and bounded to 240 Unicode
+characters.
+
+Projection rebuilds replay the durable Workspace event log into an isolated
+replacement generation before activation. Callers keep reading the prior
+generation until the replacement catches up, so rebuilds do not create a
+partially empty index. Search also has a dedicated request rate limit and a
+short database query deadline. When workload protection trips, retry after the
+`Retry-After` delay from `503 search_unavailable`; do not loop immediately.
