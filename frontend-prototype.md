@@ -75,9 +75,17 @@ Active sessions uses the existing account-security API to list active sessions
 by Workspace and recent activity, mark the current session, and revoke another
 session or all other sessions after confirmation; Assign does not collect or
 show device, browser, IP-address, or location data. Connected accounts use the
-server-driven linking flow in API mode. Notification preferences, Project
-shortcut synchronization across devices, and Project Task-label overrides are
-not persisted through the public API yet.
+server-driven linking flow in API mode. Notifications uses the persisted
+twelve-category Workspace matrix: Inbox, email, push, and immediate/daily/weekly
+delivery timing changes save independently, email remains read-only Off when
+the Workspace has no paid entitlement, and push remains unavailable until a
+confirmed browser or native endpoint exists. The Browser notifications action
+uses the browser-owned permission prompt and service-worker subscription; its
+unsupported, denied, enabled, disabled, and failed states are explicit. Inbox
+supports server-side category filtering, grouped-activity counts, bounded
+pagination, and the shared empty-state composition. Project shortcut
+synchronization across devices and Project Task-label overrides are not
+persisted through the public API yet.
 
 Task, Project, and Document properties share a compact label picker. It supports
 selecting several labels and creating a missing applicable label from the search
@@ -103,11 +111,10 @@ and moves the Task to its updated canonical URL. The Due date calendar provides
 The assignee mark is smaller
 than the standard property icon so its circular identity treatment does not
 appear oversized.
-The Task page surrounds that compact property row with a simpler document
-hierarchy: **Assign → Project name → Task name**. Assign links to Workspace Home,
-the Project name links to its List, and the Task name identifies the current page.
-An adjacent labelled copy action preserves access to the immutable Task code.
-These share a line with the
+The authenticated shell keeps the **Assign → Project name → Task name** hierarchy.
+Inside the narrow Task canvas, Assign does not repeat that trail: the first line
+above the title starts with the visible immutable Task code as a labelled copy
+action. It shares the line with the
 avatar-only **Participants** group, Follow control, and compact outlined
 Task-actions menu; these lead into the title. The participant group appears
 before Follow and shows up to three avatars plus `+N`, with no visible label or
@@ -153,6 +160,16 @@ accessible `+`, and the metadata and tab strips scroll horizontally instead of
 wrapping or pushing actions off screen. Project settings and Copy Project link
 are available from the end-aligned Project-actions menu rather than a separate
 gear. The menu sizes to its item content and keeps every item on one line.
+On layouts with room for keyboard hints, Create task entry buttons show `N` and
+the Projects collection's Create Project button shows `C`. These hints navigate
+to the dedicated creation pages; submit buttons inside those pages do not repeat
+the global shortcuts.
+
+Ordinary Task edits use their local pending and settled state instead of showing
+a generic **Task saved** toast after every change. A rejected edit still restores
+or reconciles the affected value and shows actionable rollback feedback; Task
+creation, Project moves, lifecycle actions, copying, and bulk operations retain
+their contextual result messages.
 
 Projects also have a readable path generated from their name. Authorized
 members can edit it in Project settings; Project links use
@@ -164,7 +181,9 @@ Workspace replaces its slug in the current URL without changing the underlying
 Workspace session, and My Work uses the same full-width page frame as Home.
 Home’s Assigned to me rows show Task code, title, and Status; Recently updated
 rows show Task code, title, and assignee. My Work shows each Task’s priority and
-Status alongside its code, title, and view-relevant due date.
+Status alongside its code, title, and view-relevant due date. Home does not
+show an Activity feed; historical changes stay on their contextual resource
+surfaces.
 
 The Search control in the application header (or `/` when focus is not in a
 text field) opens a Workspace-scoped modal. It queries the server after a short
@@ -183,7 +202,12 @@ numeric suffixes. In API mode, Document metadata and versioned content load
 from and save to Assign Core, including stale-version recovery, direct-child
 loading, labels, search indexing, and published-document links. Task comments
 load when a Task is opened, post idempotently, and expose revision-gated edit
-and tombstone deletion to authorized actors. Task details also create, change
+and tombstone deletion to authorized actors.
+Comments created through MCP or another mediated channel retain the author,
+snapshot a compound creation Actor such as `user:mcp`, and show the same
+accessible provenance badge as Activity. Task Activity links each
+Comment event to the matching Comment or tombstone instead of showing an
+unreferenced repeated action. Task details also create, change
 the type of, and remove typed Task relations. The Project Milestones view links
 to dedicated create and
 edit pages; its progress cards open the existing Project List with a shareable

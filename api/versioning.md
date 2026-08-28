@@ -5,9 +5,9 @@ The API major is separate from the release numbers of Assign Core, Web, Mobile,
 Desktop, CLI, SDKs, realtime protocols, and the Assign MCP server.
 
 An Assign Core release does not change the URL. Compatible additions—such as a
-new endpoint, an optional response property, or an optional request
-property—remain in v1. Assign reserves a new API major for broad incompatible
-changes that cannot reasonably coexist with v1.
+new endpoint, an optional response property, or an optional request property—
+remain in v1. Assign reserves a new API major for broad incompatible changes
+that cannot reasonably coexist with v1.
 
 Do not construct release-shaped routes such as `/api/v1.4` or `/api/v1.14.2`.
 
@@ -40,9 +40,8 @@ minimum/recommended/latest first-party client releases. That operation is not
 currently served; its exact schema will be added to OpenAPI before release.
 
 Minimum-client enforcement is reserved for cases where an older client is unsafe
-or genuinely unable to continue. Being below the recommended release may
-produce an optional upgrade notice; it is not by itself a forced-upgrade
-condition.
+or genuinely unable to continue. Being below the recommended release may produce
+an optional upgrade notice; it is not by itself a forced-upgrade condition.
 
 ## Deprecation
 
@@ -58,11 +57,10 @@ when a removal date has been committed.
 
 ## Request diagnostics
 
-The API contract will standardize API version, server release, request ID,
-client product, and client release headers before clients rely on them. Until
-those headers appear in the released OpenAPI contract, use the current
-documented request ID and user-agent behavior rather than assuming header
-availability.
+The API contract will standardize API version, server release, request ID, client
+product, and client release headers before clients rely on them. Until those
+headers appear in the released OpenAPI contract, use the current documented
+request ID and user-agent behavior rather than assuming header availability.
 
 Realtime and MCP compatibility are versioned separately from REST. Clients must
 follow the negotiation and server metadata defined by those protocols rather

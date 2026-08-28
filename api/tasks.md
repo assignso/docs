@@ -400,4 +400,10 @@ Comment authors update their existing comment with `PATCH
 /api/v1/comments/{comment_id}` and the last observed revision in `If-Match`.
 Authors and Workspace administrators may `DELETE` it. Deletion keeps an inline
 tombstone for thread continuity while removing the comment body; comments are
-not restorable.
+not restorable. Comment responses also include immutable creation `actor` and
+nullable `actor_name`. The stable identity remains `author_actor_id`; `actor`
+uses the base Actor type for direct creation and appends a mediated origin after
+a colon. For example, a user creating through MCP is `user:mcp`, with the safe
+client label such as `Codex` in `actor_name`. This lets clients render mediated
+creation without guessing from the author name and without exposing credentials,
+prompts, or request content.

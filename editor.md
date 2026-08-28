@@ -138,6 +138,10 @@ shows as unavailable rather than pretending the target is still there.
   reference to that document or task.
 - Paste any other link and it stays a normal link.
 
+When Assign is installed as a browser app, links to Assign stay inside the app.
+External web links open in a separate browser context so they do not replace the
+standalone Assign window.
+
 One `Ctrl/Cmd+Z` undoes the conversion. Nothing about a
 paste blocks typing: if a link's title cannot be looked up, you are left with a
 working link.
@@ -180,8 +184,9 @@ download links — they give nobody access to anything on their own.
 Documents save on their own as you write. The state beside the title tells you
 where you are: *Unsaved changes*, *Saving…*, or *Saved*. **Saved** means the
 server has confirmed it, not just that you stopped typing. Task descriptions use
-the same editing surface, but the current public Task API does not yet persist
-them; API-mode clients must not present a task description as server-saved.
+the same editing surface and persist through revision-checked Task updates. If a
+description save fails, Assign keeps the local draft and offers a retry instead
+of discarding the linked or formatted content.
 
 Documents support live co-editing after the **Live** connection state appears.
 While Assign is connecting or reconnecting, the last server-saved body remains
