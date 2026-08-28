@@ -33,6 +33,10 @@ this API, so the page clearly identifies that the token carries the connecting
 person's Toggl permissions. Assign validates it directly with Toggl, sends it
 only in the authenticated connection request, and stores it in the encrypted
 server vault; it is never placed in a URL or saved in browser storage.
+If a connection attempt fails, the page clears the token and shows Assign's
+safe server-reported reason. A provider-unavailable message means the Assign
+operator must enable the Toggl adapter and encrypted integration vault; the
+personal Toggl token does not belong in server runtime configuration.
 
 After connecting, select an active Toggl Project and bind it to an Assign
 Project. A confirmed integration action can then create one completed Toggl
