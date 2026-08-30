@@ -394,6 +394,15 @@ provider is stale or unavailable, and the read performs no inline provider
 request. See [Integrations and Rich Entities](integrations.md) for the snapshot,
 freshness, action, and pagination contract.
 
+When Workspace Knowledge is enabled and ready, `GET
+/api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` returns at
+most five permission-filtered, read-only related subjects. Each result includes
+a display title, type, explanation, and source time. The response explicitly
+distinguishes ready, empty, and temporarily unavailable state and labels stale
+observations. Empty results are omitted from Task detail; unavailable Knowledge
+never blocks the Task, its canonical Relations, or Comments and never creates a
+Task relation.
+
 ## Edit or delete a comment
 
 Comment authors update their existing comment with `PATCH

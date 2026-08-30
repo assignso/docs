@@ -20,6 +20,20 @@ Workspace, the caller's Actor within it, and their role:
   "id": "<user-id>",
   "email": "jane@example.com",
   "display_name": "Jane Doe",
+  "username": "jane",
+  "profile_picture_url": "https://cdn.example.com/jane.jpg",
+  "title": "Engineering manager",
+  "phone": "+36 30 123 4567",
+  "bio": "Building calm collaboration tools.",
+  "profile_status": "Heads-down until 15:00",
+  "name_display": "full_name",
+  "first_day_of_week": "monday",
+  "editor_controls": "contextual",
+  "timezone": "Europe/Budapest",
+  "locale": "en-GB",
+  "date_format": "day_month_year",
+  "time_format": "twenty_four_hour",
+  "number_format": "comma_decimal",
   "workspace": {
     "id": "<workspace-id>",
     "name": "Acme",
@@ -36,8 +50,10 @@ Workspace the caller belongs to, switch the session first — see
 [Switch the session's Workspace](authentication.md#switch-the-sessions-workspace).
 
 A newly registered account-only session has no selected Workspace. Its response
-contains only `id`, `email`, and `display_name`; `workspace`, `actor_id`, and
-`role` are omitted until the first Workspace is created.
+contains the account and interface-preference fields shown above;
+`workspace`, `actor_id`, and `role` are omitted until the first Workspace is
+created. Optional `username`, `profile_picture_url`, and `title` values may be
+`null`.
 
 ## Update the current profile
 
@@ -49,19 +65,64 @@ X-CSRF-Token: <csrf-token>
 If-Match: "3"
 Content-Type: application/json
 
-{"display_name": "Jane Q. Doe"}
+{"username": "jane_q", "title": "Staff engineer", "first_day_of_week": "sunday"}
 ```
 
-`display_name` is the only editable profile field. It is trimmed before
-validation and must be 1 to 100 characters. Changing an email address is a
-verification flow that has to prove control of the new mailbox, not a profile
-edit, and it is not available in this version.
+The request may contain one or more of `display_name`, `username`, `title`,
+`phone`, `bio`, `profile_status`, `name_display`, `first_day_of_week`, `editor_controls`,
+`timezone`, `locale`, `date_format`, `time_format`, `number_format`, and the
+synchronized Voice preferences. Full names are 1–100 characters. Usernames are globally unique,
+lowercase, 3–30 characters, and use letters, numbers, underscores, or interior
+hyphens. An empty optional text value removes it. `name_display` is `username` or `full_name`, and username
+display requires a selected username. `first_day_of_week` is `sunday` or
+`monday`. `editor_controls` is `contextual` or `persistent` and changes only
+the formatting-control presentation across Document, Task-description, and
+Comment editors. `timezone` uses an IANA identifier and `locale` uses BCP 47. Phone is
+private, unverified profile metadata: it is not used for sign-in, MFA,
+recovery, SMS, or notification delivery.
+
+Changing the primary email is deliberately separate from profile editing:
+
+```http
+POST /api/v1/me/email-change
+If-Match: "3"
+Content-Type: application/json
+
+{"email":"jane.new@example.com"}
+```
+
+The request requires authentication within the last 15 minutes and sends a
+30-minute, single-use link to the new inbox. The old address remains active.
+The link opens the supported Web client, which removes its token from browser
+history and calls `POST /api/v1/me/email-change/verify` with that token. Only
+the same browser session can complete it. Success changes the verified address,
+invalidates pending identity/password tokens, revokes other sessions, and
+sends a security notice to the old address.
 
 `If-Match` carries the user revision the client last observed, taken from the
 `ETag` of a previous `GET` or `PATCH` of `/api/v1/me`. A stale revision is
 refused with `409 revision_conflict` rather than overwriting a concurrent
 edit. The response is the same body `GET /api/v1/me` returns, with the new
 revision in its `ETag`.
+
+## Profile picture uploads
+
+Profile pictures use the normal direct-to-S3 attachment reservation and
+completion flow. Crop the image to a 512 × 512 PNG or JPEG before upload; the
+completed object must be clean and no larger than 5 MiB. Associate it with:
+
+```http
+POST /api/v1/me/profile-picture
+If-Match: "3"
+Content-Type: application/json
+
+{"attachment_id":"<completed-attachment-id>"}
+```
+
+`DELETE /api/v1/me/profile-picture` removes it. Replacement and removal
+soft-delete the previous object and release its storage quota. The stable
+authenticated `/api/v1/me/profile-picture/content` URL redirects to a short-lived
+inline S3 credential; clients must not persist the signed destination URL.
 
 ## List current-user sessions
 
@@ -312,7 +373,7 @@ Workspace name:
 ```json
 {
   "items": [
-    {"id": "<workspace-id>", "name": "Acme", "slug": "acme", "role": "owner"}
+    {"id": "<workspace-id>", "name": "Acme", "slug": "acme", "icon_url": null, "role": "owner"}
   ],
   "next_cursor": null,
   "has_more": false

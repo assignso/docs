@@ -12,13 +12,25 @@ that Codex opens for the sign-in. No client ID or client secret is required.
 With the Codex CLI, register the server and complete browser authorization:
 
 ```sh
+assign mcp setup codex
+```
+
+This convenience command first ensures interactive Assign CLI login, then uses
+Codex's own supported MCP registration and OAuth commands. The existing browser
+session normally avoids another credential entry, but Codex still receives a
+separate, revocable MCP credential; the Assign CLI token is never shared.
+
+You can also perform the same Codex steps directly:
+
+```sh
 codex mcp add assign --url https://mcp.assign.so/
 codex mcp login assign --scopes assign:read,assign:write
 codex mcp list
 ```
 
 Use only `assign:read` in the login command when the client should remain
-read-only. Codex desktop, the Codex CLI, and the Codex IDE integration share
+read-only, or run `assign mcp setup codex --scopes assign:read`. Codex desktop,
+the Codex CLI, and the Codex IDE integration share
 the same MCP configuration. A trusted repository may instead declare the
 remote server in `.codex/config.toml`; do not commit a bearer value. For a
 non-interactive service, reference an environment variable with
@@ -39,10 +51,41 @@ The initial catalog is intentionally bounded:
   Workspace.
 - Create Documents and replace Document content with revision checks.
 - Create and update Tasks, assign or unassign them, and add Task comments.
+- Attach a file to an existing Task with `attachment_upload_reserve`, a direct
+  upload to the returned short-lived object-storage request, and
+  `task_attachment_complete`.
+- When the selected Workspace has enabled and entitled Workspace Knowledge,
+  search and traverse its permitted indexed context with `knowledge_search`,
+  `knowledge_context`, `knowledge_related`, `knowledge_path`, and
+  `knowledge_impact`.
+- When that Workspace also has an eligible connected repository, search and
+  inspect bounded dependency impact with `code_search` and `code_impact`.
+
+Knowledge and code tools use the same Assign MCP connection and the existing
+`assign:read` scope. They appear only when at least one currently authorized
+Workspace is eligible; a Workspace-bound service credential sees only its own
+eligible catalog. Every invocation repeats current membership, Workspace
+policy, subscription, Project, repository, and service-readiness checks, so a
+tool cached by a client fails safely after a downgrade or access change.
+
+Knowledge queries accept at most 500 characters and 50 results. Traversals are
+bounded to depth 8, and path queries return at most 5 paths. Results include
+evidence, provenance, freshness, and any abstention or truncation reason rather
+than an unqualified generated answer. The catalog never exposes internal graph,
+dataset, model, provider, or raw Cognee controls.
 
 Write tools require a caller-generated idempotency key. Reuse the same key only
 when retrying the exact same request. Task and Document updates also require the
 current revision so a retry cannot overwrite a newer human change.
+
+For a Task attachment, compute the exact byte length and lowercase SHA-256
+digest first. Call `attachment_upload_reserve` with the Workspace, filename,
+length, digest, and an idempotency key. Send the unchanged bytes to its returned
+URL using the exact method and headers; the URL expires and must not be logged
+or shared. Then call `task_attachment_complete` with the Workspace, Task UUID,
+upload UUID, the same digest, and a different idempotency key. Assign verifies
+the stored bytes, scans the object, commits storage quota, and links the file to
+the Task atomically. Do not send raw or base64 file bytes in an MCP tool input.
 
 `task_update` supports partial edits: supply only the Task fields you want to
 change and Assign preserves the rest. To clear a due date or Milestone, supply
@@ -129,6 +172,12 @@ create a replacement when rotating access.
   revision.
 - If a tool is rate limited, wait for the returned retry interval and retry the
   same operation with the same idempotency key.
+- If a Knowledge or code tool disappears or returns `tool_unavailable`, refresh
+  the client's tool list. Confirm that Workspace Knowledge is enabled, the
+  subscription is active, the relevant Project or repository remains in scope,
+  and the Knowledge service is ready.
+- If a Knowledge call returns `knowledge_not_current`, wait for indexing to
+  reach the requested source sequence, then retry with the same bounds.
 - If a connection was unused for 90 days or reached one year, authorize it
   again from the client.
 - If the settings page shows that a client or service credential is revoked,

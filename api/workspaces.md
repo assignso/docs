@@ -28,6 +28,64 @@ route.
 `viewer` is read-only. It can read the Workspace and its work and nothing
 else; every write, including comments, is refused.
 
+## Workspace settings
+
+Any active member may read `GET /api/v1/workspaces/{workspace_id}/settings`.
+Owners and administrators update it with `PATCH` plus the returned revision in
+`If-Match`. The revisioned resource contains the optional description and the
+default locale, timezone, first day of week, Project visibility, Task workflow
+category, priority, and assignee policy. An omitted Project or Task creation
+field resolves from these defaults in the creation transaction; an explicit
+caller value always wins.
+
+Workspace icons use the direct-to-S3 attachment reservation/completion flow.
+After cropping to a clean 512 × 512 PNG or JPEG no larger than 5 MiB, an owner
+or administrator associates the completed object with `POST
+/api/v1/workspaces/{workspace_id}/icon` and its attachment ID. `DELETE` removes
+it. Replacement/removal retires the old object and releases quota. The stable
+authenticated `/icon/content` operation redirects to a short-lived inline S3
+credential.
+
+`GET` and revisioned `PATCH
+/api/v1/workspaces/{workspace_id}/knowledge-settings` expose explicit included
+Projects, source toggles, session-learning policy, desired enablement, and
+acknowledgement status. Enablement requires the `workspace_knowledge`
+entitlement and at least one selected Project; without entitlement the response
+is truthfully unavailable. Provisioning and disabling remain pending until the
+Knowledge worker acknowledges them. The read also carries the last acknowledged
+revision, observation and success times, indexed/source sequences, backlog,
+bounded entity counts, and a customer-safe failure code. These fields describe
+derived Knowledge state only and never override canonical Workspace content.
+
+Knowledge Credit balance, usage, estimates, and top-up controls remain visibly
+unavailable until the separately governed credit ledger and commercial catalog
+are activated. Assign does not invent a zero balance, derive credits from a
+browser return, or imply that a disabled top-up control can authorize spend.
+
+An owner or administrator may read `GET
+/api/v1/workspaces/{workspace_id}/billing-settings` for the provider-neutral
+plan, lifecycle, billing cadence, period, customer-presence flag, and a bounded
+invoice summary. `provider_available` is authoritative: it remains false until
+the current environment has a complete mode-consistent provider key, webhook
+secret, four Small/Growth cadence Price mappings, and reviewed return/callback
+URLs.
+
+When available, `POST
+/api/v1/workspaces/{workspace_id}/checkout-sessions` accepts only a server-known
+plan and cadence, for example `{"plan":"small","cadence":"monthly"}`. It
+returns a short-lived provider-hosted URL and opaque reference; clients never
+send a Price ID or amount. After the Workspace has a verified provider
+customer, `POST /api/v1/workspaces/{workspace_id}/billing-portal-sessions`
+returns a short-lived hosted portal URL. Both authenticated mutations require
+the browser CSRF header.
+
+Checkout and Portal returns are navigation only. Assign changes the local
+subscription projection only after the Stripe callback signature is verified,
+the event is durably deduplicated, and the referenced subscription is
+reconciled. Exact commercial prices, tax/legal terms, and live activation
+remain separate release gates; local sandbox fixture amounts are not public
+pricing.
+
 ## Control AI and MCP access
 
 ```http
@@ -179,8 +237,9 @@ is the unique canonical URL segment and must use 1–63 lowercase letters,
 numbers, and interior hyphens.
 
 Success returns the created Workspace, creates the owner membership and Actor
-in the same transaction, and replaces both browser-session cookies with a
-session scoped to the new Workspace. Concurrent bootstrap attempts are
+and the account's unique Free Workspace claim in the same transaction, and
+replaces both browser-session cookies with a session scoped to the new
+Workspace. Concurrent bootstrap attempts are
 serialized per account, so only one can create the first Workspace. A caller
 that already has a Workspace receives `409 workspace_already_exists` and
 should list its Workspaces and use the normal session-switch operation.
@@ -195,7 +254,7 @@ X-CSRF-Token: <csrf-token>
 Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
 Content-Type: application/json
 
-{"name": "Acme"}
+{"name": "Acme", "slug": "acme"}
 ```
 
 ```json
@@ -203,6 +262,7 @@ Content-Type: application/json
   "id": "<workspace-id>",
   "name": "Acme",
   "slug": "acme",
+  "icon_url": null,
   "revision": 1,
   "archived_at": null,
   "created_at": "2026-08-18T09:30:00Z",
@@ -210,12 +270,26 @@ Content-Type: application/json
 }
 ```
 
-The caller becomes its first `owner`. `name` is trimmed and must be 1 to 100
-characters. `slug` is derived from the name and made unique. An owner or admin
-can later choose a different canonical URL segment.
+This account-level command is available even when the caller is a member of
+another Workspace: the selected Workspace and its role do not grant or deny
+creation. The caller becomes the new Workspace's first `owner`. `name` is
+trimmed and must be 1 to 100 characters. `slug` is optional; when supplied it
+must be a unique canonical path, and when omitted Core generates one.
+
+Each human account may own one active Free Workspace. Repeating the command
+after that claim is occupied returns `409 free_workspace_claim_unavailable`
+without creating a Workspace, membership, Actor, or event. The idempotency key
+is scoped to the account, so retrying through a different selected Workspace
+still replays the same result.
 
 Creating a Workspace does not switch the calling session into it — see
 [Switch the session's Workspace](authentication.md#switch-the-sessions-workspace).
+
+Before presenting the form, use `GET /api/v1/workspace-creation-options`. It
+returns `free_available`, the claimed Free Workspace summary when applicable,
+and the currently purchasable paid choices. Paid creation remains absent while
+the commercial catalog is inactive; the Web flow explains that state instead
+of offering a control Core would reject.
 
 ## Read a Workspace
 
@@ -231,7 +305,7 @@ use in a later `If-Match`.
 An archived Workspace answers `404` for everyone except an owner, who can
 still read it in order to un-archive it.
 
-## Rename, change the URL, or un-archive a Workspace
+## Rename, change the URL or icon, or un-archive a Workspace
 
 ```http
 PATCH /api/v1/workspaces/{workspace_id} HTTP/1.1
@@ -244,11 +318,15 @@ Content-Type: application/json
 {"name": "Acme Corporation"}
 ```
 
-The body carries exactly one of `name`, `slug`, or `archived`. Renaming and
-changing the URL require `workspace:manage` — `owner` or `admin`. The `slug`
+The body carries exactly one of `name`, `slug`, `icon_url`, or `archived`.
+Renaming and changing the URL or icon require `workspace:manage` — `owner` or
+`admin`. The `slug`
 must be a unique 1–63 character segment made of lowercase letters, numbers,
 and interior hyphens. A claimed URL returns `409 workspace_url_taken`; an
 invalid one returns `400 invalid_workspace_url`.
+
+`icon_url` accepts a bounded HTTPS image URL. An empty string removes the icon
+and restores the client's initials fallback.
 
 `archived` accepts only `false`, which un-archives the Workspace and is
 owner-only; archiving is the `DELETE` below.
@@ -387,9 +465,10 @@ deliberate membership change on somebody already present, not by whoever opens
 a link in a mailbox.
 
 `token` is returned **once**; only its hash is stored. Assign also sends the
-one-time token to the invited address through the configured email provider.
-The mutation fails if delivery fails, rather than reporting an invitation that
-never reached its recipient. A retried request carrying the same
+invited address a clickable, single-use Web action link through the configured
+email provider. The email does not display a standalone token. The mutation
+fails if delivery fails, rather than reporting an invitation that never reached
+its recipient. A retried request carrying the same
 `Idempotency-Key` replays the same body, token included, without sending a
 duplicate message.
 
@@ -425,6 +504,15 @@ immediately.
 
 ## Accept an invitation
 
+Recipients normally open the action link from their email. Opening the page
+does not accept the invitation, so mail scanners and browser prefetchers cannot
+consume it. The Web client removes the token from the visible URL, asks a
+signed-out recipient to log in or create an account with the invited address,
+then presents an explicit **Accept invitation** action. On success it switches
+the browser session to the joined Workspace and opens that Workspace.
+
+API clients may redeem the same token directly:
+
 ```http
 POST /api/v1/invitations/accept HTTP/1.1
 Host: api.assign.so
@@ -435,7 +523,7 @@ Content-Type: application/json
 {"token": "<one-time-token>"}
 ```
 
-Returns the created membership. This route is **not** Workspace-scoped: the
+Returns the joined Workspace. This route is **not** Workspace-scoped: the
 caller is by definition not yet a member of the target Workspace.
 
 The caller must be signed in, and their account's email address must match the

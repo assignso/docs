@@ -60,6 +60,34 @@ only with an explicit HTTPS Assign API origin. Tokens are never accepted as
 command-line arguments and `assign doctor` reports only the credential source,
 never its value.
 
+## Set up Assign MCP in Codex
+
+After installing the Codex CLI, configure and authorize Assign MCP with one
+command:
+
+```sh
+assign mcp setup codex
+```
+
+If you have not run `assign login`, setup starts that browser flow first. It
+then registers `https://mcp.assign.so/` in Codex and starts Codex's own OAuth
+authorization. Your existing browser session normally means you do not enter
+your Assign credentials again, although Assign still shows the MCP Workspace
+and scope consent.
+
+CLI and MCP credentials remain separate. The command never copies or exposes
+the CLI access or refresh token; Codex stores and refreshes its own revocable,
+MCP-scoped credential. Use a read-only grant when writes are unnecessary:
+
+```sh
+assign mcp setup codex --scopes assign:read
+```
+
+Setup reuses a compatible existing `assign` server entry. If that name points
+to another URL, a local process, or an environment bearer token, setup refuses
+to overwrite it; inspect it with `codex mcp get assign` and remove it explicitly
+before retrying. The command currently supports only the production Assign host.
+
 Bare `assign` returns active Tasks assigned to the credential owner in its
 bound Workspace. `assign search <query>` searches the bounded Task/Document
 projection. `assign start|done|reopen <TASK-CODE> --revision <n>` uses the

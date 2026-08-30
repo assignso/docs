@@ -1,9 +1,9 @@
 # Time tracking
 
 Time tracking is optional for each Workspace. A Workspace administrator enables
-it in **Preferences → Time tracking**, then chooses exact reporting or upward
-rounding to 15 or 30 minutes. Exact duration is retained for every entry; the
-policy only determines its reportable duration.
+it in **Preferences → Time tracking**, under **Work management**, then chooses
+exact reporting or upward rounding to 15 or 30 minutes. Exact duration is
+retained for every entry; the policy only determines its reportable duration.
 
 ## Log time on a Task
 

@@ -11,7 +11,7 @@ The current Assign 3.0 web build is an interaction prototype. Its public pages a
 - `/reset-password` — redeem a reset token and choose a new password
 - `/verify-email` — redeem the token from a verification email link
 - `/signup` — prototype signup
-- `/create-workspace` — guarded first-Workspace onboarding
+- `/create-workspace` — first-Workspace onboarding and account-level additional Workspace creation
 
 In the default local API mode, login and signup call Assign Core and establish
 its browser session. Existing password users can request a four-hour,
@@ -20,7 +20,11 @@ The emailed link opens `/reset-password` with the token already supplied, the
 request confirmation does not reveal whether an address is registered, and a
 successful reset signs out every existing session. Accounts without a
 Workspace continue to the guarded first-Workspace page, where the editable
-path is filled automatically from the name; accounts with one open it directly.
+path is filled automatically from the name. Signed-in accounts can also reach
+the same page from the Workspace switcher or Account Billing & plans. The page
+reads account-level eligibility, permits one claim-backed Free Workspace even
+when the account already has other memberships, and leaves the current session
+selected until the user explicitly opens the created Workspace.
 Explicit fixture mode simulates the same transitions without storing an
 account. Google and GitHub hand off to Assign Core when those providers are
 configured.
@@ -50,7 +54,17 @@ window and can reopen its interface after a short network interruption. Your
 Workspace data, uploads, and account actions still require a connection; Assign
 does not store authenticated data or upload credentials for offline use.
 
-Workspace settings provide dedicated General, Members, and Labels routes.
+Workspace settings replace the default app sidebar with grouped, icon-labelled
+navigation for General, Members, Time tracking, Labels, Task statuses, Project
+lifecycle, and Developer tools. Time tracking has a dedicated page in the
+**Work management** group. Account settings use a separate contextual sidebar
+for all account destinations. Both sidebars include **Back to app**, which
+returns to the active Workspace Home; settings pages do not repeat the
+destinations as tabs. Account and Workspace settings use a centered `max-w-2xl`
+column with standard responsive page padding.
+Account settings additionally show the current avatar, display name, and email
+as rounded, bordered static context at the top of the scrollable sidebar content,
+below the header's **Back to app** link and without opening the main profile menu.
 Authorized member managers can invite people, change
 membership roles, and revoke pending invitations from Members. Labels are
 separated into editable global Project, Document, and Task panels. Project
@@ -69,8 +83,10 @@ Workspace administrator can
 publish an unlisted read-only status link after confirmation. Visitors see only
 the Project name/marker and aggregate workflow Task counts; unpublishing or
 archiving revokes the link immediately. Account settings
-provide keyboard-accessible route navigation for Profile, Active sessions,
-Notifications, Connected accounts, Passkeys, Subscription, and MCP access.
+provide keyboard-accessible sidebar navigation for Profile, Security, Active
+sessions, Notifications, Connected accounts, Passkeys, Subscription, and MCP
+access. Security contains email verification, password, authenticator-app, and
+personal API-token controls; Profile contains personal details only.
 Active sessions uses the existing account-security API to list active sessions
 by Workspace and recent activity, mark the current session, and revoke another
 session or all other sessions after confirmation; Assign does not collect or
@@ -93,11 +109,12 @@ results. One selected label shows its color circle and name. When several labels
 are selected, the closed control stays the same size and shows overlapping color
 circles and a count instead of one chip per label; the picker does not maintain
 a frequently-used section.
-Authenticated breadcrumbs retain the v2-style `Assign` home action. On compact
-desktop widths, the path to a Project or Document remains clickable. Project
+Desktop authenticated breadcrumbs retain the v2-style `Assign` home action and
+show at most four items. The path to a Project or Document remains clickable.
+Project
 collection pages end at the Project path and omit the redundant view label such
 as List or Board; other pages retain a non-interactive current-page label. On
-narrow phones intermediate path segments collapse before the header controls do.
+narrow phones, only the deepest clickable breadcrumb item is displayed.
 Task detail retains its narrow centered reading canvas. Its 28px property controls,
 including Log time when enabled, use intrinsic widths, share a solid visible
 border, and wrap together as an inline row; they do not stretch into full-width

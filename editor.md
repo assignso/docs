@@ -59,9 +59,11 @@ Keyboard shortcuts work too: `Ctrl/Cmd+B` for bold, `Ctrl/Cmd+I` for italic,
 link.
 
 Selecting text opens a small formatting toolbar. If you would rather keep the
-controls visible all the time, turn on **Formatting controls** on a document
-page. That is a display preference — it changes nothing about your content, and
-every command stays available from the keyboard and the `/` menu either way.
+controls visible all the time, turn on **Always show editor toolbar** in
+**Account settings → Interface**. The choice follows your account and applies
+to documents, task descriptions, and comments. It changes nothing about your
+content, and every command stays available from the keyboard and the `/` menu
+either way.
 
 ## Inserting blocks
 
