@@ -74,6 +74,10 @@ evidence, provenance, freshness, and any abstention or truncation reason rather
 than an unqualified generated answer. The catalog never exposes internal graph,
 dataset, model, provider, or raw Cognee controls.
 
+Rate limits apply to shared read, search, write, Knowledge, and code classes.
+Calling different tools in the same class consumes the same class budget; a
+client cannot gain additional capacity by alternating tool names.
+
 Write tools require a caller-generated idempotency key. Reuse the same key only
 when retrying the exact same request. Task and Document updates also require the
 current revision so a retry cannot overwrite a newer human change.
@@ -89,7 +93,8 @@ the Task atomically. Do not send raw or base64 file bytes in an MCP tool input.
 
 `task_update` supports partial edits: supply only the Task fields you want to
 change and Assign preserves the rest. To clear a due date or Milestone, supply
-an empty string for `due_on` or `milestone_id` respectively.
+an empty string for `due_on` or `milestone_id` respectively. A present
+`due_on` value is always the Task's `YYYY-MM-DD` calendar date, not a timestamp.
 
 Task descriptions and Task comments use Assign's structured editor JSON
 objects. Document reads and writes may use either that structural content or
