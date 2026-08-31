@@ -50,7 +50,8 @@ The initial catalog is intentionally bounded:
 - Search Projects, Tasks, Documents, comments, and active People inside one authorized
   Workspace.
 - Create Documents and replace Document content with revision checks.
-- Create and update Tasks, assign or unassign them, and add Task comments.
+- Create and update Tasks, explicitly complete them, assign or unassign them,
+  and add Task comments.
 - Attach a file to an existing Task with `attachment_upload_reserve`, a direct
   upload to the returned short-lived object-storage request, and
   `task_attachment_complete`.
@@ -95,6 +96,14 @@ the Task atomically. Do not send raw or base64 file bytes in an MCP tool input.
 change and Assign preserves the rest. To clear a due date or Milestone, supply
 an empty string for `due_on` or `milestone_id` respectively. A present
 `due_on` value is always the Task's `YYYY-MM-DD` calendar date, not a timestamp.
+Do not use `task_update` to infer that a Task was completed from a Status UUID.
+Use `task_complete` with the Task's current revision and a caller-generated
+idempotency key. Assign chooses the applicable done Status through the same
+workflow service used by first-party clients and returns the updated Task,
+the resulting Status ID, label, and `done` category, plus
+`completion_confirmed: true`. The tool does not report success unless the
+persisted Task also has `completed_at`; a missing done workflow or an
+unconfirmed postcondition is returned as an explicit error.
 
 Task descriptions and Task comments use Assign's structured editor JSON
 objects. Document reads and writes may use either that structural content or
