@@ -416,3 +416,14 @@ a colon. For example, a user creating through MCP is `user:mcp`, with the safe
 client label such as `Codex` in `actor_name`. This lets clients render mediated
 creation without guessing from the author name and without exposing credentials,
 prompts, or request content.
+
+## React to a comment
+
+Comment responses include a bounded `reactions` array with each non-zero
+reaction key, its aggregate count, and whether the current Actor contributed.
+Use `PUT /api/v1/comments/{comment_id}/reactions/{reaction}` to add your
+reaction and `DELETE` on the same path to remove it. Both operations are
+idempotent and return the current Comment. Supported reaction keys are
+`thumbs_up`, `heart`, `tada`, `smile`, `confused`, and `eyes`. Reactions are
+available only on live Comments under active Tasks and do not change the
+Comment body revision.

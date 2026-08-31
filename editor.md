@@ -220,3 +220,8 @@ post keeps your draft so you can try again. Use **Copy link** below any retained
 comment—even a deleted-comment placeholder—to share a URL that opens and focuses
 that exact place in the Task discussion. If you authored a live comment, its
 **Edit** and **Delete** actions appear beside Copy link below the comment body.
+Live comments also show reaction counts below the body. Select an existing
+reaction to add or remove yours, or use **Add reaction** to choose 👍, ❤️, 🎉,
+😄, 😕, or 👀. When the current Task discussion already uses reactions, the
+picker places its three most-used choices first without storing a separate
+reaction-history preference.
