@@ -188,7 +188,10 @@ where you are: *Unsaved changes*, *Saving…*, or *Saved*. **Saved** means the
 server has confirmed it, not just that you stopped typing. Task descriptions use
 the same editing surface and persist through revision-checked Task updates. If a
 description save fails, Assign keeps the local draft and offers a retry instead
-of discarding the linked or formatted content.
+of discarding the linked or formatted content. Leaving the Task page flushes a
+pending description save; if it still fails, returning to that Task restores
+the draft. If another update wins the revision first, compare both summaries,
+then choose **Load saved version** or **Retry my draft**.
 
 Documents support live co-editing after the **Live** connection state appears.
 While Assign is connecting or reconnecting, the last server-saved body remains
