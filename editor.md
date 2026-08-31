@@ -216,4 +216,7 @@ overwrite their work. You keep your draft and choose:
 
 The comment box on a task is the same editor, with the commands that make sense
 there. Comments post one at a time; they are not a live shared session. A failed
-post keeps your draft so you can try again.
+post keeps your draft so you can try again. Use **Copy link** below any retained
+comment—even a deleted-comment placeholder—to share a URL that opens and focuses
+that exact place in the Task discussion. If you authored a live comment, its
+**Edit** and **Delete** actions appear beside Copy link below the comment body.
