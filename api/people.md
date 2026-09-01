@@ -24,3 +24,7 @@ GET /api/v1/workspaces/{workspace_id}/people/{user_id}/activity?limit=50
 This is a cursor-paginated collaboration feed, not an audit log. It uses the
 same redaction and current-access rules as Workspace activity. If a person is
 not an active visible member, both requests return the normal `404` response.
+
+The authenticated person profile loads this feed independently from the
+identity and assigned-work sections. Loading, empty, failure, and continuation
+states therefore do not replace or disclose data from the rest of the profile.

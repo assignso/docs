@@ -55,6 +55,21 @@ contains the account and interface-preference fields shown above;
 created. Optional `username`, `profile_picture_url`, and `title` values may be
 `null`.
 
+## Review Workspace plans
+
+`GET /api/v1/me/billing-plans` returns a cursor-paginated Account → Billing & plans
+overview with at most 100 active Workspace memberships per page. Each row contains the
+Workspace identity, the current user's relationship, that Workspace's
+independent plan and canonical lifecycle state, and whether the relationship
+may navigate to Workspace billing management. The response also reports
+whether the account's one Free Workspace claim is available.
+
+This is a read-only overview, not an account subscription. It omits payment,
+invoice, tax, billing-contact, provider-customer, and entitlement detail and
+never becomes a cross-Workspace mutation boundary. Sensitive controls remain
+under Workspace Settings → Billing and require `workspace.billing.manage` plus
+recent authentication.
+
 ## Update the current profile
 
 ```http

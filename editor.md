@@ -4,6 +4,10 @@ Assign has one editor. Documents, task descriptions, and comments all use it, so
 the same shortcuts, formatting, mentions, and Markdown behave the same way
 everywhere.
 
+Pasting a code-only clipboard selection creates a code block, including from
+mobile clipboard providers, and keeps a recognized language hint. Mixed rich
+content continues through the normal sanitized paste behavior.
+
 Editor body text uses a compact, consistent size across Documents, Task
 descriptions, and Comments. Headings remain proportionally larger so the
 document structure stays easy to scan.

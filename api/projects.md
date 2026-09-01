@@ -344,6 +344,51 @@ private, revoked, and archived links all return the same `404`.
 
 ## List Project Statuses
 
+The authenticated Project representation includes
+`show_cancelled_column`. Project managers update that revisioned Board
+preference through the ordinary Project `PATCH` operation with
+`{"show_cancelled_column":true}`. It changes only Board presentation; it never
+changes Task resolution, All tasks history, Search, or direct-link access.
+
+## Read and update the completion policy
+
+Read the Project's completion defaults:
+
+```http
+GET /api/v1/projects/{project_id}/completion-policy HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+```
+
+The response carries an `ETag`. A Project without a stored policy returns the
+server-selected active and done defaults with `ETag: "0"`; an applicable review
+Status is included when available, while review remains disabled.
+
+Project managers replace the complete policy with the observed ETag:
+
+```http
+PUT /api/v1/projects/{project_id}/completion-policy HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+If-Match: "0"
+Idempotency-Key: <opaque-client-key>
+Content-Type: application/json
+
+{
+  "requires_review": true,
+  "default_active_status_id": "<active-status-id>",
+  "default_review_status_id": "<review-status-id>",
+  "default_done_status_id": "<done-status-id>"
+}
+```
+
+Every selected Status must be active and applicable to the Project. The
+active, review, and done selections currently use the `in_progress`,
+`in_review`, and `done` categories respectively. Disabling review retains the
+review selection. A stale ETag returns `409 revision_conflict`; an invalid or
+archived Status returns `422 project_completion_policy_invalid`.
+
 ```http
 GET /api/v1/projects/{project_id}/statuses?limit=50 HTTP/1.1
 Host: api.assign.so
@@ -362,6 +407,10 @@ the Workspace-wide Statuses applicable to it:
       "project_id": null,
       "label": "Backlog",
       "category": "backlog",
+      "status_type": "backlog",
+      "icon": null,
+      "color": null,
+      "marks_task_resolved": false,
       "position": 1,
       "is_required": true,
       "revision": 1,
@@ -376,9 +425,13 @@ the Workspace-wide Statuses applicable to it:
 ```
 
 `project_id` is `null` for a Workspace-wide Status applicable to every
-Project. `category` is one of `backlog`, `todo`, `in_progress`, `in_review`,
-or `done`. Active lists omit archived Statuses; an individual archived Status
-remains readable so a historical Task can retain its workflow label.
+Project. `category` is the compatible visual grouping. `status_type` is the
+canonical lifecycle meaning: `backlog`, `unstarted`, `started`, `completed`,
+or `cancelled`. Completed and cancelled types resolve Tasks regardless of the
+custom label. `icon` and `color` are optional presentation overrides, and
+`marks_task_resolved` is derived. Active lists omit archived Statuses; an
+individual archived Status remains readable so a historical Task can retain
+its workflow label.
 
 ## Create a Project Status
 
@@ -390,7 +443,7 @@ X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"label":"Ready for review","category":"in_review","position":5}
+{"label":"Ready for review","category":"in_review","status_type":"started","icon":"circle-dot","color":"#7C3AED","position":5}
 ```
 
 Creates a Project-scoped Status and returns `201` with the Status and its
@@ -455,7 +508,8 @@ The required-category safeguard still applies, so a replacement cannot remove
 the final active `todo`, `in_progress`, or `done` Status. Archived Tasks retain
 their existing historical Status.
 
-Update a Status label or category with `PATCH /api/v1/statuses/{status_id}`
+Update a Status label, lifecycle type, compatible category, icon, or color with
+`PATCH /api/v1/statuses/{status_id}`
 and its current `If-Match`, `X-CSRF-Token`, and `Idempotency-Key` headers.
 The response is the revised Status and a new `ETag`.
 

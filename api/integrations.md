@@ -106,7 +106,11 @@ Authenticated members can browse the same bounded catalog at
 at `/app/{workspaceSlug}/integrations/{providerKey}/installations/{installationId}`.
 The current web experience supports provider search, category filters, current
 Workspace installation filtering/health summaries, preview-provider
-authorization, resource refresh, reconnect, and consequence-confirmed removal.
+authorization, resource refresh, reconnect, provider-owned access management,
+and consequence-confirmed removal. For GitHub, **Manage access in GitHub** opens
+the organization installation settings where an organization owner can change
+repository selection and approve requested app permissions. Assign cannot grant
+GitHub permissions itself.
 Provider marks may use version-pinned Simple Icons
 assets or separately reviewed checked-in provider SVGs as a visual aid across
 catalog, provider, installation, and Rich Entity surfaces. Slack uses its
@@ -117,6 +121,33 @@ its API exposes no scoped OAuth grant: its dedicated provider page accepts a
 personal API token through the authenticated completion operation, never a URL
 or browser store. Catalog cards never collect credentials or treat visibility
 as authorization.
+
+The GitLab provider page also supports GitLab Self-Managed 19 or newer. Choose
+**Self-Managed**, enter the pathless HTTPS instance origin and that instance's
+confidential OAuth application ID and secret, then choose **Public HTTPS** or
+**Private connector**. Public mode is for an internet-reachable instance and
+revalidates the destination before connections. Private mode enrolls
+`assign-gitlab-connector`, which runs inside the customer network and makes only
+outbound requests to Assign; no inbound firewall rule or VPN to Assign is
+required. The enrollment token is returned once and must be placed directly in
+the connector process, never in browser storage or source control.
+
+Create the OAuth application on the target GitLab instance before connecting:
+
+1. As a GitLab administrator, open **Admin > Applications > New application**.
+   A user-owned or group-owned application also works when its ownership scope
+   matches the intended installation, but an instance-wide application is the
+   recommended customer-managed setup.
+2. Copy the exact **OAuth redirect URI** shown on Assign's GitLab provider page
+   into GitLab. It has the form
+   `https://<assign-origin>/api/v1/integration-authorizations/callback`.
+3. Select the `api` and `read_user` scopes and keep the application
+   confidential so GitLab issues an Application ID and secret. Leave
+   **Trusted** disabled unless the GitLab administrator intentionally wants to
+   bypass the user approval screen.
+4. Copy the Application ID and secret into Assign. GitLab shows the secret only
+   at creation or rotation, and Assign sends it directly to its encrypted
+   credential vault.
 
 **Connected accounts** shows the same safe personal integration identity and
 authorization state grouped by eligible Workspace installation. It can
@@ -158,6 +189,10 @@ The lifecycle operations are:
   where required. OAuth callbacks provide `code`; a provider-native installation
   callback, such as a GitHub App installation, instead provides its matching
   `installation_id` while retaining the same one-use state;
+- `POST /api/v1/workspaces/{workspace_id}/integration-private-connectors` for
+  a one-time private-connector enrollment token. The connector then uses its
+  bearer-authenticated, versioned long-poll operations; these endpoints are a
+  bounded GitLab transport, not a general HTTP proxy;
 - `POST /api/v1/workspaces/{workspace_id}/integration-authorizations/credential`
   for providers such as Toggl Track that expose no scoped OAuth grant. The
   CSRF-protected JSON body carries the one-use state and credential, both bound
@@ -166,6 +201,10 @@ The lifecycle operations are:
 - `DELETE /api/v1/integration-installations/{installation_id}` and
   `DELETE /api/v1/me/integration-identities/{identity_id}` for Workspace or
   self-only authority removal;
+- `POST /api/v1/integration-installations/{installation_id}/management-link`
+  for an Owner/Admin-only, freshly validated handoff to provider-owned
+  installation settings. The response includes only a safe permission and
+  repository-selection summary; it contains no credential;
 - `GET /api/v1/integration-installations/{installation_id}/resources` and
   `POST .../resources/refresh` for persisted or explicit provider discovery;
 - `POST /api/v1/projects/{project_id}/integration-bindings` and
@@ -342,7 +381,7 @@ The preview Git providers use these provider-specific behaviors:
 
 - GitHub uses `github.development_activity` for repository branches, commits,
   pull requests, checks, and deployments.
-- GitLab.com uses `gitlab.development_activity` for numeric GitLab Project
+- GitLab.com and GitLab Self-Managed use `gitlab.development_activity` for GitLab Project
   branches, commits, merge requests, pipelines, and deployments.
 - Bitbucket Cloud uses `bitbucket.development_activity` for repository UUID and
   full-name branches, commits, pull requests, build statuses, pipelines, and
@@ -373,9 +412,15 @@ person's delegated access token.
 
 Bitbucket Cloud native Issues are not supported: Bitbucket removed those APIs
 on 2026-08-20. The integration uses OAuth and REST, not new Connect app
-registration. GitLab Self-Managed is also outside the current GitLab.com
-preview because its network, certificate, base-URL, and version-support policy
-requires separate qualification.
+registration.
+
+GitLab Self-Managed requires major version 19 or newer and namespaces remote
+identity by canonical instance origin. A signing token enables Assign's signed
+webhook contract where the instance supports it; otherwise the installation
+uses bounded reconciliation. GitLab 19.0 remains reconciliation-only when the
+signed delivery capability is unavailable. Assign does not accept GitLab's
+plaintext `X-Gitlab-Token` fallback. TLS verification cannot be disabled in
+Core; a private customer CA belongs only in the connector host's trust store.
 
 For optional pull-request automation, set
 `configuration.pull_request_status_mappings` on an incoming

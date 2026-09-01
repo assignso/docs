@@ -55,8 +55,8 @@ Workspace data, uploads, and account actions still require a connection; Assign
 does not store authenticated data or upload credentials for offline use.
 
 Workspace settings replace the default app sidebar with grouped, icon-labelled
-navigation for General, Members, Time tracking, Labels, Task statuses, Project
-lifecycle, and Developer tools. Time tracking has a dedicated page in the
+navigation for General, Members, Knowledge, Billing, Time tracking, Labels,
+Task statuses, Project lifecycle, and Developer tools. Time tracking has a dedicated page in the
 **Work management** group. Account settings use a separate contextual sidebar
 for all account destinations. Both sidebars include **Back to app**, which
 returns to the active Workspace Home; settings pages do not repeat the
@@ -84,7 +84,7 @@ publish an unlisted read-only status link after confirmation. Visitors see only
 the Project name/marker and aggregate workflow Task counts; unpublishing or
 archiving revokes the link immediately. Account settings
 provide keyboard-accessible sidebar navigation for Profile, Security, Active
-sessions, Notifications, Connected accounts, Passkeys, Subscription, and MCP
+sessions, Notifications, Connected accounts, Passkeys, Billing & plans, and MCP
 access. Security contains email verification, password, authenticator-app, and
 personal API-token controls; Profile contains personal details only.
 Active sessions uses the existing account-security API to list active sessions
@@ -193,6 +193,8 @@ members can edit it in Project settings; Project links use
 `/app/{workspaceSlug}/projects/{projectPath}` while the disabled Project key
 remains the stable Task-code prefix. Task pages use
 `/app/{workspaceSlug}/tasks/{taskCode}` and are not nested beneath a Project.
+Use **Copy task link** in the Task actions menu to copy that canonical absolute
+URL; clipboard success or failure is shown without navigating away.
 Legacy opaque-ID links redirect to these canonical routes. Renaming the active
 Workspace replaces its slug in the current URL without changing the underlying
 Workspace session, and My Work uses the same full-width page frame as Home.

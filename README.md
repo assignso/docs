@@ -8,10 +8,15 @@ contract is maintained separately in `openapi-spec` and is the source for
 generated SDKs.
 
 Assign uses **Workspace** for its tenant and collaboration boundary and **Task**
-for its work resource. Public product endpoints use `/api/v1`; deployment probes
-such as `/health` and `/ready` are not public API resources.
+for its work resource. Public product endpoints use `/api/v1`; operational
+responses such as the API-origin health summary at `/`, `/health`, and `/ready`
+are not public API resources. The root summary reports only safe aggregate
+states for the API, database, WebSocket/Yjs collaboration, and optional
+Knowledge service; integrations must not treat it as a versioned product
+contract.
 
 - [API conventions](api/conventions.md)
+- [Supplemental API operation reference](api/operation-reference.md)
 - [Browser authentication](api/authentication.md)
 - [Account and Workspaces](api/account.md)
 - [Assign CLI](cli.md)
@@ -23,9 +28,11 @@ such as `/health` and `/ready` are not public API resources.
 - [Attachments](api/attachments.md)
 - [Current work](api/current-work.md)
 - [Search](api/search.md)
+- [Workspace Knowledge](api/knowledge.md)
 - [People profiles](api/people.md)
 - [Inbox](api/inbox.md)
 - [Activity](api/activity.md)
+- [Workspace Agents](api/agents.md)
 - [Connect an MCP client](mcp.md)
 - [Time tracking](time-tracking.md)
 - [Writing in Assign](editor.md)

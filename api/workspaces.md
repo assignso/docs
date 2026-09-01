@@ -57,12 +57,19 @@ revision, observation and success times, indexed/source sequences, backlog,
 bounded entity counts, and a customer-safe failure code. These fields describe
 derived Knowledge state only and never override canonical Workspace content.
 
-Knowledge Credit balance, usage, estimates, and top-up controls remain visibly
-unavailable until the separately governed credit ledger and commercial catalog
-are activated. Assign does not invent a zero balance, derive credits from a
-browser return, or imply that a disabled top-up control can authorize spend.
+When the private Knowledge ledger is configured, Workspace Billing includes a
+signed, Workspace-scoped balance summary for recurring, promotional,
+purchased, reserved, and available credits. If that projection is unavailable,
+the UI labels it unavailable rather than inventing a zero balance. In local
+fake-provider mode only, billing managers may start unpriced 100, 500, or 1000
+credit checkouts with `POST
+/api/v1/workspaces/{workspace_id}/billing/knowledge-credit-top-ups`. A browser
+return grants nothing; a verified fake event creates one grant, and a verified
+full refund creates one compensating ledger transaction. Ordinary Stripe and
+production top-ups remain unavailable until their commercial catalog is
+accepted.
 
-An owner or administrator may read `GET
+An owner or administrator with `workspace.billing.manage` may read `GET
 /api/v1/workspaces/{workspace_id}/billing-settings` for the provider-neutral
 plan, lifecycle, billing cadence, period, customer-presence flag, and a bounded
 invoice summary. `provider_available` is authoritative: it remains false until
@@ -76,8 +83,20 @@ plan and cadence, for example `{"plan":"small","cadence":"monthly"}`. It
 returns a short-lived provider-hosted URL and opaque reference; clients never
 send a Price ID or amount. After the Workspace has a verified provider
 customer, `POST /api/v1/workspaces/{workspace_id}/billing-portal-sessions`
-returns a short-lived hosted portal URL. Both authenticated mutations require
-the browser CSRF header.
+returns a short-lived hosted portal URL. These billing mutations require the
+browser CSRF header and recent authentication.
+
+`GET /api/v1/me/billing-plans` is the Account-level bounded overview. It lists
+at most 100 active Workspace relationships with each Workspace's independent
+plan/status and whether the current role can manage billing. It includes no
+payment, invoice, tax, provider-customer, or cross-Workspace mutation data;
+those details remain on Workspace Settings → Billing.
+
+When a Workspace is `billing_restricted`, reads, billing repair, archival, and
+safe usage-reduction actions remain available. Ordinary content writes,
+capacity increases, write integrations, Agents, and automation fail closed.
+Numeric `members.active_humans` entitlements count active human memberships and
+reserve one place for every unexpired pending invitation.
 
 Checkout and Portal returns are navigation only. Assign changes the local
 subscription projection only after the Stripe callback signature is verified,
@@ -141,12 +160,16 @@ X-CSRF-Token: <csrf-token>
 Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
 Content-Type: application/json
 
-{"label":"Ready for review","category":"in_review"}
+{"label":"Ready for review","category":"in_review","status_type":"started","icon":"circle-dot","color":"#7C3AED"}
 ```
 
 The new Status appends to the Workspace-wide workflow and returns `201` with
 its `ETag`. Clients do not supply a position. Labels are 1–100 characters and
 categories are `backlog`, `todo`, `in_progress`, `in_review`, or `done`.
+`status_type` carries the canonical lifecycle meaning and accepts `backlog`,
+`unstarted`, `started`, `completed`, or `cancelled`; existing clients may omit
+it and continue using the compatible category mapping. Icon and six-digit hex
+color overrides are optional.
 Creation is safely retryable with the same `Idempotency-Key`; callers without
 `workspace:manage` are refused.
 
@@ -288,8 +311,37 @@ Creating a Workspace does not switch the calling session into it — see
 Before presenting the form, use `GET /api/v1/workspace-creation-options`. It
 returns `free_available`, the claimed Free Workspace summary when applicable,
 and the currently purchasable paid choices. Paid creation remains absent while
-the commercial catalog is inactive; the Web flow explains that state instead
-of offering a control Core would reject.
+the billing catalog is inactive; the Web flow explains that state instead of
+offering a control Core would reject.
+
+### Create a paid Workspace
+
+Choose one server-issued `quote_id` from the creation-options response. The
+identifier is an Assign catalog key, not a Stripe Price ID:
+
+```http
+POST /api/v1/workspace-checkouts HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
+Content-Type: application/json
+
+{"name":"Acme Premium","slug":"acme-premium","quote_id":"small_monthly"}
+```
+
+The response contains an opaque checkout `id`, `pending` state, expiry, and a
+provider-hosted `url`. Redirect the browser to that URL. A Checkout success or
+cancel return is navigation only and never proves payment.
+
+After a success return, poll
+`GET /api/v1/workspace-checkouts/{checkout_id}`. The resource belongs to the
+current account; a foreign identifier returns `404`. States are `pending`,
+`activating`, `activated`, `expired`, `canceled`, or `failed`. Only
+`activated` includes the created Workspace summary. Assign reaches that state
+after verifying and deduplicating the Stripe event and reconciling an effective
+subscription. Abandoned, canceled, expired, or ineffective checkouts create no
+Workspace.
 
 ## Read a Workspace
 

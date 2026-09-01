@@ -60,6 +60,9 @@ Returns one page ordered by the Task's immutable project-local number:
       "description_text": "",
       "due_on": null,
       "milestone_id": null,
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution": null,
       "label_ids": [],
       "revision": 1,
       "created_at": "2026-08-15T12:00:00Z",
@@ -76,6 +79,13 @@ Returns one page ordered by the Task's immutable project-local number:
 }
 ```
 
+The collection accepts `state=active|resolved|all`, repeatable `status_id`,
+`assignee_actor_id`, `resolution=completed|cancelled`, and
+`include_archived=true|false`. Cursors are bound to the complete filter set and
+cannot be reused after a filter changes. Every page also returns exact
+Project-level `counts` for `active`, `completed`, `cancelled`, and `archived`
+Tasks; item reads remain bounded by `limit` and `next_cursor`.
+
 `priority` is one of `none`, `low`, `medium`, `high`, or `urgent`. The
 Project's ticket reference (for example `ASSIGN-42`) is formed by combining
 its `key` with `task_number` — see [Projects](projects.md). This exact
@@ -85,6 +95,18 @@ and no leading zeroes.
 The web application uses that code in the canonical Workspace-scoped URL
 `/app/{workspaceSlug}/tasks/ASSIGN-42`; browser URLs do not expose or nest the
 Task below the Project's opaque ID.
+
+`resolved_at`, `resolved_by`, and `resolution` describe only the current
+terminal episode. Entering a completed or cancelled Status records them;
+returning to any active Status clears them. `resolution` is `completed`,
+`cancelled`, or null. The older `completed_at` field remains as a compatible
+completed-only projection. Resolving a Task does not archive it, and references
+to resolved or archived Tasks remain readable.
+
+In the supported Web client, List shows active work plus a bounded recent
+completion window, Board keeps terminal columns shallow, and the low-prominence
+All tasks destination shows complete non-archived Project history. Search
+includes resolved Tasks by default; archived Tasks require explicit inclusion.
 
 ## Create a Task
 
