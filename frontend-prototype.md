@@ -110,11 +110,12 @@ are selected, the closed control stays the same size and shows overlapping color
 circles and a count instead of one chip per label; the picker does not maintain
 a frequently-used section.
 Desktop authenticated breadcrumbs retain the v2-style `Assign` home action and
-show at most four items. The path to a Project or Document remains clickable.
+show the route levels that fit without displacing primary controls. The path to a Project or Document remains clickable.
 Project
 collection pages end at the Project path and omit the redundant view label such
 as List or Board; other pages retain a non-interactive current-page label. On
-narrow phones, only the deepest clickable breadcrumb item is displayed.
+narrow phones, the current page title opens a bottom sheet containing the full
+breadcrumb trail and clickable ancestors.
 Task detail retains its narrow centered reading canvas. Its 28px property controls,
 including Log time when enabled, use intrinsic widths, share a solid visible
 border, and wrap together as an inline row; they do not stretch into full-width

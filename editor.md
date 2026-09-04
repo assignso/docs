@@ -122,8 +122,11 @@ $$
 $$
 ```
 
-Code blocks recognize common languages automatically and remain ordinary
-copyable code if the language is not recognized. Empty headings, lists, quotes,
+When the caret is in a code block, use **Code language** in the formatting
+toolbar to choose Plain text, Bash, CSS, Go, JavaScript, JSON, PHP, Python, or
+TypeScript. The selection controls syntax highlighting and is retained when the
+document is converted to and from fenced Markdown. Code remains ordinary
+copyable text if the language is not recognized. Empty headings, lists, quotes,
 code blocks, and equations keep a visible format-specific hint until you type.
 
 ## Mentioning people and linking work
