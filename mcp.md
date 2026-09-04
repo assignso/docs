@@ -106,7 +106,11 @@ persisted Task also has `completed_at`; a missing done workflow or an
 unconfirmed postcondition is returned as an explicit error.
 
 Task descriptions and Task comments use Assign's structured editor JSON
-objects. Document reads and writes may use either that structural content or
+objects. Every structural editor input must include
+`{"schema_version":1,"type":"doc","content":[...]}`. Check the MCP tool
+result for an error and confirm that a successful mutation returns the created
+or updated resource identifier before treating it as complete. Document reads
+and writes may use either that structural content or
 Assign's documented Markdown profile; a mutation must supply exactly one, and
 both representations pass through the same authorization, validation, and
 revision checks. Search accepts at most 50 results per page; continue with the
