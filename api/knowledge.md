@@ -50,7 +50,10 @@ traces.
 
 `GET /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` remains
 the smaller fail-open Task-detail projection. It returns at most five related
-items and never blocks the Task workflow.
+items and never blocks the Task workflow. Globally unconfigured, disabled,
+unentitled, unacknowledged, empty-scope, and out-of-scope conditions use the
+empty state so Task detail renders no error or placeholder. The unavailable
+state is reserved for genuine retrieval/currentness failures after eligibility.
 
 Assign MCP clients use the existing `knowledge_search`, `knowledge_context`,
 `knowledge_related`, `knowledge_path`, and `knowledge_impact` tools rather than

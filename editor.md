@@ -124,10 +124,13 @@ $$
 $$
 ```
 
-When the caret is in a code block, use **Code language** in the formatting
-toolbar to choose Plain text, Bash, CSS, Go, JavaScript, JSON, PHP, Python, or
-TypeScript. The selection controls syntax highlighting and is retained when the
-document is converted to and from fenced Markdown. Code remains ordinary
+Each editable code block has its own compact control strip. Use the small
+**Code language** selector at its left edge to choose Plain text, Bash, CSS, Go, JavaScript,
+JSON, Mermaid diagram, PHP, Python, or TypeScript. Recognized syntax is
+highlighted immediately with the Tiptap CodeBlockLowlight syntax treatment, and
+the selection is retained when the document is converted to and from fenced
+Markdown. The adjacent Lucide Copy icon action copies the code; duplicate, delete, and other
+editor actions are not part of this compact strip. Code remains ordinary
 copyable text if the language is not recognized. Empty headings, lists, quotes,
 code blocks, and equations keep a visible format-specific hint until you type.
 

@@ -23,11 +23,13 @@ Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 ## Read a person's activity
 
 ```http
-GET /api/v1/workspaces/{workspace_id}/people/{user_id}/activity?limit=50 HTTP/1.1
+GET /api/v1/workspaces/{workspace_id}/people/{username}/activity?limit=50 HTTP/1.1
 ```
 
 This returns activity authored by that active workspace member, using the
-same safe collaboration projection and cursor behavior.
+same safe collaboration projection and cursor behavior. A current or former
+username resolves to the same immutable User; legacy UUID references remain
+accepted only for link migration.
 
 All endpoints return newest-first opaque cursor pages. `limit` defaults to
 50 and accepts 1 through 100. A cursor is scoped to the resource it came from.

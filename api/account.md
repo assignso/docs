@@ -52,8 +52,8 @@ Workspace the caller belongs to, switch the session first — see
 A newly registered account-only session has no selected Workspace. Its response
 contains the account and interface-preference fields shown above;
 `workspace`, `actor_id`, and `role` are omitted until the first Workspace is
-created. Optional `username`, `profile_picture_url`, and `title` values may be
-`null`.
+created. The username is allocated from the full name during registration.
+Optional `profile_picture_url` and `title` values may be `null`.
 
 ## Review Workspace plans
 
@@ -84,17 +84,22 @@ Content-Type: application/json
 ```
 
 The request may contain one or more of `display_name`, `username`, `title`,
-`phone`, `bio`, `profile_status`, `name_display`, `first_day_of_week`, `editor_controls`,
+`phone`, `bio`, `profile_status`, `name_display`, `first_day_of_week`,
+`editor_controls`,
 `timezone`, `locale`, `date_format`, `time_format`, `number_format`, and the
-synchronized Voice preferences. Full names are 1–100 characters. Usernames are globally unique,
+synchronized Voice preferences. Full names are 1–100 characters. Usernames are
+globally unique,
 lowercase, 3–30 characters, and use letters, numbers, underscores, or interior
-hyphens. An empty optional text value removes it. `name_display` is `username` or `full_name`, and username
-display requires a selected username. `first_day_of_week` is `sunday` or
+hyphens. A username may change, but every successfully claimed value remains
+reserved to the same account so old profile links cannot be transferred. The
+username cannot be cleared. An empty optional profile text value removes it.
+`name_display` is `username` or `full_name`, and username display requires a
+selected username. `first_day_of_week` is `sunday` or
 `monday`. `editor_controls` is `contextual` or `persistent` and changes only
 the formatting-control presentation across Document, Task-description, and
-Comment editors. `timezone` uses an IANA identifier and `locale` uses BCP 47. Phone is
-private, unverified profile metadata: it is not used for sign-in, MFA,
-recovery, SMS, or notification delivery.
+Comment editors. `timezone` uses an IANA identifier and `locale` uses BCP 47.
+Phone is private, unverified profile metadata: it is not used for sign-in,
+MFA, recovery, SMS, or notification delivery.
 
 Changing the primary email is deliberately separate from profile editing:
 

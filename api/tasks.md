@@ -147,6 +147,23 @@ Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 Returns the Task with its current `ETag`. A Task outside the caller's
 Workspace is indistinguishable from an absent one (`404`).
 
+## Recover a Task description
+
+`GET /api/v1/tasks/{task_id}/description-revisions?limit=50` returns immutable
+description snapshots newest first. Pages default to 50 items and cap at 100;
+follow `next_cursor` while `has_more` is true. Each snapshot includes its Task
+revision, nullable Actor, `baseline`, `created`, or `updated` change kind, exact
+rich-text description, plain-text preview, and creation time. Access is checked
+against the current Task, and an unreadable Task is indistinguishable from an
+absent one.
+
+To restore a snapshot, send `POST
+/api/v1/tasks/{task_id}/description-revisions/{revision}/restore` with the
+normal CSRF token, `Idempotency-Key`, and current Task `If-Match`. The selected
+description becomes a new Task revision; the overwritten description remains
+in history. A stale Task revision returns the normal concurrency conflict, so a
+client must reload before deciding whether to retry.
+
 ## Read assignment history and participants
 
 ```http
@@ -419,11 +436,13 @@ freshness, action, and pagination contract.
 When Workspace Knowledge is enabled and ready, `GET
 /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` returns at
 most five permission-filtered, read-only related subjects. Each result includes
-a display title, type, explanation, and source time. The response explicitly
-distinguishes ready, empty, and temporarily unavailable state and labels stale
-observations. Empty results are omitted from Task detail; unavailable Knowledge
-never blocks the Task, its canonical Relations, or Comments and never creates a
-Task relation.
+a display title, type, explanation, and source time. Globally unconfigured,
+Free or otherwise unentitled, disabled, unacknowledged, empty-scope, and
+out-of-scope conditions use the empty state and are omitted from Task detail.
+The temporarily unavailable state is reserved for a genuine retrieval or
+currentness failure after eligibility; it never blocks the Task, its canonical
+Relations, or Comments and never creates a Task relation. Stale successful
+observations remain labelled.
 
 ## Edit or delete a comment
 

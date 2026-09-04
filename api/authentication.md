@@ -88,7 +88,11 @@ Content-Type: application/json
 ```
 
 Registration returns `201` with the account and sets both browser-session
-cookies. It creates account data only: no Workspace, membership, or Actor is
+cookies. It derives a globally unique lowercase username from the supplied
+full display name, adding a numeric suffix when needed. The username may be
+changed later, while every previously claimed username remains reserved to the
+same account so existing profile links keep working. Registration creates
+account data only: no Workspace, membership, or Actor is
 created, and the response omits all Workspace fields. The resulting
 account-only session can read account-level resources and create the first
 Workspace, but cannot use Workspace-scoped operations. Continue with

@@ -110,8 +110,8 @@ are selected, the closed control stays the same size and shows overlapping color
 circles and a count instead of one chip per label; the picker does not maintain
 a frequently-used section.
 Desktop authenticated breadcrumbs retain the v2-style `Assign` home action and
-show the route levels that fit without displacing primary controls. The path to a Project or Document remains clickable.
-Project
+show the route levels that fit without displacing primary controls. The path to
+a Project or Document remains clickable. Project
 collection pages end at the Project path and omit the redundant view label such
 as List or Board; other pages retain a non-interactive current-page label. On
 narrow phones, the current page title opens a bottom sheet containing the full
@@ -138,6 +138,10 @@ Task-actions menu; these lead into the title. The participant group appears
 before Follow and shows up to three avatars plus `+N`, with no visible label or
 surrounding border; the actions menu is wide enough to keep its labels on one
 line. Description, attachments, relations, and comments stay compact when empty.
+For active Tasks, **Description history** in the Task-actions menu opens retained
+description snapshots only when requested. Each entry previews its saved text;
+restoring an earlier entry asks for confirmation, creates a new Task revision,
+and keeps the overwritten description available in history.
 On Task detail, Attachments and Relations are flat separator rows with counts and
 Add actions rather than rounded panels. Each saved relation is one inline row;
 Add opens one inline relation-type dropdown and Task picker with a cancel control
@@ -169,12 +173,14 @@ distribution, and capped recent resources. Current Tasks in the authoritative
 In progress and In review categories appear under Ongoing work; immutable recent
 Activity remains a separate section.
 Every authenticated Project route starts with the same compact header: one
-Project icon and one-line name, the Create task action and Project-actions menu,
-a description summary of at most two lines, then Project key, Task count,
-owner-first member avatars, and a shortened external hostname. **More** appears
-only when the summary overflows; the full description remains available with
-**Less** after its final text. On the narrowest phones Create task is shown as an
-accessible `+`, and the metadata and tab strips scroll horizontally instead of
+Project icon and one-line name, with the Create task action and Project-actions
+menu aligned to the title. A uniformly small-text metadata row shows the
+immutable Project key as code and a shortened external hostname with a reduced
+link icon when configured. The header omits Task count and member avatars, then
+shows a description summary of at most two lines.
+**More** appears only when the summary overflows; the full description remains
+available with **Less** after its final text. On the narrowest phones Create task
+is shown as an accessible `+`, and the tab strip scrolls horizontally instead of
 wrapping or pushing actions off screen. Project settings and Copy Project link
 are available from the end-aligned Project-actions menu rather than a separate
 gear. The menu sizes to its item content and keeps every item on one line.
@@ -254,4 +260,7 @@ List, the Documents listing, and Document detail. The header identifies Assign,
 the active Workspace, and the current User ID. Navigation, editing controls,
 menus, and action buttons are omitted; property inputs and editor content print
 as plain text. Project List prints the complete current result with its active
-grouping and filter context rather than only the rows visible on screen.
+grouping and filter context rather than only the rows visible on screen. Detail
+pages request portrait orientation. Task printing also omits empty attachment,
+relationship, and Comment regions and uses the available page space before
+continuing onto another sheet.
