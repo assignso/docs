@@ -6,7 +6,9 @@ everywhere.
 
 Pasting a code-only clipboard selection creates a code block, including from
 mobile clipboard providers, and keeps a recognized language hint. Mixed rich
-content continues through the normal sanitized paste behavior.
+content continues through the normal sanitized paste behavior. When a mobile
+clipboard supplies both rich HTML and plain text containing fenced Markdown,
+the fenced Markdown wins so code blocks and their language labels are retained.
 
 Editor body text uses a compact, consistent size across Documents, Task
 descriptions, and Comments. Headings remain proportionally larger so the
