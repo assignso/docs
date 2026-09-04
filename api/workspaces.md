@@ -60,8 +60,11 @@ derived Knowledge state only and never override canonical Workspace content.
 When the private Knowledge ledger is configured, Workspace Billing includes a
 signed, Workspace-scoped balance summary for recurring, promotional,
 purchased, reserved, and available credits. If that projection is unavailable,
-the UI labels it unavailable rather than inventing a zero balance. In local
-fake-provider mode only, billing managers may start unpriced 100, 500, or 1000
+the UI labels it unavailable rather than inventing a zero balance. The expanded
+Workspace settings sidebar links to Billing with a compact plan and
+available-credit summary; default Workspace navigation and Account settings do
+not duplicate it. In local fake-provider mode only, billing managers may start
+unpriced 100, 500, or 1000
 credit checkouts with `POST
 /api/v1/workspaces/{workspace_id}/billing/knowledge-credit-top-ups`. A browser
 return grants nothing; a verified fake event creates one grant, and a verified
