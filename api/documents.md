@@ -1,5 +1,8 @@
 # Documents
 
+For asynchronous repository mirroring, import, sync history, and conflict
+handling, see [Git-backed Documents](git-backed-documents.md).
+
 Document operations use the authenticated browser session and the shared
 [API conventions](conventions.md). The complete request and response schemas,
 including examples and error codes, are in the versioned OpenAPI contract.

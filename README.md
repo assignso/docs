@@ -29,6 +29,7 @@ contract.
 - [Current work](api/current-work.md)
 - [Search](api/search.md)
 - [Workspace Knowledge](api/knowledge.md)
+- [Git-backed Documents](api/git-backed-documents.md)
 - [People profiles](api/people.md)
 - [Inbox](api/inbox.md)
 - [Activity](api/activity.md)

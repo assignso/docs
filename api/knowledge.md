@@ -5,8 +5,7 @@ work, Documents, integrations, repository facts, and code. It does not replace
 canonical resources or ordinary lexical [Search](search.md).
 
 The Web client uses Knowledge in contextual features such as related Task
-evidence. A standalone Knowledge search destination is not part of the
-supported production navigation.
+evidence, committed ordinary Search questions, and private Discuss responses.
 
 ## Search evidence
 
@@ -50,6 +49,15 @@ Responses are `private, no-store`. The API never exposes raw Knowledge scores,
 prompts, provider/model identity, graph identifiers, topology, credentials, or
 traces.
 
+## Concise answers
+
+`GET /api/v1/workspaces/{workspace_id}/knowledge/answer?q=...` runs only after
+an explicit submission. It returns an extractive one-sentence answer and at
+most five current, authorized sources. `supported`, `partial`, `conflicting`,
+and `none` make uncertainty and abstention explicit. Assign does not call this
+route for each keystroke, and ordinary lexical Search remains usable when the
+Knowledge service is unavailable.
+
 ## Related Task context
 
 `GET /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` remains
@@ -66,7 +74,8 @@ suggestions, not proof of a dependency; they never create or modify Task relatio
 No matching evidence produces an empty result. Pure paraphrases without shared
 terms are not guaranteed to match.
 
-Assign MCP clients use the existing `knowledge_search`, `knowledge_context`,
+Assign MCP clients may use `gather_information` for the same concise bounded
+answer. They may also use the existing `knowledge_search`, `knowledge_context`,
 `knowledge_related`, `knowledge_path`, and `knowledge_impact` tools rather than
 this browser-session route.
 

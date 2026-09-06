@@ -23,6 +23,18 @@ distinguish an intentional machine-facing surface from an undocumented one.
 | `receiveStripeBillingWebhook` | `POST /api/v1/billing/webhooks/stripe` | Stripe-signed provider callback; browser and SDK callers must not invoke it. |
 | `getWorkspaceIconContent` | `GET /api/v1/workspaces/{workspace_id}/icon/content` | Authorized content response for the current Workspace icon. |
 
+## Knowledge and private Discuss
+
+| Operation | Route |
+| --- | --- |
+| `answerWorkspaceKnowledge` | `GET /api/v1/workspaces/{workspace_id}/knowledge/answer` |
+| `listDiscussMessages` / `sendDiscussMessage` | `GET` / `POST /api/v1/workspaces/{workspace_id}/discuss/messages` |
+| `searchDiscussMessages` | `GET /api/v1/workspaces/{workspace_id}/discuss/messages/search` |
+| `updateDiscussReadState` | `POST /api/v1/workspaces/{workspace_id}/discuss/read-state` |
+| `getDiscussPreferences` / `updateDiscussPreferences` | `GET` / `PATCH /api/v1/workspaces/{workspace_id}/discuss/preferences` |
+| `listDiscussReminders` / `createDiscussReminder` | `GET` / `POST /api/v1/workspaces/{workspace_id}/discuss/reminders` |
+| `updateDiscussReminderState` | `PATCH /api/v1/workspaces/{workspace_id}/discuss/reminders/{reminder_id}` |
+
 ## Time tracking
 
 Time entries are Workspace-authorized, revision-aware records. Corrections
