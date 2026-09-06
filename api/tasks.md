@@ -468,3 +468,34 @@ idempotent and return the current Comment. Supported reaction keys are
 `thumbs_up`, `heart`, `tada`, `smile`, `confused`, and `eyes`. Reactions are
 available only on live Comments under active Tasks and do not change the
 Comment body revision.
+
+## Browser description collaboration
+
+POST /api/v1/tasks/{task_id}/collaboration-sessions admits or renews the browser user's resource-scoped editor/viewer lease. DELETE /api/v1/tasks/{task_id}/collaboration-sessions/{session_id} ends that user's lease. Both require the browser session and CSRF token. Missing, inaccessible, archived or trashed Tasks are not admitted. The response's generation identifies the current Task replica; a structural description replacement invalidates the old generation. See the OpenAPI contract for the complete schema.
+
+Task REST, SDK, CLI and MCP operations continue to read and write structural descriptions. A versioned replacement returns a conflict while acknowledged collaborative updates await a checkpoint. Checkpoints preserve description history. Raw Yjs frames, provider state and caret awareness are browser-transport internals, not public content representations or MCP tools.
+
+## Read a board column
+
+Use `GET /api/v1/projects/{project_id}/tasks?status_id={status_id}&order=rank&limit=50`
+for one Status in shared manual order. `rank_desc` reads the opposite direction.
+Follow `next_cursor` with the same Project, Status, order and filters. Concurrent
+moves can change which page contains a Task; refresh earlier pages to reconcile
+live changes and deduplicate Task IDs when appending.
+
+Column responses include `column.total`, the full non-archived Status count,
+and `column.can_move_tasks`, an advisory permission checked again on every move.
+They return this column metadata instead of the history view's global `counts`.
+Rows and the total describe the same read snapshot. The default `order=number`
+retains the existing history response and ordering.
+
+For recent resolved work, use `order=resolved_desc&resolved_since={RFC3339 time}`.
+The cutoff limits rows without reducing the full Status total. Exactly one
+Status is required for column orders, and history State, resolution, assignee
+and include-archived filters cannot be combined with them.
+
+An `anchor_task_id` starts a rank read strictly beyond that Task in the selected
+direction. It cannot accompany a cursor or `resolved_desc`. The anchor must
+still belong to the requested Project and Status. This supports bounded neighbor
+reads for movement; send the resulting neighbor IDs and the Task's current
+revision through the existing move operation. Do not submit ranks or array indexes.

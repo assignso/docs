@@ -50,7 +50,9 @@ remains generated and non-persistent.
 
 On browsers that support web-app installation, use the browser's **Install** or
 **Add to Home Screen** action for Assign. The installed app opens in its own
-window and can reopen its interface after a short network interruption. Your
+window, briefly shows **Opening Assign…** while checking the saved session, and
+then opens the active Workspace or Login as appropriate. It can reopen its
+interface after a short network interruption. Your
 Workspace data, uploads, and account actions still require a connection; Assign
 does not store authenticated data or upload credentials for offline use.
 
@@ -108,14 +110,26 @@ selecting several labels and creating a missing applicable label from the search
 results. One selected label shows its color circle and name. When several labels
 are selected, the closed control stays the same size and shows overlapping color
 circles and a count instead of one chip per label; the picker does not maintain
-a frequently-used section.
-Desktop authenticated breadcrumbs retain the v2-style `Assign` home action and
-show the route levels that fit without displacing primary controls. The path to
-a Project or Document remains clickable. Project
-collection pages end at the Project path and omit the redundant view label such
-as List or Board; other pages retain a non-interactive current-page label. On
-narrow phones, the current page title opens a bottom sheet containing the full
-breadcrumb trail and clickable ancestors.
+a frequently-used section. On a phone-width Project List, grouping remains visible
+beside one **Filters** button; Milestone, Status, assignee, and priority filters
+open vertically in that popover instead of creating a horizontally scrolling row.
+Desktop breadcrumbs keep the **Assign** home action and up to two nearest
+clickable ancestors. The ellipsis opens the complete trail, including the
+current page. On narrow phones, the current page title opens that trail in an
+anchored popover. Links preserve the known Project and Document context; Escape
+closes the popover and returns focus to its trigger.
+
+Project List keeps the current group header visible while scrolling. Tap a
+Task once to open it; scrolling or using an embedded control does not open it.
+A successfully created Task refreshes the current list and its counts, and
+previously visited lists refresh when reopened.
+
+Workspace owners and administrators can reorder **Task statuses** by selecting
+a destination **Position** or using **Move earlier** and **Move later**. Icon
+choices show their symbols and names; Color offers named Tailwind colors and
+an **Automatic** option. Existing custom colors remain selectable. Changes save
+immediately and appear in the shared Status catalog.
+
 Task detail retains its narrow centered reading canvas. Its 28px property controls,
 including Log time when enabled, use intrinsic widths, share a solid visible
 border, and wrap together as an inline row; they do not stretch into full-width
@@ -146,10 +160,20 @@ On Task detail, Attachments and Relations are flat separator rows with counts an
 Add actions rather than rounded panels. Each saved relation is one inline row;
 Add opens one inline relation-type dropdown and Task picker with a cancel control
 instead of a modal or collapsible list. Once both selections are available, Assign
-creates the relation automatically without a separate save action. Comments uses
+creates the relation automatically without a separate save action. Type in the
+Task picker to search the bounded available Tasks. Comments uses
 an unpanelled heading and
 full-width composer; its submit action appears after the composer receives focus
-or content.
+or content. Pasted Comment permalinks keep a visible comment qualifier and their
+exact fragment. Following one waits for the destination Task's bounded Comment
+load, then centers, focuses, and highlights that Comment. Reaction changes from
+other connected clients reconcile automatically without a page reload.
+Deleted Comments disappear from the discussion and print view. Links to later
+Comments keep their original numbers; a deleted Comment link never selects a
+different Comment.
+Comment authors and other roster-resolved human identities open their Workspace
+profiles. User, Task, Project, and Document references inside posted Comments open
+their authorized destinations; unavailable references remain non-clickable.
 The top bar's **Current task** control selects at most one active, in-progress
 Task assigned to you across all of your Workspaces. Choosing another Task
 replaces the selection, clearing removes it, and the Task page offers the same
@@ -189,8 +213,8 @@ the Projects collection's Create Project button shows `C`. These hints navigate
 to the dedicated creation pages; submit buttons inside those pages do not repeat
 the global shortcuts.
 
-Ordinary Task edits use their local pending and settled state instead of showing
-a generic **Task saved** toast after every change. A rejected edit still restores
+Ordinary Task edits use their local pending and settled state without showing a
+**Saving**, **Saved**, or spinner indicator. A rejected edit still restores
 or reconciles the affected value and shows actionable rollback feedback; Task
 creation, Project moves, lifecycle actions, copying, and bulk operations retain
 their contextual result messages.
@@ -202,6 +226,9 @@ remains the stable Task-code prefix. Task pages use
 `/app/{workspaceSlug}/tasks/{taskCode}` and are not nested beneath a Project.
 Use **Copy task link** in the Task actions menu to copy that canonical absolute
 URL; clipboard success or failure is shown without navigating away.
+Use **Copy prompt** to copy a short agent handoff containing the visible Task
+code, title, and canonical URL. Assign does not open an external provider or put
+private Task content into an outbound URL.
 Legacy opaque-ID links redirect to these canonical routes. Renaming the active
 Workspace replaces its slug in the current URL without changing the underlying
 Workspace session, and My Work uses the same full-width page frame as Home.
@@ -264,3 +291,27 @@ grouping and filter context rather than only the rows visible on screen. Detail
 pages request portrait orientation. Task printing also omits empty attachment,
 relationship, and Comment regions and uses the available page space before
 continuing onto another sheet.
+
+### Project Board controls
+
+Open a Task by clicking its card or pressing Enter while the card is focused.
+The title is also a Task link: Ctrl/Cmd-click or middle-click opens it in a new
+tab. Arrow keys navigate between cards; Shift plus an arrow moves a Task, while
+Shift+Home and Shift+End move it to the top or bottom. Keys inside an editable
+control retain their normal editing behavior.
+
+Moves appear immediately. If saving fails, the board restores the acknowledged
+placement and explains the failure. Updates from other clients preserve newer
+edits, and a delayed response does not undo an already confirmed move. Cards
+remain in place while unrelated Tasks update. On touch screens, ordinary
+scrolling remains browser-native; the Task page also provides status editing.
+
+Project Board columns load independently. Active columns offer **Show more**;
+completed and cancelled columns show a bounded recent snapshot with a full count
+and **View all** for older Tasks. A failed column read retains visible content
+and offers **Retry**. Movement stays unavailable until permission is resolved.
+
+Open a Task and use **Task actions** for **Move up**, **Move down**, **Move to top**,
+**Move to bottom**, or **Move to status**. These controls use the shared Task
+order, including neighbors outside the loaded Board page. Keyboard menu
+navigation and ordinary touch activation provide alternatives to dragging.

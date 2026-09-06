@@ -11,8 +11,11 @@ File bytes never pass through Assign's API servers.
 > embedding remain disabled, while Task/Project linking and forced download are available.
 
 There is no client-side MIME allowlist. Server-side byte inspection still
-rejects executable, script, HTML, and XHTML content. SVG files are supported as
-forced downloads only and are never previewed or rendered inside Assign.
+rejects executable, script, HTML, and XHTML content. Stored-byte inspection
+recognizes PNG/APNG, JPEG, GIF, WebP, AVIF, BMP, TIFF/BigTIFF, ICO/CUR, JPEG
+2000, JPEG XL, Photoshop, and HEIC/HEIF still and sequence images rather than
+trusting a client MIME label or filename. SVG files are supported as forced
+downloads only and are never previewed or rendered inside Assign.
 
 Before public launch, Assign will require private malware scanning again. Scanner
 unavailability will fail closed; a detected file will be quarantined and cannot
@@ -48,8 +51,10 @@ the rest of the Task or Project page remains usable.
 
 Saved Project files appear as a centered responsive grid: one column on smaller
 screens and two columns on desktop, with cards filling their grid cells.
-Clean raster-image cards load a short-lived thumbnail near the viewport; unscanned files, SVG,
-and non-image files remain icon-only. Activating a raster-image or PDF title
+Clean raster-image cards load a short-lived thumbnail near the viewport. Every
+recognized raster format uses the same preview path; formats unsupported by the
+current browser fall back to the image icon without affecting download.
+Unscanned files, SVG, and non-image files remain icon-only. Activating a raster-image or PDF title
 displays it in a new browser tab through a separately authorized inline URL.
 The card-wide action and separate labelled icon still force a download; another
 labelled icon globally deletes the

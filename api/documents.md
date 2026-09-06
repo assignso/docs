@@ -25,9 +25,9 @@ one traversal.
 
 `POST /api/v1/documents/{document_id}/collaboration-sessions` admits you to a
 short-lived presence lease. It returns an `editor` role when you can edit the
-Document and `viewer` when you can only read it. Repeat the request at the
-returned heartbeat interval to remain present; reconnecting renews your one
-lease rather than adding a duplicate collaborator. End your own lease with
+Document and `viewer` when you can only read it. Each tab receives an independent
+session so opening another tab does not disconnect the first. The connected
+relay renews its lease; disconnected sessions expire. End your own lease with
 `DELETE /api/v1/documents/{document_id}/collaboration-sessions/{session_id}`;
 a retried successful end is safe.
 
@@ -46,13 +46,16 @@ Document content APIs remain the supported integration surface.
 
 `GET /api/v1/workspaces/{workspace_id}/reference-options` supplies candidates
 for the editor’s `@` picker. Provide `q` and optionally repeat `types` with
-`user`, `document`, `project`, or `task`. Results are grouped by type, filtered
+`user`, `document`, `project`, `task`, or `agent`. Results are grouped by type, filtered
 to resources you can read, and exclude archived resources. Each group defaults
 to 10 candidates and never exceeds 20; there is no cursor or total count.
 
 Every candidate includes its stable `assign:` URI for storing in rich text,
 with a display label and, when useful, an email, Project name, Project key, or
-Task ticket reference as `secondary_label`. Blank or whitespace-only `q`
+Task ticket reference or Agent responsibility as `secondary_label`. Agent
+candidates are active definitions visible in the Workspace and are available to
+Comment editors; selecting one stores an `assign:agent/` reference and admits
+durable attention when the Comment is created. Blank or whitespace-only `q`
 returns empty groups rather than a Workspace directory.
 
 Direct children are available from `GET /api/v1/documents/{document_id}/children`.
@@ -121,3 +124,7 @@ This endpoint has no browser-session requirement, is rate limited, and returns
 child, author, audit, or revision data. Treat the public identifier as the
 sharing capability; change the Document back to a non-public scope to revoke
 access.
+
+Document save and connection indicators stay steady during routine work. Unsaved edits
+remain marked until acknowledged; brief reconnects do not flash the status.
+Persistent failures and conflicts remain visible.

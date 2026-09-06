@@ -123,6 +123,8 @@ assign project switch PRO
 assign project current
 assign project tasks PRO
 assign project documents PRO
+assign project url PRO
+assign project open PRO
 ```
 
 When a Project argument is omitted from `project show`, `project tasks`, or
@@ -135,6 +137,8 @@ Documents are read-only in this CLI slice and use their canonical path:
 assign document list
 assign document list --project PRO
 assign document show release-plan
+assign document url release-plan
+assign document open release-plan
 ```
 
 `document show` prints metadata followed by server-extracted text. Responses
