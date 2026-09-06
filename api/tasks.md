@@ -471,9 +471,20 @@ Comment body revision.
 
 ## Browser description collaboration
 
-POST /api/v1/tasks/{task_id}/collaboration-sessions admits or renews the browser user's resource-scoped editor/viewer lease. DELETE /api/v1/tasks/{task_id}/collaboration-sessions/{session_id} ends that user's lease. Both require the browser session and CSRF token. Missing, inaccessible, archived or trashed Tasks are not admitted. The response's generation identifies the current Task replica; a structural description replacement invalidates the old generation. See the OpenAPI contract for the complete schema.
+`POST /api/v1/tasks/{task_id}/collaboration-sessions` admits or renews the
+browser user's resource-scoped editor/viewer lease.
+`DELETE /api/v1/tasks/{task_id}/collaboration-sessions/{session_id}` ends that
+user's lease. Both require the browser session and CSRF token. Missing,
+inaccessible, archived or trashed Tasks are not admitted. The response's
+generation identifies the current Task replica; a structural description
+replacement invalidates the old generation. See the OpenAPI contract for the
+complete schema.
 
-Task REST, SDK, CLI and MCP operations continue to read and write structural descriptions. A versioned replacement returns a conflict while acknowledged collaborative updates await a checkpoint. Checkpoints preserve description history. Raw Yjs frames, provider state and caret awareness are browser-transport internals, not public content representations or MCP tools.
+Task REST, SDK, CLI and MCP operations continue to read and write structural
+descriptions. A versioned replacement returns a conflict while acknowledged
+collaborative updates await a checkpoint. Checkpoints preserve description
+history. Raw Yjs frames, provider state and caret awareness are
+browser-transport internals, not public content representations or MCP tools.
 
 ## Read a board column
 

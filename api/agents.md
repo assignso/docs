@@ -274,4 +274,9 @@ proceed; existing run history remains available.
 
 ### Missing evidence and uncertain outcomes
 
-Agents should distinguish missing information from a confirmed absence of blockers or progress. A suggested change requires approval; it is not a completed change. When an operation's acknowledgment is uncertain, inspect its run/action status before starting another operation. Rewording the same request can create a different action; use the original operation's retry/reconciliation path.
+Agents should distinguish missing information from a confirmed absence of
+blockers or progress. A suggested change requires approval; it is not a
+completed change. When an operation's acknowledgment is uncertain, inspect its
+run/action status before starting another operation. Rewording the same request
+can create a different action; use the original operation's retry/reconciliation
+path.

@@ -4,7 +4,9 @@ Workspace Knowledge is an optional evidence layer across authorized Assign
 work, Documents, integrations, repository facts, and code. It does not replace
 canonical resources or ordinary lexical [Search](search.md).
 
-The Web client uses Knowledge in contextual features such as related Task evidence. A standalone Knowledge search destination is not part of the supported production navigation.
+The Web client uses Knowledge in contextual features such as related Task
+evidence. A standalone Knowledge search destination is not part of the
+supported production navigation.
 
 ## Search evidence
 

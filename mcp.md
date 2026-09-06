@@ -253,4 +253,9 @@ credential to support.
 
 ### Task updates in open Assign views
 
-Task changes made through MCP are saved by the same service as changes in Assign. Open Task views and Project Lists are expected to update automatically, including Status and list counts. After a connection interruption or returning to a suspended tab, Assign revalidates the visible data. If a value remains stale but a manual refresh shows the saved change, report the affected Task, page, and approximate time; never include access tokens.
+Task changes made through MCP are saved by the same service as changes in
+Assign. Open Task views and Project Lists are expected to update automatically,
+including Status and list counts. After a connection interruption or returning
+to a suspended tab, Assign revalidates the visible data. If a value remains
+stale but a manual refresh shows the saved change, report the affected Task,
+page, and approximate time; never include access tokens.
