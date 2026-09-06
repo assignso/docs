@@ -62,6 +62,11 @@ The initial catalog is intentionally bounded:
   `knowledge_impact`.
 - When that Workspace also has an eligible connected repository, search and
   inspect bounded dependency impact with `code_search` and `code_impact`.
+- When optional session memory is available, use `memory_remember` to begin or
+  continue an explicitly consented private session, `memory_recall` to search
+  it, `memory_export` to retrieve all unexpired notes and `memory_forget` to
+  purge and revoke it. Remember and forget require `assign:write`; recall and
+  export require `assign:read`.
 
 Knowledge and code tools use the same Assign MCP connection and the existing
 `assign:read` scope. They appear only when at least one currently authorized
@@ -75,6 +80,14 @@ bounded to depth 8, and path queries return at most 5 paths. Results include
 evidence, provenance, freshness, and any abstention or truncation reason rather
 than an unqualified generated answer. The catalog never exposes internal graph,
 dataset, model, provider, or raw Cognee controls.
+
+Session memory is non-canonical and private to the current Workspace, Actor and
+OAuth client. The first remember call returns an opaque session UUID; pass it to
+later remember, recall, export or forget calls. Assign never places these notes in shared
+Workspace Knowledge, and there is no automatic promotion or self-improvement
+path. A disconnect, membership/entitlement/policy loss, expiry or session
+deletion makes cached calls fail closed. Record durable shared facts through
+normal authorized Task, Document or Comment operations instead.
 
 Rate limits apply to shared read, search, write, Knowledge, and code classes.
 Calling different tools in the same class consumes the same class budget; a
@@ -237,3 +250,7 @@ create a replacement when rotating access.
 
 Assign never asks you to send an access token, refresh token, or service
 credential to support.
+
+### Task updates in open Assign views
+
+Task changes made through MCP are saved by the same service as changes in Assign. Open Task views and Project Lists are expected to update automatically, including Status and list counts. After a connection interruption or returning to a suspended tab, Assign revalidates the visible data. If a value remains stale but a manual refresh shows the saved change, report the affected Task, page, and approximate time; never include access tokens.

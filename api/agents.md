@@ -69,6 +69,11 @@ time runs once at the earlier instant, and recovery admits only the latest misse
 the prior 24 hours. The response exposes the next unambiguous UTC instant. Creating desired state
 does not synchronously contact the Knowledge runtime.
 
+When event execution is enabled for Task Revisor, new or updated Tasks in its current
+scope can create runs. Rapid edits to the same Task may be grouped into one queued review.
+Historical replay and the Agent's own changes do not initiate another review. Availability
+still depends on the Workspace's entitlement and the definition's qualified rollout.
+
 ## Configure or pause an Agent
 
 ```http
@@ -125,6 +130,11 @@ safe error code, and timestamps. It never exposes prompts, retrieved context, ra
 chain of thought, provider details, credentials, or private traces. Safe run history retains for
 90 days. Resource references are independently authorized and may be redacted.
 
+A failed run with `error_code: "provider_outcome_unknown"` requires reconciliation:
+the provider may have processed work before its response was lost. Its reserved credits remain
+held while the outcome is checked. The runtime does not automatically repeat that paid attempt;
+ordinary collaboration remains available.
+
 Cancel a queued, running, or approval-waiting run idempotently:
 
 ```http
@@ -175,5 +185,93 @@ Insufficient credits create a visible blocked/skipped outcome without blocking n
 The Web interface keeps hiring, Agent detail, Agent Activity, and each run detail on dedicated URLs.
 It exposes schedule detail/next occurrence, manual admission, cursor-backed safe history, permitted
 cancellation, exact approvals, provenance, lifecycle controls, entitlement/credit state, and explicit
-approval-required and billing-blocked states. Custom Agents remain unavailable until every canonical
-definition passes independent provider-backed evaluation and production canary gates.
+approval-required and billing-blocked states.
+
+## Build custom Agents in Agent Studio
+
+Agent Studio is inside the Workspace **Agents** area. Owners and Admins can create a
+bounded custom definition from a name, description, one concrete responsibility,
+customer instructions, existing Project knowledge, and allowlisted Assign tools.
+Backlog Grump and Ticket Comedian are editor-prefill examples; they are not hidden
+canonical Agents and do not grant extra authority.
+
+```http
+GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions?limit=50&cursor=<cursor>
+POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions
+GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}
+GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/profile
+PATCH /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}
+```
+
+Create and update bodies replace the whole editable definition. Updates require
+`If-Match: "<revision>"`; a conflict preserves the newer saved revision so the
+editor can reload without overwriting another administrator. Saving never starts
+execution. `draft`, `active`, and `paused` are distinct desired states, and every
+admitted request pins the exact revision and digest it used.
+
+Project knowledge bindings use `knowledge-binding.v1` with Observe authority.
+The initial tool catalog includes versioned `task_comment_create` Communicate and
+`task_create` Manage contracts. Core checks current Workspace, private-Project,
+integration, capability, and custom-Agent entitlement authority both when the
+definition is saved and when a request is admitted. Definitions cannot upload
+executables or configure an arbitrary MCP server.
+
+The definition read is a management view. The `profile` read is the safe member
+projection used by Agent references: it includes identity, responsibility,
+state, revision and bounded latest-run facts, but never instructions, bindings,
+raw inputs or prompts. Current Workspace and Task visibility are rechecked when
+history and outcomes are read. Member-visible history returns an empty
+`instructions` value; Studio managers retain the bounded original request input.
+
+A test is the only preview-only request:
+
+```http
+POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <unique-key>
+Content-Type: application/json
+
+{
+  "source_kind": "test",
+  "source_id": "0198ef21-9fe1-7a44-b323-f45c5ef2827f",
+  "instructions": "Review the current backlog and show what you would do.",
+  "preview_only": true
+}
+```
+
+The durable response starts in `queued` state. A preview may read its selected
+knowledge and consumes actual settled Knowledge Credits, but its proposed Comment
+or Task cannot commit. Cursor-backed request history and the bounded usage summary
+are available at `.../{definition_id}/requests` and
+`.../{definition_id}/usage`. Usage separates pending runs, reserved credits, and
+settled credits. Task delegation uses
+`POST .../{definition_id}/delegations/{task_id}` and adds an Agent responsibility
+overlay without replacing the human assignee or changing Task lifecycle state.
+
+Custom-Agent production activation remains subject to the canonical-Agent
+qualification, provider, billing, and Workspace enrollment gates. A saved or
+active definition does not by itself prove that production execution is ready.
+
+## Execution recovery and retained history
+
+Pausing an Agent or changing its Project scope cancels pending work and
+invalidates outstanding approvals. Approval also checks current permissions and
+the exact Task revision. A run that could not start before its dispatch deadline
+reports `agent_dispatch_expired`; you can request a new run. An uncertain
+provider outcome remains non-retryable while its credit reservation is
+reconciled.
+
+Safe summaries, reports and action previews expire after 90 days. Purging a Task
+removes its associated retained Agent content and cancels pending actions;
+minimal approval and financial history remains. Stalled Work Tracker reacts to
+changes to overdue active Tasks, and Documentation Keeper to Task completions,
+when their event trigger is enabled.
+
+Canonical Agent versions become available through staged qualification. An
+entitlement alone does not guarantee immediate run availability. If a version
+is unavailable or quarantined, new runs and pending approved actions cannot
+proceed; existing run history remains available.
+
+### Missing evidence and uncertain outcomes
+
+Agents should distinguish missing information from a confirmed absence of blockers or progress. A suggested change requires approval; it is not a completed change. When an operation's acknowledgment is uncertain, inspect its run/action status before starting another operation. Rewording the same request can create a different action; use the original operation's retry/reconciliation path.

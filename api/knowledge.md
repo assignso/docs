@@ -4,14 +4,16 @@ Workspace Knowledge is an optional evidence layer across authorized Assign
 work, Documents, integrations, repository facts, and code. It does not replace
 canonical resources or ordinary lexical [Search](search.md).
 
-The supported Web client exposes a first-class **Knowledge** destination.
-Queries run only after explicit submission. Results identify why they matched,
-their provenance and source time, and whether the Knowledge index is stale or
-the bounded result was truncated. A result links to Assign only when Core can
-resolve a current canonical resource; code or external evidence may remain
-read-only.
+The Web client uses Knowledge in contextual features such as related Task evidence. A standalone Knowledge search destination is not part of the supported production navigation.
 
 ## Search evidence
+
+Knowledge updates asynchronously after changes to included Projects, Tasks,
+Documents and enabled Comments. A rebuild or temporary service outage can delay
+new evidence. Retrieval checks current access and source visibility; moved,
+deleted or excluded content may disappear before replacement evidence is ready.
+Turning off a source option removes its derived content asynchronously while
+preserving the original Assign resources.
 
 `GET /api/v1/workspaces/{workspace_id}/knowledge/search` requires
 browser-session authentication and the current Workspace's active Knowledge
@@ -55,6 +57,21 @@ unentitled, unacknowledged, empty-scope, and out-of-scope conditions use the
 empty state so Task detail renders no error or placeholder. The unavailable
 state is reserved for genuine retrieval/currentness failures after eligibility.
 
+Indexed Tasks can discover Documents through shared distinctive title terms,
+including function identifiers, without an explicit saved relation. The result
+explains the shared terms and links to the authorized Document. These are inferred
+suggestions, not proof of a dependency; they never create or modify Task relations.
+No matching evidence produces an empty result. Pure paraphrases without shared
+terms are not guaranteed to match.
+
 Assign MCP clients use the existing `knowledge_search`, `knowledge_context`,
 `knowledge_related`, `knowledge_path`, and `knowledge_impact` tools rather than
 this browser-session route.
+
+Optional MCP session memory is separate from this shared evidence layer.
+`memory_remember` stores a bounded note in an explicitly consented 30-day scope
+bound to the current Workspace, Actor and OAuth client; `memory_recall` searches
+only that scope, `memory_export` returns its unexpired notes and `memory_forget`
+purges and revokes it. Notes never appear in this HTTP response, shared
+`knowledge_*`/`code_*` tools or automatic Agent learning. Production
+availability is staged separately from the local P8 contract.
