@@ -31,12 +31,13 @@ family. `POST /api/v1/cli/oauth/revoke` revokes the current interactive CLI
 family. These tokens are accepted only at API-host CLI operations and are never
 accepted by the MCP resource host.
 
-## Native mobile OAuth (published contract; not yet served)
+## Native mobile OAuth
 
-The native mobile OAuth and push-device operations are published in OpenAPI so
-SDK and client work can be prepared, but are **not yet available from the API**.
-Until the backend implementation is released, a mobile app must keep native
-sign-in, refresh, browser handoff, and push registration disabled.
+The API implements native mobile OAuth and push-device operations. A particular
+mobile app can sign in only after its public client ID, platform, and exact
+callback URI have been registered by the Assign operator. An unregistered app
+must keep native sign-in disabled; push registration also remains unavailable
+until the separately managed native push-token encryption key is installed.
 
 When available, mobile sign-in starts only in the system browser at
 `GET /api/v1/mobile/oauth/authorize`. The request uses a registered public

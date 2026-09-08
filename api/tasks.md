@@ -57,6 +57,7 @@ Returns one page ordered by the Task's immutable project-local number:
       "title": "Wire the Projects endpoint",
       "priority": "medium",
       "description": {"type": "doc", "content": []},
+      "summary": null,
       "description_text": "",
       "due_on": null,
       "milestone_id": null,
@@ -146,6 +147,18 @@ Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 
 Returns the Task with its current `ETag`. A Task outside the caller's
 Workspace is indistinguishable from an absent one (`404`).
+
+Task reads and bounded Task collections include a nullable `summary`. When
+present, it is a one- or two-sentence scanning aid derived from a description
+of at least 300 normalized characters. `source_revision` identifies the exact
+Task revision it describes. Core returns `null` while generation is pending,
+when the description is shorter, or as soon as the Task revision changes.
+Always use the canonical Task fields and description as evidence or action
+preconditions; the summary is display convenience only.
+
+The same nullable projection is present on My Work results and the bounded Task
+rows in Project Overview, so clients can show additional context without a
+per-Task body request.
 
 ## Recover a Task description
 

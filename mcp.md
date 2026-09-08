@@ -67,6 +67,15 @@ The initial catalog is intentionally bounded:
   it, `memory_export` to retrieve all unexpired notes and `memory_forget` to
   purge and revoke it. Remember and forget require `assign:write`; recall and
   export require `assign:read`.
+- Inspect your private Discuss work with `discuss_get_run` and bounded
+  `discuss_list_run_events`, or request Stop with `discuss_cancel_run`. Run and event
+  results include only safe lifecycle/tool summaries and reauthorized private resource links.
+- Poll specialist work started from your private Discuss conversation with
+  `discuss_list_specialist_runs` or `discuss_get_specialist_run`, and request cooperative Stop with
+  `discuss_cancel_specialist_run`. These return normalized state and safe summaries/interactions;
+  they do not expose source-journal payloads. Assign does not currently advertise MCP Tasks.
+- Resolve the optional opaque evidence handles returned by `knowledge_search` with
+  `knowledge_get_evidence` when current source metadata or a bounded passage is needed.
 
 Knowledge and code tools use the same Assign MCP connection and the existing
 `assign:read` scope. They appear only when at least one currently authorized
@@ -80,6 +89,20 @@ bounded to depth 8, and path queries return at most 5 paths. Results include
 evidence, provenance, freshness, and any abstention or truncation reason rather
 than an unqualified generated answer. The catalog never exposes internal graph,
 dataset, model, provider, or raw Cognee controls.
+
+Knowledge evidence handles are signed, short-lived Workspace-bound locators, not access grants.
+Resolve 1–20 handles from the same result generation. Assign checks your current membership,
+Project restrictions and source access again; a source removed or revoked after search is not
+returned. Evidence resource links use `assign://knowledge/evidence/{workspace_id}/{evidence_id}`
+and are private and non-cacheable.
+
+Discuss run traces use `assign://workspaces/{workspace_id}/discuss/runs/{run_id}/trace`; individual
+safe events use the corresponding `/events/{event_id}` URI. Run-event pages default to 50 and cap at
+100. They omit prompts, hidden reasoning, credentials, raw tool arguments/results, provider payloads
+and internal events. `discuss_cancel_run` requires `assign:write`; it requests cancellation and does
+not roll back a committed action. Specialist list/get pages default to 20 and cap at 50;
+`discuss_cancel_specialist_run` requires `assign:write` and routes through the canonical Agent or
+work-session cancellation service. MCP Tasks is not currently advertised.
 
 Session memory is non-canonical and private to the current Workspace, Actor and
 OAuth client. The first remember call returns an opaque session UUID; pass it to
@@ -117,8 +140,8 @@ authorization or permission to broaden the requested work.
 
 When a prompt contains a Task link, match its Workspace slug with
 `workspace_list`, pass the visible code such as `ASG-11` to `task_get`, and
-inspect the fragment after reading the Comment list. New links use a stable
-creation-order pointer such as `#comment-2`; select the matching Comment
+inspect the `comment` query after reading the Comment list. New links use a stable
+creation-order pointer such as `?comment=2`; select the matching Comment
 `number`. Older links may contain a Comment UUID after `#comment-`; select the
 matching Comment `id`. Assign continues to accept those older links, but MCP
 returns the shorter numbered form.

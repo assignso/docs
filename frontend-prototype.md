@@ -165,7 +165,8 @@ Task picker to search the bounded available Tasks. Comments uses
 an unpanelled heading and
 full-width composer; its submit action appears after the composer receives focus
 or content. Pasted Comment permalinks keep a visible comment qualifier and their
-exact fragment. Following one waits for the destination Task's bounded Comment
+exact `comment` query pointer; previously issued `#comment-*` fragments remain
+compatible. Following one waits for the destination Task's bounded Comment
 load, then centers, focuses, and highlights that Comment. Reaction changes from
 other connected clients reconcile automatically without a page reload.
 Deleted Comments disappear from the discussion and print view. Links to later

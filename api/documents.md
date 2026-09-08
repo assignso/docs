@@ -15,6 +15,15 @@ optional Project and parent Document, direct-child count, and public identifier
 when it is published. Read and update an individual Document separately from
 its versioned rich-text content.
 
+Authenticated Document metadata includes a nullable `summary`. When present,
+it is a one- or two-sentence scanning aid derived from a body of at least 300
+normalized characters and carries the exact `source_revision`. It becomes
+`null` immediately when that revision is no longer current, while generation
+is pending, or when the body is shorter. It does not replace canonical content
+or evidence. Bounded metadata collections carry the same field without loading
+bodies; the deliberately minimal anonymous published-Document response does not.
+Project Overview's bounded recent-Document rows also carry this nullable field.
+
 `GET /api/v1/workspaces/{workspace_id}/documents` returns a bounded,
 title-ordered page of active root Documents. Use `q` (up to 200 characters) to
 match titles and extracted text, `project_id` to restrict the Project, and

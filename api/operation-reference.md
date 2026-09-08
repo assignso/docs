@@ -30,6 +30,11 @@ distinguish an intentional machine-facing surface from an undocumented one.
 | `answerWorkspaceKnowledge` | `GET /api/v1/workspaces/{workspace_id}/knowledge/answer` |
 | `listDiscussMessages` / `sendDiscussMessage` | `GET` / `POST /api/v1/workspaces/{workspace_id}/discuss/messages` |
 | `searchDiscussMessages` | `GET /api/v1/workspaces/{workspace_id}/discuss/messages/search` |
+| `branchDiscussMessage` | `POST /api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}/branch` |
+| `listDiscussRunEvents` | `GET /api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}/run-events` |
+| `decideDiscussInteraction` | `POST /api/v1/workspaces/{workspace_id}/discuss/interactions/{interaction_id}/decision` |
+| `listDiscussSpecialistRuns` / `getDiscussSpecialistRun` | `GET /api/v1/workspaces/{workspace_id}/discuss/specialist-runs` / `GET /api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}` |
+| `cancelDiscussSpecialistRun` | `POST /api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}/cancel` |
 | `updateDiscussReadState` | `POST /api/v1/workspaces/{workspace_id}/discuss/read-state` |
 | `getDiscussPreferences` / `updateDiscussPreferences` | `GET` / `PATCH /api/v1/workspaces/{workspace_id}/discuss/preferences` |
 | `listDiscussReminders` / `createDiscussReminder` | `GET` / `POST /api/v1/workspaces/{workspace_id}/discuss/reminders` |

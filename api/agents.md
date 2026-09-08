@@ -12,6 +12,12 @@ quarantine, roll back, remove, and approve Agents;
 Owners, Admins, and Members may start manual runs. A Member may cancel a run they initiated,
 while an Owner or Admin may cancel any non-terminal run in the Workspace.
 
+An explicit independent-work request in Discuss can start one active, ready, Workspace-scoped hired
+Agent through this same manual-run lifecycle. It does not create a second Agent execution record.
+Discuss exposes its private progress and Stop projection separately; the ordinary Agent run remains
+the authoritative execution history and retains the same authorization, scope, credit, approval and
+cancellation rules.
+
 ## Browse the Agent Library
 
 ```http
