@@ -75,10 +75,12 @@ or `expired`. Only safe summaries and safe pending interaction prompts are retur
 `POST .../discuss/specialist-runs/{specialist_run_id}/cancel` requests cooperative Stop through the
 underlying canonical Agent/work-session journal. It is idempotent for already terminal work and does
 not imply rollback. A completed specialist posts one Agent result back to the originating branch.
-At most two specialists may be active in one private conversation; specialist work cannot recursively
+At most two specialists may be active in one private conversation; specialist work cannot
+recursively
 delegate another specialist. All responses are membership-private and `no-store`.
 
-The compatible synchronous `POST .../messages` requires the session CSRF token and an `Idempotency-Key`.
+The compatible synchronous `POST .../messages` requires the session CSRF token and an
+`Idempotency-Key`.
 Retries with the same key return the existing turn and do not repeat Knowledge
 work. Allow up to 130 seconds for a synchronous assessment response. Cancelling a
 request stops answer generation; the submitted message remains saved.
@@ -171,7 +173,8 @@ readable narrow width. **Latest messages** brings you back to the newest reply. 
 history opens near the latest user turn. Sending a new prompt keeps the transcript at the
 end of its scroll container while the prompt is accepted and the response appears.
 
-Open the **…** menu at the upper right and choose **Search Discuss history**, enter a phrase, and press
+Open the **…** menu at the upper right and choose **Search Discuss history**, enter a phrase, and
+press
 **Search** or Enter. Search runs only when submitted. **Back to conversation**
 returns to the current transcript. **Load earlier messages** retrieves older
 history in pages; after ten pages, use search to locate older material.
@@ -293,3 +296,15 @@ the answer should say so rather than imply that every item has been checked.
 Standalone greetings such as “hi” or “hello” receive a short greeting without
 searching workspace content. A greeting followed by a question routes according
 to that question’s intent.
+
+## Replies from connected assistants
+
+An authorized external MCP assistant can use `discuss_post_message` with `workspace_id`, `content`
+and a
+stable `idempotency_key` to post supplied text to your own private Discuss conversation. It requires
+`assign:write`; it cannot choose another recipient or impersonate the hosted Discuss Agent. Reusing
+a key
+with identical text is safe, while different text requires a new key. Posting supplied text does not
+start
+an AI response or consume Assign AI credits. The message retains the connected application's
+identity.

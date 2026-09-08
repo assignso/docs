@@ -190,7 +190,8 @@ Insufficient credits create a visible blocked/skipped outcome without blocking n
 
 The Web interface keeps hiring, Agent detail, Agent Activity, and each run detail on dedicated URLs.
 It exposes schedule detail/next occurrence, manual admission, cursor-backed safe history, permitted
-cancellation, exact approvals, provenance, lifecycle controls, entitlement/credit state, and explicit
+cancellation, exact approvals, provenance, lifecycle controls, entitlement/credit state, and
+explicit
 approval-required and billing-blocked states.
 
 ## Build custom Agents in Agent Studio
@@ -286,3 +287,20 @@ completed change. When an operation's acknowledgment is uncertain, inspect its
 run/action status before starting another operation. Rewording the same request
 can create a different action; use the original operation's retry/reconciliation
 path.
+
+## Agent Studio MCP access
+
+In an Agent definition's **Tools** section, select **Enable MCP access** and save the definition to
+allow
+its permitted Assign tools. New custom Agents start with access off. Tools still obey the Agent's
+bindings,
+your Workspace permissions and approval rules. Turning access off prevents further tool actions;
+previously
+committed actions remain in history. Failed saves preserve your unsaved choice.
+
+The custom Agent definition API accepts optional `mcp_enabled`. Omit it on an existing definition
+update
+to preserve the saved value, or send `false` to disable access. Current response Agents can publish
+one
+permitted Task comment under their own identity; enabling MCP does not add tools or broader
+permissions.

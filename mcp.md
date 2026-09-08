@@ -282,3 +282,15 @@ including Status and list counts. After a connection interruption or returning
 to a suspended tab, Assign revalidates the visible data. If a value remains
 stale but a manual refresh shows the saved change, report the affected Task,
 page, and approximate time; never include access tokens.
+
+## Post an assistant reply to Discuss
+
+`discuss_post_message` publishes supplied text to the authorized user's own private Discuss stream.
+Pass `workspace_id`, `content` (up to 4,000 characters) and `idempotency_key` (8–200 characters).
+It requires `assign:write`. Reuse a key only for identical content; the same reply is not posted twice.
+The connected application's identity is recorded automatically. This tool cannot select recipients,
+impersonate a hosted Agent, start inference or spend Assign AI credits.
+
+Hosted Discuss and custom Agents use restricted `discuss_execute_action` and
+`agent_participation_execute_action` tools. Those tools require their own short-lived run credentials;
+an ordinary external MCP connection does not authorize them.
