@@ -11,6 +11,12 @@ show their current Workspace sources and can abstain when evidence is missing.
 If Knowledge is unavailable, your submitted message remains saved and ordinary
 Workspace work remains available.
 
+Discuss can read tickets, move a ticket to an exact workflow status, add supplied comments, and
+undo a receipt-backed status change when its revision still matches. Those changes are authored
+by **Discuss agent** under your current permissions; receipts retain the initiating actor. Hired
+specialists use their own Agent identity and post results to the originating private
+conversation.
+
 ## Message history
 
 `GET /api/v1/workspaces/{workspace_id}/discuss/messages` returns a bounded
