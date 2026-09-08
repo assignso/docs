@@ -51,6 +51,11 @@ The initial catalog is intentionally bounded:
 - Search Projects, Tasks, Documents, comments, and active People inside one authorized
   Workspace.
 - Create Documents and replace Document content with revision checks.
+- List, inspect, create, update, or archive label definitions. Read and replace
+  complete label assignments for Documents, Projects, and Tasks with the
+  corresponding `*_label_list` and `*_label_replace` tools. Replacement supports
+  at most 20 purpose-safe labels and confirms the persisted result; Task assignments
+  may combine Workspace defaults with labels local to that Task's Project.
 - Create and update Tasks, explicitly complete them, assign or unassign them,
   and add Task comments.
 - Attach a file to an existing Task with `attachment_upload_reserve`, a direct
