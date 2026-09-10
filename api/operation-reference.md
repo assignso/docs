@@ -13,6 +13,13 @@ Client-specific, callback, content-transfer, and private-connector operations
 do not imply an ordinary web page. They are listed so API consumers can
 distinguish an intentional machine-facing surface from an undocumented one.
 
+## Reversible commands
+
+| Operation | Route | Notes |
+| --- | --- | --- |
+| `undoCommand` | `POST /api/v1/commands/{command_id}/undo` | Executes a same-actor, field-aware compensating mutation. |
+| `redoCommand` | `POST /api/v1/commands/{command_id}/redo` | Reapplies a successfully undone command while its preconditions still hold. |
+
 ## Agents, billing callbacks, and Workspace media
 
 | Operation | Route | Notes |
@@ -28,9 +35,9 @@ distinguish an intentional machine-facing surface from an undocumented one.
 | Operation | Route |
 | --- | --- |
 | `answerWorkspaceKnowledge` | `GET /api/v1/workspaces/{workspace_id}/knowledge/answer` |
+| `getDiscussAvailability` | `GET /api/v1/workspaces/{workspace_id}/discuss/availability` |
 | `listDiscussMessages` / `sendDiscussMessage` | `GET` / `POST /api/v1/workspaces/{workspace_id}/discuss/messages` |
 | `searchDiscussMessages` | `GET /api/v1/workspaces/{workspace_id}/discuss/messages/search` |
-| `branchDiscussMessage` | `POST /api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}/branch` |
 | `listDiscussRunEvents` | `GET /api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}/run-events` |
 | `decideDiscussInteraction` | `POST /api/v1/workspaces/{workspace_id}/discuss/interactions/{interaction_id}/decision` |
 | `listDiscussSpecialistRuns` / `getDiscussSpecialistRun` | `GET /api/v1/workspaces/{workspace_id}/discuss/specialist-runs` / `GET /api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}` |

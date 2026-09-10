@@ -22,6 +22,8 @@ should not receive that content.
 
 - Assign edits are grouped before a conditional direct commit to the selected
   branch. Synchronization never force-pushes or creates a pull request.
+- Edits made while a sync is exporting remain pending for the next pass; the
+  completed run acknowledges only the version actually exported.
 - **Sync now** starts an immediate bounded reconciliation, but still applies
   authorization, conflict, provider and rate limits.
 - In bidirectional mode, verified provider pushes cause Assign to reread the
@@ -68,3 +70,7 @@ operations recheck the current Document revision and Git head. If a mutation's
 HTTP result is lost, read the repository, run history or conflict list before
 retrying; this first contract does not replay mutation responses by an
 idempotency key.
+
+Repository reads are limited to 2,000 eligible files, 20 MiB total and 1 MiB per
+file. Sync also limits loaded canonical content and frontmatter to 20 MiB; a
+local corpus over that limit needs to be reduced before it can synchronize.

@@ -144,20 +144,25 @@ $$
 $$
 ```
 
-Each editable code block has its own compact control strip. Use the small
-**Code language** selector at its left edge to choose Plain text, Bash, CSS, Go, JavaScript,
+Each editable code block uses a light neutral surface with a compact control
+panel in its top-right corner. The panel appears when you hover the block, move
+the caret or selection into it, tap it, or focus one of its controls; it stays
+out of the way at rest and does not add an empty row before your first line. Use
+**Code language** to choose Plain text, Bash, CSS, Go, JavaScript,
 JSON, Mermaid diagram, PHP, Python, or TypeScript. Recognized syntax is
 highlighted immediately with the Tiptap CodeBlockLowlight syntax treatment, and
 the selection is retained when the document is converted to and from fenced
-Markdown. The adjacent Lucide Copy icon action copies the code; duplicate, delete, and other
-editor actions are not part of this compact strip. Code remains ordinary
+Markdown. The adjacent Lucide Copy icon action copies the exact code and briefly
+shows whether copying succeeded; duplicate, delete, and other editor actions are
+not part of this compact panel. Code remains ordinary
 copyable text if the language is not recognized. Empty headings, lists, quotes,
 code blocks, and equations keep a visible format-specific hint until you type.
 
 Imported language names remain visible even when they are not in the selector's
 standard list. Long code lines scroll within the block; keyboard users can focus
 the code region to scroll it. Enter adds a code line, Tab inserts two spaces,
-and Ctrl/Cmd+Enter returns to ordinary writing. A corrected Mermaid diagram can
+Backspace at the very start keeps the code block in place, and Ctrl/Cmd+Enter
+returns to ordinary writing. A corrected Mermaid diagram can
 render again after an invalid draft; invalid source remains readable.
 
 ## Mentioning people and linking work
@@ -296,3 +301,10 @@ start, versioned editing may become available; conflicting drafts are retained f
 session that was already live reconnects automatically and does not switch to a competing save
 path. If access is removed or the description is replaced elsewhere, reload the Task to recover
 the current version. Carets are temporary and do not appear in exports or description history.
+
+## Collaboration connections
+
+The collaboration client sends its complete initial bootstrap frame within ten
+seconds of connecting. A stalled connection closes so it can reconnect. Server
+shutdown also closes collaboration connections; supported clients reconnect and
+recover from the retained checkpoint and updates.

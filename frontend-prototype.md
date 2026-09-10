@@ -46,6 +46,10 @@ database and the public generated SDK for the implemented Workspace, Project,
 Status, Task, Document, and Comment operations. The separate fixture workflow
 remains generated and non-persistent.
 
+Keyboard users can use **Skip to content** to move directly to the page. The
+content landmark itself does not draw a page-sized focus ring; interactive
+controls inside it retain their visible focus indicators.
+
 ## Installing the web app
 
 On browsers that support web-app installation, use the browser's **Install** or
@@ -124,11 +128,14 @@ Task once to open it; scrolling or using an embedded control does not open it.
 A successfully created Task refreshes the current list and its counts, and
 previously visited lists refresh when reopened.
 
-Workspace owners and administrators can reorder **Task statuses** by selecting
-a destination **Position** or using **Move earlier** and **Move later**. Icon
-choices show their symbols and names; Color offers named Tailwind colors and
-an **Automatic** option. Existing custom colors remain selectable. Changes save
-immediately and appear in the shared Status catalog.
+Workspace owners and administrators manage **Task statuses** in five lifecycle
+bands. Each band has an add action, and each compact Status row shows its icon,
+color, and human label before expanding into the full editor. Drag a row within
+its band to reorder it, or use **Position**, **Move earlier**, and **Move later**
+for the equivalent keyboard and touch path. Lifecycle changes remain explicit in
+the expanded editor. Icon choices show their symbols and names; Color offers named
+Tailwind colors and an **Automatic** option. Existing custom colors remain
+selectable. Changes save immediately and appear in the shared Status catalog.
 
 Task detail retains its narrow centered reading canvas. Its 28px property controls,
 including Log time when enabled, use intrinsic widths, share a solid visible
@@ -183,6 +190,14 @@ change. When selected, it shows the Task title and code without a visible
 **Current** prefix, plus a colorful focus icon; its accessible name still
 identifies the current-task state. Assign automatically clears a selection that
 stops being eligible.
+
+Supported Task property and lifecycle changes show one brief action toast with
+**Undo**. `Cmd/Ctrl+Z` invokes the same application command, and
+`Cmd/Ctrl+Shift+Z` or `Ctrl+Y` invokes Redo. A successful new change clears the
+Redo stack. The stack is scoped to the current user and Workspace and shared
+between that user's active tabs. Inputs, textareas, contenteditable fields,
+Tiptap/ProseMirror, and code editors keep their native editing history; the
+application shortcut stays inert while one of those surfaces has focus.
 Document scope, Project, parent, and Labels use the same compact 24px,
 intrinsic-width, visibly bordered inline presentation without changing the
 Document canvas.
@@ -199,14 +214,13 @@ In progress and In review categories appear under Ongoing work; immutable recent
 Activity remains a separate section.
 Every authenticated Project route starts with the same compact header: one
 Project icon and one-line name, with the Create task action and Project-actions
-menu aligned to the title. A uniformly small-text metadata row shows the
+menu aligned to the title. The application top bar and browser title use the
+Project name throughout Project routes. A compact metadata row shows the
 immutable Project key as code and a shortened external hostname with a reduced
-link icon when configured. The header omits Task count and member avatars, then
-shows a description summary of at most two lines.
-**More** appears only when the summary overflows; the full description remains
-available with **Less** after its final text. On the narrowest phones Create task
-is shown as an accessible `+`, and the tab strip scrolls horizontally instead of
-wrapping or pushing actions off screen. Project settings and Copy Project link
+link icon when configured. The header omits description, Task count, and member
+avatars. On the narrowest phones Create task is shown as a centered accessible
+`+`, and the tab strip scrolls horizontally instead of wrapping or pushing
+actions off screen. Project settings and Copy Project link
 are available from the end-aligned Project-actions menu rather than a separate
 gear. The menu sizes to its item content and keeps every item on one line.
 On layouts with room for keyboard hints, Create task entry buttons show `N` and
@@ -234,19 +248,22 @@ Legacy opaque-ID links redirect to these canonical routes. Renaming the active
 Workspace replaces its slug in the current URL without changing the underlying
 Workspace session, and My Work uses the same full-width page frame as Home.
 Home’s Assigned to me rows show Task code, title, and Status; Recently updated
-rows show Task code, title, and assignee. My Work shows each Task’s priority and
-Status alongside its code, title, and view-relevant due date. Home does not
-show an Activity feed; historical changes stay on their contextual resource
-surfaces.
+rows show Task code, title, and assignee. Assigned to me ranks urgent, high,
+medium, low, then no-priority Tasks, with the newest update first inside each
+priority. My Work shows each Task’s priority and Status alongside its code,
+title, and view-relevant due date. Home does not show an Activity feed;
+historical changes stay on their contextual resource surfaces.
 
 The Search control in the application header (or `/` when focus is not in a
 text field) opens a Workspace-scoped modal. It queries the server after a short
 debounce, shows Project, Task, and Document title matches, and opens the
 selected resource. People matches appear when that server capability is
 available; a People-only failure does not hide otherwise valid results. On
-phones, the Search dialog and its internally scrolling results remain inside
-the visible viewport. Search never performs a client-side scan of Workspace
-content in API mode.
+phones, the top-bar control retains its icon and visible **Search** label, and
+the Search dialog with its internally scrolling results remains inside the
+visible viewport. Nested choices in the compact Project **Filters** control
+remain above surrounding content and directly operable. Search never performs
+a client-side scan of Workspace content in API mode.
 
 Documents are available at `/app/{workspace}/documents`;
 `/app/{workspace}/documents/new` creates one, and each Document opens at
@@ -316,3 +333,32 @@ Open a Task and use **Task actions** for **Move up**, **Move down**, **Move to t
 **Move to bottom**, or **Move to status**. These controls use the shared Task
 order, including neighbors outside the loaded Board page. Keyboard menu
 navigation and ordinary touch activation provide alternatives to dragging.
+
+## Recovery and presentation
+
+If a visible resource cannot refresh, its local recovery state offers Retry while
+other usable content remains in place; background refresh alone does not label
+the whole Task list stale. Local draft or collaboration storage failures show a
+warning: copy unsaved text before refreshing or leaving. Sign-out reports
+incomplete cleanup when local storage cannot be cleared; close other Assign tabs
+and retry on shared devices. Private Workspace snapshots are no longer restored
+from disk.
+
+Task rows and Board cards prepare Task detail when pointer, touch, or keyboard intent is
+clear. Warm navigation keeps the current page usable until the Task is ready; cold direct
+links reserve the Task title, properties, and body geometry to avoid a generic page shift.
+
+The Web fix prevents opening another tab from replaying old changes as
+new reads. When Assign asks the browser to slow down, live-update recovery waits
+for the requested interval and stops after repeated failures. Avoid repeatedly
+refreshing while rate limited; keep unsaved text and retry after the pause.
+This correction is available in Web `1.0.0-rc.10`, deployed on September 9, 2026.
+
+Account date, time-zone, time and number preferences update authenticated timestamps and displays.
+Calendar-only due dates retain their chosen day. Parent Documents load child titles in pages with
+Load more. Long Discuss histories keep keyboard focus while loading older messages.
+
+Reset and invitation links may ask you to reopen the original email if their browser continuation
+expires. Keep using the same browser through sign-in. Mermaid diagrams offer a Diagram source
+disclosure for reading their source text. These changes remain in the local release candidate until
+deployment is verified.

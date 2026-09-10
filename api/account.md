@@ -40,7 +40,8 @@ Workspace, the caller's Actor within it, and their role:
     "slug": "acme"
   },
   "actor_id": "<actor-id>",
-  "role": "member"
+  "role": "member",
+  "authorization_revision": "<opaque-revision>"
 }
 ```
 
@@ -48,11 +49,15 @@ Workspace, the caller's Actor within it, and their role:
 [Roles](workspaces.md#roles). To act in a different
 Workspace the caller belongs to, switch the session first — see
 [Switch the session's Workspace](authentication.md#switch-the-sessions-workspace).
+`authorization_revision` is an opaque cache-admission value for this exact Actor
+and Workspace. It changes when the Actor's visible private projection may change.
+Clients may compare it for equality before displaying persisted data, but must
+never infer permissions from it; every request remains server-authorized.
 
 A newly registered account-only session has no selected Workspace. Its response
 contains the account and interface-preference fields shown above;
-`workspace`, `actor_id`, and `role` are omitted until the first Workspace is
-created. The username is allocated from the full name during registration.
+`workspace`, `actor_id`, `role`, and `authorization_revision` are omitted until the first
+Workspace is created. The username is allocated from the full name during registration.
 Optional `profile_picture_url` and `title` values may be `null`.
 
 ## Review Workspace plans

@@ -26,13 +26,32 @@ Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 
 Returns a cursor-bounded activity page ordered by `updated_at` descending,
 then Task ID descending. The default page size is 50 and the maximum is 100.
-Active Tasks are returned by default; set `include_archived=true` to include
+Unarchived Tasks, including resolved Tasks, are returned by default; set
+`include_archived=true` to include
 archived Tasks. Repeated `project_id` and `status_category` parameters apply
 OR filters. `assignee_actor_id`, `milestone_id`, and RFC 3339
 `updated_since` further narrow the page. A Project identifier outside the
 Workspace contributes no rows, so this endpoint cannot reveal whether that
 Project exists. This is not a text-search endpoint; use
 [Workspace search](search.md) for matching and ranking.
+
+### Checked pagination (awaiting deployment)
+
+Set `consistency=checked` to receive `query_digest`, `collection_version`,
+`visibility_revision`, `observed_at`, cumulative `returned_count`, and `coverage`.
+Use `state=active` for unresolved work, `state=resolved` for resolved work, or
+`state=all` (the default) for both. The optional `resolution` is `completed` or
+`cancelled`; it cannot be combined with `state=active`.
+
+Continue with the returned `next_cursor` and the same filters. `complete` means
+all matching, permitted Tasks were covered at the reported observation boundary.
+`partial` means more pages remain or the ten-page/1,000-row scan limit was reached;
+`limit_reason` distinguishes `more_pages` from `scan_limit`. Changed data or
+permissions produces an empty `stale` page with
+`limit_reason=collection_or_visibility_changed`; restart explicitly. Neither
+partial nor stale results prove that matching work is absent. Changed-filter,
+expired or invalid cursors return `invalid_cursor`. Omitting consistency retains
+legacy pagination without a completeness claim.
 
 ## List Project Tasks
 
@@ -258,6 +277,34 @@ membership. `If-Match` must carry the revision last observed by the client; a
 stale revision returns `409`. Label assignment is replaced as a complete set
 through the target-label endpoint in the OpenAPI contract.
 
+When one of the supported Task metadata fields changes, the mutation response
+also includes an optional `reversible_command`. Its opaque ID, safe description,
+state, and `undoable_until` instant can be presented to the user; inverse values
+are intentionally never returned. Description-only edits use the editor's own
+history and do not return an application command.
+
+Undo and Redo execute the server-owned inverse or forward command:
+
+```http
+POST /api/v1/commands/{command_id}/undo HTTP/1.1
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <opaque-client-key>
+```
+
+```http
+POST /api/v1/commands/{command_id}/redo HTTP/1.1
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <opaque-client-key>
+```
+
+Commands are available for ten minutes and only to the actor who created them
+in the same Workspace. Core checks current permissions and compares only the
+fields owned by that command. An unrelated edit can coexist with Undo; a later
+edit to the same field returns `409 command_conflict` without changing the
+Task. Expired or already-transitioned commands also return a stable `409`.
+Each successful reversal is a new ordinary Task mutation and appears through
+the normal realtime and Activity paths.
+
 ## Bulk-update selected Tasks
 
 ```http
@@ -313,7 +360,8 @@ If-Match: "7"
 Idempotency-Key: <opaque-client-key>
 ```
 
-Archives the Task and returns `204`. Supply the Task revision most recently
+Archives the Task and returns `200` with the updated Task and an optional
+reversible command handle. Supply the Task revision most recently
 returned in its `ETag`; stale revisions return `409`. Retrying the same request
 with the same idempotency key replays the original result. Archive is reversible
 organization: the Task remains readable but leaves active Project lists, My
@@ -347,6 +395,9 @@ redacts content but retains a safe `Purged task` tombstone for Activity,
 relations, assignment history, time entries, and notification references;
 restore then returns `410 task_purged`. Task-only comments, labels,
 subscriptions, integration links, and orphan attachment content are removed.
+
+Archive, trash, and restore transitions participate in application Undo while
+their command remains valid. Permanent purge never does.
 
 ## Duplicate a Task
 
@@ -523,3 +574,6 @@ direction. It cannot accompany a cursor or `resolved_desc`. The anchor must
 still belong to the requested Project and Status. This supports bounded neighbor
 reads for movement; send the resulting neighbor IDs and the Task's current
 revision through the existing move operation. Do not submit ranks or array indexes.
+
+See [versioned work proposals and receipts](work-capabilities.md) for private result sets, drafts,
+reviewed ChangeSets and write recovery in the upcoming update.

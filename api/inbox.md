@@ -60,6 +60,13 @@ accessible, or no longer followed.
 Notification delivery is asynchronous, so a just-completed action does not
 guarantee that its Inbox item is already present in the next read.
 
+Discuss creates `agent` Inbox items only for meaningful lifecycle transitions: when a response needs
+your input, completes, or fails. Core supplies short safe preview text and a relative link back to the
+originating Workspace Discuss conversation; generated answer text, prompts, source excerpts, and raw
+provider output are not copied into the notification. Progress, token updates, and cancellation do not
+create another item. Delivery requires the initiating user's membership to remain active, and replaying
+the same canonical event does not duplicate the notification.
+
 ## Notification preferences
 
 `GET /api/v1/workspaces/{workspace_id}/notification-preferences` returns every

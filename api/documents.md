@@ -140,3 +140,6 @@ access.
 Document save and connection indicators stay steady during routine work. Unsaved edits
 remain marked until acknowledged; brief reconnects do not flash the status.
 Persistent failures and conflicts remain visible.
+
+See [versioned work proposals and receipts](work-capabilities.md) for private result sets, drafts,
+reviewed ChangeSets and write recovery in the upcoming update.

@@ -11,6 +11,27 @@ show their current Workspace sources and can abstain when evidence is missing.
 If Knowledge is unavailable, your submitted message remains saved and ordinary
 Workspace work remains available.
 
+Press `G` outside a text field or editor to open the current Workspace's Discuss
+page. While an input, composer, selector, or editor has focus, global letter and
+number shortcuts stay off so every typed character remains in that control.
+Discuss remains visible in navigation when the Workspace has not unlocked
+it. A subtle lock then leads to a deterministic product preview; the preview
+does not read Workspace data or consume AI credits. Personal and higher plans
+can include Discuss according to the current Workspace catalog.
+
+If a Workspace loses Discuss access, authorized existing history remains
+read-only. New messages and actions are disabled, but running work can still be
+stopped safely. A separate exhausted-credit state keeps history visible and
+directs a billing manager to add credits; members without billing permission are
+asked to contact the Workspace owner.
+
+`GET /api/v1/workspaces/{workspace_id}/discuss/availability` returns the
+membership-authorized access decision before clients load private history.
+Branch on `access` and `reason`, not `minimum_plan_key` or
+`minimum_plan_label`; those plan fields are presentation metadata. Premium
+mutation endpoints return HTTP 402 with `discuss_entitlement_required` or
+`discuss_credits_exhausted` when the current Workspace cannot start new work.
+
 Discuss can read tickets, move a ticket to an exact workflow status, add supplied comments, and
 undo a receipt-backed status change when its revision still matches. Those changes are authored
 by **Discuss agent** under your current permissions; receipts retain the initiating actor. Hired
@@ -32,19 +53,56 @@ raw history, prove an action, or override current Task/Project/Document state; e
 comes from retained messages and current facts from canonical Workspace records. Private Discuss
 history is never added to shared Workspace Knowledge.
 
+In the upcoming conversation-runtime update, you can ask about a Task or Project by its visible
+name or code. Discuss looks up the permitted match and reads its current canonical fields before
+giving feedback. If the name matches more than one visible item, Discuss asks which one you mean;
+it does not guess. Search snippets are discovery hints, not current Project or Task state.
+
 The Web uses `POST .../turns`, which returns `202` after the turn is saved. It requires
 an `Idempotency-Key` and the session CSRF token. Generation continues if you navigate
-away or reload. Send `{ "content": "Your question", "reference_ids": [] }`; optional
-references contain up to five IDs from your own private message history. Reusing a
-key with different content or references returns `409`. You can send another turn while
+away or reload. Send `{ "content": "Your question" }`. Reusing a key with different
+content or typed context returns `409`. You can send another turn while
 a response is active. Assign saves it as an ordered successor and still runs only one
 foreground response at a time.
 
 The request may also include `context` with a surface and canonical Project, active-entity,
 or selected-entity handles. The Web supplies this when you open Discuss from a Project,
 Task, Document, or a selection of up to 20 Tasks. Discuss shows the inherited context as
-removable chips before sending. Core resolves every handle again with your current
+one compact counted row before sending; expand it to inspect or remove individual handles.
+Core resolves every handle again with your current
 Workspace permissions; labels and IDs do not grant access.
+
+API clients may include optional `parts` with up to one `task_selection`, one `search_result` and one
+`turn_preferences` entry when sending a queued turn:
+
+```json
+{
+  "content": "Explain these three Tasks",
+  "parts": [
+    {"type": "task_selection", "selection_id": "<saved-selection-id>"},
+    {"type": "turn_preferences", "locale": "en-GB", "timezone": "Europe/Budapest"}
+  ]
+}
+```
+
+Assign resolves the selection under your current permissions and stores its original
+`result_set_id` and `version`. Optional supplied values must match or the request conflicts.
+This does not refresh the selection or apply changes. Locale/timezone applies only to this
+turn and does not change saved preferences. Other part types, extra fields, duplicate entries,
+or invalid locale/timezone values are rejected by queued Send. Remove a metadata entry before
+sending to omit it; previous page context is not a new explicit selection.
+
+In the upcoming update, Project **Ask Discuss** prepares a saved selection before opening Discuss.
+The chip shows its version. Remove it to omit those Tasks or choose another selection to replace it
+without losing your draft. Preparation does not send a message or use AI credits. If preparation
+fails, the selection remains available to retry. Retrying a failed Send uses its original selection
+and text while preserving newer edits in the composer.
+
+Pending assistant content may grow as newer message revisions arrive. Older clients may display it
+as plain text until finalization. The upcoming Web update formats complete blocks while keeping
+incomplete Markdown inert; unfinished links must not become active. A clarification pauses
+work for your answer. Submitting the current question's answer continues with the conversation's
+remaining budget; an expired or changed question requires refreshed state.
 
 Use `GET .../events?after=N` to follow saved changes. Start from the history page's
 `event_cursor`, apply newer message revisions, then advance to the returned `cursor`.
@@ -74,7 +132,7 @@ or `expired`. Only safe summaries and safe pending interaction prompts are retur
 
 `POST .../discuss/specialist-runs/{specialist_run_id}/cancel` requests cooperative Stop through the
 underlying canonical Agent/work-session journal. It is idempotent for already terminal work and does
-not imply rollback. A completed specialist posts one Agent result back to the originating branch.
+not imply rollback. A completed specialist posts one Agent result against its immutable initiating turn.
 At most two specialists may be active in one private conversation; specialist work cannot
 recursively
 delegate another specialist. All responses are membership-private and `no-store`.
@@ -127,12 +185,20 @@ reversible. Compound actions, shared app-wide Undo/Redo, and recurring automatio
 capabilities rather than implied behavior. Specialist delegation is limited to the documented
 built-in catalog and hired/ready Workspace Agents.
 
-When Discuss uses an internal read or change operation, the assistant message can show one compact
-activity row. The row updates in place from **Working** to completed, failed or cancelled. Expand it
-for bounded status, result-count and duration details. This activity is an audit-friendly summary,
+When Discuss uses internal reads, changes, specialists or recorded evidence, the assistant message
+shows at most one compact activity row. The row updates in place from **Working** to completed, failed
+or cancelled. Expand its single disclosure for bounded status, result-count, duration, evidence and
+paginated recorded activity. This activity is an audit-friendly summary,
 not model reasoning or a raw tool transcript, and a refresh does not duplicate it.
 
-### Clarifications, approvals, and branches
+When a response uses implementation or test evidence, its activity detail can show evidence cards.
+A code reference names an exact commit, repository-relative path, optional symbol, and line range. **Verified
+CI** means a passed record from Assign's canonical integration or work-session journal for that exact
+repository commit. **Reported tests** means an external Agent or tool reported the result; Assign has
+not verified it. Missing, stale, malformed, denied, deleted, ambiguous-symbol, or commit-mismatched
+records are withheld rather than relabelled. These cards are references, not source-access grants.
+
+### Clarifications and approvals
 
 When Discuss needs a missing detail, the saved response shows a clarification prompt with bounded
 choices or a labelled answer field. An approval uses explicit **Approve** and **Reject** choices;
@@ -140,17 +206,12 @@ ordinary prose is not approval. The first valid current decision wins and queues
 If the request, policy, tool catalog, expiry, or another device's decision made the prompt stale,
 Discuss asks you to reload rather than applying the old decision.
 
-Choose **Edit** on a final user message to save replacement text as a new private branch. Choose
-**Regenerate** on a final assistant response to branch from its original prompt. Assign preserves
-the former history and shows the active branch in the same single conversation; it does not create
-named chats. Branching waits until current queued/running/stopping work is terminal. Regenerating a
-successful action explanation reuses its saved receipt and explicitly says no action was repeated.
-
-API clients use `POST .../messages/{message_id}/branch` with `operation`, `expected_revision` and
-an `Idempotency-Key`. Use `POST .../interactions/{interaction_id}/decision` with
+API clients use `POST .../interactions/{interaction_id}/decision` with
 `expected_revision`, `decision` and an `Idempotency-Key`. Conflicting/stale revisions return `409`.
-Message responses may include `branch_id`, `supersedes_message_id` and
-`reuses_receipt_message_id`; history may include `active_branch_id`.
+
+Discuss has one chronological private stream. Correct an earlier statement with a normal new message.
+Failed or cancelled delivery may be retried; completed responses are not regenerated, and committed
+actions are never repeated by retry.
 
 “What did we discuss about the launch?” searches your retained private history.
 Earlier-message excerpts provide conversation context, not current Workspace facts.
@@ -179,8 +240,9 @@ press
 returns to the current transcript. **Load earlier messages** retrieves older
 history in pages; after ten pages, use search to locate older material.
 
-The composer grows as you write, up to a bounded height. Enter sends; Shift+Enter
-adds a line. Suggested prompts fill the composer without sending. While waiting
+The empty composer keeps its normal white surface while its Send button is unavailable, so the
+editable field does not appear disabled. It grows as you write, up to a bounded height. Enter sends;
+Shift+Enter adds a line. Suggested prompts fill the composer without sending. While waiting
 for a response, you can keep typing and send an ordered follow-up; only a duplicate
 submission awaiting acknowledgement is blocked. A failed request keeps its original message and
 offers Retry message; retrying does not replace a newer draft. Messages support up to 8,000
@@ -223,13 +285,9 @@ Code includes Copy code and a language label; wide code and tables scroll within
 the message. Generated HTML is displayed as text. Image URLs appear as links
 rather than loading automatically. Native Workspace evidence remains in Sources.
 
-Discuss does not show conversation or message Copy link actions. Existing private message
-links and structured references still reveal the exact saved message, loading up to ten
-history pages when needed. Unavailable or older targets show a clear fallback to Archives
-search. Links do not grant access to another person.
-
-Choose **Reference** on a saved message to add a reference to your next prompt. Remove
-it from the composer before sending if it is no longer relevant. **Stop response**
+Discuss does not show conversation or message Copy link or manual message-reference actions.
+Ask about earlier context naturally; Discuss selects bounded recent context and authorized private
+history recall automatically. **Stop response**
 requests cancellation of active work; it shows **Stopping…** until Assign confirms the
 terminal result. If no response is active, it cancels the earliest queued response.
 Your unsent text remains editable. Reconnection and another open tab retrieve saved updates
@@ -308,3 +366,159 @@ with identical text is safe, while different text requires a new key. Posting su
 start
 an AI response or consume Assign AI credits. The message retains the connected application's
 identity.
+
+See [versioned work proposals and receipts](work-capabilities.md) for private result sets, drafts,
+reviewed ChangeSets and write recovery in the upcoming update.
+
+## Durable reviews and operation references
+
+### Unread activity and questions (upcoming Web update)
+
+Discuss shows an unread count in the sidebar and a dot when the sidebar is collapsed.
+The badge displays `99+` for larger counts. It refreshes while the app is visible and
+clears after the latest settled messages are viewed. Scrolling through older messages,
+searching history, opening Archives or leaving the browser in the background does not
+mark the latest conversation read. A **New messages** divider keeps your return point
+visible in the conversation; date dividers separate days.
+
+When Discuss needs clarification or approval, choose an offered response or write your
+own when permitted, then submit explicitly. Selecting a choice does not send it. A
+failed submission keeps your answer so you can retry; a changed or expired question
+requires refreshing it. Answered questions remain in history. Archives remains read-only.
+
+### Versioned decisions
+
+A durable approval refers to the exact ChangeSet ID, version and digest being reviewed. Use the
+canonical interaction revision when answering; cached approval cannot authorize an edited proposal.
+Review and apply are separate operations. Clarifications accept free text where allowed; approvals
+accept only approve or reject. A waiting interaction expires after 24 hours. Stop requests cancellation
+and does not imply that already committed work was undone.
+
+Clients may receive an extensible `operation_receipts` part with a `receipts` array of canonical
+operation references (`operation_id`, `tool`, `state`, and optional resource identity/revision).
+Receipts survive response recovery and regeneration; regenerating an existing committed result does
+not repeat its action. Continue to handle unknown message-part types safely. Use canonical receipt
+and ChangeSet controls to inspect outcomes, including partial or refused work, instead of inferring
+success from answer text. See [MCP](../mcp.md#recall-private-discuss-history-and-manage-explicit-rules)
+for exact private-message recall and explicit rule controls.
+
+While an assistant message is pending, an extensible `runtime_status` part can carry an allowlisted
+Core status (`working`, `reading`, `waiting`, `speaking` or `needs_input`). Clients must derive visible
+copy from that code rather than render producer text. A newer message revision replaces the prior
+status. The membership-private recorded-activity feed can additionally expose `status.changed`,
+`run.terminal`, `interaction.required`, `interaction.resolved` and `result.available`; their summaries
+are Core-owned, while work details are resolved from the canonical operation receipt.
+
+## Private live updates (upcoming update)
+
+In the upcoming Web update, **Inspect task**, **Inspect project** and **Inspect document** load current
+authorized metadata from Sources. Changed or archived resources are labeled; unavailable resources
+withhold the preview. Only one preview is open at a time. **Recorded activity** shows 20 records per
+page, up to 200 records, and a duration only when both start and finish are recorded. These inspection
+controls do not send another AI request. Archives remain read-only.
+
+An extensible `runtime_text` part may include `part_id`, `run_id`, `step_id`, `generation`, `revision`,
+`producer_fence`, `producer_sequence` and a UTF-8 byte `offset` for the accompanying full text.
+Treat it as a materialized snapshot, not a delta to concatenate. Snapshots may skip offsets after
+reconnection. A conflicting same revision or invalid text offset requires an authorized refresh.
+Final canonical content replaces provisional parts.
+
+`GET /api/v1/workspaces/{workspace_id}/discuss/events/stream?envelope_version=1` opens a
+cookie-authenticated private SSE subscription. It starts with `hello`; subsequent frames are
+`discuss_event`, `heartbeat` or terminal `resync_required`. A `discuss_event` contains `stream_id`,
+`sequence` and the existing `message` projection. Apply only newer message revisions and replace
+provisional content on finalization.
+
+Save each event's opaque SSE `id` in memory. Resume with `Last-Event-ID`, or the `cursor` query
+parameter; the header takes precedence. A new connection without a cursor begins at the current
+watermark. After hello, catch up through the existing HTTP event endpoint from your last acknowledged
+numeric cursor before displaying current state. On resync, refresh authorized snapshots and reconnect
+with the returned cursor. Never replay approval or mutation requests during recovery. Cursors belong
+to one private membership stream and cannot be transferred to another Workspace or member.
+
+Connections periodically close and should reconnect with bounded backoff. Heartbeats occur every 15
+seconds. Authentication/access loss clears private cached content. Closing or backgrounding a viewer
+does not Stop the run. Generated clients include the endpoint and payload types; use the platform's
+incremental streaming transport for SSE.
+
+In the Web update, complete formatting blocks can appear before the response finishes. Unfinished
+links, code and tables remain plain text until ready. **Work receipts** distinguishes saved results,
+drafts and proposals from applied work. Expand a receipt to inspect current authorized outcomes,
+including committed, conflicted and excluded changes. Unavailable receipts do not establish success.
+
+Clients supporting provisional text can add `text_deltas=true` to the private stream request. Wait
+for `hello.text_deltas=true` before accepting a `discuss_event` with `text_delta`. This object contains
+`kind` (`text_delta` or `text_snapshot`), `run_id`, `message_id`, `part_id`, `producer_fence`,
+`producer_sequence`, `generation`, `revision`, `offset` and `text`. These frames have no SSE `id` and
+do not advance your durable cursor. Offsets count UTF-8 bytes; snapshots have offset zero. Text is
+bounded to 2 KiB per delta and 64 KiB per part, with a 512 KiB encoded-frame limit.
+
+Keep provisional text separate from saved message snapshots and drafts. On a gap or changed
+fence/generation, refresh authorized snapshots; a reconnect supplies current provisional text where
+available. Discard it when the viewer detaches or loses access. A final canonical message always
+replaces provisional text. Older clients can omit the option and continue receiving canonical message
+updates.
+
+For a Discuss-bound proposal, **Review proposed changes** opens its exact review page. Saving edits
+creates a new version without approving it. **Approve and continue Discuss** reviews that version and
+returns to the conversation. The interaction decision request accepts an optional `proposal` object
+containing the same ChangeSet `id` and the current `version` and `digest`. Core rejects stale or
+unrelated versions. Retry with the identical request and idempotency key; changing the reviewed
+identity is a new request. Standalone proposal pages retain separate review and apply actions.
+
+### Personal Task views (upcoming update)
+
+Filter a Task result card by title/code, choose title order, then **Save query as view**. A view keeps
+its original scope plus up to four title/code filters. **Saved personal views** lists your views;
+opening one queries current Tasks and opens a new result snapshot. The previous snapshot and its
+selections remain unchanged. Filtering is limited to the checked 1,000-Task scan; partial coverage,
+even with no matches, does not establish that no other matching Tasks exist.
+
+### Search context (upcoming update)
+
+The Search handoff opens Discuss with the visible query and result version. Remove the chip to omit
+it; opening Discuss never sends automatically. API clients send
+`{"type":"search_result","query":"release","result_version":"<version from Search>"}` in `parts`.
+Core rechecks the first 20 unfiltered Workspace work results before accepting a new turn. Changed
+results return `409 revision_conflict`; reopen Search and inspect the new version. An identical retry
+of an already-saved Send recovers its original acknowledgement. Results are bounded lexical findings,
+not complete coverage or permission to act. People are outside this work-results context.
+
+Tool activity reports recorded start and response states with factual duration when available.
+A completed tool response does not itself confirm a change; inspect the operation receipt for the
+committed outcome. Late or unconfirmed tool responses are never presented as successful changes.
+
+## Inspecting evidence
+
+A saved evidence receipt opens the collection's current authorized passages. The evidence page lets
+you filter by source type or Project and exclude references from that investigation. Saving creates
+a new exact version; it does not modify the sources or remember a global preference. Changed,
+unavailable and excluded references withhold their text. Normal controls make no model request.
+See [evidence collection operations](work-capabilities.md#evidence-collections).
+
+## Agent result attribution
+
+An unreleased compatible extension adds optional `delivery_mode` and `author` to existing
+`specialist_result` parts. For `direct` delivery, `author` contains the admitted Agent's `actor_id`,
+`definition_id`, `version`, `revision`, `name`, `initiator_actor_id` and `parent_run_id`. Its identity
+survives later configuration edits. For `supporting` delivery, present the result as Discuss.
+If attribution is absent or invalid, retain the generic Agent label. Never derive identity from
+message prose. Clients that do not recognize these optional properties can ignore them.
+
+Later results remain attached to their immutable initiating turn in the private stream. A
+configuration or access change can make an Agent result unavailable. Stop preserves actions already
+committed. A successful scheduled report can still be useful when it made no changes; an empty
+no-action completion creates no extra message.
+
+### Evidence follow-up context (upcoming update)
+
+On the evidence page, save any changed exclusions, then choose **Ask Discuss about this investigation**.
+The existing conversation opens with an **Evidence · Version N** chip. Remove it to omit the context;
+nothing is sent until you Send. Display filters do not change which sources belong to the investigation.
+
+Queued Send accepts `{"type":"evidence_collection","id":"<collection-id>","version":2}` in `parts`.
+Up to four metadata entries are allowed, one each for evidence, Task selection, Search and preferences.
+Only the current private collection version is admitted. A stale pin returns `409 revision_conflict`;
+reopen the investigation and attach its current version. Identical acknowledged retries retain the
+original historical handle without granting current source access. Exclusions remain local to this
+investigation, and a collection does not authorize sharing its content with other people.

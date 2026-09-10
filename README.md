@@ -39,3 +39,6 @@ contract.
 - [Writing in Assign](editor.md)
 - [Privacy and cookie choices](privacy-and-cookies.md)
 - [Frontend prototype](frontend-prototype.md)
+
+See [versioned work proposals and receipts](api/work-capabilities.md) for private result sets, drafts,
+reviewed ChangeSets and write recovery in the upcoming update.

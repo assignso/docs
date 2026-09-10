@@ -67,3 +67,15 @@ generation until the replacement catches up, so rebuilds do not create a
 partially empty index. Search also has a dedicated request rate limit and a
 short database query deadline. When workload protection trips, retry after the
 `Retry-After` delay from `503 search_unavailable`; do not loop immediately.
+
+## Inspect and ask Discuss (upcoming update)
+
+Search remains deterministic, including Enter. **Inspect work-result context** shows your query,
+Workspace work scope and the returned page version. **Ask Discuss about work results** opens the
+Discuss page with a removable context chip. Write a message and explicitly Send to continue; opening
+Discuss does not use AI credits. People remain searchable and are excluded from this work handoff.
+
+The first unfiltered, non-archived page with `limit=20` may include `result_version`. Other filters,
+limits and later pages omit it. It identifies the observed work results, not exhaustive coverage or
+current entity content. Search withholds stale index rows when the source is no longer available in
+its indexed scope. Normal entity reads remain authoritative.

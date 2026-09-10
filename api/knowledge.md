@@ -43,7 +43,9 @@ Each result includes a display-safe kind, title, bounded excerpt, explanation,
 current-resource navigation metadata. Code evidence may also carry a repository
 identifier, repository path, and symbol. Treat `stale` and `truncated` as
 warnings that the projection may be behind or incomplete; never infer absence
-from a bounded result.
+from a bounded result. Available domains may still return results when the code index is
+unavailable; such a result is marked incomplete. External source citation references are opaque
+identities, not reusable download URLs. Use authorized resource navigation metadata when present.
 
 Responses are `private, no-store`. The API never exposes raw Knowledge scores,
 prompts, provider/model identity, graph identifiers, topology, credentials, or
