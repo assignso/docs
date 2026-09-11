@@ -186,9 +186,13 @@ The lifecycle operations are:
 - `POST /api/v1/workspaces/{workspace_id}/integration-authorizations` and
   `GET /api/v1/integration-authorizations/callback` for one-use provider
   authorization with PKCE where supported or confidential client authentication
-  where required. OAuth callbacks provide `code`; a provider-native installation
-  callback, such as a GitHub App installation, instead provides its matching
-  `installation_id` while retaining the same one-use state;
+  where required. OAuth callbacks provide `code`; a GitHub App callback provides
+  its matching `installation_id` while retaining the same one-use query state.
+  A Sentry App post-install callback instead provides `code`, `installationId`,
+  and `orgSlug` and does not echo arbitrary OAuth state. Assign correlates that
+  callback with the initiating browser through a short-lived, callback-scoped,
+  HttpOnly, Secure, SameSite=Lax cookie and consumes the cookie and server-side
+  authorization attempt exactly once;
 - `POST /api/v1/workspaces/{workspace_id}/integration-private-connectors` for
   a one-time private-connector enrollment token. The connector then uses its
   bearer-authenticated, versioned long-poll operations; these endpoints are a
@@ -226,11 +230,12 @@ does not delete canonical Assign Tasks/Documents or historical attribution.
 
 Installation-addressed provider webhooks arrive at
 `POST /api/v1/webhooks/integrations/{provider_key}/{installation_id}`. Providers
-that operate one application-wide webhook, currently Telegram and Slack, use
+that operate one application-wide webhook, currently Telegram, Slack, and Sentry, use
 `POST /api/v1/webhooks/integrations/{provider_key}`; Assign verifies the global
 secret before returning a Slack URL-verification challenge, completing a
 matching one-use setup, or resolving the active logical installation from an
-immutable remote tenant/resource ID. Assign
+immutable remote tenant/resource ID. For Sentry this routing key is the signed
+payload's `installation.uuid`. Assign
 verifies the provider signature before accepting any payload-derived command,
 discards the raw body, stores only a bounded normalized envelope, deduplicates
 deliveries, retries transient failures durably, dead-letters exhausted work, and
