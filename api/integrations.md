@@ -488,11 +488,20 @@ outside the current Workspace both return `404`.
 
 Version 1 snapshots can contain a title, summary, semantic status, up to eight
 metrics, up to twelve typed scalar properties, and up to eight explicit
-`open_external` actions. Links and actions use HTTPS. `sync_status`, the
+`open_external` actions. A property may include an optional canonical HTTPS
+`url` while keeping its human-readable `value`; supported clients render that
+value as an inline external link. The entity title links to `canonical_url`.
+External links open in a new tab. `sync_status`, the
 optional safe `sync_message`, and `last_synced_at` let clients distinguish
 current, stale, degraded, and unavailable provider context. Unsupported or
 malformed stored snapshots are omitted rather than rendered as arbitrary
 markup.
+
+Task detail initially presents each linked entity as a compact card of roughly
+180 pixels or less, keeping provider identity, title navigation, status,
+summary, freshness, and a labelled details control visible. Expanding that
+control reveals the complete metrics, properties, sync details, and secondary
+actions for that entity without expanding the other linked cards.
 
 ```json
 {
@@ -513,7 +522,13 @@ markup.
         "status": {"label": "Unresolved", "tone": "danger"},
         "metrics": [{"id": "events", "label": "Events", "value": "1284"}],
         "properties": [
-          {"id": "environment", "label": "Environment", "type": "text", "value": "production"}
+          {
+            "id": "environment",
+            "label": "Environment",
+            "type": "text",
+            "value": "production",
+            "url": "https://sentry.io/organizations/example/issues/94821/events/"
+          }
         ],
         "actions": [{"id": "open", "label": "Open in Sentry", "kind": "open_external", "url": "https://sentry.io/organizations/example/issues/94821/"}]
       },
