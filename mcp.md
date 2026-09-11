@@ -6,8 +6,10 @@ supported client. The client opens Assign in a browser, where you choose a
 Workspace and approve read and, when needed, write access.
 
 Codex users only need that server URL. Assign discovers Codex through its
-published client metadata and accepts the temporary localhost callback port
-that Codex opens for the sign-in. No client ID or client secret is required.
+published client metadata (CIMD) and accepts the temporary localhost callback
+port that Codex opens for the sign-in. No client ID or client secret is
+required, and Assign intentionally does not offer open dynamic client
+registration (DCR).
 
 With the Codex CLI, register the server and complete browser authorization:
 
@@ -23,8 +25,11 @@ separate, revocable MCP credential; the Assign CLI token is never shared.
 You can also perform the same Codex steps directly:
 
 ```sh
-codex mcp add assign --url https://mcp.assign.so/
-codex mcp login assign --scopes assign:read,assign:write
+codex mcp add assign --url https://mcp.assign.so/ \
+  --oauth-resource https://mcp.assign.so/ \
+  --oauth-client-registration cimd
+codex mcp login assign --scopes assign:read,assign:write \
+  --oauth-client-registration cimd
 codex mcp list
 ```
 
@@ -74,9 +79,19 @@ or mobile client.
 
 The initial catalog is intentionally bounded:
 
-- Read authorized Workspaces, Projects, Tasks, Task comments, direct Task
-  relations, and Documents
+- Read authorized Workspaces, active Workspace members, Projects, Project
+  Statuses, Milestones, Tasks, Task comments, direct Task relations, Task
+  subscriptions/subscribers, Task attachments, and Documents
   with cursor pagination.
+- Create Projects and update one typed Project setting at a time with the
+  current revision and a retry-stable idempotency key. Name, path, description,
+  external URL, complete Start/Target date pair, visual identity, visibility,
+  and the cancelled-column Board setting retain their existing field-specific
+  permissions; the Project key is immutable after creation.
+- For an interactive human connection, list the current member's personal
+  Workspace Inbox with `inbox_notification_list` and mark one item read or
+  unread with `inbox_notification_read_set`. Service credentials and hosted
+  Agents cannot access their owner's Inbox.
 - Search Projects, Tasks, Documents, comments, and active People inside one authorized
   Workspace.
 - Create Documents and replace Document content with revision checks.
@@ -86,10 +101,15 @@ The initial catalog is intentionally bounded:
   at most 20 purpose-safe labels and confirms the persisted result; Task assignments
   may combine Workspace defaults with labels local to that Task's Project.
 - Create and update Tasks, explicitly complete them, assign or unassign them,
-  and add Task comments.
+  archive/trash/restore them, manage subscriptions and direct relations, and
+  create/edit/delete Task comments.
+- List, inspect, create, and update canonical Project Milestones. Roadmap
+  projections, ordering and drafts are separate capabilities and are not exposed.
 - Attach a file to an existing Task with `attachment_upload_reserve`, a direct
   upload to the returned short-lived object-storage request, and
-  `task_attachment_complete`.
+  `task_attachment_complete`. List attachment metadata, request a freshly
+  authorized short-lived download URL, or soft-delete an attachment with the
+  corresponding read/delete tools.
 - When the selected Workspace has enabled and entitled Workspace Knowledge,
   search and traverse its permitted indexed context with `knowledge_search`,
   `knowledge_context`, `knowledge_related`, `knowledge_path`, and
@@ -197,6 +217,31 @@ upload UUID, the same digest, and a different idempotency key. Assign verifies
 the stored bytes, scans the object, commits storage quota, and links the file to
 the Task atomically. Do not send raw or base64 file bytes in an MCP tool input.
 
+Use `task_attachment_list` to read attachment metadata without minting URLs,
+`attachment_get` for one metadata record, and `attachment_download` only when a
+five-minute download URL is actually needed. These calls require the parent Task
+as well as the attachment ID so Project-restricted credentials remain bounded.
+`attachment_delete` is a global soft delete across every parent link, not an
+unlink from only the supplied Task, and requires a retry-stable idempotency key.
+A Project-restricted credential can run it only when every affected parent
+Project is inside its complete grant.
+
+Use `status_list`/`status_get` to discover the Status IDs accepted by Task
+creation and updates. `workspace_member_list` provides bounded active-member
+identity for assignment workflows. Use `milestone_list`/`milestone_get` and
+`milestone_create`/`milestone_update` for canonical Milestones; update uses
+explicit clear flags for description and due date so omitted values are kept.
+
+`task_lifecycle_set` accepts only `archive`, `trash`, or `restore` and requires
+the current Task revision. It never permanently purges a Task. Subscription
+state is `following`, `muted`, or `unfollowed`; use `task_subscription_get`,
+`task_subscription_set`, and `task_subscriber_list`. Subscription never grants
+Task access. Relation create/update/delete uses the same typed relation and cycle
+rules as Assign. Comment update requires the current Comment revision; deletion
+returns a body-free tombstone and has no restore operation. Comment ID operations
+also require the parent Task, and Milestone ID operations require the owning
+Project, so credential Project scope is checked before the opaque child is read.
+
 `task_update` supports partial edits: supply only the Task fields you want to
 change and Assign preserves the rest. To clear a due date or Milestone, supply
 an empty string for `due_on` or `milestone_id` respectively. A present
@@ -221,8 +266,9 @@ both representations pass through the same authorization, validation, and
 revision checks. Search accepts at most 50 results per page; continue with the
 opaque relevance cursor when another page is available.
 
-The catalog does not expose deletion, billing, member administration,
-credential management, arbitrary HTTP, SQL, filesystem, or shell access.
+The catalog does not expose Workspace, Project, or Document deletion, permanent
+Task purge, billing, member administration, credential management, arbitrary
+HTTP, SQL, filesystem, or shell access.
 
 Returned Workspace, Project, Task, Document, comment, relation, and search links
 use the same human-readable `https://assign.so/app/...` routes as the web app.
@@ -282,12 +328,17 @@ create a replacement when rotating access.
 ## Troubleshooting
 
 - Use the exact HTTPS endpoint, including the trailing slash.
-- If Codex reports a registration error before opening the browser, remove and
-  re-add the server using exactly `https://mcp.assign.so/`; older Assign
-  deployments did not advertise Codex client-metadata support.
+- If Codex reports `Dynamic client registration not supported`, its automatic
+  selection attempted DCR. Remove and re-add the entry with the exact command
+  above so Codex uses CIMD, then run the explicit `codex mcp login` command.
+  Current Codex versions accept `--oauth-client-registration` on both `add` and
+  `login`; upgrade Codex if that option is unavailable.
 - If the browser opens at Assign login, finish signing in in that tab. Assign
   returns to the pending consent screen automatically; do not copy the callback
   URL or any token between windows.
+- If OAuth succeeds but an already-running Codex task still reports
+  `Auth required`, start a new task (or restart Codex). MCP transports created
+  before login may retain their pre-authentication session until recreated.
 - Complete browser approval with an active Assign Workspace, or use a live
   Workspace service credential in the bearer header.
 - Request both `assign:read` and `assign:write` when a workflow needs to inspect
