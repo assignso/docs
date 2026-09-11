@@ -53,10 +53,24 @@ raw history, prove an action, or override current Task/Project/Document state; e
 comes from retained messages and current facts from canonical Workspace records. Private Discuss
 history is never added to shared Workspace Knowledge.
 
-In the upcoming conversation-runtime update, you can ask about a Task or Project by its visible
+You can ask about a Task or Project by its visible
 name or code. Discuss looks up the permitted match and reads its current canonical fields before
 giving feedback. If the name matches more than one visible item, Discuss asks which one you mean;
 it does not guess. Search snippets are discovery hints, not current Project or Task state.
+
+Authorized Task and Project mentions in an answer appear as compact clickable links with distinct
+icons. If your paired prompt contains the exact Task code that the answer resolved, that code also
+becomes clickable after the response arrives; typing and sending the prompt performs no extra lookup.
+Generated URLs, ambiguous names, partial codes, and text inside code or existing links are not promoted
+to trusted Assign navigation.
+
+An answer about exactly one Task shows one read-only **Current Task** card. A successful request that
+creates or updates exactly one Task shows the same card after the change commits. It links to the Task
+and reflects its current Project, Status, Priority, Assignee, Due date, optional Milestone and Labels,
+plus completed or archived state when applicable. The card refreshes from canonical Workspace state;
+if it changed after the answer, the card says so, and if it was deleted or you lost access it becomes
+unavailable. Project summaries, comparisons, bulk work, pending approvals, and failed or uncertain
+changes do not show a single-Task success card.
 
 The Web uses `POST .../turns`, which returns `202` after the turn is saved. It requires
 an `Idempotency-Key` and the session CSRF token. Generation continues if you navigate

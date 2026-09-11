@@ -230,9 +230,10 @@ does not delete canonical Assign Tasks/Documents or historical attribution.
 
 Installation-addressed provider webhooks arrive at
 `POST /api/v1/webhooks/integrations/{provider_key}/{installation_id}`. Providers
-that operate one application-wide webhook, currently Telegram, Slack, and Sentry, use
+that operate one application-wide webhook, currently Telegram, Slack, Discord, and Sentry, use
 `POST /api/v1/webhooks/integrations/{provider_key}`; Assign verifies the global
-secret before returning a Slack URL-verification challenge, completing a
+secret or public verification key before returning a Slack URL-verification
+challenge, a Discord PING/interaction acknowledgement, completing a
 matching one-use setup, or resolving the active logical installation from an
 immutable remote tenant/resource ID. For Sentry this routing key is the signed
 payload's `installation.uuid`. Assign
@@ -291,6 +292,11 @@ message snippet and provider link and creates the Task in the configured active
 Status. Channel presence alone grants no Assign permission, and an unmapped or
 write-denied Slack user creates no Task.
 
+The Slack application requests only `channels:read`, `channels:history`,
+`groups:read`, `groups:history`, `chat:write`, and `commands` bot scopes for this
+contract. It does not request workspace-wide message access beyond channels in
+which the installed app is present.
+
 `slack.thread_sync` is independently configured as `link_only`, `incoming`,
 `outgoing`, or `bidirectional`. Incoming replies are imported only for an
 explicitly linked thread, under the mapped member's canonical Assign authority,
@@ -305,6 +311,30 @@ allowlist of `task.created`, `task.updated`, `task.moved`, and/or
 Deliveries contain only the Task code, title, and event label; Comment and
 Document content are excluded. They are queued, retried, rate-limited, and
 dead-lettered outside the originating Assign command.
+
+### Discord communication preview
+
+An Owner or Admin installs the Assign Discord application in one server through
+Discord's authorization page. Assign requests application commands, bot and
+identity authorization plus View Channels, Send Messages, and Read Message
+History. The privileged Message Content intent is not requested. Installation
+registers the server-scoped **Create Assign Task** message command and discovers
+only text and announcement channels. Channel binding alone starts no behavior.
+
+Any active member may separately connect their own Discord identity inside that
+server installation. The resulting delegated credential belongs only to that
+User and Assign Workspace; disconnecting it does not remove the server app,
+channel bindings, behavior, or another member's identity.
+
+An administrator enables `discord.conversation_to_task` for one bound channel,
+chooses the active Project Status for new Tasks, and retains
+`privacy_mode: selected_snippet`. A member then selects one Discord message and
+runs **Apps → Create Assign Task**. Assign verifies Discord's Ed25519 interaction
+signature, acknowledges the command synchronously, and creates at most one Task
+from that selected snippet and stable Discord link. Assign does not ingest
+ambient messages, search server history, or mirror threads. The separate
+`discord.message.post` action posts only after Assign's ordinary binding,
+permission, idempotency, and confirmation checks.
 
 ### GitHub Gist Document interchange
 
@@ -381,6 +411,28 @@ active member who configured the route. Existing Task-code references are
 linked first; later occurrences refresh the Rich Entity without duplicating the
 Task. `sentry.resolution_sync` and the confirmed `sentry.issue.resolve` action
 remain separate write authority—read/link consent never implies resolution.
+
+After the Workspace Sentry App is installed, Project Settings → Connected tools
+owns routing for each Sentry Project. An administrator selects an explicit
+Sentry Project ↔ Assign Project binding and enables any of these independent
+behaviors:
+
+- **Error updates** keeps the bounded Sentry issue summary current.
+- **Alert-created Tasks** chooses the initial Assign Status and may filter by
+  normalized level, environment, or platform. Sentry's alert rule remains the
+  right place for thresholds and high-cardinality conditions.
+- **Lifecycle mapping** optionally maps unresolved, regressed, resolved, and
+  ignored to active Statuses in that Assign Project. Unmapped states do nothing,
+  and a later manual Task move pauses automation for that Task until the
+  behavior is saved again.
+
+The installed Assign Sentry App also adds **Create Assign Task** and **Link
+Assign Task** to Sentry's Issue Details UI and adds an Assign action to Sentry
+issue alerts. These signed controls show only Assign Projects bound to the
+current Sentry Project and at most 20 active Tasks from the selected Project.
+No Workspace administrator enters a webhook or callback URL. **Verify setup**
+checks the saved binding, enabled behavior, and current Sentry authorization
+without creating a Task or changing Sentry.
 
 The preview Git providers use these provider-specific behaviors:
 

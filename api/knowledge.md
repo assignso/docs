@@ -69,12 +69,18 @@ unentitled, unacknowledged, empty-scope, and out-of-scope conditions use the
 empty state so Task detail renders no error or placeholder. The unavailable
 state is reserved for genuine retrieval/currentness failures after eligibility.
 
-Indexed Tasks can discover Documents through shared distinctive title terms,
-including function identifiers, without an explicit saved relation. The result
-explains the shared terms and links to the authorized Document. These are inferred
-suggestions, not proof of a dependency; they never create or modify Task relations.
-No matching evidence produces an empty result. Pure paraphrases without shared
-terms are not guaranteed to match.
+Task context contains only direct, permission-filtered canonical neighbors such as
+the owning Project, parent, explicit dependencies and Task relations, Comments, and
+explicit Task/Document references. It does not treat a shared title, assignee,
+status, Project, semantic similarity, or graph proximity as proof that two Tasks
+concern the same work. A shared Project may appear as context, but Assign does not
+expand through it to every Task in that Project. The requested result limit is a
+maximum; when there is no supported connection, the result is empty.
+
+A Task with only a title remains searchable and keeps its real canonical links.
+Similar Tasks and Documents can still be discovered through Knowledge search, but
+similarity is not returned as a factual relationship or promoted to a Task
+dependency.
 
 Assign MCP clients may use `gather_information` for the same concise bounded
 answer. They may also use the existing `knowledge_search`, `knowledge_context`,
