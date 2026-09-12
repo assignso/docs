@@ -15,8 +15,10 @@ Press `G` outside a text field or editor to open the current Workspace's Discuss
 page. While an input, composer, selector, or editor has focus, global letter and
 number shortcuts stay off so every typed character remains in that control.
 Discuss remains visible in navigation when the Workspace has not unlocked
-it. A subtle lock then leads to a deterministic product preview; the preview
-does not read Workspace data or consume AI credits. Personal and higher plans
+it. A subtle lock then leads to a deterministic product preview with an inert,
+blurred decorative conversation behind a sharp preview and fade; it never shows
+the ordinary empty-conversation startup screen. The preview does not read
+Workspace data or consume AI credits. Personal and higher plans
 can include Discuss according to the current Workspace catalog.
 
 If a Workspace loses Discuss access, authorized existing history remains

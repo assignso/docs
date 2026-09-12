@@ -63,26 +63,25 @@ purchased, reserved, and available credits. If that projection is unavailable,
 the UI labels it unavailable rather than inventing a zero balance. The expanded
 Workspace settings sidebar links to Billing with a compact plan and
 available-credit summary; default Workspace navigation and Account settings do
-not duplicate it. In local fake-provider mode only, billing managers may start
-unpriced 100, 500, or 1000
+not duplicate it. When the accepted local Stripe test catalog is configured,
+billing managers may start 150, 325, 875, 1,800, 3,700, or 7,600-credit
 credit checkouts with `POST
 /api/v1/workspaces/{workspace_id}/billing/knowledge-credit-top-ups`. A browser
-return grants nothing; a verified fake event creates one grant, and a verified
-full refund creates one compensating ledger transaction. Ordinary Stripe and
-production top-ups remain unavailable until their commercial catalog is
-accepted.
+return grants nothing; only verified payment creates one grant, delayed-payment
+failure creates none, and a verified full refund creates one compensating ledger
+transaction. Production top-ups remain unavailable while production billing is disabled.
 
 An owner or administrator with `workspace.billing.manage` may read `GET
 /api/v1/workspaces/{workspace_id}/billing-settings` for the provider-neutral
 plan, lifecycle, billing cadence, period, customer-presence flag, and a bounded
 invoice summary. `provider_available` is authoritative: it remains false until
 the current environment has a complete mode-consistent provider key, webhook
-secret, four Small/Growth cadence Price mappings, and reviewed return/callback
-URLs.
+secret, six Personal/Team/Growth cadence Price mappings, six credit-pack Price
+mappings, and reviewed return/callback URLs.
 
 When available, `POST
 /api/v1/workspaces/{workspace_id}/checkout-sessions` accepts only a server-known
-plan and cadence, for example `{"plan":"small","cadence":"monthly"}`. It
+plan and cadence, for example `{"plan":"personal","cadence":"monthly"}`. It
 returns a short-lived provider-hosted URL and opaque reference; clients never
 send a Price ID or amount. After the Workspace has a verified provider
 customer, `POST /api/v1/workspaces/{workspace_id}/billing-portal-sessions`
@@ -330,7 +329,7 @@ X-CSRF-Token: <csrf-token>
 Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
 Content-Type: application/json
 
-{"name":"Acme Premium","slug":"acme-premium","quote_id":"small_monthly"}
+{"name":"Acme Premium","slug":"acme-premium","quote_id":"personal_monthly"}
 ```
 
 The response contains an opaque checkout `id`, `pending` state, expiry, and a

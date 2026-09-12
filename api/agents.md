@@ -181,8 +181,10 @@ stored a prior qualified definition version; it restores that version in paused 
 `DELETE .../{agent_id}` soft-removes the instance, stops unfinished work, and preserves retained
 audit/history rather than destructively deleting it.
 
-Canonical Agents require the Growth `agents.canonical` entitlement. Up to five may be active and
-up to 100 non-removed instances may be retained. Workspace Billing presents the entitlement state,
+Personal, Team, and Growth include canonical/custom Agent execution through the corresponding
+entitlements; Free remains preview-only. The current conservative launch safety cap allows up to five
+active and 100 non-removed instances while differentiated paid-tier concurrency remains pending.
+Workspace Billing presents the entitlement state,
 both usage counts, and recurring, promotional, purchased, reserved, available, and current-period
 Knowledge Credit facts. Runs also show reserved and settled credits. There is no per-Agent recurring
 charge or postpaid overage in the initial release.
@@ -198,7 +200,7 @@ approval-required and billing-blocked states.
 
 Agent Studio is inside the Workspace **Agents** area. Owners and Admins can create a
 bounded custom definition from a name, description, one concrete responsibility,
-customer instructions, existing Project knowledge, and allowlisted Assign tools.
+customer instructions, optional existing Project knowledge, and allowlisted Assign tools.
 Backlog Grump and Ticket Comedian are editor-prefill examples; they are not hidden
 canonical Agents and do not grant extra authority.
 
@@ -297,6 +299,9 @@ The dedicated Studio editor keeps one revisioned definition across **Profile**, 
 approved same-Workspace subagents, trigger types, prohibited actions, and the approval boundary are
 ordinary editable draft fields. Saving a draft does not activate, schedule, install, or run it.
 Templates and the local guided-draft helper only prefill this same form for review.
+One definition-level Save action remains visible below every section; it does not
+activate or run the Agent. While you type a new name, the complete generated slug
+continues to update until you edit the slug yourself. Saved slugs remain stable.
 
 Member-visible profiles expose responsibility, the managing actor, knowledge categories, safe
 capability names, prohibited actions, trigger types, and the approval boundary. They never expose
