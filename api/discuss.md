@@ -71,7 +71,8 @@ giving feedback. If the name matches more than one visible item, Discuss asks wh
 it does not guess. Search snippets are discovery hints, not current Project or Task state.
 
 Authorized Task and Project mentions in an answer appear as compact clickable links with distinct
-icons. If your paired prompt contains the exact Task code that the answer resolved, that code also
+icons. The upcoming Web refinement uses underlines with the same text color and line height as
+the surrounding message, without a badge. If your paired prompt contains the exact Task code that the answer resolved, that code also
 becomes clickable after the response arrives; typing and sending the prompt performs no extra lookup.
 Generated URLs, ambiguous names, partial codes, and text inside code or existing links are not promoted
 to trusted Assign navigation.
@@ -143,7 +144,8 @@ reasoning, credentials, raw arguments/results and provider payloads are never re
 `POST .../messages/{message_id}/cancel` cancels queued work immediately. For running work it
 records the request and returns `cancel_requested`; keep reconciling until the message is terminal.
 Stop does not roll back an already committed change. An interrupted response is not retried
-automatically. **Retry response** explicitly creates a new turn and preserves history.
+automatically. **Restore retry draft** restores the full request for review without sending it. Review any work
+that may already have completed, then choose Send to create a new turn. History is preserved.
 
 ### Specialist work
 
@@ -211,18 +213,23 @@ reversible. Compound actions, shared app-wide Undo/Redo, and recurring automatio
 capabilities rather than implied behavior. Specialist delegation is limited to the documented
 built-in catalog and hired/ready Workspace Agents.
 
+The upcoming Web correction shows a pending response status once: in the empty response body,
+then below partial text while the response continues. Completion removes that pending status.
+
 When Discuss uses internal reads, changes, specialists or recorded evidence, the assistant message
 shows at most one compact activity row. The row updates in place from **Working** to completed, failed
-or cancelled. Expand its single disclosure for bounded status, result-count, duration, evidence and
-paginated recorded activity. This activity is an audit-friendly summary,
+or cancelled. The upcoming Web refinement expands this disclosure into plain single-line activity
+and evidence summaries, without borders, backgrounds, timestamps, pagination controls or a nested
+scroll area. Dedicated recorded-activity inspection retains its paginated history and timing.
+This activity is an audit-friendly summary,
 not model reasoning or a raw tool transcript, and a refresh does not duplicate it.
 
-When a response uses implementation or test evidence, its activity detail can show evidence cards.
+When a response uses implementation or test evidence, its activity detail can show evidence references.
 A code reference names an exact commit, repository-relative path, optional symbol, and line range. **Verified
 CI** means a passed record from Assign's canonical integration or work-session journal for that exact
 repository commit. **Reported tests** means an external Agent or tool reported the result; Assign has
 not verified it. Missing, stale, malformed, denied, deleted, ambiguous-symbol, or commit-mismatched
-records are withheld rather than relabelled. These cards are references, not source-access grants.
+records are withheld rather than relabelled. These references do not grant source access.
 
 ### Clarifications and approvals
 
@@ -317,7 +324,11 @@ history recall automatically. **Stop response**
 requests cancellation of active work; it shows **Stopping…** until Assign confirms the
 terminal result. If no response is active, it cancels the earliest queued response.
 Your unsent text remains editable. Reconnection and another open tab retrieve saved updates
-automatically. A stopped or failed answer offers **Retry response**.
+automatically. A stopped or failed answer offers **Restore retry draft**. This restores the original request,
+clarification answers, files, references and saved context into an empty composer. It does not
+replace a draft you are already writing or send automatically. Removing a restored attachment
+only removes it from your draft. If original context is unavailable, restore stops with an error;
+responses following an approval require reviewing the original change and its outcome first.
 
 ## Evidence assessment
 
@@ -333,7 +344,11 @@ an answer before it is saved. An insufficient assessment does not establish read
 
 ## Private files and references
 
-Use **Attach files**, paste files, or drop them into the composer. Files count toward your
+Use **Attach files**, paste files, or drop them anywhere on the writable Discuss page in the upcoming
+Web update. Dropped files upload into your private draft without sending a message; review them and
+choose **Send** when ready. The upcoming Web refinement places
+**Attach files** inside the input bar and removes its decorative Workspace context label; actual
+selected context remains available above the input. Files count toward your
 workspace storage and are private to your Discuss stream; they do not appear in project or
 task attachment lists. Use up to five files, 10 MiB each and 20 MiB combined. A file must pass
 its safety checks before sending. Upload errors retain the draft and offer retry/removal.
@@ -439,8 +454,9 @@ are Core-owned, while work details are resolved from the canonical operation rec
 
 In the upcoming Web update, **Inspect task**, **Inspect project** and **Inspect document** load current
 authorized metadata from Sources. Changed or archived resources are labeled; unavailable resources
-withhold the preview. Only one preview is open at a time. **Recorded activity** shows 20 records per
-page, up to 200 records, and a duration only when both start and finish are recorded. These inspection
+withhold the preview. Only one preview is open at a time. The response's Activity disclosure groups
+exact repeated terminal summaries with a count. **Recorded activity** opens separately on request,
+shows 20 records per page up to 200 records, and shows a duration only when both start and finish are recorded. These inspection
 controls do not send another AI request. Archives remain read-only.
 
 An extensible `runtime_text` part may include `part_id`, `run_id`, `step_id`, `generation`, `revision`,
@@ -548,3 +564,22 @@ Only the current private collection version is admitted. A stale pin returns `40
 reopen the investigation and attach its current version. Identical acknowledged retries retain the
 original historical handle without granting current source access. Exclusions remain local to this
 investigation, and a collection does not authorize sharing its content with other people.
+
+
+In the upcoming Web refinement, **New messages** appears above the new turn's user prompt instead
+of separating the prompt from its reply. This divider placement does not change unread counts.
+
+
+### Required answers and optional follow-ups
+
+When Discuss needs your answer to finish the current request, it posts an interactive question.
+For example, it may need to know which task to move. Your answer continues that request with its
+context. Optional follow-ups, such as offering a shorter summary after answering, remain ordinary
+message text. They do not leave the response waiting. Approving an action still uses its dedicated
+review and approval controls.
+
+
+When proposing a task status change, Discuss reads the applicable Project statuses and their
+current revisions. Invalid or stale proposals return a recoverable error; they do not authorize
+a change. A failed response alone does not prove that work was committed. Review the current task
+and any available operation result before sending a restored retry draft.
