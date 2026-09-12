@@ -319,8 +319,10 @@ the message. Generated HTML is displayed as text. Image URLs appear as links
 rather than loading automatically. Native Workspace evidence remains in Sources.
 
 Discuss does not show conversation or message Copy link or manual message-reference actions.
-Ask about earlier context naturally; Discuss selects bounded recent context and authorized private
-history recall automatically. **Stop response**
+In the upcoming cognitive update, ask about earlier context naturally: Discuss supplies a bounded
+canonical recent transcript before interpretation and can supplement it with authorized private
+history recall. The first local implementation uses up to four preceding messages and is not yet a
+deployed-behavior claim. **Stop response**
 requests cancellation of active work; it shows **Stopping…** until Assign confirms the
 terminal result. If no response is active, it cancels the earliest queued response.
 Your unsent text remains editable. Reconnection and another open tab retrieve saved updates
