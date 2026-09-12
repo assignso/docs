@@ -40,6 +40,16 @@ by **Discuss agent** under your current permissions; receipts retain the initiat
 specialists use their own Agent identity and post results to the originating private
 conversation.
 
+## Asking about work
+
+Ask “Summarize my projects” for an overview of the Projects you can access, or name one
+Project for a summary of its current Tasks. Discuss reports when results cover only a page.
+
+Send a Task code on its own to read and explain that Task. Ask to clarify a ticket to identify
+missing requirements before proposing changes. When the ticket needs supporting context, Discuss
+searches visible Documents, reads the relevant source, and explains how it relates to the ticket.
+A clarification request does not itself apply an edit; proposed changes require review.
+
 ## Message history
 
 `GET /api/v1/workspaces/{workspace_id}/discuss/messages` returns a bounded
