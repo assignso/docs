@@ -72,10 +72,10 @@ it does not guess. Search snippets are discovery hints, not current Project or T
 
 Authorized Task and Project mentions in an answer appear as compact clickable links with distinct
 icons. The upcoming Web refinement uses underlines with the same text color and line height as
-the surrounding message, without a badge. If your paired prompt contains the exact Task code that the answer resolved, that code also
-becomes clickable after the response arrives; typing and sending the prompt performs no extra lookup.
-Generated URLs, ambiguous names, partial codes, and text inside code or existing links are not promoted
-to trusted Assign navigation.
+the surrounding message, without a badge. If your paired prompt contains the exact Task code that
+the answer resolved, that code also becomes clickable after the response arrives; typing and sending
+the prompt performs no extra lookup. Generated URLs, ambiguous names, partial codes, and text inside
+code or existing links are not promoted to trusted Assign navigation.
 
 An answer about exactly one Task shows one read-only **Current Task** card. A successful request that
 creates or updates exactly one Task shows the same card after the change commits. It links to the Task
@@ -144,8 +144,9 @@ reasoning, credentials, raw arguments/results and provider payloads are never re
 `POST .../messages/{message_id}/cancel` cancels queued work immediately. For running work it
 records the request and returns `cancel_requested`; keep reconciling until the message is terminal.
 Stop does not roll back an already committed change. An interrupted response is not retried
-automatically. **Restore retry draft** restores the full request for review without sending it. Review any work
-that may already have completed, then choose Send to create a new turn. History is preserved.
+automatically. **Restore retry draft** restores the full request for review without sending it.
+Review any work that may already have completed, then choose Send to create a new turn. History is
+preserved.
 
 ### Specialist work
 
@@ -319,16 +320,17 @@ the message. Generated HTML is displayed as text. Image URLs appear as links
 rather than loading automatically. Native Workspace evidence remains in Sources.
 
 Discuss does not show conversation or message Copy link or manual message-reference actions.
-In the upcoming cognitive update, ask about earlier context naturally: Discuss supplies a bounded
-canonical recent transcript before interpretation and can supplement it with authorized private
-history recall. The first local implementation uses up to four preceding messages and is not yet a
-deployed-behavior claim. **Stop response**
+In the upcoming cognitive update, ask about earlier context naturally: Discuss supplies up to four
+preceding canonical messages before interpretation and can supplement them with authorized private
+history recall. A required clarification keeps the original objective and known arguments through a
+restart, so a short answer such as a Task code continues that request. This is locally implemented
+and is not yet a deployed-behavior claim. **Stop response**
 requests cancellation of active work; it shows **Stopping…** until Assign confirms the
 terminal result. If no response is active, it cancels the earliest queued response.
 Your unsent text remains editable. Reconnection and another open tab retrieve saved updates
-automatically. A stopped or failed answer offers **Restore retry draft**. This restores the original request,
-clarification answers, files, references and saved context into an empty composer. It does not
-replace a draft you are already writing or send automatically. Removing a restored attachment
+automatically. A stopped or failed answer offers **Restore retry draft**. This restores the original
+request, clarification answers, files, references and saved context into an empty composer. It does
+not replace a draft you are already writing or send automatically. Removing a restored attachment
 only removes it from your draft. If original context is unavailable, restore stops with an error;
 responses following an approval require reviewing the original change and its outcome first.
 
@@ -458,8 +460,8 @@ In the upcoming Web update, **Inspect task**, **Inspect project** and **Inspect 
 authorized metadata from Sources. Changed or archived resources are labeled; unavailable resources
 withhold the preview. Only one preview is open at a time. The response's Activity disclosure groups
 exact repeated terminal summaries with a count. **Recorded activity** opens separately on request,
-shows 20 records per page up to 200 records, and shows a duration only when both start and finish are recorded. These inspection
-controls do not send another AI request. Archives remain read-only.
+shows 20 records per page up to 200 records, and shows a duration only when both start and finish are
+recorded. These inspection controls do not send another AI request. Archives remain read-only.
 
 An extensible `runtime_text` part may include `part_id`, `run_id`, `step_id`, `generation`, `revision`,
 `producer_fence`, `producer_sequence` and a UTF-8 byte `offset` for the accompanying full text.
@@ -566,11 +568,8 @@ Only the current private collection version is admitted. A stale pin returns `40
 reopen the investigation and attach its current version. Identical acknowledged retries retain the
 original historical handle without granting current source access. Exclusions remain local to this
 investigation, and a collection does not authorize sharing its content with other people.
-
-
 In the upcoming Web refinement, **New messages** appears above the new turn's user prompt instead
 of separating the prompt from its reply. This divider placement does not change unread counts.
-
 
 ### Required answers and optional follow-ups
 
@@ -579,8 +578,6 @@ For example, it may need to know which task to move. Your answer continues that 
 context. Optional follow-ups, such as offering a shorter summary after answering, remain ordinary
 message text. They do not leave the response waiting. Approving an action still uses its dedicated
 review and approval controls.
-
-
 When proposing a task status change, Discuss reads the applicable Project statuses and their
 current revisions. Invalid or stale proposals return a recoverable error; they do not authorize
 a change. A failed response alone does not prove that work was committed. Review the current task
