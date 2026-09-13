@@ -51,6 +51,12 @@ MCP exposes the same domain capabilities through `task_result_set_*`, `task_sele
 `workspace_id` and a typed `request`; writes also require `idempotency_key`. Human approval is never
 a model-supplied field or MCP tool. Discovery describes each tool's policy and limits.
 
+`activity_list` reads Task, Project, Workspace or active-member activity from the authorized 90-day
+projection. Its request may include RFC 3339 `from` and `before` timestamps; `from` is inclusive and
+`before` is exclusive. Pagination cursors are valid only for the same scope, resource and interval.
+The response repeats applied boundaries in UTC and reports `retained_days`; an interval extending
+beyond retention is not proof that older activity did not exist.
+
 Open a saved result to inspect current compact Task fields. Changed and unavailable targets stay
 distinct from the original snapshot. Filter or sort the displayed results, select exact targets,
 and choose Ask Discuss to prepare context without sending. Refresh creates a new snapshot and
