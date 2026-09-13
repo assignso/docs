@@ -1,8 +1,10 @@
 # Account and Workspaces
 
-These operations require an authenticated browser session (see
-[Browser authentication](authentication.md)) and follow the shared
-[API conventions](conventions.md).
+These operations follow the shared [API conventions](conventions.md).
+`GET /api/v1/me` and `GET /api/v1/workspaces` also accept the explicitly activated
+[native mobile credential](authentication.md#native-mobile-oauth-activation-required).
+Native `/me` is account-only and omits a browser-selected Workspace/Actor/role.
+Other Account operations retain their documented browser authentication.
 
 ## Read the current user and Workspace
 
@@ -353,3 +355,12 @@ pickers and mention candidates:
 value — including a Workspace the caller belongs to under a different
 session — reports the same `404` used for an absent Workspace, per the
 conventions' discoverability rule.
+
+## First Workspace from a native app
+
+After native login or registration, list your Workspaces. If there are no active
+memberships, call `POST /api/v1/mobile/workspaces/bootstrap` with the native bearer
+and a JSON body containing `name` and `slug`. A successful 201 response contains
+the new Workspace. Select that Workspace in the app; this endpoint sets no browser
+cookies. An account that already has a Workspace cannot use bootstrap to create
+another. See [native authentication](authentication.md#native-email-and-password-authentication).

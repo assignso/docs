@@ -1,5 +1,10 @@
 # Projects and Statuses
 
+Native mobile credentials, when activated, also admit Workspace Project listing, Project
+detail, Project Status listing and Project Task listing. Project mutations remain outside that
+native subset. See [native activation and admission](authentication.md#native-mobile-oauth-
+activation-required).
+
 These operations require an authenticated browser session (see
 [Browser authentication](authentication.md)) and follow the shared
 [API conventions](conventions.md), including `Idempotency-Key` on creates and
@@ -280,3 +285,12 @@ optional date-only `due_on`, and a `planned`, `active`, `completed`, or
 `cancelled` status. `PATCH /api/v1/milestones/{milestone_id}` updates it with
 `If-Match`; `DELETE` archives it reversibly. Progress is computed from linked
 Tasks rather than stored on the milestone.
+
+## Native creation
+
+The existing create operation also accepts a native mobile bearer token. Send
+`Idempotency-Key` and the same request body as browser callers; omit cookies and
+`X-CSRF-Token`. Browser callers still require CSRF. Workspace membership and
+resource write permissions are checked on every request. Reuse the key when
+retrying an unchanged command. This support requires a server build that admits
+[native creation](authentication.md); it does not imply deployment availability.

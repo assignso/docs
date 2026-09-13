@@ -1,7 +1,7 @@
 # Workspace governance
 
 Creating a Workspace, managing who belongs to it, inviting people by email,
-and archiving it. These operations require an authenticated browser session
+and archiving it. The browser operations below require an authenticated browser session
 (see [Browser authentication](authentication.md)) and follow the shared
 [API conventions](conventions.md).
 
@@ -461,3 +461,19 @@ Beyond the shared error codes in [API conventions](conventions.md):
 | `410` | `invitation_expired` | The invitation passed its `expires_at`. |
 | `403` | `invitation_recipient_mismatch` | The signed-in account is not the invited address. |
 | `422` | `self_membership_mutation` | The caller tried to change their own membership. |
+
+## Native Workspace creation
+
+First-party native clients can use `GET /api/v1/mobile/workspace-creation-options`
+to read account Free Workspace eligibility and `POST /api/v1/mobile/workspaces`
+with `{ "name": "My workspace", "slug": "my-workspace" }` to create it. Send the
+native access token as a Bearer token and a unique `Idempotency-Key` for creation;
+reuse that key for retries of the same payload. These endpoints reject browser
+cookies and do not require CSRF. The slug is optional in the API.
+
+Membership in another Workspace does not consume Free eligibility. An existing
+active Free claim returns `409 free_workspace_claim_unavailable`. Creation returns
+the Workspace without changing the current selection; select it explicitly.
+The mobile profile menu's **Switch Workspace** opens a drawer with **Create Workspace**;
+the form shows **Open Workspace** after success. Paid creation is not yet supported
+natively. The existing browser creation and checkout workflows are unchanged.

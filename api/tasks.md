@@ -1,5 +1,10 @@
 # Tasks
 
+Native mobile credentials, when activated, also admit Task detail and Task update. Native
+updates omit cookies and CSRF, but still require the observed `If-Match` revision and
+`Idempotency-Key`; all domain permissions and lifecycle rules apply. See [native activation and
+admission](authentication.md#native-mobile-oauth-activation-required).
+
 These operations require an authenticated browser session (see
 [Browser authentication](authentication.md)) and follow the shared
 [API conventions](conventions.md), including `Idempotency-Key` on creates and
@@ -183,3 +188,12 @@ Comment authors update their existing comment with `PATCH
 Authors and Workspace administrators may `DELETE` it. Deletion keeps an inline
 tombstone for thread continuity while removing the comment body; comments are
 not restorable.
+
+## Native creation
+
+The existing create operation also accepts a native mobile bearer token. Send
+`Idempotency-Key` and the same request body as browser callers; omit cookies and
+`X-CSRF-Token`. Browser callers still require CSRF. Workspace membership and
+resource write permissions are checked on every request. Reuse the key when
+retrying an unchanged command. This support requires a server build that admits
+[native creation](authentication.md); it does not imply deployment availability.

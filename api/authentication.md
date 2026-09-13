@@ -31,30 +31,95 @@ family. `POST /api/v1/cli/oauth/revoke` revokes the current interactive CLI
 family. These tokens are accepted only at API-host CLI operations and are never
 accepted by the MCP resource host.
 
-## Native mobile OAuth (published contract; not yet served)
+## Native email and password authentication
 
-The native mobile OAuth and push-device operations are published in OpenAPI so
-SDK and client work can be prepared, but are **not yet available from the API**.
-Until the backend implementation is released, a mobile app must keep native
-sign-in, refresh, browser handoff, and push registration disabled.
+The native login and signup screens offer email/password authentication. Apple
+and GitHub options on iOS, and Google and GitHub on Android, are currently
+visible as disabled coming-soon options. Use email/password until those options
+are connected.
 
-When available, mobile sign-in starts only in the system browser at
+On signup, **Already have an account? Sign in** appears above the fields.
+The email and password fields support your device’s password manager.
+Opening its system autofill sheet keeps your draft; leaving the screen or
+backgrounding Assign clears the password. Password saving and automatic
+suggestions depend on your password manager and app/domain setup; they are
+not yet verified in the development build. Assign does not save your password
+for transfer to the login screen.
+
+Native apps can display their own login and signup screens. Use HTTPS and send
+no browser cookies. The native endpoints are:
+
+- `POST /api/v1/mobile/auth/login`: email/password plus client/installation binding.
+- `POST /api/v1/mobile/auth/register`: the same binding, email/password and optional
+  `display_name`; returns a native token set with status 201.
+- `POST /api/v1/mobile/auth/mfa/verify`: binding, `mfa_token` and authenticator or
+  recovery `code`; returns a native token set after successful verification.
+
+Use `client_id=assign-ios` with `platform=ios`, or `assign-android` with `android`.
+Include a stable random URL-safe `installation_id` of 43–128 characters and a
+`device_label` of at most 64 characters. These public client identifiers do not
+require an OAuth callback or Apple/Google developer account.
+
+Login returns `mfa_required=false` with `tokens`, or `mfa_required=true` with
+`mfa_token` and `expires_at`. Keep the challenge in memory and submit it from the
+same client/installation. It expires after five minutes, allows five failed code
+attempts and is single-use. No mobile token is issued before required MFA passes.
+Store issued credentials in the platform secure store and retain the existing
+refresh/revoke lifecycle below. Never persist passwords or verification codes.
+
+Password recovery and verification resend use the existing anonymous email
+endpoints. A `verification_delivery_failed` registration response means the
+account was created: request another verification email, then log in. Do not
+automatically retry registration or token issuance after an uncertain response.
+
+After authentication, fetch `/api/v1/me` and `/api/v1/workspaces`. An account with
+no active memberships may create its first Workspace using
+`POST /api/v1/mobile/workspaces/bootstrap` with native bearer and `{name, slug}`.
+This returns the Workspace without changing a browser session; repeated or
+concurrent first creation cannot provision another Workspace.
+
+## Native mobile OAuth (activation required)
+
+Native mobile authentication requires a registered first-party platform client and
+verified HTTPS app links. Public mobile activation is not available yet. The
+OpenAPI contract describes supported operations; confirm the selected server
+supports the requested endpoints. OAuth additionally requires callback registration.
+
+For separate OAuth entry, authorization starts in the system browser at
 `GET /api/v1/mobile/oauth/authorize`. The request uses a registered public
 client, exact callback URI, high-entropy state and installation identifier,
 and PKCE `S256`; there is no mobile client secret. Production returns through
 the Assign universal/app link at
 `https://api.assign.so/mobile/oauth/callback`. The app exchanges the returned
 five-minute one-time code and PKCE verifier at
-`POST /api/v1/mobile/oauth/token` for a 15-minute opaque bearer access token
+`POST /api/v1/mobile/oauth/token` for an opaque bearer access token valid for up to 15 minutes
 and a rotating refresh token. Both tokens belong only in platform-secure
 storage, never a URL, log, analytics event, or ordinary application storage.
 
 Each refresh rotates the refresh token. A consumed-token replay revokes the
-credential family and requires a fresh browser sign-in. `POST
+credential family and requires fresh authentication. `POST
 /api/v1/mobile/oauth/revoke` revokes the calling device credential and its
 push registration; browser account security can list or revoke native
 credentials under `/api/v1/me/mobile-credentials`. See the machine-readable
 contract for the exact request/response schemas.
+
+The signed-in native subset includes `GET /api/v1/me`,
+`GET /api/v1/workspaces`, Workspace Project listing, Project detail/statuses/Tasks,
+Task detail and Task update, alongside Inbox and My Work. Project and Task
+creation also accept native bearer credentials in builds with creation support. Other routes do not
+implicitly accept native credentials. Native `/me` returns account information
+without a browser-selected Workspace. The app chooses an active membership and
+uses the appropriate Workspace/resource route.
+
+Native creation requires `Idempotency-Key`; reuse it for retries of the same
+command. Native Task updates require `If-Match` and `Idempotency-Key`; they omit browser
+cookies and `X-CSRF-Token`. Browser mutations still require CSRF. Invalid bearer
+credentials never fall back to browser cookies. Use the returned `expires_in`
+(0–900 seconds), rather than assuming another full 15 minutes; zero requires
+sign-in again. SDK callers must use clients generated from this contract. PHP
+Task-update and Project/Task-create calls retain their positional order; native callers
+pass `null` in
+the CSRF argument position.
 
 ## Sign in with an identity provider
 
@@ -411,3 +476,19 @@ rotated values. Clients must re-read the CSRF cookie before issuing further
 mutating requests. A Workspace the caller does not actively belong to
 returns `403 workspace_access_denied` and leaves the current session
 untouched.
+
+### Using a password reset email
+
+Open the clickable link in your reset email, then enter and confirm your new
+password. There is no reset token to copy or paste. If you open the reset page
+without its email link, choose **Request a new link**. Invalid, expired or
+already-used links also require a new reset email. Unverified addresses receive
+a verification email first; verify the address and request the reset again.
+
+### Failed requests in the native app
+
+A failed save or data request shows an error without signing you out or clearing
+your draft. This includes permission, validation, server and connection failures.
+If an operation rejects authentication, the app checks whether your session is
+still valid before signing you out. It does not automatically repeat a failed
+save. Confirmed invalid sessions and explicit sign-out still clear private data.

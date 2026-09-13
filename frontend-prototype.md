@@ -115,3 +115,18 @@ bulk-assigned to a milestone. Milestones continue to appear in the Task property
 descriptions use the same editor and persist through the Task create and update
 contract, while unchanged property selections perform no update. See
 [Writing in Assign](editor.md) for editor behavior.
+
+## Creating from empty lists
+
+Empty Home and Projects views offer **Create Project**. Task lists offer
+**Create task**; Project Documents and Milestones offer their contextual create
+actions inside the empty panel as well as in the page header. These actions
+open the normal creation pages and retain the current Project where applicable.
+Archived lists, search results and Activity history keep their own empty states.
+
+In native mobile builds with creation support, signed-in Home and Work offer
+**Create task**, Projects offers **Create Project**, and Project Tasks preselects
+the current Project. Choose a Project and enter a Task title, or enter a Project
+name, ticket key and path. Task defaults come from Workspace settings. Creation
+requires a writable role and connection; failures retain the form for retry.
+Preview mode and unavailable native workflows do not create live resources.
