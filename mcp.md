@@ -346,6 +346,11 @@ create a replacement when rotating access.
 - If the browser opens at Assign login, finish signing in in that tab. Assign
   returns to the pending consent screen automatically; do not copy the callback
   URL or any token between windows.
+- If **Allow access** does not advance or the browser reports that the consent
+  script was blocked by Content Security Policy, close that authorization page
+  and report the approximate time and client name. Do not use console scripts,
+  repeatedly submit the form, or reuse a callback URL; start a fresh OAuth flow
+  only after the service correction is deployed.
 - If OAuth succeeds but an already-running Codex task still reports
   `Auth required`, start a new task (or restart Codex). MCP transports created
   before login may retain their pre-authentication session until recreated.

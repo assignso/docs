@@ -482,8 +482,9 @@ numeric cursor before displaying current state. On resync, refresh authorized sn
 with the returned cursor. Never replay approval or mutation requests during recovery. Cursors belong
 to one private membership stream and cannot be transferred to another Workspace or member.
 
-Connections periodically close and should reconnect with bounded backoff. Heartbeats occur every 15
-seconds. Authentication/access loss clears private cached content. Closing or backgrounding a viewer
+Connections periodically close and should reconnect with bounded backoff. A clean close after a
+successful `hello` is routine rotation and does not mean the response stopped. Heartbeats occur every
+15 seconds. Authentication/access loss clears private cached content. Closing or backgrounding a viewer
 does not Stop the run. Generated clients include the endpoint and payload types; use the platform's
 incremental streaming transport for SSE.
 
@@ -582,3 +583,37 @@ When proposing a task status change, Discuss reads the applicable Project status
 current revisions. Invalid or stale proposals return a recoverable error; they do not authorize
 a change. A failed response alone does not prove that work was committed. Review the current task
 and any available operation result before sending a restored retry draft.
+
+### Composer actions and clearing the page
+
+Use **+** in the message bar to attach files, add a reference or search your conversation. You can
+also drop files anywhere on the Discuss page; attachments stay in the draft until you send.
+
+Use **Dictate message** to capture one utterance on a supported browser. **Stop dictation** ends the
+capture; finalized words are inserted into your draft for review and editing, and are never sent
+automatically. The control is disabled when browser recognition is unavailable and hidden when Voice
+is turned off for the device.
+
+**Clear page** hides previous messages from the main view on this browser. They remain available
+in **Archives** and history search. Your unsent draft and attachments stay in place, and new messages
+appear normally. **Undo** brings the earlier messages back. Clearing survives reloads and is scoped
+to your account, Workspace and conversation on this browser; it does not delete history or reset
+Discuss's context. Finish active responses and open questions before clearing the page.
+
+### Live voice (upcoming update)
+
+Enable **Browser dictation + Live voice** under Preferences → Voice, then use **Start voice
+conversation** in Discuss. The compact conversation stays in the current thread, keeps the text
+composer usable, and shows connecting, listening, speaking, muted and ending states. **Mute
+microphone** and **End voice conversation** wait for the service to acknowledge the change.
+
+The browser sends audio directly over WebRTC to the configured Live provider. Assign's API key never
+reaches the browser, provider recording storage is disabled, and a Voice/public action is not treated
+as successful until the ordinary Discuss backend returns its canonical result. Voice interruption
+does not cancel work already running; its result remains in the private Discuss conversation after
+Voice ends. If Voice cannot connect, typed Discuss remains available.
+
+API clients create the browser transport with
+`POST /api/v1/workspaces/{workspace_id}/discuss/voice/sessions`, sending the ICE-complete SDP offer
+and optional locale. The response contains the SDP answer, opaque Live session ID and client session
+duration bound. Browser clients wait for `session.started` before reporting that Voice is ready.
