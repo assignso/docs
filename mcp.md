@@ -3,7 +3,8 @@
 Assign provides a remote Model Context Protocol server at
 `https://mcp.assign.so/`. Add that exact URL as a remote MCP server in a
 supported client. The client opens Assign in a browser, where you choose a
-Workspace and approve read and, when needed, write access.
+set of Workspaces and approve read and, when needed, write access. One
+connection can authorize up to 100 Workspaces where your account has an active membership.
 
 Codex users only need that server URL. Assign discovers Codex through its
 published client metadata (CIMD) and accepts the temporary localhost callback
@@ -45,6 +46,14 @@ manager.
 Every request uses current Assign permissions. Disconnecting a client,
 revoking a service credential, disabling Workspace AI access, or losing
 Workspace membership takes effect immediately.
+
+During browser consent, Assign lists active Workspace memberships where AI
+integrations are enabled. The eligible set is selected by default. Clear any
+Workspace the client should not access, then choose **Allow access**. The one
+OAuth grant appears as one client connection in Account settings, while
+`workspace_list` returns each selected Workspace that remains authorized.
+Disabling AI integrations or losing membership removes only the affected
+Workspace from that connection.
 
 ## Task, Project and Document previews
 
