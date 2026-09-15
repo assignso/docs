@@ -62,29 +62,25 @@ never its value.
 
 ## Set up Assign MCP in Codex
 
-After installing the Codex CLI, configure and authorize Assign MCP with one
-command:
+After installing the Codex CLI, configure Assign MCP over stdio with one command:
 
 ```sh
 assign mcp setup codex
 ```
 
-If you have not run `assign login`, setup starts that browser flow first. It
-then registers `https://mcp.assign.so/` in Codex and starts Codex's own OAuth
-authorization. Your existing browser session normally means you do not enter
-your Assign credentials again, although Assign still shows the MCP Workspace
-and scope consent.
+If you are not authenticated, setup starts `assign login` first. It then
+registers the local command `assign mcp serve` as Codex's stdio server. The
+server uses the same CLI credential and its current Workspace; it exchanges
+that credential at the API host for a short-lived MCP bearer held only in
+memory. The CLI access and refresh tokens are never sent to the MCP host.
 
-CLI and MCP credentials remain separate. The command never copies or exposes
-the CLI access or refresh token; Codex stores and refreshes its own revocable,
-MCP-scoped credential. Use a read-only grant when writes are unnecessary:
+The MCP bearer cannot outlive 15 minutes, has no refresh token, and cannot
+exceed the CLI credential's read/write scopes. Run `assign workspace switch`
+to change the stdio server's Workspace. Use the remote HTTP connection instead
+when one MCP connection must cover multiple selected Workspaces.
 
-```sh
-assign mcp setup codex --scopes assign:read
-```
-
-Setup reuses a compatible existing `assign` server entry. If that name points
-to another URL, a local process, or an environment bearer token, setup refuses
+Setup reuses a compatible existing `assign` stdio entry. If that name points
+to a remote URL, another local command, or an environment bearer token, setup refuses
 to overwrite it; inspect it with `codex mcp get assign` and remove it explicitly
 before retrying. The command currently supports only the production Assign host.
 

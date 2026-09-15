@@ -12,16 +12,23 @@ port that Codex opens for the sign-in. No client ID or client secret is
 required, and Assign intentionally does not offer open dynamic client
 registration (DCR).
 
-With the Codex CLI, register the server and complete browser authorization:
+With the Assign CLI, register a local stdio alternative that uses your existing
+CLI authentication:
 
 ```sh
 assign mcp setup codex
 ```
 
-This convenience command first ensures interactive Assign CLI login, then uses
-Codex's own supported MCP registration and OAuth commands. The existing browser
-session normally avoids another credential entry, but Codex still receives a
-separate, revocable MCP credential; the Assign CLI token is never shared.
+This command registers `assign mcp serve` in Codex. The local process exchanges
+the current CLI credential for an in-memory, 15-minute MCP bearer limited to
+the CLI credential's Workspace and scopes. The CLI credential stays at the API
+host and is never sent to `mcp.assign.so`. Workspace membership and the
+Workspace AI-access policy are rechecked when the bearer is issued.
+
+The stdio option follows the CLI's single current Workspace. Run `assign
+workspace switch` to change it. Choose the direct remote HTTP connection below
+when one connection should authorize several Workspaces independently of the
+CLI's current Workspace.
 
 You can also perform the same Codex steps directly:
 
@@ -34,8 +41,8 @@ codex mcp login assign --scopes assign:read,assign:write \
 codex mcp list
 ```
 
-Use only `assign:read` in the login command when the client should remain
-read-only, or run `assign mcp setup codex --scopes assign:read`. Codex desktop,
+Use only `assign:read` in the direct login command when the client should remain
+read-only. Codex desktop,
 the Codex CLI, and the Codex IDE integration share
 the same MCP configuration. A trusted repository may instead declare the
 remote server in `.codex/config.toml`; do not commit a bearer value. For a

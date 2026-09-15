@@ -29,7 +29,11 @@ The five-minute authorization code is single-use. The token endpoint returns a
 and one-year absolute family expiry. Consumed-refresh replay revokes the whole
 family. `POST /api/v1/cli/oauth/revoke` revokes the current interactive CLI
 family. These tokens are accepted only at API-host CLI operations and are never
-accepted by the MCP resource host.
+accepted by the MCP resource host. `POST /api/v1/cli/mcp/token` may exchange
+their current single-Workspace authority for a non-refreshable, 15-minute MCP
+bearer. The exchange rechecks membership and Workspace AI access, limits the
+bearer to the API credential's scopes, and lets `assign mcp serve` bridge stdio
+without disclosing the CLI credential to the MCP host.
 
 ## Native mobile OAuth
 

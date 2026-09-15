@@ -69,9 +69,10 @@ timesheets are bounded projections and exports use the documented content type.
 ## CLI and native credential operations
 
 CLI OAuth tokens and native mobile credentials are separate credential
-families. Do not substitute them for browser cookies, personal API tokens, or
-MCP credentials. Native mobile routes remain unavailable until their backend
-release is explicitly documented.
+families. Do not substitute them for browser cookies or MCP credentials. The
+CLI MCP exchange is the one supported exception: it derives a short-lived MCP
+bearer without exposing the source API credential. Native mobile routes remain
+unavailable until their backend release is explicitly documented.
 
 | Operation | Route |
 | --- | --- |
@@ -89,6 +90,7 @@ release is explicitly documented.
 | `getCliDocument` | `GET /api/v1/cli/documents/{document_path}` |
 | `getCliMyWork` | `GET /api/v1/cli/my-work` |
 | `searchCliWorkspace` | `GET /api/v1/cli/search` |
+| `issueCliMcpBridgeToken` | `POST /api/v1/cli/mcp/token` |
 | `startCliTask` | `POST /api/v1/cli/tasks/{task_code}/start` |
 | `completeCliTask` | `POST /api/v1/cli/tasks/{task_code}/done` |
 | `reopenCliTask` | `POST /api/v1/cli/tasks/{task_code}/reopen` |
