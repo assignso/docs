@@ -196,8 +196,9 @@ opaque stream epoch, a signed current cursor, and heartbeat/retry hints. Send
 `envelope_version=1` on supported clients and echo the epoch on reconnect when
 available. Each `workspace_event` frame has a signed, opaque SSE `id` that the
 client must preserve unchanged through the standard `Last-Event-ID` header or
-the `cursor` query parameter. Connections close normally before the request
-timeout; reconnecting is expected.
+the `cursor` query parameter. Connections rotate normally after at most 55
+seconds under a dedicated streaming request budget; reconnecting from the last
+cursor is expected and must not trigger a whole-Workspace refetch.
 
 If a cursor is invalid or expired, the requested version is unsupported, or
 the epoch no longer matches, the server sends a terminal `resync_required`
@@ -526,10 +527,17 @@ its recipient. A retried request carrying the same
 `Idempotency-Key` replays the same body, token included, without sending a
 duplicate message.
 
-A pending invitation for the same address is refused `409 invitation_pending`
-rather than silently reissued — revoke it and invite again. An address that
-already belongs to an active member is refused `409 already_member`, which
-discloses nothing an administrator cannot already read from the member list.
+If the configured email provider cannot accept the message, the transaction
+rolls back and the endpoint returns `503 delivery_unavailable`. Keep the
+entered address and role and retry after email delivery is restored.
+
+An unexpired pending invitation for the same address is refused
+`409 invitation_pending` rather than silently reissued. Use the resend operation
+when the recipient needs a fresh link. Once that invitation expires, the address can be invited again
+immediately; bounded retention cleanup removes expired invitation rows. An
+address that already belongs to an active member is refused
+`409 already_member`, which discloses nothing an administrator cannot already
+read from the member list.
 
 ## List invitations
 
@@ -543,6 +551,24 @@ Requires `members:manage`; returns one page, newest first, and never contains
 a token. `state` is derived rather than stored: `expired` is computed from
 `expires_at`, so an invitation that lapsed and one already swept from storage
 read the same way.
+
+## Send an invitation again
+
+```http
+POST /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}/resend HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: 6d181c58-44ee-4af8-8e5c-961e9167bbf7
+```
+
+Requires `members:manage`. Assign revokes the pending link, creates a fresh
+seven-day invitation for the same address and role, and sends it before the
+transaction commits. The response has the same shape as invitation creation.
+Repeating the idempotency key returns the same response without sending twice.
+If delivery fails, the replacement and revocation both roll back, so the
+original link remains usable. Accepted, revoked, expired, missing, or
+out-of-Workspace invitations cannot be resent.
 
 ## Revoke an invitation
 
@@ -578,11 +604,15 @@ Content-Type: application/json
 ```
 
 Returns the joined Workspace. This route is **not** Workspace-scoped: the
-caller is by definition not yet a member of the target Workspace.
+caller is by definition not yet a member of the target Workspace. Its
+idempotency record is account-scoped, so a freshly registered account can
+accept before it has a Workspace or Actor in the invitation's target.
 
-The caller must be signed in, and their account's email address must match the
-invited address. A signed-in caller whose address differs is refused `403
-invitation_recipient_mismatch` — a token that worked for whoever held it would
+The caller must be signed in, must have verified their email address, and that
+address must match the invited address. An unverified caller is refused
+`403 email_verification_required` without consuming the link. A signed-in caller
+whose address differs is refused `403 invitation_recipient_mismatch` — a token
+that worked for whoever held it would
 turn a forwarded email into a Workspace membership.
 
 An expired invitation answers `410 invitation_expired`; a revoked or already
@@ -602,4 +632,5 @@ Beyond the shared error codes in [API conventions](conventions.md):
 | `409` | `invitation_not_pending` | The invitation was revoked or already accepted. |
 | `410` | `invitation_expired` | The invitation passed its `expires_at`. |
 | `403` | `invitation_recipient_mismatch` | The signed-in account is not the invited address. |
+| `403` | `email_verification_required` | The matching account has not verified its email address. |
 | `422` | `self_membership_mutation` | The caller tried to change their own membership. |

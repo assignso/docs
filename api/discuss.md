@@ -617,3 +617,9 @@ API clients create the browser transport with
 `POST /api/v1/workspaces/{workspace_id}/discuss/voice/sessions`, sending the ICE-complete SDP offer
 and optional locale. The response contains the SDP answer, opaque Live session ID and client session
 duration bound. Browser clients wait for `session.started` before reporting that Voice is ready.
+
+### Voice session continuity
+
+The Voice session response may include `context_cursor`, the Discuss event cursor associated with startup history. Clients that keep Voice context current should catch up from that cursor through the existing Discuss event API and deduplicate message revisions against their live event feed. Canonical updates provide context; they must not be submitted as new user requests.
+
+Voice sessions are bound to the authenticated session that created them. Expiry, sign-out, access changes or inactivity can end Voice. A session whose closure is still being confirmed can temporarily prevent another session from starting; continue in text while confirmation is pending.

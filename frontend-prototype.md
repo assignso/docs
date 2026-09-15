@@ -359,6 +359,9 @@ Calendar-only due dates retain their chosen day. Parent Documents load child tit
 Load more. Long Discuss histories keep keyboard focus while loading older messages.
 
 Reset and invitation links may ask you to reopen the original email if their browser continuation
-expires. Keep using the same browser through sign-in. Mermaid diagrams offer a Diagram source
+expires. Keep using the same browser through sign-in or registration. After email verification,
+Assign returns an invited registrant to the pending invitation. Workspace administrators can send
+a pending invitation again to replace its old link, or revoke it after confirmation. Mermaid
+diagrams offer a Diagram source
 disclosure for reading their source text. These changes remain in the local release candidate until
 deployment is verified.

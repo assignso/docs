@@ -123,7 +123,7 @@ Content-Type: application/json
 The `202` response is the durable Core-owned run, normally in `queued` state. It does not mean
 the model has run or an action has committed. The private runtime continuously claims admitted
 work, changes the public projection to `running` when execution authority is resolved, and then
-publishes one safe terminal state. A terminal-projection retry does not re-run the Agent. Poll one
+publishes one safe terminal state. While a run is still running, the runtime may reconnect to its existing work after an interruption. It preserves the original request and confirmed actions; this is not a new run or a repeated submission. A terminal-projection retry does not re-run the Agent. Poll one
 run or page retained history:
 
 ```http
@@ -139,7 +139,7 @@ chain of thought, provider details, credentials, or private traces. Safe run his
 A failed run with `error_code: "provider_outcome_unknown"` requires reconciliation:
 the provider may have processed work before its response was lost. Its reserved credits remain
 held while the outcome is checked. The runtime does not automatically repeat that paid attempt;
-ordinary collaboration remains available.
+ordinary collaboration remains available. A completed result can still have pending provider usage: its credit reservation stays held until accounting is reconciled. Completion is not a statement that the final charge is known.
 
 Cancel a queued, running, or approval-waiting run idempotently:
 
@@ -268,9 +268,7 @@ invalidates outstanding approvals. Approval also checks current permissions and
 the exact Task revision. A run that could not start before its dispatch deadline
 reports `agent_dispatch_expired`; you can request a new run. A dispatch that exhausts
 its resolution attempts before execution starts reports `agent_resolution_exhausted` once
-reconciled. This failure does not mean an Agent action was performed. An uncertain
-provider outcome remains non-retryable while its credit reservation is
-reconciled.
+reconciled. This failure does not mean an Agent action was performed. A terminal failed run with an uncertain provider outcome remains non-retryable while its credit reservation is reconciled. Running work can reconnect within its original permissions and time limit; revoked or expired authority cannot be renewed by retrying.
 
 Safe summaries, reports and action previews expire after 90 days. Purging a Task
 removes its associated retained Agent content and cancels pending actions;
@@ -328,3 +326,8 @@ capabilities and supports manual and scheduled runs. It is not installed automat
 the ordinary library entitlement and uses one of the existing five active-Agent slots. The original
 five definitions keep their identifiers; Task Revisor keeps its current name. Availability remains
 subject to rollout. Consumers should use the catalog rather than assume a fixed definition count.
+
+
+## Run a saved custom Agent
+
+In Studio, **Run preview** saves the current edits and queues a preview that cannot commit changes. **Run now** uses the saved active revision and may perform its permitted actions; save any edits you want it to use first. Draft and paused Agents cannot run. Requests appear in the existing history with their pinned revision and status. A queued request is not a completed action.
