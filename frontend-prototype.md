@@ -114,9 +114,11 @@ selecting several labels and creating a missing applicable label from the search
 results. One selected label shows its color circle and name. When several labels
 are selected, the closed control stays the same size and shows overlapping color
 circles and a count instead of one chip per label; the picker does not maintain
-a frequently-used section. On a phone-width Project List, grouping remains visible
-beside one **Filters** button; Milestone, Status, assignee, and priority filters
-open vertically in that popover instead of creating a horizontally scrolling row.
+a frequently-used section. On every Project List, one **Filters** button opens
+Milestone, Status, assignee, and priority controls vertically in a popover. A
+separate sort icon opens manual/recent/oldest/priority ordering and
+Status/assignee/Milestone grouping choices. Both controls sit directly beneath
+the Project tabs without a full-width filter bar.
 Desktop breadcrumbs keep the **Assign** home action and up to two nearest
 clickable ancestors. The ellipsis opens the complete trail, including the
 current page. On narrow phones, the current page title opens that trail in an
@@ -127,6 +129,15 @@ Project List keeps the current group header visible while scrolling. Tap a
 Task once to open it; scrolling or using an embedded control does not open it.
 A successfully created Task refreshes the current list and its counts, and
 previously visited lists refresh when reopened.
+
+Every Project page starts with a small **Projects** link above the Project name.
+The compact header omits Project code/key and other metadata; those details stay
+available in Overview and Project settings. The six Project views use
+icon-labelled line tabs with a short selected underline over a full-width bottom
+rule. On small screens, three tabs remain visible beside a **More** button ending
+in a chevron-down icon; choosing an overflow view puts it into the final visible slot so the
+current view never disappears. Project settings uses the same narrow centered
+content width as Task and Document detail.
 
 Workspace owners and administrators manage **Task statuses** in five lifecycle
 bands. Each band has an add action, and each compact Status row shows its icon,
@@ -212,15 +223,14 @@ owner-first membership, lifecycle-aware Task and Milestone progress, Status
 distribution, and capped recent resources. Current Tasks in the authoritative
 In progress and In review categories appear under Ongoing work; immutable recent
 Activity remains a separate section.
-Every authenticated Project route starts with the same compact header: one
-Project icon and one-line name, with the Create task action and Project-actions
-menu aligned to the title. The application top bar and browser title use the
-Project name throughout Project routes. A compact metadata row shows the
-immutable Project key as code and a shortened external hostname with a reduced
-link icon when configured. The header omits description, Task count, and member
-avatars. On the narrowest phones Create task is shown as a centered accessible
-`+`, and the tab strip scrolls horizontally instead of wrapping or pushing
-actions off screen. Project settings and Copy Project link
+Every authenticated Project route starts with the same compact header: a small
+**Projects** return link above one Project icon and one-line name, with the
+Create task action and Project-actions menu aligned to the title. The application
+top bar and browser title use the Project name throughout Project routes. The
+header omits Project code/key, URL, description, Task count, and member avatars.
+On the narrowest phones Create task is shown as a centered accessible `+`, and
+three icon-labelled line tabs plus **More** with a chevron keep every route available without horizontal
+page overflow. Project settings and Copy Project link
 are available from the end-aligned Project-actions menu rather than a separate
 gear. The menu sizes to its item content and keeps every item on one line.
 On layouts with room for keyboard hints, Create task entry buttons show `N` and
@@ -246,7 +256,10 @@ code, title, and canonical URL. Assign does not open an external provider or put
 private Task content into an outbound URL.
 Legacy opaque-ID links redirect to these canonical routes. Renaming the active
 Workspace replaces its slug in the current URL without changing the underlying
-Workspace session, and My Work uses the same full-width page frame as Home.
+Workspace session. Documents, Projects, and My Work use the same responsive page
+header; page actions such as Add document, Archive, and Create Project appear at
+its trailing edge and wrap below the title when space is limited. My Work uses the
+same full-width page frame as Home and has no page-level action buttons.
 Home’s Assigned to me rows show Task code, title, and Status; Recently updated
 rows show Task code, title, and assignee. Assigned to me ranks urgent, high,
 medium, low, then no-priority Tasks, with the newest update first inside each
@@ -283,9 +296,10 @@ the type of, and remove typed Task relations. The Project Milestones view links
 to dedicated create and
 edit pages; its progress cards open the existing Project List with a shareable
 milestone filter, while card overflow actions copy the filtered link or archive
-the milestone. Project List can group Tasks by Status, assignee, or milestone;
-Status is the default, while selecting another grouping or no grouping remains
-shareable in the URL. List and Backlog rows reuse the same compact Status and
+the milestone. Project List can group Tasks by Status, assignee, or milestone
+and sort them by manual order, recent update, oldest update, or priority. Status
+grouping and manual order are the defaults; alternate grouping and sorting
+remain shareable in the URL. List and Backlog rows reuse the same compact Status and
 assignee controls as Task properties. Their title-edit pencil appears on row
 hover or focus, including after a touch activates the row. Selected Tasks can
 be managed from the shared bottom bar on both views: it shows the selected

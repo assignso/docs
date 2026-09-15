@@ -194,7 +194,15 @@ The Web interface keeps hiring, Agent detail, Agent Activity, and each run detai
 It exposes schedule detail/next occurrence, manual admission, cursor-backed safe history, permitted
 cancellation, exact approvals, provenance, lifecycle controls, entitlement/credit state, and
 explicit
-approval-required and billing-blocked states.
+approval-required and billing-blocked states. Activity and run detail refresh while a visible run is
+queued, running, or waiting for approval, then stop once the terminal state and any safe report are
+shown. Cancelled and billing-blocked runs with no output explicitly state that no response was
+produced.
+
+Scheduled results in Discuss use the Agent name captured with the run. If a scheduled run is cancelled,
+blocked by billing, or exhausts managed recovery without a confirmed response, the terminal message
+states that outcome instead of presenting an earlier progress phrase such as `Run started.` as the
+result.
 
 ## Build custom Agents in Agent Studio
 
