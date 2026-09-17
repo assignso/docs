@@ -64,7 +64,8 @@ Content-Type: application/json
   "additional_instructions": "Prefer concise review comments.",
   "schedule_timezone": "Europe/Budapest",
   "schedule_local_time": "09:00",
-  "schedule_weekdays": [1, 2, 3, 4, 5]
+  "schedule_weekdays": [1, 2, 3, 4, 5],
+  "schedule_interval_minutes": 0
 }
 ```
 
@@ -74,6 +75,11 @@ minute-precision local time, and ISO weekdays. Nonexistent DST times are skipped
 time runs once at the earlier instant, and recovery admits only the latest missed occurrence from
 the prior 24 hours. The response exposes the next unambiguous UTC instant. Creating desired state
 does not synchronously contact the Knowledge runtime.
+
+Set `schedule_interval_minutes` to `60` through `10080` for a fixed recurrence instead. An hourly
+schedule runs on each whole-hour UTC boundary and is not duplicated or skipped by daylight-saving
+changes. Zero keeps the local-time weekday schedule. Invalid nonzero values return
+`400 invalid_schedule`.
 
 When event execution is enabled for Task Revisor, new or updated Tasks in its current
 scope can create runs. Rapid edits to the same Task may be grouped into one queued review.
@@ -203,6 +209,11 @@ Scheduled results in Discuss use the Agent name captured with the run. If a sche
 blocked by billing, or exhausts managed recovery without a confirmed response, the terminal message
 states that outcome instead of presenting an earlier progress phrase such as `Run started.` as the
 result.
+
+The optional **Grumpy** library Agent is a read-only reporting definition for manual or scheduled
+runs. It posts one brief, evidence-backed grumpy observation about current Workspace work, or a
+general complaint when there is no current work. It cannot attack people, invent work, or mutate
+Workspace state. Configure it with `schedule_interval_minutes: 60` for hourly Discuss delivery.
 
 ## Build custom Agents in Agent Studio
 
