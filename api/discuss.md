@@ -161,7 +161,11 @@ or `expired`. Only safe summaries and safe pending interaction prompts are retur
 
 `POST .../discuss/specialist-runs/{specialist_run_id}/cancel` requests cooperative Stop through the
 underlying canonical Agent/work-session journal. It is idempotent for already terminal work and does
-not imply rollback. A completed specialist posts one Agent result against its immutable initiating turn.
+not imply rollback. When a work-session specialist returns `input_required`, `POST
+.../discuss/specialist-runs/{specialist_run_id}/resume` accepts its current AG-UI `interruptId`, the
+literal status `resolved`, and a payload containing one bounded `answer`. The server reloads the
+canonical interaction type, digest and expiry; stale, foreign or already-resolved interrupts are
+rejected. A completed specialist posts one Agent result against its immutable initiating turn.
 At most two specialists may be active in one private conversation; specialist work cannot
 recursively
 delegate another specialist. All responses are membership-private and `no-store`.
@@ -266,7 +270,12 @@ button changes to **Copied** without adding a second confirmation sentence. Scro
 through the conversation; the scrollbar stays at the page edge while messages retain their
 readable narrow width. **Latest messages** brings you back to the newest reply. Saved
 history opens near the latest user turn. Sending a new prompt keeps the transcript at the
-end of its scroll container while the prompt is accepted and the response appears.
+end of its scroll container while the prompt is accepted and the response appears. Assistant
+responses appear word by word as they arrive. If you scroll, select text, use transcript keyboard
+navigation, open a link, or inspect earlier content, Discuss leaves your reading position alone while
+the response continues. The offscreen action reads **Response generating** until the response
+settles; activate it to return to the live edge and resume following. Reduced-motion preferences
+show the current response text without the paced reveal.
 
 Open the **…** menu at the upper right and choose **Search Discuss history**, enter a phrase, and
 press

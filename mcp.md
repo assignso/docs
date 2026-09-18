@@ -49,9 +49,15 @@ Workspace membership takes effect immediately.
 ## Task, Project and Document previews
 
 When your connected Assign server and MCP client support MCP Apps, `task_list`
-can display compact Task chips and `task_get` can display a Task detail preview.
-Select a chip to fetch current details. **Back to Tasks** returns to the list;
+can display compact Task rows and `task_get` can display a Task detail preview.
+Lists initially show three rows; **Show N more** expands the current page without making
+another request. Select a row to fetch current details. **Back to Tasks** returns to the list;
 **Next page** replaces it with the next bounded page.
+
+Each preview starts with the same compact header: a Task, Project or Document icon, the title,
+key properties directly underneath, and the available actions. On narrow clients the actions wrap
+below the title instead of squeezing or hiding it. The icon identifies the resource rather than
+repeating the Assign app mark already shown by the client.
 
 Details show the Task code, title, meaningful Status/priority/assignee/due metadata,
 and a read-only description only when it exists. They also include the exact authorized
@@ -68,6 +74,9 @@ read-only body, limited to 128 KiB. Content already requested in chat appears im
 Markdown results appear as readable source. Refresh retains the selected content mode.
 Some rich blocks require opening the full Document in Assign.
 
+Long Task descriptions and loaded Document bodies provide **Show more** and **Show less**
+without changing the stored content or asking the server again.
+
 All previews use Assign's shadcn neutral styling, compact controls and light/dark themes.
 
 Previews use the permissions already granted to the connection. An unavailable
@@ -75,7 +84,11 @@ or denied read hides the old preview and offers a retry. Some rich content is
 available only on the full resource page. Clients without embedded UI support retain
 the same structured results, text and resource links. Widget availability depends on
 the client and server version; it does not establish support for every desktop
-or mobile client.
+or mobile client. [Claude web/Desktop](https://modelcontextprotocol.io/extensions/apps/overview#client-support)
+and [current Cursor editor releases](https://cursor.com/help/customization/mcp#does-cursor-support-mcp-apps)
+document MCP Apps support. Claude Code, Cursor CLI, Google Antigravity and other MCP-only surfaces still receive
+the structured result, text and links; treat embedded rendering on those exact surfaces as
+unsupported until their vendor documents it and Assign verifies it.
 
 ## Available tools
 

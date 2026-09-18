@@ -42,6 +42,7 @@ distinguish an intentional machine-facing surface from an undocumented one.
 | `decideDiscussInteraction` | `POST /api/v1/workspaces/{workspace_id}/discuss/interactions/{interaction_id}/decision` |
 | `listDiscussSpecialistRuns` / `getDiscussSpecialistRun` | `GET /api/v1/workspaces/{workspace_id}/discuss/specialist-runs` / `GET /api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}` |
 | `cancelDiscussSpecialistRun` | `POST /api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}/cancel` |
+| `resumeDiscussSpecialistRun` | `POST /api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}/resume` |
 | `updateDiscussReadState` | `POST /api/v1/workspaces/{workspace_id}/discuss/read-state` |
 | `getDiscussPreferences` / `updateDiscussPreferences` | `GET` / `PATCH /api/v1/workspaces/{workspace_id}/discuss/preferences` |
 | `listDiscussReminders` / `createDiscussReminder` | `GET` / `POST /api/v1/workspaces/{workspace_id}/discuss/reminders` |
