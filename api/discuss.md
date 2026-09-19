@@ -200,6 +200,11 @@ recently?” or “What are recent tasks?”. Task answers include authorized cl
 references and support simple Markdown. Recent lists show a bounded selection and
 say when more results are available.
 
+First-person work recommendations use active Tasks assigned to you. Discuss does not
+recommend a Task assigned to another person as your next work; it may identify that
+Task separately as a blocker or coordination item and name its assignee. Unassigned
+Tasks are described as available work rather than as your assigned work.
+
 To change work, send an explicit request such as “Move ASG-123 to Done.” or
 “Comment on ASG-123: Task delivered.” The status must resolve to one available
 workflow label. A comment request without text asks what to write. Successful
