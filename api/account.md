@@ -26,11 +26,15 @@ Workspace, the caller's Actor within it, and their role:
   "phone": "+36 30 123 4567",
   "bio": "Building calm collaboration tools.",
   "profile_status": "Heads-down until 15:00",
+  "totp_enabled": true,
   "name_display": "full_name",
   "first_day_of_week": "monday",
+  "first_day_of_week_inherited": false,
   "editor_controls": "contextual",
   "timezone": "Europe/Budapest",
+  "timezone_inherited": false,
   "locale": "en-GB",
+  "locale_inherited": false,
   "date_format": "day_month_year",
   "time_format": "twenty_four_hour",
   "number_format": "comma_decimal",
@@ -59,6 +63,9 @@ contains the account and interface-preference fields shown above;
 `workspace`, `actor_id`, `role`, and `authorization_revision` are omitted until the first
 Workspace is created. The username is allocated from the full name during registration.
 Optional `profile_picture_url` and `title` values may be `null`.
+`totp_enabled` is read-only and true only after an authenticator-app setup has
+been confirmed; clients use it to render the correct setup, recovery-code, or
+disable state and must still rely on the security endpoints for authorization.
 
 ## Review Workspace plans
 
@@ -74,6 +81,34 @@ invoice, tax, billing-contact, provider-customer, and entitlement detail and
 never becomes a cross-Workspace mutation boundary. Sensitive controls remain
 under Workspace Settings → Billing and require `workspace.billing.manage` plus
 recent authentication.
+
+## Synchronize Project shortcuts
+
+`GET /api/v1/workspaces/{workspace_id}/project-shortcuts` returns the current
+user's nine Project-shortcut slots for the session's selected Workspace. Each
+slot is either a Project UUID or `null`; a Project can occupy only one slot.
+The response includes `customized`, a positive `revision`, `updated_at`, and an
+`ETag`. When no custom value exists, the server creates a default from the first
+nine active Projects the user can read and reports `customized: false`.
+
+`PUT /api/v1/workspaces/{workspace_id}/project-shortcuts` replaces all nine
+slots. Send the previous response revision in `If-Match`, the browser CSRF
+token, and exactly nine UUID-or-null values:
+
+```http
+PUT /api/v1/workspaces/{workspace_id}/project-shortcuts HTTP/1.1
+X-CSRF-Token: <csrf-token>
+If-Match: "4"
+Content-Type: application/json
+
+{"slots":["<project-id>",null,null,null,null,null,null,null,null]}
+```
+
+The server rejects duplicate or malformed assignments, returns
+`409 revision_conflict` for a stale revision, and returns
+`422 project_unavailable` when a selected Project is archived or no longer
+readable. Reads remove inaccessible, archived, or deleted Projects before
+returning the current set, so every device receives the same authorized view.
 
 ## Update the current profile
 
@@ -105,6 +140,14 @@ the formatting-control presentation across Document, Task-description, and
 Comment editors. `timezone` uses an IANA identifier and `locale` uses BCP 47.
 Phone is private, unverified profile metadata: it is not used for sign-in,
 MFA, recovery, SMS, or notification delivery.
+
+`timezone_inherited`, `locale_inherited`, and
+`first_day_of_week_inherited` explicitly select the current Workspace's
+corresponding default. Existing Accounts retain concrete preferences until a
+User enables inheritance. A `GET /me` response always returns the effective
+timezone, locale, and first day plus the inheritance flags, so presentation
+consumers do not need to fetch Workspace settings separately. Setting a flag
+false keeps the supplied concrete Account value.
 
 Changing the primary email is deliberately separate from profile editing:
 

@@ -90,6 +90,9 @@ Returns one private, non-cacheable Project summary for overview screens. The
 response combines Project metadata, the first three owner-first Project
 members and exact member count, lifecycle-aware Task counts, Milestone
 progress, the authoritative Status distribution, and bounded recent data.
+Each Status distribution row includes its stable identifier, lifecycle type,
+optional icon and color, position, and Task count so clients do not infer
+semantics or appearance from the label.
 Recent Tasks, Activity items, Documents, and files each contain at most five
 items. Ongoing work contains at most five active Tasks in each of the stored
 `in_progress` and `in_review` Status categories; Status display names do not
@@ -291,6 +294,11 @@ and cannot be demoted or removed before ownership is transferred. These
 operations change only Project access; they never create or remove Workspace
 membership.
 
+In the web app, Project settings lists active Workspace members you can add to
+the Project. Workspace owners and admins can also send a Workspace invitation
+from this page. An invited person receives no Project access until they accept
+the invitation and a Project manager adds them with a Project role.
+
 Project responses expose `permissions.can_manage_members`. A manager can use
 the revisioned Project update to switch between Workspace and private access:
 
@@ -333,7 +341,8 @@ Content-Type: application/json
 The returned `public_id` forms the app URL `/p/{public_id}` and the anonymous
 `GET /api/v1/public/projects/{public_id}` API read. The public representation
 contains the Project name, optional visual identity, updated time, and ordered
-workflow Status labels with aggregate non-archived Task counts. It does not
+workflow Status identifiers, labels, lifecycle types, optional icons/colors,
+positions, and aggregate non-archived Task counts. It does not
 expose the Workspace or owner, members, Task content, Documents, attachments,
 labels, milestones, revisions, or audit data. The route is anonymously
 rate-limited and returns `Cache-Control: no-store`.
@@ -508,10 +517,22 @@ The required-category safeguard still applies, so a replacement cannot remove
 the final active `todo`, `in_progress`, or `done` Status. Archived Tasks retain
 their existing historical Status.
 
-Update a Status label, lifecycle type, compatible category, icon, or color with
-`PATCH /api/v1/statuses/{status_id}`
-and its current `If-Match`, `X-CSRF-Token`, and `Idempotency-Key` headers.
-The response is the revised Status and a new `ETag`.
+Before changing a Status lifecycle type, request the authoritative impact:
+
+```http
+GET /api/v1/statuses/{status_id}/lifecycle-preview?status_type=completed HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+```
+
+The preview reports the current and target type, affected Task count, the
+1,000-Task synchronous migration limit, and whether the change can run
+synchronously. Update a Status label, lifecycle type, compatible category,
+icon, or color with `PATCH /api/v1/statuses/{status_id}` and its current
+`If-Match`, `X-CSRF-Token`, and `Idempotency-Key` headers. A lifecycle change
+above that limit is rejected rather than partially applied. A successful
+change updates every affected Task atomically and returns the revised Status
+and a new `ETag`.
 
 Move a Status using neighbour anchors, not numeric positions:
 

@@ -77,6 +77,7 @@ release is explicitly documented.
 | Operation | Route |
 | --- | --- |
 | `exchangeCliOAuthToken` | `POST /api/v1/cli/oauth/token` |
+| `createCliMcpBridgeToken` | `POST /api/v1/cli/mcp/token` |
 | `revokeNativeMobileCredential` | `DELETE /api/v1/me/mobile-credentials/{credential_id}` |
 | `upsertCurrentNativePushDevice` | `PUT /api/v1/me/mobile-credentials/current/push-device` |
 | `deleteCurrentNativePushDevice` | `DELETE /api/v1/me/mobile-credentials/current/push-device` |
@@ -122,9 +123,12 @@ mutation and follows the integration idempotency and audit contract.
 ## Comments and labels
 
 Comment writes and label changes enforce live target visibility and Workspace
-authorization. Label archival prevents future assignment without rewriting
-historical audit evidence; replacement operates on the complete target label
-set and uses the revision rules in the OpenAPI contract.
+authorization. Label lists are active-only by default; authorized settings
+clients may pass `include_archived=true`. Label archival prevents future
+assignment without rewriting historical audit evidence, and a revision-checked
+`PATCH` with `{"archived":false}` restores the same stable definition. Target
+replacement operates on the complete active label set and uses the revision
+rules in the OpenAPI contract.
 
 | Operation | Route |
 | --- | --- |

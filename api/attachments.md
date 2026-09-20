@@ -1,6 +1,6 @@
 # Attachments
 
-Files can be attached to Tasks and Projects. The browser first reserves a direct
+Files can be attached to Tasks, Projects, and Documents. The browser first reserves a direct
 upload, sends file bytes to a short-lived object-storage URL, completes server
 verification, and then links the attachment to the chosen resource.
 File bytes never pass through Assign's API servers.
@@ -32,13 +32,40 @@ Content-Type: application/json
 {"attachment_id":"<attachment-id>"}
 ```
 
-Use `/api/v1/projects/{project_id}/attachments` for a Project. Both return `201`
-with the attachment metadata. A file may be linked to more than one Task or
-Project in the same Workspace.
+Use `/api/v1/projects/{project_id}/attachments` for a Project or
+`/api/v1/documents/{document_id}/attachments` for a Document. Each operation
+returns `201` with the attachment metadata. A file may belong to more than one
+resource in the same Workspace.
 
-`GET` on either path returns a bounded, newest-first `items` list (maximum 100 attachments).
+`GET` on any parent path returns a bounded, newest-first `items` list (maximum
+100 attachments). A Document keeps its link when a block is removed because a
+saved revision may still contain that block. The link is removed when the
+Document is permanently purged or the attachment itself is deleted.
+
+The Document and Task-description editors complete an upload and create the
+parent link before inserting an image or file block. If linking fails
+conclusively, the browser deletes the newly completed attachment and leaves the
+content unchanged. If the link response is lost, it first reads the parent
+attachment collection so a committed link is never deleted.
+
+Published Documents use separate anonymous authorization operations:
+
+```http
+POST /api/v1/public/documents/{public_id}/attachments/{attachment_id}/preview HTTP/1.1
+```
+
+Replace `preview` with `download` for a forced download. Core issues a
+five-minute URL only if the attachment belongs to that published Document and
+its current body still references the ID. An attachment retained only for an
+older revision is not public. Unpublishing or archiving the Document revokes
+both operations.
 
 ## User experience and safety
+
+In an existing Document or Task description, use the image or file command in
+the editor toolbar or slash menu. The editor stores the attachment ID instead
+of a signed URL, so image blocks can be reordered without re-uploading the
+file. Creation drafts enable these commands after the Document or Task exists.
 
 On a Ticket, attachments appear after the ticket body and before Relations. On
 a Project, they appear in the **Attachments** tab immediately after
@@ -58,7 +85,7 @@ Unscanned files, SVG, and non-image files remain icon-only. Activating a raster-
 displays it in a new browser tab through a separately authorized inline URL.
 The card-wide action and separate labelled icon still force a download; another
 labelled icon globally deletes the
-attachment. Global deletion hides every Task and Project link under the existing
+attachment. Global deletion hides every Task, Project, and Document link under the existing
 soft-delete rules; it is not a current-parent unlink. Each open, preview, or
 download flow uses a short-lived URL that applications must not store. SVG is
 always a download—never an inline preview or content embedded in an

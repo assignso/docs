@@ -28,10 +28,23 @@ Project Overview's bounded recent-Document rows also carry this nullable field.
 title-ordered page of active root Documents. Use `q` (up to 200 characters) to
 match titles and extracted text, `project_id` to restrict the Project, and
 `scope` for `workspace`, `project`, or `public`. A returned `next_cursor` is
-valid only with the same filters; start a new request when a filter changes.
-Set `archived_only=true` to browse the same bounded, authorized collection of
-archived roots for recovery; active and archived Documents are never mixed in
-one traversal.
+valid only with the same filters and sort; start a new request when either
+changes. Set `archived_only=true` to browse the same bounded, authorized
+collection of archived roots for recovery; active and archived Documents are
+never mixed in one traversal.
+
+Three optional parameters shape the collection. `location` filters by where a
+Document lives: `workspace` returns Documents outside every Project and
+`projects` returns Documents inside a Project. It describes structure only, not
+visibility or access, so it is independent of `scope`; a nested Document belongs
+to the same Project as its parent and is classified the same way. `location=workspace`
+cannot be combined with `project_id`. `sort` orders the page by `title` (the
+default), `updated_desc` (most recently modified first), or `updated_asc`, using
+each Document's own modification time, with the identifier breaking ties. Set
+`include_descendants=true` to return nested Documents as individual rows, each
+once, instead of roots only; those rows carry an `ancestors` array (root first,
+each with `id`, `title`, and `path`) so a search result can show its parent
+path. Omit all three for the original title-ordered roots page.
 
 ## Collaboration admission and browser relay
 
@@ -70,7 +83,8 @@ Comment editors; selecting one stores an `assign:agent/` reference and admits
 durable attention when the Comment is created. Blank or whitespace-only `q`
 returns empty groups rather than a Workspace directory.
 
-Direct children are available from `GET /api/v1/documents/{document_id}/children`.
+Direct children are available from `GET /api/v1/documents/{document_id}/children`,
+in title order unless `sort` is `updated_desc` or `updated_asc`.
 The response is cursor-paginated; clients should retain the next cursor rather
 than assuming a Document tree is returned in one response. Documents, Projects,
 and Tasks use the generic target-label operations in the OpenAPI contract to
@@ -79,6 +93,27 @@ replace their complete label set.
 Creates require `Idempotency-Key`; metadata and content updates require the
 current `If-Match` value. A stale revision returns `409`, so clients should
 reload and let the person decide how to reconcile their changes.
+
+## Document attachments
+
+List an existing Document's attachment ownership set with
+`GET /api/v1/documents/{document_id}/attachments`. Link a clean, completed
+upload before inserting its ID into rich text:
+
+```http
+POST /api/v1/documents/{document_id}/attachments HTTP/1.1
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: <opaque-client-key>
+Content-Type: application/json
+
+{"attachment_id":"<attachment-id>"}
+```
+
+The caller needs write access to the Document. Project Documents also enforce
+their Project membership. The link remains after an ordinary edit or archive
+so current and historical revisions can resolve the same attachment. Signed
+preview and download URLs remain short lived and must never be stored in the
+Document body.
 
 ## Revision history and recovery
 
@@ -128,7 +163,11 @@ Host: api.assign.so
 
 The Assign web reader is available at `https://assign.so/d/{public_id}`. It
 renders the same public-safe title and body for people without an Assign
-account; it has no editing, Workspace navigation, or identity metadata.
+account; it has no editing, Workspace navigation, or identity metadata. Image
+and file blocks use the public Document attachment authorization operations.
+Core authorizes only attachments linked to the Document and referenced by its
+current body, so removing a block also removes its public access even while an
+older private revision retains the file.
 
 This endpoint has no browser-session requirement, is rate limited, and returns
 `Cache-Control: no-store`. Its response contains only `public_id`, `title`,
@@ -143,3 +182,8 @@ Persistent failures and conflicts remain visible.
 
 See [versioned work proposals and receipts](work-capabilities.md) for private result sets, drafts,
 reviewed ChangeSets and write recovery in the upcoming update.
+
+For Discuss suggestions, add `surface=discuss` to the reference-options query. This includes
+ready installed Agents and custom Agents that can receive a Discuss request without a Task-comment tool. The default
+`surface=comment` retains Comment eligibility rules. Both modes check current visibility and
+Workspace entitlement; selecting an option does not grant permission to execute it.

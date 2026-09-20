@@ -1,8 +1,9 @@
 # People profiles
 
 People are workspace-scoped collaboration profiles. Any member who can see a
-workspace member can open that person’s profile; profiles never expose account
-email or personal account settings.
+workspace member can open that person’s profile. Profiles show the title, bio,
+and status a person chose to publish in their account profile settings, and
+never expose email, phone, or other personal account settings.
 
 ## Read a profile
 
@@ -11,7 +12,19 @@ GET /api/v1/workspaces/{workspace_id}/people/{username}
 ```
 
 The response includes the person’s display name, current username, current workspace role,
-active status, a workspace actor ID, and an `is_you` flag. Use the actor ID
+active status, a workspace actor ID, an `is_you` flag, the optional `title`,
+`bio`, and `profile_status` text (each `null` when the person has not set it),
+and an optional authorized `profile_picture_url`. The picture URL is an Assign
+route, not a durable object-store address:
+
+```http
+GET /api/v1/workspaces/{workspace_id}/people/{user_id}/profile-picture/content
+```
+
+It rechecks active same-Workspace membership and redirects an authorized
+browser to a short-lived inline object URL. It returns the normal content-free
+`404` when the target picture or membership is unavailable.
+Use the actor ID
 with the normal Workspace Task list (`assignee_actor_id`) to show that
 person’s permitted assigned work.
 

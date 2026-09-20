@@ -74,8 +74,9 @@ below the header's **Back to app** link and without opening the main profile men
 Authorized member managers can invite people, change
 membership roles, and revoke pending invitations from Members. Labels are
 separated into editable global Project, Document, and Task panels. Project
-shortcuts assign the sidebar numbers `1` through `9` permanently for a
-Workspace in the current browser; reordering Projects does not renumber them.
+shortcuts assign the sidebar numbers `1` through `9` permanently for the
+current user in one Workspace; reordering Projects does not renumber them and
+the revisioned set follows that user across devices.
 Account settings provide the numbered Project-shortcut manager for the selected
 Workspace, also reachable from the sidebar Project-section settings action. A
 new Project takes the first open number without changing existing assignments
@@ -105,9 +106,10 @@ confirmed browser or native endpoint exists. The Browser notifications action
 uses the browser-owned permission prompt and service-worker subscription; its
 unsupported, denied, enabled, disabled, and failed states are explicit. Inbox
 supports server-side category filtering, grouped-activity counts, bounded
-pagination, and the shared empty-state composition. Project shortcut
-synchronization across devices and Project Task-label overrides are not
-persisted through the public API yet.
+pagination, and the shared empty-state composition. Project shortcuts are
+persisted through the public API with whole-set conflict protection and
+automatic removal of unavailable Projects. Project Task-label overrides are
+not persisted through the public API yet.
 
 Task, Project, and Document properties share a compact label picker. It supports
 selecting several labels and creating a missing applicable label from the search
@@ -300,8 +302,11 @@ the milestone. Project List can group Tasks by Status, assignee, or milestone
 and sort them by manual order, recent update, oldest update, or priority. Status
 grouping and manual order are the defaults; alternate grouping and sorting
 remain shareable in the URL. List and Backlog rows reuse the same compact Status and
-assignee controls as Task properties. Their title-edit pencil appears on row
-hover or focus, including after a touch activates the row. Selected Tasks can
+assignee controls as Task properties. Assignee menus show Project members first,
+then the other active Workspace members. The same order is used when creating or
+editing a Task and when assigning selected Tasks in bulk. Their title-edit
+pencil appears on row hover or focus, including after a touch activates the
+row. Selected Tasks can
 be managed from the shared bottom bar on both views: it shows the selected
 count, stays centered against the browser viewport, opens Actions with its
 visible `A` keycap, and clears selection with its labelled control and visible
@@ -379,3 +384,14 @@ a pending invitation again to replace its old link, or revoke it after confirmat
 diagrams offer a Diagram source
 disclosure for reading their source text. These changes remain in the local release candidate until
 deployment is verified.
+
+### Task Comments and Activity tabs (upcoming)
+
+Task details opens on **Comments**. Select **Activity** to see Task changes and linked development
+updates in a timeline. Available comment previews link back to their thread, and switching tabs
+keeps your comment draft. GitHub, GitLab and Bitbucket cards appear under **Linked development**
+in Activity. Other external context stays above the Task attachments.
+
+Activity includes recorded creation, description edits, status changes, attachment links and Task
+relations. Git entries show the provider state Assign observed; older actions are not reconstructed
+from the latest card. Activity loads when opened and offers **Load more** for available older entries.

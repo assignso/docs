@@ -87,6 +87,17 @@ answer. They may also use the existing `knowledge_search`, `knowledge_context`,
 `knowledge_related`, `knowledge_path`, and `knowledge_impact` tools rather than
 this browser-session route.
 
+Each Knowledge MCP response declares `match_status` and coverage for canonical,
+lexical, semantic, source-assertion, cross-domain, and code retrieval. Coverage
+can be `ready`, `partial`, `stale`, or `unavailable`, with a safe reason when
+useful. `no_match` means no result inside that declared coverage; it does not
+turn missing or stale coverage into proof that nothing exists. Use
+`knowledge_status` for the same content-free diagnostic before retrying or when
+the service cannot answer a graph question. Graph tools also accept bounded
+relation and provenance filters. Extracted source assertions retain their
+source revision and modality and remain distinct from canonical Assign
+relations.
+
 Optional MCP session memory is separate from this shared evidence layer.
 `memory_remember` stores a bounded note in an explicitly consented 30-day scope
 bound to the current Workspace, Actor and OAuth client; `memory_recall` searches

@@ -285,6 +285,11 @@ current chat access rather than silently polling or importing prior messages.
 
 ### Slack communication and notifications
 
+To connect a channel from the Project, open **Project actions → Connect Slack
+channel**. It opens the Project's Connected tools with the Add panel ready on
+your Workspace's Slack installation; if Slack is not installed yet, it links to
+the Marketplace instead.
+
 A Slack channel binding is inert until an administrator creates a separate
 behavior. `slack.conversation_to_task` lets a mapped, active Assign member use
 the **Create Assign Task** message action; the route stores only the selected

@@ -1,8 +1,8 @@
 # Time tracking
 
 Time tracking is optional for each Workspace. A Workspace administrator enables
-it in **Preferences → Time tracking**, under **Work management**, then chooses
-exact reporting or upward rounding to 15 or 30 minutes. Exact duration is
+it in **Workspace settings → Features**, then opens **Work management → Time tracking**
+to choose exact reporting or upward rounding to 15 or 30 minutes. Exact duration is
 retained for every entry; the policy only determines its reportable duration.
 
 ## Log time on a Task
@@ -23,6 +23,11 @@ immediately after Inbox. Press `T` to open it, or select it from the sidebar,
 then choose a bounded date range, review your reportable and exact totals, and
 download the same range as CSV. The CSV includes the work date, Project, Task,
 reportable and exact seconds, and optional note.
+
+The initial range is your current week according to your Account timezone and
+first-day-of-week preference. Work dates are shown using your Account locale and
+date format. The date field itself remains a calendar date and is never shifted
+when you travel or change time zones.
 
 ## Toggl Track integration
 

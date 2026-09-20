@@ -47,7 +47,7 @@ result; Undo will not overwrite a later person's edit.
 
 MCP exposes the same domain capabilities through `task_result_set_*`, `task_selection_*`,
 `task_saved_view_*`, `document_patch_*`, `change_set_*` and `operation_receipt_*`, plus
-`workspace_member_resolve`, `activity_list` and `task_context_get`. New tool inputs contain
+`workspace_member_resolve`, `activity_list`, `summarize` and `task_context_get`. New tool inputs contain
 `workspace_id` and a typed `request`; writes also require `idempotency_key`. Human approval is never
 a model-supplied field or MCP tool. Discovery describes each tool's policy and limits.
 
@@ -56,6 +56,10 @@ projection. Its request may include RFC 3339 `from` and `before` timestamps; `fr
 `before` is exclusive. Pagination cursors are valid only for the same scope, resource and interval.
 The response repeats applied boundaries in UTC and reports `retained_days`; an interval extending
 beyond retention is not proof that older activity did not exist.
+
+`summarize` reads one exact Task, Project or Document by `resource_id`. Project summaries may include
+bounded checked Task highlights. Use the dedicated Task, Project, Document and activity list tools
+for collections, work organization and activity intervals.
 
 Open a saved result to inspect current compact Task fields. Changed and unavailable targets stay
 distinct from the original snapshot. Filter or sort the displayed results, select exact targets,

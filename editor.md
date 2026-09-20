@@ -32,25 +32,32 @@ several blocks applies formatting to the selection.
 
 ## Finding documents
 
-The **Documents** page uses the same wide layout as Home, My Work, and Projects
-and lists top-level documents with the most recently modified first. Up to five
-top-level or nested documents also appear in a horizontally scrollable
-**Recent documents** row above the list. Recent documents stays independent of
-the table filters. Search, Project, and scope filters sit directly above the
-table. The table keeps a fixed **Name**, **Modified**, **Scope**, and **Actions**
-order; select Name, Modified, or Scope to change sorting. Modified uses your
-browser's long date-and-time format.
+The **Documents** page separates documents by where they live. Choose
+**Workspace** for documents outside your Projects, **Projects** for documents
+that belong to a Project, or **All documents** for both. Opening Documents from
+the sidebar always starts on Workspace. In Projects, a Project picker starts on
+**All projects** and can narrow the list to one Project; when you look at more
+than one Project, or at All documents, a **Location** column names each
+document's Project or Workspace.
 
-Your filters, table sort, direction, and current page are kept in the URL, so
-browser back/forward and copied links return to the same view. Changing a filter
-or sort returns to page one.
-Each page shows up to ten documents, with the visible result range beside the
-Previous and Next controls. If nothing matches, choose **Clear filters** to
-return to the complete list.
+Documents are listed with the most recently edited first. Use the sort menu to
+switch to **Title A–Z** or **Oldest edited**. A document with pages beneath it
+has an arrow: select it to show those pages in place, and select it again to
+hide them. Search looks through titles and text, including pages inside other
+documents, and shows each match with the documents it sits under. If nothing
+matches, choose **Clear search**, or **Search all documents** to look everywhere.
 
-Use a row's Actions menu to copy its link or archive it. The Archive page keeps
-the same filters, recent row, table, and paging layout and offers Restore for
-recoverable documents. Permanent deletion is not currently available.
+Your scope, Project, search, sort, and page are kept in the URL, so browser
+back/forward and copied links return to the same view. Changing any of them
+returns to page one. Page controls appear only when the list is longer than one
+page.
+
+**New document** starts in the place you are looking: Workspace on Workspace and
+All documents, or the Project you selected. On **All projects**, choose a Project
+before you create it. Use a row's actions menu to copy its link or archive it.
+**Archive** opens the archive for the scope and Project you are viewing and
+offers Restore for recoverable documents; choose **Active documents** to go back.
+Permanent deletion is not currently available.
 
 If live collaboration cannot start for a newly opened document, Assign switches
 to **Versioned editing** after two attempts. Your edits then use the same
@@ -117,8 +124,13 @@ and you can undo it normally.
 
 ### Images and files
 
-Choose **Image** or **File** from the `/` menu to attach something. Images show
-in place; files show as a named row you can download.
+In an existing Document or Task description, choose **Image** or **File** from
+the `/` menu. Images appear in the editor, while files appear as named download
+rows. Creation drafts hide these commands until the Document or Task exists.
+
+Select an image to reveal its reorder controls. Drag the labelled grip to move
+the block, or use **Move image up** and **Move image down** for keyboard and
+touch reordering.
 
 An attachment is stored as a link to the file, not a copy of it, so it does not
 count against the size of the document itself — it counts against your

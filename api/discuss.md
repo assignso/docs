@@ -40,6 +40,26 @@ by **Discuss agent** under your current permissions; receipts retain the initiat
 specialists use their own Agent identity and post results to the originating private
 conversation.
 
+## Ask an Agent
+
+Type `@` followed by the Agent's name, select it from the suggestions, write your
+request, and send. Suggestions include installed Agents and custom Agents you can use.
+Use the arrow keys to choose a suggestion, then Tab or Enter to insert it. Escape
+closes the suggestions. Selected references appear blue in the input and sent message.
+Keep typing after the reference; selecting an Agent does not send anything automatically.
+The request runs through that exact Agent, and its response appears in Discuss
+under its name. The Agent keeps its configured instructions, tools and permissions.
+
+Choose one Agent per request. You can include Task, Project and Document references.
+If an Agent is unavailable or you lose access, Discuss tells you; it does not choose
+a replacement. Private attachments and saved Search context cannot yet be passed
+through this handoff. Shorten a request if it exceeds the custom-Agent input limit.
+
+API clients can request these suggestions with
+`GET /api/v1/workspaces/{workspace_id}/reference-options?q=grumpy&types=agent&surface=discuss`.
+Omitting `surface` keeps the existing Task Comment eligibility rules. A suggestion
+is not permission to run an Agent; execution checks current access again.
+
 ## Asking about work
 
 Ask “Summarize my projects” for an overview of the Projects you can access, or name one
@@ -49,6 +69,16 @@ Send a Task code on its own to read and explain that Task. Ask to clarify a tick
 missing requirements before proposing changes. When the ticket needs supporting context, Discuss
 searches visible Documents, reads the relevant source, and explains how it relates to the ticket.
 A clarification request does not itself apply an edit; proposed changes require review.
+
+## Chat controls
+
+The conversation scrolls at the page edge. The composer floats above it, with room at the end to read the final message.
+
+The updated Web chat centers the composer on an empty page. A conversation starter fills an editable draft; press Send when you are ready. Type `/` for Focus, Summarize, Plan or Workspace research starters. Use the arrow keys to choose a starter, Enter to insert it, and Escape to dismiss the list.
+
+Conversation map opens the latest 50 loaded user messages. Choose one to return to that point in the conversation; use history search for older messages. Clear page keeps saved messages in Archives.
+
+Expand Activity to inspect recorded work and its current status. Supported Mermaid code blocks have a View diagram action; their source and Copy code remain available. Diagrams with unsupported syntax stay readable as code.
 
 ## Message history
 
@@ -125,11 +155,13 @@ without losing your draft. Preparation does not send a message or use AI credits
 fails, the selection remains available to retry. Retrying a failed Send uses its original selection
 and text while preserving newer edits in the composer.
 
-Pending assistant content may grow as newer message revisions arrive. Older clients may display it
-as plain text until finalization. The upcoming Web update formats complete blocks while keeping
-incomplete Markdown inert; unfinished links must not become active. A clarification pauses
-work for your answer. Submitting the current question's answer continues with the conversation's
-remaining budget; an expired or changed question requires refreshed state.
+Assistant text can appear while Discuss is still using tools. The Web app shows the first
+received text immediately, including partial words. Complete Markdown blocks are formatted;
+unfinished links remain inactive. Before text arrives, a working indicator shows that the response
+is pending. Response time depends on the model and the work requested.
+
+A clarification pauses work for your answer. Submitting the current question's answer continues
+with the conversation's remaining budget; an expired or changed question requires refreshed state.
 
 Use `GET .../events?after=N` to follow saved changes. Start from the history page's
 `event_cursor`, apply newer message revisions, then advance to the returned `cursor`.
@@ -181,9 +213,12 @@ All responses are `private, no-store`.
 ## Personal settings and reminders
 
 `GET` and `PATCH .../discuss/preferences` manage the current membership's IANA
-timezone, work hours/days, exactly three optional ceremonies (start day, end
+timezone, whether that timezone follows the Account timezone, work hours/days, exactly three optional ceremonies (start day, end
 day, end week), conservative push opt-in, and wording personality. Updates use
-the returned revision. Plan changes never enable ceremonies or push.
+the returned revision. When `timezone_inherited` is true, the returned
+`timezone` is the resolved effective Account value and later Account timezone
+changes continue to apply. Setting an explicit Discuss timezone sets inheritance
+false. Plan changes never enable ceremonies or push.
 
 `GET` and `POST .../discuss/reminders` list or create explicitly confirmed work
 reminders with a concrete due instant and timezone. `PATCH
@@ -226,15 +261,14 @@ built-in catalog and hired/ready Workspace Agents.
 The upcoming Web correction shows a pending response status once: in the empty response body,
 then below partial text while the response continues. Completion removes that pending status.
 
-When Discuss uses internal reads, changes, specialists or recorded evidence, the assistant message
-shows at most one compact activity row. The row updates in place from **Working** to completed, failed
-or cancelled. The upcoming Web refinement expands this disclosure into plain single-line activity
-and evidence summaries, without borders, backgrounds, timestamps, pagination controls or a nested
-scroll area. Dedicated recorded-activity inspection retains its paginated history and timing.
-This activity is an audit-friendly summary,
-not model reasoning or a raw tool transcript, and a refresh does not duplicate it.
+One or two tool calls appear as individual disclosures. Longer chains share a collapsible
+timeline. Each call shows its current state; expanding an individual call shows its safe summary
+and any available result count or recorded duration. Long timelines show up to 20 calls,
+prioritizing working and failed calls, and say when earlier calls are omitted. These summaries
+do not expose model reasoning or raw tool requests and results. Sources and specialist controls
+remain beside the response.
 
-When a response uses implementation or test evidence, its activity detail can show evidence references.
+When a response uses implementation or test evidence, the response can show evidence references.
 A code reference names an exact commit, repository-relative path, optional symbol, and line range. **Verified
 CI** means a passed record from Assign's canonical integration or work-session journal for that exact
 repository commit. **Reported tests** means an external Agent or tool reported the result; Assign has
@@ -637,3 +671,17 @@ duration bound. Browser clients wait for `session.started` before reporting that
 The Voice session response may include `context_cursor`, the Discuss event cursor associated with startup history. Clients that keep Voice context current should catch up from that cursor through the existing Discuss event API and deduplicate message revisions against their live event feed. Canonical updates provide context; they must not be submitted as new user requests.
 
 Voice sessions are bound to the authenticated session that created them. Expiry, sign-out, access changes or inactivity can end Voice. A session whose closure is still being confirmed can temporarily prevent another session from starting; continue in text while confirmation is pending.
+
+## Public web search and saved memory
+
+Ask Discuss to search the public web, or choose `/search` in the composer. Search activity appears separately from Workspace sources. Completed page visits include links to the original sites.
+
+Save a private note by sending `/remember` followed by up to 1,000 characters. Send `/memories` to list your notes, or `/forget` followed by a note ID to remove one from saved context. You can keep up to 32 notes. Each note shows its original message and ID. Forgetting a note leaves the original conversation intact. Editing or deleting its original message stops it from being recalled as saved memory.
+
+Saved notes belong to your Discuss conversation in the current Workspace. Discuss can receive up to 16 notes per turn, within its context limit. These notes are not shared Workspace knowledge or memory saved by another connected client.
+
+### Recovering a failed answer
+
+If Discuss cannot finish an answer, an error banner appears below any available response text. Your request stays saved. Choose **Restore retry draft** to review the original request and its context, then send it when ready. Restoring the draft does not submit it. If restoration fails, the error remains visible so you can try again.
+
+Activity summaries review a limited number of recent changes in the requested period. If more changes remain, the summary should say so; a partial summary does not mean there were no other changes.

@@ -22,6 +22,19 @@ Codex's own supported MCP registration and OAuth commands. The existing browser
 session normally avoids another credential entry, but Codex still receives a
 separate, revocable MCP credential; the Assign CLI token is never shared.
 
+For a client that needs stdio, opt in explicitly:
+
+```sh
+assign mcp setup codex --transport stdio --scopes assign:read
+```
+
+The local process forwards MCP JSON and streaming responses to the same remote
+Assign MCP catalog. It exchanges the CLI credential for a short-lived,
+non-refreshable MCP token whose scopes and lifetime can only be narrower than
+the parent. The process remains bound to its first Workspace; reconnect after a
+Workspace switch. Direct remote OAuth remains the default and is usually the
+simplest choice.
+
 You can also perform the same Codex steps directly:
 
 ```sh
@@ -86,9 +99,10 @@ the same structured results, text and resource links. Widget availability depend
 the client and server version; it does not establish support for every desktop
 or mobile client. [Claude web/Desktop](https://modelcontextprotocol.io/extensions/apps/overview#client-support)
 and [current Cursor editor releases](https://cursor.com/help/customization/mcp#does-cursor-support-mcp-apps)
-document MCP Apps support. Claude Code, Cursor CLI, Google Antigravity and other MCP-only surfaces still receive
-the structured result, text and links; treat embedded rendering on those exact surfaces as
-unsupported until their vendor documents it and Assign verifies it.
+document MCP Apps support. Claude Code, Cursor CLI, Google Antigravity and other
+MCP-only surfaces still receive the structured result, text and links; treat
+embedded rendering on those exact surfaces as unsupported until their vendor
+documents it and Assign verifies it.
 
 ## Available tools
 
@@ -109,6 +123,10 @@ The initial catalog is intentionally bounded:
   Agents cannot access their owner's Inbox.
 - Search Projects, Tasks, Documents, comments, and active People inside one authorized
   Workspace.
+- Use `summarize` for a permission-checked Task, Project, Document, filtered collection,
+  personal-work, next-work, or activity summary. Activity summaries require an explicit time
+  interval. The result includes its coverage and source versions. A partial result or a Document
+  marked `metadata_only` does not establish that information is absent.
 - Create Documents and replace Document content with revision checks.
 - List, inspect, create, update, or archive label definitions. Read and replace
   complete label assignments for Documents, Projects, and Tasks with the
@@ -128,7 +146,8 @@ The initial catalog is intentionally bounded:
 - When the selected Workspace has enabled and entitled Workspace Knowledge,
   search and traverse its permitted indexed context with `knowledge_search`,
   `knowledge_context`, `knowledge_related`, `knowledge_path`, and
-  `knowledge_impact`.
+  `knowledge_impact`. Use `knowledge_status` for a content-free readiness and
+  coverage diagnosis.
 - When that Workspace also has an eligible connected repository, search and
   inspect bounded dependency impact with `code_search` and `code_impact`.
 - When optional session memory is available, use `memory_remember` to begin or
@@ -152,17 +171,23 @@ The initial catalog is intentionally bounded:
   `knowledge_get_evidence` when current source metadata or a bounded passage is needed.
 
 Knowledge and code tools use the same Assign MCP connection and the existing
-`assign:read` scope. They appear only when at least one currently authorized
-Workspace is eligible; a Workspace-bound service credential sees only its own
-eligible catalog. Every invocation repeats current membership, Workspace
+`assign:read` scope. Retrieval tools appear only when at least one currently
+authorized Workspace is eligible; `knowledge_status` remains available to a
+read-scoped connection so it can return a content-free generic unavailable
+state. A Workspace-bound service credential sees only its own eligible catalog.
+Every invocation repeats current membership, Workspace
 policy, subscription, Project, repository, and service-readiness checks, so a
 tool cached by a client fails safely after a downgrade or access change.
 
-Knowledge queries accept at most 500 characters and 50 results. Traversals are
+Knowledge queries accept at most 500 characters and 50 results. Start with five
+results and depth one, then expand only when needed. Traversals are
 bounded to depth 8, and path queries return at most 5 paths. Results include
-evidence, provenance, freshness, and any abstention or truncation reason rather
-than an unqualified generated answer. The catalog never exposes internal graph,
-dataset, model, provider, or raw Cognee controls.
+`match_status`, per-family coverage, evidence, provenance, freshness, and any
+abstention or truncation reason rather than an unqualified generated answer.
+Coverage distinguishes `ready`, `partial`, `stale`, and `unavailable`; a
+`no_match` result applies only to the coverage the response declares. Relation
+and provenance filters can narrow graph traversal at the server. The catalog
+never exposes internal graph, dataset, model, provider, or raw Cognee controls.
 
 Knowledge evidence handles are signed, short-lived Workspace-bound locators, not access grants.
 Resolve 1–20 handles from the same result generation. Assign checks your current membership,
@@ -377,9 +402,10 @@ create a replacement when rotating access.
 - If a tool is rate limited, wait for the returned retry interval and retry the
   same operation with the same idempotency key.
 - If a Knowledge or code tool disappears or returns `tool_unavailable`, refresh
-  the client's tool list. Confirm that Workspace Knowledge is enabled, the
-  subscription is active, the relevant Project or repository remains in scope,
-  and the Knowledge service is ready.
+  the client's tool list, then call `knowledge_status`. Its coverage shows
+  whether a family is partial, stale, or unavailable without returning customer
+  content. Confirm Project/repository scope or Workspace settings only when the
+  diagnostic asks for that action.
 - If a Knowledge call returns `knowledge_not_current`, wait for indexing to
   reach the requested source sequence, then retry with the same bounds.
 - If a connection was unused for 90 days or reached one year, authorize it

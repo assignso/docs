@@ -179,6 +179,19 @@ The same nullable projection is present on My Work results and the bounded Task
 rows in Project Overview, so clients can show additional context without a
 per-Task body request.
 
+## Images and files in Task descriptions
+
+An existing Task description can insert image and file blocks through the
+normal Task attachment operations. Complete the direct upload, link the
+attachment with `POST /api/v1/tasks/{task_id}/attachments`, and then store its
+opaque attachment ID in the rich-text node. Clients resolve that ID from the
+bounded Task attachment collection and request fresh preview or download URLs;
+signed URLs never belong in Task content.
+
+Task creation drafts do not have a Task attachment owner yet. They can queue
+page-level files for linking after creation, but must not insert unowned image
+or file nodes into the draft description.
+
 ## Recover a Task description
 
 `GET /api/v1/tasks/{task_id}/description-revisions?limit=50` returns immutable

@@ -31,6 +31,14 @@ family. `POST /api/v1/cli/oauth/revoke` revokes the current interactive CLI
 family. These tokens are accepted only at API-host CLI operations and are never
 accepted by the MCP resource host.
 
+The optional local MCP bridge exchanges a current CLI OAuth credential or
+personal API token at `POST /api/v1/cli/mcp/token`. The response is a
+short-lived, non-refreshable MCP bearer for the same Workspace. Requested
+scopes may narrow but never expand the parent. Parent expiry or revocation is
+checked on every MCP authentication, so the derived token stops working
+immediately. Applications should use the CLI setup command rather than calling
+this exchange directly.
+
 ## Native mobile OAuth
 
 The API implements native mobile OAuth and push-device operations. A particular
