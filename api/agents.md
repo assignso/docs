@@ -284,10 +284,15 @@ active definition does not by itself prove that production execution is ready.
 
 Pausing an Agent or changing its Project scope cancels pending work and
 invalidates outstanding approvals. Approval also checks current permissions and
-the exact Task revision. A run that could not start before its dispatch deadline
+the exact Task revision. If the execution service is missing an Agent's rebuildable
+materialization, Core keeps the same queued run, reconciles the current Agent revision,
+and retries admission. A run that still could not start before its dispatch deadline
 reports `agent_dispatch_expired`; you can request a new run. A dispatch that exhausts
-its resolution attempts before execution starts reports `agent_resolution_exhausted` once
-reconciled. This failure does not mean an Agent action was performed. A terminal failed run with an uncertain provider outcome remains non-retryable while its credit reservation is reconciled. Running work can reconnect within its original permissions and time limit; revoked or expired authority cannot be renewed by retrying.
+its resolution attempts before execution starts reports `agent_resolution_exhausted`
+once reconciled. This failure does not mean an Agent action was performed. A terminal
+failed run with an uncertain provider outcome remains non-retryable while its credit
+reservation is reconciled. Running work can reconnect within its original permissions
+and time limit; revoked or expired authority cannot be renewed by retrying.
 
 Safe summaries, reports and action previews expire after 90 days. Purging a Task
 removes its associated retained Agent content and cancels pending actions;
