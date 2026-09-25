@@ -66,8 +66,8 @@ contains the account and interface-preference fields shown above;
 Workspace is created. The username is allocated from the full name during registration.
 Optional `profile_picture_url` and `title` values may be `null`.
 `avatar_initials` (1–2 characters, `null` derives letters from the full name)
-and `avatar_color` (a Tailwind color family name such as `indigo`, from the
-same vocabulary as label colors, random at registration) drive the two-letter SVG avatar shown without a picture.
+and `avatar_color` (a shared palette color such as `indigo` or `indigo-200`,
+the same vocabulary as label colors; a random family name at registration) drive the two-letter SVG avatar shown without a picture.
 `totp_enabled` is read-only and true only after an authenticator-app setup has
 been confirmed; clients use it to render the correct setup, recovery-code, or
 disable state and must still rely on the security endpoints for authorization.
@@ -141,8 +141,10 @@ username cannot be cleared. An empty optional profile text value removes it.
 An empty `avatar_initials` clears the letters override; `avatar_color` always
 carries one of `slate`, `gray`, `zinc`, `neutral`, `stone`, `red`, `orange`,
 `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`,
-`indigo`, `violet`, `purple`, `fuchsia`, `pink`, or `rose`; clients choose the
-rendered shade.
+`indigo`, `violet`, `purple`, `fuchsia`, `pink`, or `rose`, optionally pinned to
+one Tailwind step with a suffix (`-50`, `-100` … `-900`, `-950`). A bare name lets
+clients choose the rendered shade; a pinned value such as `amber-400` renders that
+exact shade.
 `name_display` is `username` or `full_name`, and username display requires a
 selected username. `first_day_of_week` is `sunday` or
 `monday`. `editor_controls` is `contextual` or `persistent` and changes only
