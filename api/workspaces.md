@@ -302,8 +302,8 @@ creation. The caller becomes the new Workspace's first `owner`. `name` is
 trimmed and must be 1 to 100 characters. `slug` is optional; when supplied it
 must be a unique canonical path, and when omitted Core generates one.
 
-Each human account may own one active Free Workspace. Repeating the command
-after that claim is occupied returns `409 free_workspace_claim_unavailable`
+Each human account may own up to three active Free Workspaces. Repeating the command
+after all three ownership slots are occupied returns `409 free_workspace_claim_unavailable`
 without creating a Workspace, membership, Actor, or event. The idempotency key
 is scoped to the account, so retrying through a different selected Workspace
 still replays the same result.
@@ -312,7 +312,7 @@ Creating a Workspace does not switch the calling session into it — see
 [Switch the session's Workspace](authentication.md#switch-the-sessions-workspace).
 
 Before presenting the form, use `GET /api/v1/workspace-creation-options`. It
-returns `free_available`, the claimed Free Workspace summary when applicable,
+returns `free_available`, a claimed Free Workspace summary when applicable,
 and the currently purchasable paid choices. Paid creation remains absent while
 the billing catalog is inactive; the Web flow explains that state instead of
 offering a control Core would reject.

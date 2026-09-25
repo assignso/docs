@@ -1,19 +1,31 @@
 # Tasks
 
-These operations require an authenticated browser session (see
-[Browser authentication](authentication.md)) and follow the shared
-[API conventions](conventions.md), including `Idempotency-Key` on creates and
-`If-Match`/`ETag` on updates.
+These operations require an authenticated browser session or a bearer
+credential listed for the operation in OpenAPI. First-party IDE credentials use
+the developer-client flow in [Authentication](authentication.md). The shared
+[API conventions](conventions.md) apply, including `Idempotency-Key` on creates
+and `If-Match`/`ETag` on updates. Browser mutations require CSRF; bearer
+mutations do not use cookies or CSRF.
 
-## My Work (published native-bearer contract; not yet served)
+## My Work
 
 `GET /api/v1/workspaces/{workspace_id}/work?view=assigned|overdue|today|upcoming|completed`
 is the bounded caller-scoped My Work projection. It uses the signed-in actor's
 persisted IANA timezone for date buckets, returns the server's `as_of_date`,
-defaults to 50 rows, and caps a page at 100. The browser-session route is
-already contracted; its native-bearer alternative is published but unavailable
-until the mobile credential backend is released. Mobile apps must not derive
-these buckets from a general Task listing while they wait.
+defaults to 50 rows, and caps a page at 100. Browser, native mobile, personal
+API token, and developer-client credentials all use this canonical projection
+with the scopes listed in OpenAPI.
+
+## List followed Tasks
+
+`GET /api/v1/workspaces/{workspace_id}/subscribed-tasks` returns Tasks the
+current user follows. The server determines the user from the authenticated
+session or bearer credential; the request does not accept an actor ID.
+
+Results are ordered by the time each subscription last changed. Following a
+Task again moves it to the front even when the Task itself has not changed.
+The default page size is 50 and the maximum is 100. Continue with the returned
+`next_cursor`. Archived, trashed, purged, and unreadable Tasks are excluded.
 
 ## List Workspace Tasks
 
@@ -35,7 +47,7 @@ Workspace contributes no rows, so this endpoint cannot reveal whether that
 Project exists. This is not a text-search endpoint; use
 [Workspace search](search.md) for matching and ranking.
 
-### Checked pagination (awaiting deployment)
+### Checked pagination <Badge type="warning" text="Awaiting deployment" />
 
 Set `consistency=checked` to receive `query_digest`, `collection_version`,
 `visibility_revision`, `observed_at`, cumulative `returned_count`, and `coverage`.
@@ -318,6 +330,18 @@ Task. Expired or already-transitioned commands also return a stable `409`.
 Each successful reversal is a new ordinary Task mutation and appears through
 the normal realtime and Activity paths.
 
+## Start work
+
+`POST /api/v1/tasks/{task_id}/start` moves the Task to the Project's active
+Status and assigns it to the calling Actor in one transaction. Send the Task's
+last observed revision in `If-Match` and use an `Idempotency-Key`. The response
+contains the updated canonical Task and a `reassigned` flag. When that flag is
+true, another Actor's open assignment period was closed; the API does not expose
+that Actor's identity in this response.
+
+Start Work changes server state only. IDE clients handle branch creation or
+switching as a separate, explicit local action.
+
 ## Bulk-update selected Tasks
 
 ```http
@@ -493,9 +517,14 @@ optimistic retries safe.
 For a `parent` relation, the request path Task is the parent and the request
 body's `target_task_id` is its child. A child has at most one parent and nesting
 is limited to three levels. Relation reads are newest-first bounded pages (up
-to 100) and are subject to the current Project's access policy, including
-private Projects. Parent and child Tasks retain independent identity, status,
-assignee, and completion; a parent has no separately mutable percentage.
+to 100, `limit` query parameter) and are subject to the current Project's
+access policy, including private Projects. Pass the response's `next_cursor`
+back as the `cursor` query parameter to fetch the next page; `next_cursor` is
+`null` on the last page. Each returned item embeds `related_task` (`id`,
+`code`, `title`, `status_id`) describing whichever Task is not the request
+path Task, so a client can render the relation without a separate lookup.
+Parent and child Tasks retain independent identity, status, assignee, and
+completion; a parent has no separately mutable percentage.
 Removing a `parent` relation promotes the child to an independent Task without
 copying or changing its identity. To move a related Task to another Project,
 remove its relations first: the update is otherwise rejected with
@@ -512,14 +541,27 @@ freshness, action, and pagination contract.
 
 When Workspace Knowledge is enabled and ready, `GET
 /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` returns at
-most five permission-filtered, read-only related subjects. Each result includes
-a display title, type, explanation, and source time. Globally unconfigured,
-Free or otherwise unentitled, disabled, unacknowledged, empty-scope, and
-out-of-scope conditions use the empty state and are omitted from Task detail.
-The temporarily unavailable state is reserved for a genuine retrieval or
-currentness failure after eligibility; it never blocks the Task, its canonical
-Relations, or Comments and never creates a Task relation. Stale successful
-observations remain labelled.
+most five permission-filtered related subjects, each backing the Task detail
+page's **Suggestions** tab. Each result includes a display title, type,
+explanation, source time, and a `confidence` bucket (`high`, `medium`, or
+`low`) computed from fixed score thresholds, so the same kind of relation
+always buckets the same way regardless of what else is in the result.
+Globally unconfigured, Free or otherwise unentitled, disabled, unacknowledged,
+empty-scope, and out-of-scope conditions use the empty state and are omitted
+from Task detail. The temporarily unavailable state is reserved for a genuine
+retrieval or currentness failure after eligibility; it never blocks the Task,
+its canonical Relations, or Comments. Stale successful observations remain
+labelled.
+
+`POST /api/v1/workspaces/{workspace_id}/tasks/{task_id}/suggestion-feedback`
+records the user's confirm or discard decision on one Suggestions-tab result:
+`{"entity_kind": "task"|"document", "entity_id", "outcome": "confirmed"|"discarded"}`,
+requiring CSRF and idempotency headers, returns `{"accepted": true}`. Confirming
+a Task result creates a `relates` Task relation through the same relation
+model as [Manage Task relations](#manage-task-relations); confirming a
+Document result links the Document to the Task. Discarding a result
+permanently excludes that subject from future Suggestions for this Task —
+it does not resurface after the discard.
 
 ## Edit or delete a comment
 

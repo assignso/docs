@@ -2,9 +2,10 @@
 
 `GET /api/v1/workspaces/{workspace_id}/search` searches Project, Task,
 Document, Comment, and active workspace People in the caller's current
-Workspace. Browser-session authentication is
-required. The Workspace boundary and read authorization are enforced by the
-server, so a result never confirms the existence of an inaccessible resource.
+Workspace. Browser sessions, scoped personal API tokens, and registered
+developer-client credentials are accepted. The Workspace boundary and read
+authorization are enforced by the server, so a result never confirms the
+existence of an inaccessible resource.
 
 ## Request
 
@@ -68,7 +69,7 @@ partially empty index. Search also has a dedicated request rate limit and a
 short database query deadline. When workload protection trips, retry after the
 `Retry-After` delay from `503 search_unavailable`; do not loop immediately.
 
-## Inspect and ask Discuss (upcoming update)
+## Inspect and ask Discuss <Badge type="warning" text="Upcoming" />
 
 Search remains deterministic, including Enter. **Inspect work-result context** shows your query,
 Workspace work scope and the returned page version. **Ask Discuss about work results** opens the

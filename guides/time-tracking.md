@@ -55,7 +55,7 @@ changes.
 
 The public API provides Workspace policy, Task-entry, Task/Project-total,
 personal-timesheet, and CSV-export operations under `/api/v1`. See the
-machine-readable [OpenAPI contract](../openapi-spec/openapi.yaml) for request
+machine-readable [OpenAPI contract](../api/endpoints.md#time-tracking) for request
 and response schemas.
 
 Before a Workspace has stored its first policy, the policy read reports

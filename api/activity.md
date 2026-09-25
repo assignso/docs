@@ -125,7 +125,7 @@ an action by Ada through Codex remains attributed to Ada and is presented as
 “Performed via MCP by Codex.” Credentials, prompts, tool arguments, and private
 provider metadata are never returned.
 
-### Task development history (upcoming)
+### Task development history <Badge type="warning" text="Upcoming" />
 
 Task history can return `task.development_updated` for a linked GitHub, GitLab or Bitbucket item.
 Its bounded scalar summary can include `provider`, `rich_entity_id`, `entity_type`,

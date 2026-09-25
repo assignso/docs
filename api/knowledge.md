@@ -87,6 +87,12 @@ answer. They may also use the existing `knowledge_search`, `knowledge_context`,
 `knowledge_related`, `knowledge_path`, and `knowledge_impact` tools rather than
 this browser-session route.
 
+Each related-context result now also carries a `confidence` bucket, and a
+companion `suggestion-feedback` endpoint records the user's confirm/discard
+decision on a result — see [Read linked external context](tasks.md#read-linked-external-context)
+for the full contract. Neither is exposed as an MCP tool; this remains a
+browser Task-detail-only surface.
+
 Each Knowledge MCP response declares `match_status` and coverage for canonical,
 lexical, semantic, source-assertion, cross-domain, and code retrieval. Coverage
 can be `ready`, `partial`, `stale`, or `unavailable`, with a safe reason when
@@ -96,7 +102,11 @@ turn missing or stale coverage into proof that nothing exists. Use
 the service cannot answer a graph question. Graph tools also accept bounded
 relation and provenance filters. Extracted source assertions retain their
 source revision and modality and remain distinct from canonical Assign
-relations.
+relations. To traverse an extracted claim, use `knowledge_path` or
+`knowledge_impact`, include `source_asserts` in `relation_types`, and list the
+claim types you want in `assertion_modalities`. The accepted values are
+`proposed`, `accepted`, `rejected`, `reported`, and `inferred`. Assign does not
+include source assertions in `knowledge_context` or `knowledge_related`.
 
 Optional MCP session memory is separate from this shared evidence layer.
 `memory_remember` stores a bounded note in an explicitly consented 30-day scope

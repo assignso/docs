@@ -22,6 +22,8 @@ Workspace, the caller's Actor within it, and their role:
   "display_name": "Jane Doe",
   "username": "jane",
   "profile_picture_url": "https://cdn.example.com/jane.jpg",
+  "avatar_initials": null,
+  "avatar_color": "indigo",
   "title": "Engineering manager",
   "phone": "+36 30 123 4567",
   "bio": "Building calm collaboration tools.",
@@ -63,6 +65,9 @@ contains the account and interface-preference fields shown above;
 `workspace`, `actor_id`, `role`, and `authorization_revision` are omitted until the first
 Workspace is created. The username is allocated from the full name during registration.
 Optional `profile_picture_url` and `title` values may be `null`.
+`avatar_initials` (1–2 characters, `null` derives letters from the full name)
+and `avatar_color` (a Tailwind color family name such as `indigo`, from the
+same vocabulary as label colors, random at registration) drive the two-letter SVG avatar shown without a picture.
 `totp_enabled` is read-only and true only after an authenticator-app setup has
 been confirmed; clients use it to render the correct setup, recovery-code, or
 disable state and must still rely on the security endpoints for authorization.
@@ -74,7 +79,7 @@ overview with at most 100 active Workspace memberships per page. Each row contai
 Workspace identity, the current user's relationship, that Workspace's
 independent plan and canonical lifecycle state, and whether the relationship
 may navigate to Workspace billing management. The response also reports
-whether the account's one Free Workspace claim is available.
+whether another slot in the account's three-Free-Workspace allowance is available.
 
 This is a read-only overview, not an account subscription. It omits payment,
 invoice, tax, billing-contact, provider-customer, and entitlement detail and
@@ -125,7 +130,7 @@ Content-Type: application/json
 
 The request may contain one or more of `display_name`, `username`, `title`,
 `phone`, `bio`, `profile_status`, `name_display`, `first_day_of_week`,
-`editor_controls`,
+`editor_controls`, `avatar_initials`, `avatar_color`,
 `timezone`, `locale`, `date_format`, `time_format`, `number_format`, and the
 synchronized Voice preferences. Full names are 1–100 characters. Usernames are
 globally unique,
@@ -133,6 +138,11 @@ lowercase, 3–30 characters, and use letters, numbers, underscores, or interior
 hyphens. A username may change, but every successfully claimed value remains
 reserved to the same account so old profile links cannot be transferred. The
 username cannot be cleared. An empty optional profile text value removes it.
+An empty `avatar_initials` clears the letters override; `avatar_color` always
+carries one of `slate`, `gray`, `zinc`, `neutral`, `stone`, `red`, `orange`,
+`amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`,
+`indigo`, `violet`, `purple`, `fuchsia`, `pink`, or `rose`; clients choose the
+rendered shade.
 `name_display` is `username` or `full_name`, and username display requires a
 selected username. `first_day_of_week` is `sunday` or
 `monday`. `editor_controls` is `contextual` or `persistent` and changes only
@@ -252,14 +262,17 @@ Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Content-Type: application/json
 
-{"name":"terminal","scopes":["assign:read"]}
+{"name":"terminal","scopes":["assign:read","assign:discuss"]}
 ```
 
 The `201` response is the only time the raw `token` is returned. Store it in a
 secret manager or `ASSIGN_TOKEN`; do not place it in a URL, terminal command,
 or checked-in file. The default expiry is 90 days and the maximum requested
 expiry is one year. `assign:read` permits the shipped CLI My Work view;
-`assign:write` is reserved for future authorized CLI mutations.
+`assign:write` permits the CLI's supported Task mutations; and
+`assign:discuss` permits canonical Discuss history, messages, events,
+cancellation, and interaction decisions. The Discuss availability and
+Workspace authorization checks still apply.
 
 Revoke a token with `DELETE /api/v1/me/api-tokens/{token_id}` and the same
 CSRF header. It returns `204`; future API-host bearer requests fail
@@ -424,7 +437,7 @@ X-CSRF-Token: <csrf-token>
 
 Answers `204` and immediately revokes the connection's access and refresh
 tokens. A grant belonging to another user reports the same `404` as an absent
-grant. See [Connect an MCP client](../mcp.md) for the client authorization and
+grant. See [Connect an MCP client](../mcp/index.md) for the client authorization and
 session lifecycle.
 
 ## List current-user Workspaces

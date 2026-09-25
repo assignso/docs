@@ -202,11 +202,12 @@ At most two specialists may be active in one private conversation; specialist wo
 recursively
 delegate another specialist. All responses are membership-private and `no-store`.
 
-The compatible synchronous `POST .../messages` requires the session CSRF token and an
-`Idempotency-Key`.
-Retries with the same key return the existing turn and do not repeat Knowledge
-work. Allow up to 130 seconds for a synchronous assessment response. Cancelling a
-request stops answer generation; the submitted message remains saved.
+The compatible `POST .../messages` requires the session CSRF token and an
+`Idempotency-Key`. It now returns the saved user message and pending assistant turn
+immediately, then completes through the same supervisor and streamed event path as
+`POST .../turns`. Retries with the same key return the existing turn and do not start
+another run. Request cancellation after the response does not cancel the queued turn;
+use the run cancellation endpoint for an explicit Stop.
 `POST .../read-state` advances the private read position monotonically.
 All responses are `private, no-store`.
 
@@ -415,10 +416,10 @@ can make old references unavailable.
 
 File context is bounded to 4,000 characters. Discuss can extract PDF, DOCX, PPTX, CSV
 and XLSX content; spreadsheet formulas use saved values and are not recalculated.
-With the OpenAI transport, supported images and PDFs of up to four pages can also be
+Supported images and PDFs of up to four pages can also be
 read visually, using the turn's normal call and credit limits. Visual interpretations
 may be incomplete. Larger PDFs use local text extraction up to 20 pages; scanned PDF
-OCR is limited to four pages and requires the configured extraction tools. Unsupported,
+OCR is limited to four pages. Unsupported,
 encrypted or oversized inputs report unavailable context. Audio/video processing is
 not supported. Private files are not added to shared Knowledge indexing.
 
@@ -465,7 +466,7 @@ reviewed ChangeSets and write recovery in the upcoming update.
 
 ## Durable reviews and operation references
 
-### Unread activity and questions (upcoming Web update)
+### Unread activity and questions <Badge type="warning" text="Upcoming" />
 
 Discuss shows an unread count in the sidebar and a dot when the sidebar is collapsed.
 The badge displays `99+` for larger counts. It refreshes while the app is visible and
@@ -492,7 +493,7 @@ operation references (`operation_id`, `tool`, `state`, and optional resource ide
 Receipts survive response recovery and regeneration; regenerating an existing committed result does
 not repeat its action. Continue to handle unknown message-part types safely. Use canonical receipt
 and ChangeSet controls to inspect outcomes, including partial or refused work, instead of inferring
-success from answer text. See [MCP](../mcp.md#recall-private-discuss-history-and-manage-explicit-rules)
+success from answer text. See [MCP](../mcp/discuss.md#recall-private-discuss-history-and-manage-explicit-rules)
 for exact private-message recall and explicit rule controls.
 
 While an assistant message is pending, an extensible `runtime_status` part can carry an allowlisted
@@ -502,7 +503,7 @@ status. The membership-private recorded-activity feed can additionally expose `s
 `run.terminal`, `interaction.required`, `interaction.resolved` and `result.available`; their summaries
 are Core-owned, while work details are resolved from the canonical operation receipt.
 
-## Private live updates (upcoming update)
+## Private live updates <Badge type="warning" text="Upcoming" />
 
 In the upcoming Web update, **Inspect task**, **Inspect project** and **Inspect document** load current
 authorized metadata from Sources. Changed or archived resources are labeled; unavailable resources
@@ -561,7 +562,7 @@ containing the same ChangeSet `id` and the current `version` and `digest`. Core 
 unrelated versions. Retry with the identical request and idempotency key; changing the reviewed
 identity is a new request. Standalone proposal pages retain separate review and apply actions.
 
-### Personal Task views (upcoming update)
+### Personal Task views <Badge type="warning" text="Upcoming" />
 
 Filter a Task result card by title/code, choose title order, then **Save query as view**. A view keeps
 its original scope plus up to four title/code filters. **Saved personal views** lists your views;
@@ -569,7 +570,7 @@ opening one queries current Tasks and opens a new result snapshot. The previous 
 selections remain unchanged. Filtering is limited to the checked 1,000-Task scan; partial coverage,
 even with no matches, does not establish that no other matching Tasks exist.
 
-### Search context (upcoming update)
+### Search context <Badge type="warning" text="Upcoming" />
 
 The Search handoff opens Discuss with the visible query and result version. Remove the chip to omit
 it; opening Discuss never sends automatically. API clients send
@@ -605,7 +606,7 @@ configuration or access change can make an Agent result unavailable. Stop preser
 committed. A successful scheduled report can still be useful when it made no changes; an empty
 no-action completion creates no extra message.
 
-### Evidence follow-up context (upcoming update)
+### Evidence follow-up context <Badge type="warning" text="Upcoming" />
 
 On the evidence page, save any changed exclusions, then choose **Ask Discuss about this investigation**.
 The existing conversation opens with an **Evidence · Version N** chip. Remove it to omit the context;
@@ -648,7 +649,7 @@ appear normally. **Undo** brings the earlier messages back. Clearing survives re
 to your account, Workspace and conversation on this browser; it does not delete history or reset
 Discuss's context. Finish active responses and open questions before clearing the page.
 
-### Live voice (upcoming update)
+### Live voice <Badge type="warning" text="Upcoming" />
 
 Enable **Browser dictation + Live voice** under Preferences → Voice, then use **Start voice
 conversation** in Discuss. The compact conversation stays in the current thread, keeps the text

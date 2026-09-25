@@ -144,12 +144,15 @@ content as deterministic UTF-8 Markdown. Add `?revision={revision}` to export a
 historical snapshot. `PUT /api/v1/documents/{document_id}/markdown` imports up
 to 2 MiB and replaces the current content under `If-Match`.
 
-The interchange format is a safe CommonMark/GFM subset covering paragraphs,
-headings, emphasis, inline and fenced code, block quotes, ordered and unordered
-lists, task lists, and horizontal rules. Raw HTML, external images, tables,
-footnotes, and definition lists are rejected with `400 invalid_markdown` rather
-than executed or silently flattened. Assign attachments are omitted from
-Markdown export because signed download URLs must not become portable content.
+The interchange format structures the safe Assign CommonMark/GFM profile,
+covering paragraphs, headings, emphasis, inline and fenced code, block quotes,
+ordered and unordered lists, task lists, and horizontal rules. Other bounded,
+valid UTF-8 Markdown is accepted without interpreting unknown syntax:
+unsupported blocks such as raw HTML or GFM tables are preserved as inert
+`markdown` code blocks, and unsupported inline constructs are kept as inline
+code. Raw HTML is never executed. Native editable tables require a later
+versioned editor format. Assign attachments are omitted from Markdown export
+because signed download URLs must not become portable content.
 
 ## Published Documents
 

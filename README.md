@@ -1,44 +1,51 @@
 # Assign documentation
 
-Public API consumers should start with [API conventions](api/conventions.md)
-and [API and client versioning](api/versioning.md).
+Source for [docs.assign.so](https://docs.assign.so), the public documentation for Assign. It
+covers the web app, the Assign CLI, the MCP server and the public HTTP API.
 
-Public documentation for Assign 3.0 will live here. The machine-readable HTTP
-contract is maintained separately in `openapi-spec` and is the source for
-generated SDKs.
+The site is built with [VitePress](https://vitepress.dev) and deployed to GitHub Pages from `main`.
 
-Assign uses **Workspace** for its tenant and collaboration boundary and **Task**
-for its work resource. Public product endpoints use `/api/v1`; operational
-responses such as the API-origin health summary at `/`, `/health`, and `/ready`
-are not public API resources. The root summary reports only safe aggregate
-states for the API, database, WebSocket/Yjs collaboration, and optional
-Knowledge service; integrations must not treat it as a versioned product
-contract.
+## Develop
 
-- [API conventions](api/conventions.md)
-- [Supplemental API operation reference](api/operation-reference.md)
-- [Browser authentication](api/authentication.md)
-- [Account and Workspaces](api/account.md)
-- [Assign CLI](cli.md)
-- [Workspace governance](api/workspaces.md)
-- [Projects and Statuses](api/projects.md)
-- [Tasks](api/tasks.md)
-- [Integrations and Rich Entities](api/integrations.md)
-- [Documents](api/documents.md)
-- [Attachments](api/attachments.md)
-- [Current work](api/current-work.md)
-- [Search](api/search.md)
-- [Workspace Knowledge](api/knowledge.md)
-- [Git-backed Documents](api/git-backed-documents.md)
-- [People profiles](api/people.md)
-- [Inbox](api/inbox.md)
-- [Activity](api/activity.md)
-- [Workspace Agents](api/agents.md)
-- [Connect an MCP client](mcp.md)
-- [Time tracking](time-tracking.md)
-- [Writing in Assign](editor.md)
-- [Privacy and cookie choices](privacy-and-cookies.md)
-- [Frontend prototype](frontend-prototype.md)
+```sh
+npm ci
+npm run dev        # http://localhost:5173
+npm run check      # markdownlint and a production build; the build fails on dead links
+```
 
-See [versioned work proposals and receipts](api/work-capabilities.md) for private result sets, drafts,
-reviewed ChangeSets and write recovery in the upcoming update.
+## Structure
+
+| Path | Content |
+| --- | --- |
+| `index.md` | Home page |
+| `get-started/` | Introduction, quickstart and core concepts |
+| `guides/` | Web app guides: Projects, Tasks, editor, settings, shortcuts, time tracking and privacy |
+| `cli/` | Install, authentication, command reference, Discuss, MCP setup and scripting |
+| `mcp/` | MCP overview, client setup, tool catalog, previews, security and troubleshooting |
+| `api/` | API overview, conventions, versioning, authentication and resource guides |
+| `api/endpoints.md` | Generated endpoint index; don't edit by hand |
+| `.vitepress/` | Site config and the Assign theme |
+| `public/` | Static files: favicons, `CNAME` and `robots.txt` |
+
+## Keeping the docs current
+
+The CLI, MCP and API reference pages mirror a source of truth elsewhere, and
+[AGENTS.md](AGENTS.md) describes which source owns each page. Before merging a change that
+touches one of those sources, update the matching page and run:
+
+```sh
+npm run generate:api     # regenerate api/endpoints.md from openapi-spec
+npm run check:sources    # local drift check for the MCP catalog, CLI reference and endpoint index
+npm run check
+```
+
+`check:sources` needs the sibling Assign workspace checkouts, so it runs locally rather than in
+public CI.
+
+## Deployment
+
+`.github/workflows/ci.yml` lints and builds every pull request. Pushes to `main` also deploy the
+build to GitHub Pages. The custom domain comes from `public/CNAME` (`docs.assign.so`).
+
+Content here must be safe for public readers. Internal architecture, security analysis,
+unreleased strategy and credentials don't belong in this repository.

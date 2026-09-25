@@ -351,7 +351,6 @@ the ordinary library entitlement and uses one of the existing five active-Agent 
 five definitions keep their identifiers; Task Revisor keeps its current name. Availability remains
 subject to rollout. Consumers should use the catalog rather than assume a fixed definition count.
 
-
 ## Run a saved custom Agent
 
 In Studio, **Run preview** saves the current edits and queues a preview that cannot commit changes. **Run now** uses the saved active revision and may perform its permitted actions; save any edits you want it to use first. Draft and paused Agents cannot run. Requests appear in the existing history with their pinned revision and status. A queued request is not a completed action.

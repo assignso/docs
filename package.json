@@ -3,9 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "lint": "markdownlint-cli2"
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview",
+    "lint": "markdownlint-cli2",
+    "generate:api": "node scripts/generate-api-endpoints.mjs",
+    "check": "npm run lint && npm run build",
+    "check:sources": "node scripts/check-sources.mjs"
   },
   "devDependencies": {
-    "markdownlint-cli2": "0.23.2"
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "markdownlint-cli2": "0.23.3",
+    "vitepress": "2.0.0-alpha.20",
+    "vue": "3.5.43",
+    "yaml": "2.9.1"
+  },
+  "description": "Public documentation for Assign, published at https://docs.assign.so",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
   }
 }

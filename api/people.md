@@ -14,7 +14,9 @@ GET /api/v1/workspaces/{workspace_id}/people/{username}
 The response includes the person’s display name, current username, current workspace role,
 active status, a workspace actor ID, an `is_you` flag, the optional `title`,
 `bio`, and `profile_status` text (each `null` when the person has not set it),
-and an optional authorized `profile_picture_url`. The picture URL is an Assign
+and an optional authorized `profile_picture_url`, plus the `avatar_initials`
+letters override (`null` derives letters from the display name) and the
+`avatar_color` background (a Tailwind color family name). The picture URL is an Assign
 route, not a durable object-store address:
 
 ```http

@@ -67,26 +67,30 @@ timesheets are bounded projections and exports use the documented content type.
 | `getMyTimesheet` | `GET /api/v1/timesheets/me` |
 | `exportMyTimesheet` | `GET /api/v1/timesheets/me/export` |
 
-## CLI and native credential operations
+## Developer-client, CLI, and native credential operations
 
-CLI OAuth tokens and native mobile credentials are separate credential
-families. Do not substitute them for browser cookies, personal API tokens, or
-MCP credentials. Native mobile routes remain unavailable until their backend
-release is explicitly documented.
+Developer-client OAuth tokens and native mobile credentials are separate
+credential families. Do not substitute them for browser cookies, personal API
+tokens, or MCP credentials. Shared developer authorization and Workspace
+selection use `/api/v1/dev/*`. Code-addressed CLI conveniences stay under
+`/api/v1/cli/*`.
 
 | Operation | Route |
 | --- | --- |
-| `exchangeCliOAuthToken` | `POST /api/v1/cli/oauth/token` |
+| `authorizeDeveloperClient` | `GET /api/v1/dev/oauth/authorize` |
+| `exchangeDeveloperOAuthToken` | `POST /api/v1/dev/oauth/token` |
+| `revokeCurrentDeveloperCredential` | `POST /api/v1/dev/oauth/revoke` |
 | `createCliMcpBridgeToken` | `POST /api/v1/cli/mcp/token` |
 | `revokeNativeMobileCredential` | `DELETE /api/v1/me/mobile-credentials/{credential_id}` |
 | `upsertCurrentNativePushDevice` | `PUT /api/v1/me/mobile-credentials/current/push-device` |
 | `deleteCurrentNativePushDevice` | `DELETE /api/v1/me/mobile-credentials/current/push-device` |
-| `getCurrentCliWorkspace` | `GET /api/v1/cli/workspace` |
-| `switchCurrentCliWorkspace` | `PUT /api/v1/cli/workspace` |
-| `listCliWorkspaces` | `GET /api/v1/cli/workspaces` |
+| `getCurrentDeveloperWorkspace` | `GET /api/v1/dev/workspace` |
+| `switchCurrentDeveloperWorkspace` | `PUT /api/v1/dev/workspace` |
+| `listDeveloperWorkspaces` | `GET /api/v1/dev/workspaces` |
 | `listCliProjects` | `GET /api/v1/cli/projects` |
 | `getCliProject` | `GET /api/v1/cli/projects/{project_code}` |
 | `listCliProjectTasks` | `GET /api/v1/cli/projects/{project_code}/tasks` |
+| `createCliProjectTask` | `POST /api/v1/cli/projects/{project_code}/tasks` |
 | `listCliDocuments` | `GET /api/v1/cli/documents` |
 | `getCliDocument` | `GET /api/v1/cli/documents/{document_path}` |
 | `getCliMyWork` | `GET /api/v1/cli/my-work` |
@@ -95,6 +99,8 @@ release is explicitly documented.
 | `completeCliTask` | `POST /api/v1/cli/tasks/{task_code}/done` |
 | `reopenCliTask` | `POST /api/v1/cli/tasks/{task_code}/reopen` |
 | `getCliTaskContext` | `GET /api/v1/cli/tasks/{task_code}/context` |
+| `listCliTaskComments` | `GET /api/v1/cli/tasks/{task_code}/comments` |
+| `createCliTaskComment` | `POST /api/v1/cli/tasks/{task_code}/comments` |
 
 ## MCP service credentials
 
@@ -130,6 +136,12 @@ assignment without rewriting historical audit evidence, and a revision-checked
 replacement operates on the complete active label set and uses the revision
 rules in the OpenAPI contract.
 
+A Project may also override how it presents one of its Workspace's Task
+labels — a different name and/or color, scoped to that Project only. The
+label's stable identity and existing Task assignments are unaffected. Only a
+Workspace-scope Task label may be overridden; a `PUT` upserts the override and
+a `DELETE` clears it (idempotently) to restore the Workspace default.
+
 | Operation | Route |
 | --- | --- |
 | `listTaskComments` | `GET /api/v1/tasks/{task_id}/comments` |
@@ -142,6 +154,9 @@ rules in the OpenAPI contract.
 | `archiveLabelDefinition` | `DELETE /api/v1/label-definitions/{label_id}` |
 | `listTargetLabelAssignments` | `GET /api/v1/{target_kind}/{target_id}/labels` |
 | `replaceTargetLabels` | `PUT /api/v1/{target_kind}/{target_id}/labels` |
+| `listProjectTaskLabelOverrides` | `GET /api/v1/projects/{project_id}/label-overrides` |
+| `setProjectTaskLabelOverride` | `PUT /api/v1/projects/{project_id}/label-overrides/{label_id}` |
+| `clearProjectTaskLabelOverride` | `DELETE /api/v1/projects/{project_id}/label-overrides/{label_id}` |
 
 ## Document content and attachments
 

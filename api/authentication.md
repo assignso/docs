@@ -13,12 +13,17 @@ also expires after 7 days without activity. Expired, invalid, and revoked
 sessions receive `401 authentication_required` and both cookies are expired by
 the response.
 
-## CLI browser authentication
+## Developer-client browser authentication
 
-The first-party `assign` CLI uses a credential family separate from browser
-cookies, personal API tokens, native mobile credentials, and MCP OAuth.
+The first-party `assign` CLI, VS Code extension, and JetBrains plugin use
+client-bound credential families separate from browser cookies, personal API
+tokens, native mobile credentials, and MCP OAuth. Shared authorization, token,
+revocation, current-Workspace, Workspace-list, and Workspace-switch operations
+live under `/api/v1/dev/*`. CLI-only code-addressed conveniences remain under
+`/api/v1/cli/*`; IDE product capabilities use canonical public REST resources.
+
 `assign login` binds an ephemeral callback at `http://127.0.0.1:{port}/callback`
-before opening `GET /api/v1/cli/oauth/authorize` in the system browser. The
+before opening `GET /api/v1/dev/oauth/authorize` in the system browser. The
 fixed public client is `assign-cli`; it has no secret and must use PKCE `S256`,
 an opaque state value, and the exact loopback callback. `localhost`, non-loopback
 hosts, alternate paths, custom schemes, query-bearing callbacks, and PKCE
@@ -27,9 +32,21 @@ downgrade are rejected.
 The five-minute authorization code is single-use. The token endpoint returns a
 15-minute opaque API access token and a rotating refresh token with 90-day idle
 and one-year absolute family expiry. Consumed-refresh replay revokes the whole
-family. `POST /api/v1/cli/oauth/revoke` revokes the current interactive CLI
-family. These tokens are accepted only at API-host CLI operations and are never
-accepted by the MCP resource host.
+family. `POST /api/v1/dev/oauth/revoke` revokes the calling developer-client
+family. These tokens are accepted only at the bounded API-host developer-client
+operations admitted for the grant and are never accepted by the MCP resource
+host.
+
+Local loopback callbacks are the supported P0 IDE flow. Remote extension-host
+callback support is deferred and must not be emulated with browser cookies or
+credentials in URLs.
+
+New CLI families receive `assign:read`, `assign:write`, and
+`assign:discuss`. A family created before the Discuss grant was introduced must
+complete `assign login` again before it can use `assign discuss`. A personal API
+token may carry the same dedicated `assign:discuss` scope for non-interactive
+credential selection; it does not bypass Workspace plan or authorization
+checks.
 
 The optional local MCP bridge exchanges a current CLI OAuth credential or
 personal API token at `POST /api/v1/cli/mcp/token`. The response is a
@@ -38,6 +55,30 @@ scopes may narrow but never expand the parent. Parent expiry or revocation is
 checked on every MCP authentication, so the derived token stops working
 immediately. Applications should use the CLI setup command rather than calling
 this exchange directly.
+
+### JetBrains development client
+
+The undistributed JetBrains plugin uses the same loopback Authorization Code +
+PKCE protocol with its own fixed public client ID, `assign-jetbrains`. Its grants
+and rotating refresh families are client-bound and cannot be exchanged with
+`assign-cli`. JetBrains grants receive `assign:read` and `assign:write`, not the
+CLI terminal client's `assign:discuss` scope. Refresh credentials belong only
+in IntelliJ Platform PasswordSafe;
+access credentials remain short lived and must not be written to project files,
+settings, logs, URLs, or analytics. This registration is implemented for local
+development and does not mean the plugin is published or available from
+JetBrains Marketplace.
+
+### VS Code development client
+
+The undistributed VS Code extension uses the same loopback Authorization Code +
+PKCE protocol with the distinct fixed public client ID `assign-vscode`. Its
+grants and rotating refresh families are client-bound and cannot be exchanged
+with CLI or JetBrains credentials. The extension stores refresh credentials
+only in VS Code `SecretStorage`, keeps access credentials in memory, and receives
+only `assign:read` and `assign:write`. This registration is for local extension
+development and does not mean the extension is published or available from a
+marketplace.
 
 ## Native mobile OAuth
 
