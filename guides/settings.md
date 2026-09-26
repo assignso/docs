@@ -53,3 +53,8 @@ Owners and admins can create non-interactive MCP credentials for CI or a trusted
 
 Open **Project actions → Project settings** to change the name, path, description, visual identity,
 dates, members and visibility. The Project **key** is shown for reference and can't be changed.
+
+
+## Theme preference
+
+Under Account Settings → Interface, choose **System**, **Light** or **Dark**. System follows this device’s appearance and responds when it changes. Theme changes save immediately in this browser. Other interface preferences apply across Workspaces and devices.
