@@ -86,3 +86,21 @@ Workspace owners and admins can open **Workspace settings → Developer tools**
 and disable **AI integrations**. This immediately blocks existing and new MCP
 access to that Workspace without disconnecting the same client from another
 authorized Workspace.
+
+## Native OAuth clients <Badge type="warning" text="Awaiting deployment" />
+
+Clients that support Dynamic Client Registration can register a public native client during sign-in.
+The callback must be an HTTP loopback address, and the client must use Authorization Code with S256
+PKCE and `token_endpoint_auth_method: none`. Approve the requested Workspaces and scopes in Assign.
+A registered client receives no access until you approve it. Its name appears as **Unverified**.
+If registration is temporarily unavailable, wait for the server’s retry interval before trying again.
+
+Hosted web clients with HTTPS callbacks need a reviewed registration. Registration support alone
+doesn't establish compatibility with a particular client. Task previews also depend on MCP Apps
+support; clients without it use the normal text and structured responses.
+
+## Reviewed native metadata <Badge type="warning" text="Awaiting deployment" />
+
+A reviewed native client can identify itself through published OAuth client metadata.
+You still approve access through Assign consent. A metadata identity does not grant
+access by itself, and hosted clients may require a separate registration.

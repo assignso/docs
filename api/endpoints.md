@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-This index lists all 391 operations in the public contract `Assign API 1.0.0-rc.9`,
+This index lists all 393 operations in the public contract `Assign API 1.0.0-rc.9`,
 grouped by resource. Paths are relative to `https://api.assign.so`. The **Auth** column names
 the security schemes an operation accepts; see [Authentication](./authentication).
 
@@ -179,6 +179,7 @@ Guide: [Projects](./projects)
 | `GET` | `/api/v1/projects/{project_id}/overview` | Read the bounded Project overview projection | browserSession |
 | `GET` | `/api/v1/projects/{project_id}/statuses` | List Project Statuses | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
 | `POST` | `/api/v1/projects/{project_id}/statuses` | Create a Project workflow Status | browserSession |
+| `GET` | `/api/v1/projects/{project_id}/task-attachments` | List attachments of the Project's Tasks | browserSession |
 | `GET` | `/api/v1/public/projects/{public_id}` | Read a published Project status | none |
 | `GET` | `/api/v1/statuses/{status_id}` | Read a workflow Status | browserSession |
 | `PATCH` | `/api/v1/statuses/{status_id}` | Update or restore a workflow Status | browserSession |
@@ -533,6 +534,12 @@ Guide: [Agents](./agents)
 | `GET` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | List permission-filtered custom Agent request outcomes | browserSession |
 | `POST` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | Durably admit a manual or preview-only test request | browserSession |
 | `GET` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/usage` | Read settled and pending credit usage for one custom Agent and period | browserSession |
+
+## Identity
+
+| Method | Path | Summary | Auth |
+| --- | --- | --- | --- |
+| `POST` | `/oauth/register` | Register a public native MCP OAuth client | none |
 
 ## People
 

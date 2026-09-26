@@ -28,3 +28,8 @@ Send the service credential as `Authorization: Bearer <credential>` to the same
 MCP endpoint. Never paste it into a browser settings field, source file, log,
 task, chat, or support message. Revoking it is immediate and cannot be undone;
 create a replacement when rotating access.
+
+## Client revocation <Badge type="warning" text="Awaiting deployment" />
+
+Registering a client again does not reactivate a revoked client. A disabled client
+cannot resume access merely by publishing or resubmitting its registration metadata.

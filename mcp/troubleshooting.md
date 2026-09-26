@@ -49,3 +49,11 @@ including Status and list counts. After a connection interruption or returning
 to a suspended tab, Assign revalidates the visible data. If a value remains
 stale but a manual refresh shows the saved change, report the affected Task,
 page, and approximate time; never include access tokens.
+
+## Task preview unavailable <Badge type="warning" text="Repair awaiting deployment" />
+
+If the widget says **This Task view is unavailable. Try again or open its link in chat**, use the
+Task link or ask for the Task details in chat. A repair handles Tasks whose empty Comments or
+relations preview caused this message. Other causes include a failed host connection, denied read,
+cancelled call or invalid response. If it continues after the repair is deployed, report the client
+version, time and Task link without including credentials.

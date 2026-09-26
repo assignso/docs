@@ -320,9 +320,3 @@ The collaboration client sends its complete initial bootstrap frame within ten
 seconds of connecting. A stalled connection closes so it can reconnect. Server
 shutdown also closes collaboration connections; supported clients reconnect and
 recover from the retained checkpoint and updates.
-
-## Dividers after a line break <Badge type="warning" text="Awaiting deployment" />
-
-Type `---` on an empty line after `Enter` or `Shift+Enter` to insert a divider.
-The text above stays as written. Undo restores the dashes. Markdown imports
-still interpret `Title` followed directly by `---` as a heading.
