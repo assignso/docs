@@ -78,3 +78,9 @@ If milestones fail to load while creating a Task, choose **Retry milestones**. Y
 The Play icon in the top bar opens your Current task chooser. Use a Task’s Play
 action to make an eligible Task current. This changes your focus; it does not
 start a timer.
+
+## Linked Comment highlight <Badge type="warning" text="Awaiting deployment" />
+
+Opening a Comment link scrolls to and focuses that Comment. A light neutral
+background marks the linked row; buttons and links keep their keyboard focus
+indicators.
