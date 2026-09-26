@@ -91,3 +91,12 @@ indicators.
 
 Task properties wrap into as many rows as they need. The description follows
 them without reserving space for empty rows.
+
+## Conversation map
+
+<Badge type="info" text="Awaiting deployment" />
+
+On desktop, the Conversation map appears beside the Task when there is enough
+space. Select a tick to scroll to its section. Use the arrow keys, Home and End
+to move between ticks, then Enter to open the section. The map stays hidden on
+phones and in windows that are too narrow or short.
