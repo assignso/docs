@@ -326,3 +326,9 @@ recover from the retained checkpoint and updates.
 Paste Markdown beginning with `>` to keep its quote formatting, including when
 your clipboard also supplies matching plain HTML wrappers. Quotes copied as
 rich text keep their formatting. Text pasted into a code block stays literal.
+
+## Dividers after a line break <Badge type="warning" text="Awaiting deployment" />
+
+Type `---` on an empty line after `Enter` or `Shift+Enter` to insert a divider.
+The text above stays as written. Undo restores the dashes. Markdown imports
+still interpret `Title` followed directly by `---` as a heading.
