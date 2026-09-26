@@ -39,3 +39,9 @@ fields to these events.
 Local development and browser tests do not load the production containers. If
 analytics or the consent tool fails to load, the site and blog remain usable and
 optional storage stays denied.
+
+## Compact consent controls
+
+<Badge type="warning" text="Awaiting deployment" />
+
+Cookie preferences remain available from the footer. The compact banner keeps **Accept analytics**, **Reject analytics** and preferences controls usable on smaller screens. On the narrowest screens, the analytics actions stack to keep their labels readable.
