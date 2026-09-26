@@ -125,3 +125,10 @@ From the parent Task, choose Link task and Add as subtask. Type a title in the T
 <Badge type="warning" text="Awaiting deployment" />
 
 If you leave a new Task after entering content, Assign asks you to confirm. Choose **Keep editing** to return to your draft. Reloading or closing the browser can also show a browser warning. After the Task is created, Assign opens its page.
+
+
+## Initial label failures
+
+<Badge type="warning" text="Awaiting deployment" />
+
+If a Task is created but its initial labels cannot be saved, Assign opens the Task and shows a warning. Check its labels there before creating another Task.
