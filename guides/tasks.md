@@ -108,3 +108,9 @@ phones and in windows that are too narrow or short.
 Follow a reference in a Task description to open its destination within the
 current Workspace. Browser Back returns to the Task. Modified clicks and
 links that open in another tab keep their usual behavior.
+
+## Load more Project Tasks <Badge type="warning" text="Awaiting deployment" />
+
+When more Tasks are available in Project List, choose **Load more tasks** below
+the list. You can focus the button and press Enter. The Tasks already shown stay
+in place while the next page loads.
