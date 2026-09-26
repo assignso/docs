@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-390 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+392 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -103,6 +103,8 @@ Guide: [Account](./account)
 | `GET /api/v1/workspaces/{workspace_id}/members` | List Workspace members | Session |
 | `GET /api/v1/workspaces/{workspace_id}/notification-preferences` | List effective notification preferences | Session, Mobile |
 | `PATCH /api/v1/workspaces/{workspace_id}/notification-preferences/{category}` | Update one typed notification preference | Session, Mobile |
+| `GET /api/v1/workspaces/{workspace_id}/project-display-preferences` | Read private Project display preferences for one Workspace | Session |
+| `PUT /api/v1/workspaces/{workspace_id}/project-display-preferences` | Save private Project display preferences for one Workspace | Session |
 | `GET /api/v1/workspaces/{workspace_id}/project-shortcuts` | Read the current user's Project shortcuts for one Workspace | Session |
 | `PUT /api/v1/workspaces/{workspace_id}/project-shortcuts` | Replace the current user's Project shortcuts for one Workspace | Session |
 

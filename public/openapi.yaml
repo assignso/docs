@@ -4457,6 +4457,88 @@ paths:
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/workspaces/{workspace_id}/project-display-preferences:
+    get:
+      tags:
+        - Account
+      operationId: getProjectDisplayPreferences
+      summary: Read private Project display preferences for one Workspace
+      description: Returns the current Account user's Workspace-scoped Sort and custom sequence. An absent aggregate returns default, an empty sequence and revision 1. Inaccessible, archived and deleted Projects are pruned before returning the canonical revision. Browser-session consumer only; does not change shared Project ranks.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Canonical private Project display preferences.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDisplayPreferences"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+    put:
+      tags:
+        - Account
+      operationId: updateProjectDisplayPreferences
+      summary: Save private Project display preferences for one Workspace
+      description: Atomically saves a private sort and up to 1000 unique readable same-Workspace Project UUIDs. Maximum JSON body is 64 KiB. Active membership and Project-read authority are required. If-Match prevents cross-device overwrites; retry the identical request with the same Idempotency-Key. Shared ranks and global profile revision are unchanged. Unavailable Projects return content-free validation errors.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectDisplayPreferencesUpdateRequest"
+      responses:
+        "200":
+          description: Canonical saved Project display preferences.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDisplayPreferences"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "428":
+          description: If-Match is required to save a preference.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/project-shortcuts:
     get:
       tags:
@@ -26534,6 +26616,63 @@ components:
         - import_export
         - billing
         - administrative
+    ProjectDisplayPreferences:
+      type: object
+      description: Private Account user preference scoped to one opaque Workspace. Unlisted authorized Projects follow the saved custom sequence in incoming projection order. Home Recent and grid/list layout remain independent.
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+        sort:
+          type: string
+          enum:
+            - default
+            - recent
+            - created
+            - custom
+        project_ids:
+          type: array
+          maxItems: 1000
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - workspace_id
+        - sort
+        - project_ids
+        - revision
+        - updated_at
+      additionalProperties: false
+    ProjectDisplayPreferencesUpdateRequest:
+      type: object
+      description: Complete replacement of the caller's private Workspace Project display preference, bounded to 64 KiB. Each Project must be unique, readable, active and in the named Workspace.
+      properties:
+        sort:
+          type: string
+          enum:
+            - default
+            - recent
+            - created
+            - custom
+        project_ids:
+          type: array
+          maxItems: 1000
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+      required:
+        - sort
+        - project_ids
+      additionalProperties: false
     ProjectShortcutSet:
       type: object
       additionalProperties: false
