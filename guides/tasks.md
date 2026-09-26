@@ -68,3 +68,7 @@ staying a participant. Following a Task never grants access to it.
 
 - [Tasks API](../api/tasks)
 - [Time tracking](./time-tracking)
+
+### Milestone loading (awaiting deployment)
+
+If milestones fail to load while creating a Task, choose **Retry milestones**. Your draft stays in place. A selected milestone whose name is temporarily unavailable shows **Milestone unavailable** until its details load. Choose **No milestone** to clear a selection.
