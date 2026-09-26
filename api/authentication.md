@@ -472,3 +472,9 @@ rotated values. Clients must re-read the CSRF cookie before issuing further
 mutating requests. A Workspace the caller does not actively belong to
 returns `403 workspace_access_denied` and leaves the current session
 untouched.
+
+## Post-login destinations
+
+<Badge type="warning" text="Awaiting deployment" />
+
+Successful password, second-factor and passkey sign-in opens the active Workspace’s Home using its readable path. Provider sign-in redirects through `/app`, then opens that Workspace’s Projects. The current Workspace is resolved from the authenticated session; if it is unavailable, Assign reports an error instead of opening another Workspace. Account-only sign-in still opens Workspace creation. Explicit supported sign-in continuations keep their destination.
