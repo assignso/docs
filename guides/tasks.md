@@ -130,3 +130,9 @@ If you leave a new Task after entering content, Assign asks you to confirm. Choo
 <Badge type="warning" text="Awaiting deployment" />
 
 If a Task is created but its initial labels cannot be saved, Assign opens the Task and shows a warning. Check its labels there before creating another Task.
+
+## Changing a Task’s Project
+
+<Badge type="warning" text="Awaiting deployment" />
+
+Changing a Task’s Project keeps its content visible while the move completes, then opens its new Task address. If the move fails, Assign keeps the original page and shows the error. Your selected tab is preserved after a successful move.
