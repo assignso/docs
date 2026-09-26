@@ -88,3 +88,7 @@ the Project revokes the link immediately.
 
 - [Projects and Statuses API](../api/projects)
 - [Tasks](./tasks)
+
+### Board card priority (awaiting deployment)
+
+Use the priority icon beside the assignee avatar to choose a priority without opening the Task. After choosing, focus returns to the card so you can continue navigating the Board with the keyboard.
