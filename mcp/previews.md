@@ -51,7 +51,6 @@ have stayed in the preview. Moving back to your assistant while a read is
 pending keeps focus there. Consent buttons also show a visible keyboard focus
 outline.
 
-
 ## Scrolling in a compact preview
 
 If your client limits a preview's height, scroll inside the preview to see more content. Reaching its top or bottom keeps scrolling within the preview. Keyboard scrolling and the Show more and Show fewer controls remain available. Client-specific sizing and touch behavior can vary; keep your client updated.
