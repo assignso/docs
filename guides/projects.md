@@ -38,6 +38,11 @@ the exact view.
   Status, assignee or Milestone, export CSV, archive or delete. Press `Backspace` to clear the
   selection. Tasks that fail stay selected so you can retry them.
 
+## Empty Task attachments <Badge type="warning" text="Awaiting deployment" />
+
+The Project Attachments view hides **Task attachments** when that collection is empty.
+The upload area for the Project's own files stays available.
+
 ## Use the Board
 
 - Drag a card, or focus it and use `Shift`+arrow keys to move it. `Shift+Home` and `Shift+End`
