@@ -387,3 +387,7 @@ use the same human-readable `https://assign.so/app/...` routes as the web app.
 Comments use their parent Task plus a stable numbered fragment; relations link
 to the related Task by its visible Task code. UUIDs remain resource identifiers,
 not browser-route segments.
+
+## Discuss and Inbox <Badge type="warning" text="Awaiting deployment" />
+
+The personal Inbox tools exclude generated Discuss message notices from items and unread totals. Read those notices in Discuss; other Agent notifications keep their existing Inbox behavior.

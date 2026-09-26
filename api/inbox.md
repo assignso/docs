@@ -60,12 +60,6 @@ accessible, or no longer followed.
 Notification delivery is asynchronous, so a just-completed action does not
 guarantee that its Inbox item is already present in the next read.
 
-Discuss creates `agent` Inbox items only for meaningful lifecycle transitions: when a response needs
-your input, completes, or fails. Core supplies short safe preview text and a relative link back to the
-originating Workspace Discuss conversation; generated answer text, prompts, source excerpts, and raw
-provider output are not copied into the notification. Progress, token updates, and cancellation do not
-create another item. Delivery requires the initiating user's membership to remain active, and replaying
-the same canonical event does not duplicate the notification.
 
 ## Notification preferences
 
@@ -166,3 +160,7 @@ or regress older state. The response includes `changed` and the authoritative
 Marking a notification read also suppresses its pending or deferred email and
 push deliveries. Already delivered external messages cannot be recalled; those
 adapters do not claim read acknowledgement.
+
+### Discuss notices <Badge type="warning" text="Awaiting deployment" />
+
+Read generated Discuss message notices in Discuss. They are excluded from Inbox items and unread totals, including older notices. Other Agent notifications remain in Inbox. Your configured email and push preferences still apply.
