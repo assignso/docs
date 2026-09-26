@@ -6010,9 +6010,11 @@ paths:
 
         The route serves two ceremonies, and which one runs is decided from
         server-side state, never from the request. A sign-in sets both
-        browser-session cookies and redirects to the current Workspace's
-        application route, or to Workspace creation when the account has no
-        Workspace. It first
+        browser-session cookies and, by default, redirects to the existing
+        /app launch entry. The browser resolves the exact active Workspace ID
+        to its readable path before opening Projects. Accounts without a
+        Workspace continue to Workspace creation; validated explicit
+        continuations retain their destination. It first
         resolves an exact `(provider, provider_subject)` identity. If none
         exists and the provider supplies a verified email matching an existing
         normalized account address, the callback atomically attaches the new
@@ -29744,9 +29746,10 @@ components:
     AuthenticationRedirect:
       description: |
         Redirects to the web application. On success, both browser-session
-        cookies are set and the redirect target is the current Workspace's
-        application route, or Workspace creation when the account has no
-        Workspace. On an authentication failure, the redirect target is the
+        cookies are set and the default redirect target is /app. That launch
+        entry resolves the exact active Workspace to its readable Projects path.
+        Account-only sessions continue to Workspace creation; validated explicit
+        continuations retain their destination. On an authentication failure, the redirect target is the
         login page with an opaque `error` query parameter and no cookies are
         set; the content-free authentication boundary applies even to this
         browser navigation.
