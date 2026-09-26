@@ -119,7 +119,6 @@ In Workspace settings, open Task statuses and choose a color family. You can als
 
 Open Project settings and select the icon beside the Project name. Search the curated choices or choose an emoji. Your existing icon stays visible even if it is no longer offered for new selections. Clear the selection to use the default Project marker.
 
-
 ## Personal Project views
 
 <Badge type="warning" text="Awaiting deployment" />

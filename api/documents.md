@@ -191,7 +191,6 @@ ready installed Agents and custom Agents that can receive a Discuss request with
 `surface=comment` retains Comment eligibility rules. Both modes check current visibility and
 Workspace entitlement; selecting an option does not grant permission to execute it.
 
-
 ## Schema-2 table compatibility
 
 <Badge type="warning" text="Awaiting deployment" />

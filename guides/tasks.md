@@ -119,13 +119,11 @@ in place while the next page loads.
 
 From the parent Task, choose Link task and Add as subtask. Type a title in the Task search and press Enter or choose Create subtask. If the Task is created but its parent link fails, Assign shows the new Task and lets you retry linking without creating another Task.
 
-
 ## Creation draft protection
 
 <Badge type="warning" text="Awaiting deployment" />
 
 If you leave a new Task after entering content, Assign asks you to confirm. Choose **Keep editing** to return to your draft. Reloading or closing the browser can also show a browser warning. After the Task is created, Assign opens its page.
-
 
 ## Initial label failures
 

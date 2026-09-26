@@ -40,7 +40,6 @@ They do not grant access or establish complete coverage. Current source lifecycl
 are checked even when the search index has not caught up. Read entities before acting; private
 Discuss Send and human approval remain outside model-visible tools.
 
-
 ## Personal Project views
 
 <Badge type="warning" text="Awaiting deployment" />

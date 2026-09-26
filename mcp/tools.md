@@ -391,7 +391,6 @@ not browser-route segments.
 
 The personal Inbox tools exclude generated Discuss message notices from items and unread totals. Read those notices in Discuss; other Agent notifications keep their existing Inbox behavior.
 
-
 ## Schema-2 table compatibility
 
 <Badge type="warning" text="Awaiting deployment" />

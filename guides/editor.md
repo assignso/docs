@@ -341,7 +341,6 @@ You can paste a Markdown pipe table or a table copied from an HTML source. Simpl
 
 An older editor may show newer table content as read-only. Update to a client that supports its document version before editing. Older clients cannot save a table document back to the older format.
 
-
 ## Leaving Document creation
 
 <Badge type="warning" text="Awaiting deployment" />

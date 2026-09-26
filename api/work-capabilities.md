@@ -109,7 +109,6 @@ returns one reference and its exact next offset when more remain. This supports 
 without truncating individual passages. After saving exclusions in Web, **Ask Discuss about this
 investigation** attaches its exact version for your next message; display filters do not change it.
 
-
 ## Personal Project views
 
 <Badge type="warning" text="Awaiting deployment" />
