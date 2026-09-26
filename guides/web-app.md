@@ -75,3 +75,7 @@ just the rows on screen.
 - [Projects](./projects) · [Tasks](./tasks) · [Settings](./settings)
 - [Keyboard shortcuts](./keyboard-shortcuts)
 - [Writing in Assign](./editor)
+
+### List motion <Badge type="warning" text="Awaiting deployment" />
+
+Lists gently acknowledge added items and keep nearby rows visually continuous when items are removed. Assign respects your device's reduced-motion preference. Removed items disappear immediately.
