@@ -96,3 +96,7 @@ Use the priority icon beside the assignee avatar to choose a priority without op
 ### Mobile Board scrolling (awaiting deployment)
 
 Swipe horizontally to move between Board columns. Columns settle near the center of the screen, including the first and last column.
+
+### Project sorting (awaiting deployment)
+
+Choose **Default** to use the Workspace collection order, **Recent** for the latest activity, **Created** for newest Projects, or **Custom** for your saved order. The choice stays in this browser. Home’s Recent projects always uses recent activity, regardless of your Projects-page choice.
