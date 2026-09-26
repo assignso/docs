@@ -99,7 +99,7 @@ Swipe horizontally to move between Board columns. Columns settle near the center
 
 ### Project sorting (awaiting deployment)
 
-Choose **Default** to use the Workspace collection order, **Recent** for the latest activity, **Created** for newest Projects, or **Custom** for your saved order. The choice stays in this browser. Home’s Recent projects always uses recent activity, regardless of your Projects-page choice.
+Choose **Default** to use the Workspace collection order, **Recent** for the latest activity, **Created** for newest Projects, or **Custom** for your saved order. The choice and custom order are saved to your Account for this Workspace. Home’s Recent projects always uses recent activity, regardless of your Projects-page choice.
 
 ### List Status groups (awaiting deployment)
 
@@ -126,3 +126,14 @@ Open Project settings and select the icon beside the Project name. Search the cu
 On a Project’s List, Board or Backlog, **Save view** saves your filters and presentation as a personal tab. **Update view** saves later changes. On a narrow screen, open **Saved view actions**. Rename or delete your views under Project Settings → Tabs. These views belong to your account in the current Workspace; they are not shared Project settings.
 
 API and MCP saved-view records can include an optional `definition` with an opaque `project_id`, `layout`, a non-null `parameters` object and `show_cancelled`. Existing query-only records remain valid. The checked `query` remains required; saving a definition requires access to its Project and revision checks apply to updates. Limits are 100 views per membership and 16 KiB per definition.
+
+### Saved Project ordering
+
+Your Projects-page sort and custom order are saved to your Account for the current Workspace. Other
+logged-in Web devices load the same preference; returning to an open page refreshes it. New Projects
+follow your saved custom sequence until you reorder them. Home's Recent projects stays independent.
+
+Sort and reorder wait for the saved preference to load. If saving fails, retry the change; if another
+device saved first, refresh the current order before trying again. Earlier browser-only choices are
+not automatically copied to your Account. Choose your sort again to save it. Grid/list layout remains
+a separate browser preference. Native Mobile's current Projects preview does not use this preference.

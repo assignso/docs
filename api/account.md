@@ -497,3 +497,32 @@ pickers and mention candidates:
 value — including a Workspace the caller belongs to under a different
 session — reports the same `404` used for an absent Workspace, per the
 conventions' discoverability rule.
+
+## Project display preferences
+
+Your Projects-page sort and custom order belong to your Account within one Workspace. They do not
+change shared Project ranks or anyone else's order.
+
+```http
+GET /api/v1/workspaces/{workspace_id}/project-display-preferences
+```
+
+The response includes `workspace_id`, `sort` (`default`, `recent`, `created` or `custom`),
+`project_ids`, `revision` and `updated_at`. A new preference starts at `default`, an empty sequence
+and revision 1. Projects you can no longer read are removed from the saved sequence.
+
+```http
+PUT /api/v1/workspaces/{workspace_id}/project-display-preferences
+If-Match: "1"
+Idempotency-Key: 80ce2510-8436-438a-aedc-82aa94af58b0
+X-CSRF-Token: <session-csrf-token>
+Content-Type: application/json
+
+{"sort":"custom","project_ids":["0199a020-1234-7000-8000-000000000001"]}
+```
+
+Send the complete preference, with up to 1,000 unique readable Project IDs from the named Workspace.
+The body limit is 64 KiB. Use the last `ETag` as `If-Match`; a stale revision returns `409` and a
+missing precondition returns `428`. Missing or unavailable Projects return `422` without revealing
+private Project details. Retry an identical request with the same idempotency key. Both operations
+currently require a browser session; token, native-client and MCP access are not available.
