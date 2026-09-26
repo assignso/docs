@@ -340,3 +340,10 @@ Open the editor command menu and choose Table. With your cursor in a cell, use t
 You can paste a Markdown pipe table or a table copied from an HTML source. Simple tables export as Markdown pipe tables. Tables with merged cells, stored widths or several paragraphs per cell export in an `assign-table` code fence so Assign can import their full structure again. Other Markdown readers may display that fence as code.
 
 An older editor may show newer table content as read-only. Update to a client that supports its document version before editing. Older clients cannot save a table document back to the older format.
+
+
+## Leaving Document creation
+
+<Badge type="warning" text="Awaiting deployment" />
+
+Leaving Document creation after entering content asks for confirmation. Your existing local title and body draft stays in this browser when draft storage is available. Selected labels are not part of that local draft.
