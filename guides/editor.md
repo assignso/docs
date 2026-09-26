@@ -320,3 +320,9 @@ The collaboration client sends its complete initial bootstrap frame within ten
 seconds of connecting. A stalled connection closes so it can reconnect. Server
 shutdown also closes collaboration connections; supported clients reconnect and
 recover from the retained checkpoint and updates.
+
+## Pasting quotes <Badge type="warning" text="Awaiting deployment" />
+
+Paste Markdown beginning with `>` to keep its quote formatting, including when
+your clipboard also supplies matching plain HTML wrappers. Quotes copied as
+rich text keep their formatting. Text pasted into a code block stays literal.
