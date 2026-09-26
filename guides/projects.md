@@ -100,3 +100,7 @@ Swipe horizontally to move between Board columns. Columns settle near the center
 ### Project sorting (awaiting deployment)
 
 Choose **Default** to use the Workspace collection order, **Recent** for the latest activity, **Created** for newest Projects, or **Custom** for your saved order. The choice stays in this browser. Home’s Recent projects always uses recent activity, regardless of your Projects-page choice.
+
+### List Status groups (awaiting deployment)
+
+When List is grouped by Status, active work appears first: In Progress, Review, Todo, then Backlog. Resolved work follows. Your workflow order still determines positions within each group category.
