@@ -686,3 +686,7 @@ Saved notes belong to your Discuss conversation in the current Workspace. Discus
 If Discuss cannot finish an answer, an error banner appears below any available response text. Your request stays saved. Choose **Restore retry draft** to review the original request and its context, then send it when ready. Restoring the draft does not submit it. If restoration fails, the error remains visible so you can try again.
 
 Activity summaries review a limited number of recent changes in the requested period. If more changes remain, the summary should say so; a partial summary does not mean there were no other changes.
+
+## Read state on entry <Badge type="warning" text="Awaiting deployment" />
+
+Opening Discuss marks the loaded, settled messages as read after confirmation. You can keep the latest prompt in view without scrolling through a long reply to clear the sidebar badge. Pending replies and messages that have not loaded stay unread. Later messages stay unread while you read earlier history. Search, Archives and direct message links do not trigger this entry acknowledgement. If the update fails, use **Retry updating read status**.
