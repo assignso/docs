@@ -92,3 +92,7 @@ the Project revokes the link immediately.
 ### Board card priority (awaiting deployment)
 
 Use the priority icon beside the assignee avatar to choose a priority without opening the Task. After choosing, focus returns to the card so you can continue navigating the Board with the keyboard.
+
+### Mobile Board scrolling (awaiting deployment)
+
+Swipe horizontally to move between Board columns. Columns settle near the center of the screen, including the first and last column.
