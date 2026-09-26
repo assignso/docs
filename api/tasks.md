@@ -5,6 +5,13 @@ updates omit cookies and CSRF, but still require the observed `If-Match` revisio
 `Idempotency-Key`; all domain permissions and lifecycle rules apply. See [native activation and
 admission](authentication.md#native-mobile-oauth-activation-required).
 
+In native builds where Task editing is enabled, open **Edit Task** from Task detail
+to change the title, priority, or due date. Enter a due date as `YYYY-MM-DD`, or
+leave it empty to clear it. Save requires a connection. Errors retain the draft;
+a conflict requires returning to Task detail and reopening the editor with current
+data. Cancel returns without saving. This does not enable offline editing or
+Document editing, and native activation requirements still apply.
+
 These operations require an authenticated browser session (see
 [Browser authentication](authentication.md)) and follow the shared
 [API conventions](conventions.md), including `Idempotency-Key` on creates and
