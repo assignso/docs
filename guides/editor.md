@@ -332,3 +332,11 @@ rich text keep their formatting. Text pasted into a code block stays literal.
 Type `---` on an empty line after `Enter` or `Shift+Enter` to insert a divider.
 The text above stays as written. Undo restores the dashes. Markdown imports
 still interpret `Title` followed directly by `---` as a heading.
+
+## Tables <Badge type="warning" text="Awaiting deployment" />
+
+Open the editor command menu and choose Table. With your cursor in a cell, use the table controls to add or remove rows and columns, merge or split cells, or change the header row. Widen column and Narrow column provide keyboard alternatives to dragging a resize handle. Wide tables scroll within the writing area.
+
+You can paste a Markdown pipe table or a table copied from an HTML source. Simple tables export as Markdown pipe tables. Tables with merged cells, stored widths or several paragraphs per cell export in an `assign-table` code fence so Assign can import their full structure again. Other Markdown readers may display that fence as code.
+
+An older editor may show newer table content as read-only. Update to a client that supports its document version before editing. Older clients cannot save a table document back to the older format.
