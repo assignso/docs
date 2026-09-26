@@ -492,3 +492,11 @@ your draft. This includes permission, validation, server and connection failures
 If an operation rejects authentication, the app checks whether your session is
 still valid before signing you out. It does not automatically repeat a failed
 save. Confirmed invalid sessions and explicit sign-out still clear private data.
+
+### Native Task-code reads
+
+Builds with native Task-code support also admit native bearer reads on
+`GET /api/v1/workspaces/{workspace_id}/tasks/{task_code}`. This does not extend
+admission to general Workspace Task listings, history or bulk operations.
+Live membership and resource visibility are checked; invalid Authorization
+never falls back to a browser session. See [Task links](tasks.md#native-canonical-task-links).

@@ -204,3 +204,17 @@ The existing create operation also accepts a native mobile bearer token. Send
 resource write permissions are checked on every request. Reuse the key when
 retrying an unchanged command. This support requires a server build that admits
 [native creation](authentication.md); it does not imply deployment availability.
+
+## Native canonical Task links
+
+In builds with native Task-code support, the existing
+`GET /api/v1/workspaces/{workspace_id}/tasks/{task_code}` also accepts a native
+bearer token. Live Workspace membership and Project/Task visibility still apply;
+a link grants no access. Invalid native credentials never fall back to cookies.
+The existing lifecycle/tombstone response and browser authentication remain intact.
+
+Open a canonical `https://assign.so/app/{workspaceSlug}/tasks/{taskCode}` link,
+sign in if needed, and explicitly choose its Workspace. The app checks access
+before opening the Task. Cancel abandons continuation; inaccessible, malformed
+or expired links show an unavailable state. Native universal-link association
+and release activation are required before claiming OS link handling.
