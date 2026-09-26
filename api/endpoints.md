@@ -1,5 +1,5 @@
 ---
-description: Every public Assign HTTP API operation, grouped by resource.
+description: Every public Assign HTTP API operation, grouped by resource, with a download of the OpenAPI document.
 outline: 2
 ---
 
@@ -7,12 +7,14 @@ outline: 2
 
 # Endpoint index
 
-This index lists all 393 operations in the public contract `Assign API 1.0.0-rc.9`,
-grouped by resource. Paths are relative to `https://api.assign.so`. The **Auth** column names
-the security schemes an operation accepts; see [Authentication](./authentication).
+390 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+relative to `https://api.assign.so`.
 
-Some operations are published before the server serves them. See
-[Published but not yet served](./conventions#published-but-not-yet-served).
+- **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
+  import into Postman or Insomnia, or browse it in any OpenAPI viewer. It is the
+  authoritative source for request and response schemas.
+- **Auth:** `Session` browser session, `Token` personal API token, `CLI` developer-client token,
+  `Mobile` native token, `Public` no credential. See [Authentication](./authentication).
 
 ## Authentication
 
@@ -20,41 +22,41 @@ Browser-session and native OAuth credential lifecycle operations.
 
 Guide: [Authentication](./authentication)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/auth/email/resend-verification` | Send a new verification message | none |
-| `POST` | `/api/v1/auth/email/verify` | Verify an email address | none |
-| `POST` | `/api/v1/auth/login` | Sign in with an email address and password | none |
-| `POST` | `/api/v1/auth/logout` | Log out the current browser session | browserSession |
-| `POST` | `/api/v1/auth/mfa/recovery-codes/regenerate` | Replace the account's recovery codes | browserSession |
-| `DELETE` | `/api/v1/auth/mfa/totp` | Remove the time-based one-time password factor | browserSession |
-| `POST` | `/api/v1/auth/mfa/totp/confirm` | Enable the time-based one-time password factor | browserSession |
-| `POST` | `/api/v1/auth/mfa/totp/setup` | Begin enrolling a time-based one-time password factor | browserSession |
-| `POST` | `/api/v1/auth/mfa/verify` | Complete a sign-in with a second factor | none |
-| `GET` | `/api/v1/auth/passkeys` | List the current account's passkeys | browserSession |
-| `PATCH` | `/api/v1/auth/passkeys/{passkey_id}` | Rename a passkey | browserSession |
-| `DELETE` | `/api/v1/auth/passkeys/{passkey_id}` | Remove a passkey | browserSession |
-| `POST` | `/api/v1/auth/passkeys/login/options` | Start a passkey sign-in | none |
-| `POST` | `/api/v1/auth/passkeys/login/verify` | Complete a passkey sign-in | none |
-| `POST` | `/api/v1/auth/passkeys/register/options` | Start registering a passkey | browserSession |
-| `POST` | `/api/v1/auth/passkeys/register/verify` | Finish registering a passkey | browserSession |
-| `POST` | `/api/v1/auth/password/change` | Change the current user's password | browserSession |
-| `POST` | `/api/v1/auth/password/forgot` | Request a password reset | none |
-| `POST` | `/api/v1/auth/password/reset` | Reset a password with a token | none |
-| `GET` | `/api/v1/auth/providers/{provider}/authorize` | Start provider sign-in | none |
-| `GET` | `/api/v1/auth/providers/{provider}/callback` | Complete a provider ceremony (redirect callback) | none |
-| `POST` | `/api/v1/auth/providers/{provider}/callback` | Complete a provider ceremony (form_post callback) | none |
-| `POST` | `/api/v1/auth/register` | Create an account | none |
-| `PUT` | `/api/v1/auth/session/workspace` | Switch the current session's Workspace | browserSession |
-| `GET` | `/api/v1/dev/oauth/authorize` | Authorize a registered first-party developer client | browserSession |
-| `POST` | `/api/v1/dev/oauth/revoke` | Revoke the calling interactive developer-client credential | developerAccessToken |
-| `POST` | `/api/v1/dev/oauth/token` | Exchange a developer-client authorization code or refresh token | none |
-| `POST` | `/api/v1/mobile/auth/login` | Log in from the native password screen | none |
-| `POST` | `/api/v1/mobile/auth/mfa/verify` | Complete installation-bound native MFA | none |
-| `POST` | `/api/v1/mobile/auth/register` | Register from the native account screen | none |
-| `GET` | `/api/v1/mobile/oauth/authorize` | Start or continue native mobile OAuth authorization | none |
-| `POST` | `/api/v1/mobile/oauth/revoke` | Revoke the calling native mobile credential | nativeAccessToken |
-| `POST` | `/api/v1/mobile/oauth/token` | Exchange a native authorization code or refresh token | none |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `POST /api/v1/auth/email/resend-verification` | Send a new verification message | Public |
+| `POST /api/v1/auth/email/verify` | Verify an email address | Public |
+| `POST /api/v1/auth/login` | Sign in with an email address and password | Public |
+| `POST /api/v1/auth/logout` | Log out the current browser session | Session |
+| `POST /api/v1/auth/mfa/recovery-codes/regenerate` | Replace the account's recovery codes | Session |
+| `DELETE /api/v1/auth/mfa/totp` | Remove the time-based one-time password factor | Session |
+| `POST /api/v1/auth/mfa/totp/confirm` | Enable the time-based one-time password factor | Session |
+| `POST /api/v1/auth/mfa/totp/setup` | Begin enrolling a time-based one-time password factor | Session |
+| `POST /api/v1/auth/mfa/verify` | Complete a sign-in with a second factor | Public |
+| `GET /api/v1/auth/passkeys` | List the current account's passkeys | Session |
+| `PATCH /api/v1/auth/passkeys/{passkey_id}` | Rename a passkey | Session |
+| `DELETE /api/v1/auth/passkeys/{passkey_id}` | Remove a passkey | Session |
+| `POST /api/v1/auth/passkeys/login/options` | Start a passkey sign-in | Public |
+| `POST /api/v1/auth/passkeys/login/verify` | Complete a passkey sign-in | Public |
+| `POST /api/v1/auth/passkeys/register/options` | Start registering a passkey | Session |
+| `POST /api/v1/auth/passkeys/register/verify` | Finish registering a passkey | Session |
+| `POST /api/v1/auth/password/change` | Change the current user's password | Session |
+| `POST /api/v1/auth/password/forgot` | Request a password reset | Public |
+| `POST /api/v1/auth/password/reset` | Reset a password with a token | Public |
+| `GET /api/v1/auth/providers/{provider}/authorize` | Start provider sign-in | Public |
+| `GET /api/v1/auth/providers/{provider}/callback` | Complete a provider ceremony (redirect callback) | Public |
+| `POST /api/v1/auth/providers/{provider}/callback` | Complete a provider ceremony (form_post callback) | Public |
+| `POST /api/v1/auth/register` | Create an account | Public |
+| `PUT /api/v1/auth/session/workspace` | Switch the current session's Workspace | Session |
+| `GET /api/v1/dev/oauth/authorize` | Authorize a registered first-party developer client | Session |
+| `POST /api/v1/dev/oauth/revoke` | Revoke the calling interactive developer-client credential | CLI |
+| `POST /api/v1/dev/oauth/token` | Exchange a developer-client authorization code or refresh token | Public |
+| `POST /api/v1/mobile/auth/login` | Log in from the native password screen | Public |
+| `POST /api/v1/mobile/auth/mfa/verify` | Complete installation-bound native MFA | Public |
+| `POST /api/v1/mobile/auth/register` | Register from the native account screen | Public |
+| `GET /api/v1/mobile/oauth/authorize` | Start or continue native mobile OAuth authorization | Public |
+| `POST /api/v1/mobile/oauth/revoke` | Revoke the calling native mobile credential | Mobile |
+| `POST /api/v1/mobile/oauth/token` | Exchange a native authorization code or refresh token | Public |
 
 ## Account
 
@@ -62,47 +64,47 @@ The current user and their Workspace memberships.
 
 Guide: [Account](./account)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `PATCH` | `/api/v1/inbox-items/{inbox_item_id}` | Mark one Inbox item read or unread | browserSession, nativeAccessToken |
-| `GET` | `/api/v1/me` | Read the current user and Workspace | browserSession, nativeAccessToken |
-| `PATCH` | `/api/v1/me` | Update the current user's profile | browserSession |
-| `GET` | `/api/v1/me/api-tokens` | List personal API tokens for the current Workspace | browserSession |
-| `POST` | `/api/v1/me/api-tokens` | Create a personal API token for the current Workspace | browserSession |
-| `DELETE` | `/api/v1/me/api-tokens/{token_id}` | Revoke a personal API token | browserSession |
-| `GET` | `/api/v1/me/current-work` | Read the current user's account-global current task | browserSession |
-| `PUT` | `/api/v1/me/current-work` | Select the current user's current task | browserSession |
-| `DELETE` | `/api/v1/me/current-work` | Clear the current user's current task | browserSession |
-| `GET` | `/api/v1/me/current-work/candidates` | List tasks eligible to become the current task | browserSession |
-| `POST` | `/api/v1/me/email-change` | Start a verified email-address change | browserSession |
-| `POST` | `/api/v1/me/email-change/verify` | Verify and apply an email-address change | browserSession |
-| `GET` | `/api/v1/me/identities` | List linked external identities | browserSession |
-| `POST` | `/api/v1/me/identities` | Start linking an external identity | browserSession |
-| `DELETE` | `/api/v1/me/identities/{identity_id}` | Unlink an external identity | browserSession |
-| `GET` | `/api/v1/me/mcp/grants` | List connected MCP clients | browserSession |
-| `DELETE` | `/api/v1/me/mcp/grants/{grant_id}` | Disconnect an MCP client | browserSession |
-| `GET` | `/api/v1/me/mobile-credentials` | List active native mobile credentials | browserSession |
-| `DELETE` | `/api/v1/me/mobile-credentials` | Revoke every native mobile credential | browserSession |
-| `DELETE` | `/api/v1/me/mobile-credentials/{credential_id}` | Revoke one native mobile credential | browserSession |
-| `PUT` | `/api/v1/me/mobile-credentials/current/push-device` | Create or renew the calling credential's push-device registration | nativeAccessToken |
-| `DELETE` | `/api/v1/me/mobile-credentials/current/push-device` | Remove the calling credential's push-device registration | nativeAccessToken |
-| `POST` | `/api/v1/me/profile-picture` | Associate a cropped S3-hosted profile picture | browserSession |
-| `DELETE` | `/api/v1/me/profile-picture` | Remove the current profile picture and retire its stored object | browserSession |
-| `GET` | `/api/v1/me/profile-picture/content` | Redirect to a short-lived inline S3 URL for the current profile picture | browserSession |
-| `PUT` | `/api/v1/me/push-endpoints/browser` | Register or reconfirm this browser session's push subscription | browserSession |
-| `DELETE` | `/api/v1/me/push-endpoints/browser` | Delete this browser session's push subscription | browserSession |
-| `GET` | `/api/v1/me/push-endpoints/browser/config` | Get browser push registration configuration | browserSession |
-| `GET` | `/api/v1/me/sessions` | List the current user's sessions | browserSession |
-| `DELETE` | `/api/v1/me/sessions` | Sign out every other session | browserSession |
-| `DELETE` | `/api/v1/me/sessions/{session_id}` | Revoke one of the current user's sessions | browserSession |
-| `GET` | `/api/v1/workspaces` | List current-user Workspaces | browserSession, nativeAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/inbox` | List the current user's Inbox for a Workspace | browserSession, nativeAccessToken |
-| `POST` | `/api/v1/workspaces/{workspace_id}/inbox/read-state` | Converge Inbox seen or read state through a cutoff | browserSession, nativeAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/members` | List Workspace members | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/notification-preferences` | List effective notification preferences | browserSession, nativeAccessToken |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/notification-preferences/{category}` | Update one typed notification preference | browserSession, nativeAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/project-shortcuts` | Read the current user's Project shortcuts for one Workspace | browserSession |
-| `PUT` | `/api/v1/workspaces/{workspace_id}/project-shortcuts` | Replace the current user's Project shortcuts for one Workspace | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `PATCH /api/v1/inbox-items/{inbox_item_id}` | Mark one Inbox item read or unread | Session, Mobile |
+| `GET /api/v1/me` | Read the current user and Workspace | Session, Mobile |
+| `PATCH /api/v1/me` | Update the current user's profile | Session |
+| `GET /api/v1/me/api-tokens` | List personal API tokens for the current Workspace | Session |
+| `POST /api/v1/me/api-tokens` | Create a personal API token for the current Workspace | Session |
+| `DELETE /api/v1/me/api-tokens/{token_id}` | Revoke a personal API token | Session |
+| `GET /api/v1/me/current-work` | Read the current user's account-global current task | Session |
+| `PUT /api/v1/me/current-work` | Select the current user's current task | Session |
+| `DELETE /api/v1/me/current-work` | Clear the current user's current task | Session |
+| `GET /api/v1/me/current-work/candidates` | List tasks eligible to become the current task | Session |
+| `POST /api/v1/me/email-change` | Start a verified email-address change | Session |
+| `POST /api/v1/me/email-change/verify` | Verify and apply an email-address change | Session |
+| `GET /api/v1/me/identities` | List linked external identities | Session |
+| `POST /api/v1/me/identities` | Start linking an external identity | Session |
+| `DELETE /api/v1/me/identities/{identity_id}` | Unlink an external identity | Session |
+| `GET /api/v1/me/mcp/grants` | List connected MCP clients | Session |
+| `DELETE /api/v1/me/mcp/grants/{grant_id}` | Disconnect an MCP client | Session |
+| `GET /api/v1/me/mobile-credentials` | List active native mobile credentials | Session |
+| `DELETE /api/v1/me/mobile-credentials` | Revoke every native mobile credential | Session |
+| `DELETE /api/v1/me/mobile-credentials/{credential_id}` | Revoke one native mobile credential | Session |
+| `PUT /api/v1/me/mobile-credentials/current/push-device` | Create or renew the calling credential's push-device registration | Mobile |
+| `DELETE /api/v1/me/mobile-credentials/current/push-device` | Remove the calling credential's push-device registration | Mobile |
+| `POST /api/v1/me/profile-picture` | Associate a cropped S3-hosted profile picture | Session |
+| `DELETE /api/v1/me/profile-picture` | Remove the current profile picture and retire its stored object | Session |
+| `GET /api/v1/me/profile-picture/content` | Redirect to a short-lived inline S3 URL for the current profile picture | Session |
+| `PUT /api/v1/me/push-endpoints/browser` | Register or reconfirm this browser session's push subscription | Session |
+| `DELETE /api/v1/me/push-endpoints/browser` | Delete this browser session's push subscription | Session |
+| `GET /api/v1/me/push-endpoints/browser/config` | Get browser push registration configuration | Session |
+| `GET /api/v1/me/sessions` | List the current user's sessions | Session |
+| `DELETE /api/v1/me/sessions` | Sign out every other session | Session |
+| `DELETE /api/v1/me/sessions/{session_id}` | Revoke one of the current user's sessions | Session |
+| `GET /api/v1/workspaces` | List current-user Workspaces | Session, Mobile |
+| `GET /api/v1/workspaces/{workspace_id}/inbox` | List the current user's Inbox for a Workspace | Session, Mobile |
+| `POST /api/v1/workspaces/{workspace_id}/inbox/read-state` | Converge Inbox seen or read state through a cutoff | Session, Mobile |
+| `GET /api/v1/workspaces/{workspace_id}/members` | List Workspace members | Session |
+| `GET /api/v1/workspaces/{workspace_id}/notification-preferences` | List effective notification preferences | Session, Mobile |
+| `PATCH /api/v1/workspaces/{workspace_id}/notification-preferences/{category}` | Update one typed notification preference | Session, Mobile |
+| `GET /api/v1/workspaces/{workspace_id}/project-shortcuts` | Read the current user's Project shortcuts for one Workspace | Session |
+| `PUT /api/v1/workspaces/{workspace_id}/project-shortcuts` | Replace the current user's Project shortcuts for one Workspace | Session |
 
 ## Workspaces
 
@@ -110,41 +112,41 @@ Workspace lifecycle, membership, and invitations.
 
 Guide: [Workspaces](./workspaces)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/invitations/accept` | Accept an invitation | browserSession |
-| `GET` | `/api/v1/mobile/workspace-creation-options` | Get native account Workspace-creation options | nativeAccessToken |
-| `POST` | `/api/v1/mobile/workspaces` | Create a Free Workspace with a native account | nativeAccessToken |
-| `POST` | `/api/v1/mobile/workspaces/bootstrap` | Create the native caller's first Workspace | nativeAccessToken |
-| `GET` | `/api/v1/workspace-creation-options` | Get account Workspace-creation options | browserSession |
-| `POST` | `/api/v1/workspaces` | Create a Workspace | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}` | Read a Workspace | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}` | Rename, change the URL, or restore a Workspace | browserSession |
-| `DELETE` | `/api/v1/workspaces/{workspace_id}` | Archive a Workspace | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/activity` | List access-filtered Workspace activity | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/ai-access-policy` | Get the Workspace AI access policy | browserSession |
-| `PUT` | `/api/v1/workspaces/{workspace_id}/ai-access-policy` | Update the Workspace AI access policy | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/events` | Stream Workspace reconciliation events | browserSession, bearerToken, developerAccessToken |
-| `POST` | `/api/v1/workspaces/{workspace_id}/icon` | Associate a cropped S3-hosted Workspace icon | browserSession |
-| `DELETE` | `/api/v1/workspaces/{workspace_id}/icon` | Remove the Workspace icon and retire its stored object | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/icon/content` | Redirect to a short-lived inline S3 URL for the Workspace icon | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/invitations` | List invitations | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/invitations` | Invite someone to the Workspace | browserSession |
-| `DELETE` | `/api/v1/workspaces/{workspace_id}/invitations/{invitation_id}` | Revoke an invitation | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/invitations/{invitation_id}/resend` | Resend an invitation | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/knowledge-settings` | Read Workspace Knowledge indexing settings and lifecycle state | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/knowledge-settings` | Update desired Workspace Knowledge indexing settings | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/mcp-service-credentials` | List Workspace MCP service credentials | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/mcp-service-credentials` | Create a Workspace MCP service credential | browserSession |
-| `DELETE` | `/api/v1/workspaces/{workspace_id}/mcp-service-credentials/{credential_id}` | Revoke a Workspace MCP service credential | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/members` | Restore a former member | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/members/{member_id}` | Change a member's role or state | browserSession |
-| `DELETE` | `/api/v1/workspaces/{workspace_id}/members/{member_id}` | Remove a member | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/settings` | Read shared Workspace defaults | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/settings` | Update shared Workspace defaults | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/statuses` | List Workspace-wide workflow Statuses | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/statuses` | Create a Workspace-wide workflow Status | browserSession |
-| `POST` | `/api/v1/workspaces/bootstrap` | Create the caller's first Workspace | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `POST /api/v1/invitations/accept` | Accept an invitation | Session |
+| `GET /api/v1/mobile/workspace-creation-options` | Get native account Workspace-creation options | Mobile |
+| `POST /api/v1/mobile/workspaces` | Create a Free Workspace with a native account | Mobile |
+| `POST /api/v1/mobile/workspaces/bootstrap` | Create the native caller's first Workspace | Mobile |
+| `GET /api/v1/workspace-creation-options` | Get account Workspace-creation options | Session |
+| `POST /api/v1/workspaces` | Create a Workspace | Session |
+| `GET /api/v1/workspaces/{workspace_id}` | Read a Workspace | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}` | Rename, change the URL, or restore a Workspace | Session |
+| `DELETE /api/v1/workspaces/{workspace_id}` | Archive a Workspace | Session |
+| `GET /api/v1/workspaces/{workspace_id}/activity` | List access-filtered Workspace activity | Session |
+| `GET /api/v1/workspaces/{workspace_id}/ai-access-policy` | Get the Workspace AI access policy | Session |
+| `PUT /api/v1/workspaces/{workspace_id}/ai-access-policy` | Update the Workspace AI access policy | Session |
+| `GET /api/v1/workspaces/{workspace_id}/events` | Stream Workspace reconciliation events | Session, Token, CLI |
+| `POST /api/v1/workspaces/{workspace_id}/icon` | Associate a cropped S3-hosted Workspace icon | Session |
+| `DELETE /api/v1/workspaces/{workspace_id}/icon` | Remove the Workspace icon and retire its stored object | Session |
+| `GET /api/v1/workspaces/{workspace_id}/icon/content` | Redirect to a short-lived inline S3 URL for the Workspace icon | Session |
+| `GET /api/v1/workspaces/{workspace_id}/invitations` | List invitations | Session |
+| `POST /api/v1/workspaces/{workspace_id}/invitations` | Invite someone to the Workspace | Session |
+| `DELETE /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}` | Revoke an invitation | Session |
+| `POST /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}/resend` | Resend an invitation | Session |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge-settings` | Read Workspace Knowledge indexing settings and lifecycle state | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/knowledge-settings` | Update desired Workspace Knowledge indexing settings | Session |
+| `GET /api/v1/workspaces/{workspace_id}/mcp-service-credentials` | List Workspace MCP service credentials | Session |
+| `POST /api/v1/workspaces/{workspace_id}/mcp-service-credentials` | Create a Workspace MCP service credential | Session |
+| `DELETE /api/v1/workspaces/{workspace_id}/mcp-service-credentials/{credential_id}` | Revoke a Workspace MCP service credential | Session |
+| `POST /api/v1/workspaces/{workspace_id}/members` | Restore a former member | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/members/{member_id}` | Change a member's role or state | Session |
+| `DELETE /api/v1/workspaces/{workspace_id}/members/{member_id}` | Remove a member | Session |
+| `GET /api/v1/workspaces/{workspace_id}/settings` | Read shared Workspace defaults | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/settings` | Update shared Workspace defaults | Session |
+| `GET /api/v1/workspaces/{workspace_id}/statuses` | List Workspace-wide workflow Statuses | Session |
+| `POST /api/v1/workspaces/{workspace_id}/statuses` | Create a Workspace-wide workflow Status | Session |
+| `POST /api/v1/workspaces/bootstrap` | Create the caller's first Workspace | Session |
 
 ## Projects
 
@@ -152,47 +154,47 @@ Workspace Projects and their workflow Statuses.
 
 Guide: [Projects](./projects)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/milestones/{milestone_id}` | Read a milestone with computed progress | browserSession |
-| `PATCH` | `/api/v1/milestones/{milestone_id}` | Update a milestone | browserSession |
-| `DELETE` | `/api/v1/milestones/{milestone_id}` | Archive a milestone | browserSession |
-| `PATCH` | `/api/v1/project-states/{state_id}` | Rename or restore a Project state | browserSession |
-| `DELETE` | `/api/v1/project-states/{state_id}` | Archive an unused Project state | browserSession |
-| `POST` | `/api/v1/project-states/{state_id}/archive-and-replace` | Replace an in-use Project state and archive it | browserSession |
-| `POST` | `/api/v1/project-states/{state_id}/move` | Move a Project state | browserSession |
-| `GET` | `/api/v1/projects/{project_id}` | Read a Project | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `PATCH` | `/api/v1/projects/{project_id}` | Update Project metadata, planning dates, path, visual identity, or visibility | browserSession |
-| `DELETE` | `/api/v1/projects/{project_id}` | Archive a Project | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/activity` | List access-filtered Project activity | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/attachments` | List Project attachments | browserSession |
-| `POST` | `/api/v1/projects/{project_id}/attachments` | Attach a completed upload to a Project | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/completion-policy` | Read a Project's completion policy | browserSession |
-| `PUT` | `/api/v1/projects/{project_id}/completion-policy` | Configure whether completion requires review | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/members` | List the Project's explicit members | browserSession |
-| `POST` | `/api/v1/projects/{project_id}/members` | Add an active Workspace member to the Project | browserSession |
-| `PATCH` | `/api/v1/projects/{project_id}/members/{actor_id}` | Change a Project member's role | browserSession |
-| `DELETE` | `/api/v1/projects/{project_id}/members/{actor_id}` | Remove a Project member | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/milestones` | List Project milestones | browserSession |
-| `POST` | `/api/v1/projects/{project_id}/milestones` | Create a Project milestone | browserSession |
-| `POST` | `/api/v1/projects/{project_id}/move` | Move a Project in the Workspace's shared manual order | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/overview` | Read the bounded Project overview projection | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/statuses` | List Project Statuses | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `POST` | `/api/v1/projects/{project_id}/statuses` | Create a Project workflow Status | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/task-attachments` | List attachments of the Project's Tasks | browserSession |
-| `GET` | `/api/v1/public/projects/{public_id}` | Read a published Project status | none |
-| `GET` | `/api/v1/statuses/{status_id}` | Read a workflow Status | browserSession |
-| `PATCH` | `/api/v1/statuses/{status_id}` | Update or restore a workflow Status | browserSession |
-| `DELETE` | `/api/v1/statuses/{status_id}` | Archive a workflow Status | browserSession |
-| `POST` | `/api/v1/statuses/{status_id}/archive-and-replace` | Archive a workflow Status and replace its live Tasks | browserSession |
-| `GET` | `/api/v1/statuses/{status_id}/lifecycle-preview` | Preview a Status lifecycle migration | browserSession |
-| `POST` | `/api/v1/statuses/{status_id}/move` | Move a Status in its workflow order | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/project-lifecycle` | Read the optional Project lifecycle policy | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/project-lifecycle` | Enable or disable Project lifecycle states | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/project-states` | List Workspace Project states | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/project-states` | Create a Project state | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/projects` | List Workspace Projects | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `POST` | `/api/v1/workspaces/{workspace_id}/projects` | Create a Project | browserSession, nativeAccessToken |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/milestones/{milestone_id}` | Read a milestone with computed progress | Session |
+| `PATCH /api/v1/milestones/{milestone_id}` | Update a milestone | Session |
+| `DELETE /api/v1/milestones/{milestone_id}` | Archive a milestone | Session |
+| `PATCH /api/v1/project-states/{state_id}` | Rename or restore a Project state | Session |
+| `DELETE /api/v1/project-states/{state_id}` | Archive an unused Project state | Session |
+| `POST /api/v1/project-states/{state_id}/archive-and-replace` | Replace an in-use Project state and archive it | Session |
+| `POST /api/v1/project-states/{state_id}/move` | Move a Project state | Session |
+| `GET /api/v1/projects/{project_id}` | Read a Project | Session, Mobile, Token, CLI |
+| `PATCH /api/v1/projects/{project_id}` | Update Project metadata, planning dates, path, visual identity, or visibility | Session |
+| `DELETE /api/v1/projects/{project_id}` | Archive a Project | Session |
+| `GET /api/v1/projects/{project_id}/activity` | List access-filtered Project activity | Session |
+| `GET /api/v1/projects/{project_id}/attachments` | List Project attachments | Session |
+| `POST /api/v1/projects/{project_id}/attachments` | Attach a completed upload to a Project | Session |
+| `GET /api/v1/projects/{project_id}/completion-policy` | Read a Project's completion policy | Session |
+| `PUT /api/v1/projects/{project_id}/completion-policy` | Configure whether completion requires review | Session |
+| `GET /api/v1/projects/{project_id}/members` | List the Project's explicit members | Session |
+| `POST /api/v1/projects/{project_id}/members` | Add an active Workspace member to the Project | Session |
+| `PATCH /api/v1/projects/{project_id}/members/{actor_id}` | Change a Project member's role | Session |
+| `DELETE /api/v1/projects/{project_id}/members/{actor_id}` | Remove a Project member | Session |
+| `GET /api/v1/projects/{project_id}/milestones` | List Project milestones | Session |
+| `POST /api/v1/projects/{project_id}/milestones` | Create a Project milestone | Session |
+| `POST /api/v1/projects/{project_id}/move` | Move a Project in the Workspace's shared manual order | Session |
+| `GET /api/v1/projects/{project_id}/overview` | Read the bounded Project overview projection | Session |
+| `GET /api/v1/projects/{project_id}/statuses` | List Project Statuses | Session, Mobile, Token, CLI |
+| `POST /api/v1/projects/{project_id}/statuses` | Create a Project workflow Status | Session |
+| `GET /api/v1/projects/{project_id}/task-attachments` | List attachments of the Project's Tasks | Session |
+| `GET /api/v1/public/projects/{public_id}` | Read a published Project status | Public |
+| `GET /api/v1/statuses/{status_id}` | Read a workflow Status | Session |
+| `PATCH /api/v1/statuses/{status_id}` | Update or restore a workflow Status | Session |
+| `DELETE /api/v1/statuses/{status_id}` | Archive a workflow Status | Session |
+| `POST /api/v1/statuses/{status_id}/archive-and-replace` | Archive a workflow Status and replace its live Tasks | Session |
+| `GET /api/v1/statuses/{status_id}/lifecycle-preview` | Preview a Status lifecycle migration | Session |
+| `POST /api/v1/statuses/{status_id}/move` | Move a Status in its workflow order | Session |
+| `GET /api/v1/workspaces/{workspace_id}/project-lifecycle` | Read the optional Project lifecycle policy | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/project-lifecycle` | Enable or disable Project lifecycle states | Session |
+| `GET /api/v1/workspaces/{workspace_id}/project-states` | List Workspace Project states | Session |
+| `POST /api/v1/workspaces/{workspace_id}/project-states` | Create a Project state | Session |
+| `GET /api/v1/workspaces/{workspace_id}/projects` | List Workspace Projects | Session, Mobile, Token, CLI |
+| `POST /api/v1/workspaces/{workspace_id}/projects` | Create a Project | Session, Mobile |
 
 ## Tasks
 
@@ -200,63 +202,63 @@ Project Tasks.
 
 Guide: [Tasks](./tasks)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/projects/{project_id}/tasks` | List Project Tasks | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `POST` | `/api/v1/projects/{project_id}/tasks` | Create a Task | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `PATCH` | `/api/v1/task-relations/{relation_id}` | Change a Task relation type | browserSession |
-| `DELETE` | `/api/v1/task-relations/{relation_id}` | Delete a Task relation | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}` | Read a Task | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `PATCH` | `/api/v1/tasks/{task_id}` | Update a Task | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `DELETE` | `/api/v1/tasks/{task_id}` | Archive a Task | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/activity` | List access-filtered Task activity | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/assignments` | List a Task's assignment history | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/attachments` | List Task attachments | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/attachments` | Attach a completed upload to a Task | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/collaboration-sessions` | Admit an independent Task collaboration-presence lease | browserSession |
-| `DELETE` | `/api/v1/tasks/{task_id}/collaboration-sessions/{session_id}` | End the caller's Task collaboration-presence lease | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/description-revisions` | List Task description revisions | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/description-revisions/{revision}/restore` | Restore a Task description revision | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/duplicate` | Duplicate a Task | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/move` | Atomically move a Task in workflow order | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/participants` | List factual Task participants | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/relations` | List Task relations | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/relations` | Create a Task relation | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/restore` | Restore an archived or trashed Task | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/start` | Start and assign a Task to the calling Actor | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/tasks/{task_id}/subscribers` | List current Task followers | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/subscription` | Get the current user's Task subscription | browserSession |
-| `PUT` | `/api/v1/tasks/{task_id}/subscription` | Follow a Task | browserSession |
-| `DELETE` | `/api/v1/tasks/{task_id}/subscription` | Unfollow a Task | browserSession |
-| `PUT` | `/api/v1/tasks/{task_id}/subscription/mute` | Mute a Task | browserSession |
-| `DELETE` | `/api/v1/tasks/{task_id}/subscription/mute` | Unmute a Task | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/trash` | Move a Task to trash | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/change-sets` | Propose bounded versioned changes | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/change-sets/{id}` | Read an exact proposal and accessible outcomes | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/change-sets/{id}/review` | Approve or reject an exact proposal as its initiating human | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/change-sets/apply` | Apply an exact reviewed proposal | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/document-patches` | Create or edit a versioned Document draft | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/document-patches/{id}` | Read an exact Document draft version | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/members/resolve` | Resolve an exact member identity with ambiguity preserved | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/operation-receipts/{id}` | Resolve a committed operation under current authority | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/operation-receipts/undo` | Conditionally compensate an initiating member operation | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/subscribed-tasks` | Read the caller's actively followed Tasks | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `POST` | `/api/v1/workspaces/{workspace_id}/task-result-sets` | Capture or explicitly refresh a checked Task result set | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/task-result-sets/{id}` | Read an exact Task result-set version | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/task-result-sets/{id}/hydrate` | Hydrate up to 100 exact result-set targets with current compact Task previews | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/task-saved-views` | List personal Task queries | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/task-saved-views` | Create or revision-check a personal Task query | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/task-saved-views/delete` | Delete an exact personal Task-query revision | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/task-selections` | Select exact result-set Task identities | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/task-selections/{id}` | Read a frozen Task selection | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/task-selections/{id}/hydrate` | Reauthorize up to100 selected Task identities | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/tasks` | List bounded Workspace Tasks | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/tasks/{id}/context` | Read bounded canonical Task context | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/tasks/{task_code}` | Resolve a Task's canonical Workspace URL | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` | Read bounded Workspace Knowledge context related to a Task | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/tasks/{task_id}/suggestion-feedback` | Confirm or discard one Suggestions-tab finding | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/tasks/bulk` | Update up to 100 explicitly selected Tasks | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/work` | Read the caller's bounded My Work view | browserSession, nativeAccessToken, bearerToken, developerAccessToken |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/projects/{project_id}/tasks` | List Project Tasks | Session, Mobile, Token, CLI |
+| `POST /api/v1/projects/{project_id}/tasks` | Create a Task | Session, Mobile, Token, CLI |
+| `PATCH /api/v1/task-relations/{relation_id}` | Change a Task relation type | Session |
+| `DELETE /api/v1/task-relations/{relation_id}` | Delete a Task relation | Session |
+| `GET /api/v1/tasks/{task_id}` | Read a Task | Session, Mobile, Token, CLI |
+| `PATCH /api/v1/tasks/{task_id}` | Update a Task | Session, Mobile, Token, CLI |
+| `DELETE /api/v1/tasks/{task_id}` | Archive a Task | Session |
+| `GET /api/v1/tasks/{task_id}/activity` | List access-filtered Task activity | Session |
+| `GET /api/v1/tasks/{task_id}/assignments` | List a Task's assignment history | Session |
+| `GET /api/v1/tasks/{task_id}/attachments` | List Task attachments | Session |
+| `POST /api/v1/tasks/{task_id}/attachments` | Attach a completed upload to a Task | Session |
+| `POST /api/v1/tasks/{task_id}/collaboration-sessions` | Admit an independent Task collaboration-presence lease | Session |
+| `DELETE /api/v1/tasks/{task_id}/collaboration-sessions/{session_id}` | End the caller's Task collaboration-presence lease | Session |
+| `GET /api/v1/tasks/{task_id}/description-revisions` | List Task description revisions | Session |
+| `POST /api/v1/tasks/{task_id}/description-revisions/{revision}/restore` | Restore a Task description revision | Session |
+| `POST /api/v1/tasks/{task_id}/duplicate` | Duplicate a Task | Session |
+| `POST /api/v1/tasks/{task_id}/move` | Atomically move a Task in workflow order | Session |
+| `GET /api/v1/tasks/{task_id}/participants` | List factual Task participants | Session |
+| `GET /api/v1/tasks/{task_id}/relations` | List Task relations | Session |
+| `POST /api/v1/tasks/{task_id}/relations` | Create a Task relation | Session |
+| `POST /api/v1/tasks/{task_id}/restore` | Restore an archived or trashed Task | Session |
+| `POST /api/v1/tasks/{task_id}/start` | Start and assign a Task to the calling Actor | Session, Mobile, Token, CLI |
+| `GET /api/v1/tasks/{task_id}/subscribers` | List current Task followers | Session |
+| `GET /api/v1/tasks/{task_id}/subscription` | Get the current user's Task subscription | Session |
+| `PUT /api/v1/tasks/{task_id}/subscription` | Follow a Task | Session |
+| `DELETE /api/v1/tasks/{task_id}/subscription` | Unfollow a Task | Session |
+| `PUT /api/v1/tasks/{task_id}/subscription/mute` | Mute a Task | Session |
+| `DELETE /api/v1/tasks/{task_id}/subscription/mute` | Unmute a Task | Session |
+| `POST /api/v1/tasks/{task_id}/trash` | Move a Task to trash | Session |
+| `POST /api/v1/workspaces/{workspace_id}/change-sets` | Propose bounded versioned changes | Session |
+| `GET /api/v1/workspaces/{workspace_id}/change-sets/{id}` | Read an exact proposal and accessible outcomes | Session |
+| `POST /api/v1/workspaces/{workspace_id}/change-sets/{id}/review` | Approve or reject an exact proposal as its initiating human | Session |
+| `POST /api/v1/workspaces/{workspace_id}/change-sets/apply` | Apply an exact reviewed proposal | Session |
+| `POST /api/v1/workspaces/{workspace_id}/document-patches` | Create or edit a versioned Document draft | Session |
+| `GET /api/v1/workspaces/{workspace_id}/document-patches/{id}` | Read an exact Document draft version | Session |
+| `GET /api/v1/workspaces/{workspace_id}/members/resolve` | Resolve an exact member identity with ambiguity preserved | Session |
+| `GET /api/v1/workspaces/{workspace_id}/operation-receipts/{id}` | Resolve a committed operation under current authority | Session |
+| `POST /api/v1/workspaces/{workspace_id}/operation-receipts/undo` | Conditionally compensate an initiating member operation | Session |
+| `GET /api/v1/workspaces/{workspace_id}/subscribed-tasks` | Read the caller's actively followed Tasks | Session, Mobile, Token, CLI |
+| `POST /api/v1/workspaces/{workspace_id}/task-result-sets` | Capture or explicitly refresh a checked Task result set | Session |
+| `GET /api/v1/workspaces/{workspace_id}/task-result-sets/{id}` | Read an exact Task result-set version | Session |
+| `GET /api/v1/workspaces/{workspace_id}/task-result-sets/{id}/hydrate` | Hydrate up to 100 exact result-set targets with current compact Task previews | Session |
+| `GET /api/v1/workspaces/{workspace_id}/task-saved-views` | List personal Task queries | Session |
+| `POST /api/v1/workspaces/{workspace_id}/task-saved-views` | Create or revision-check a personal Task query | Session |
+| `POST /api/v1/workspaces/{workspace_id}/task-saved-views/delete` | Delete an exact personal Task-query revision | Session |
+| `POST /api/v1/workspaces/{workspace_id}/task-selections` | Select exact result-set Task identities | Session |
+| `GET /api/v1/workspaces/{workspace_id}/task-selections/{id}` | Read a frozen Task selection | Session |
+| `GET /api/v1/workspaces/{workspace_id}/task-selections/{id}/hydrate` | Reauthorize up to100 selected Task identities | Session |
+| `GET /api/v1/workspaces/{workspace_id}/tasks` | List bounded Workspace Tasks | Session, Mobile, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/tasks/{id}/context` | Read bounded canonical Task context | Session |
+| `GET /api/v1/workspaces/{workspace_id}/tasks/{task_code}` | Resolve a Task's canonical Workspace URL | Session, Mobile, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` | Read bounded Workspace Knowledge context related to a Task | Session |
+| `POST /api/v1/workspaces/{workspace_id}/tasks/{task_id}/suggestion-feedback` | Confirm or discard one Suggestions-tab finding | Session |
+| `POST /api/v1/workspaces/{workspace_id}/tasks/bulk` | Update up to 100 explicitly selected Tasks | Session |
+| `GET /api/v1/workspaces/{workspace_id}/work` | Read the caller's bounded My Work view | Session, Mobile, Token, CLI |
 
 ## Integrations
 
@@ -264,56 +266,54 @@ Provider catalog metadata and live external entities linked to Assign resources.
 
 Guide: [Integrations](./integrations)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/integration-actions` | Request an idempotent typed remote action | browserSession |
-| `GET` | `/api/v1/integration-actions/{action_id}` | Read durable remote-action status | browserSession |
-| `GET` | `/api/v1/integration-authorizations/callback` | Complete a provider authorization callback | none |
-| `DELETE` | `/api/v1/integration-bindings/{binding_id}` | Disconnect a Project integration binding | browserSession |
-| `POST` | `/api/v1/integration-bindings/{binding_id}/sentry-readiness` | Verify a Sentry Project binding | browserSession |
-| `GET` | `/api/v1/integration-bindings/{binding_id}/subscriptions` | List configured behavior for one binding | browserSession |
-| `POST` | `/api/v1/integration-bindings/{binding_id}/subscriptions` | Configure explicit ongoing integration behavior | browserSession |
-| `GET` | `/api/v1/integration-catalog` | List Assign integration providers | browserSession |
-| `GET` | `/api/v1/integration-installations/{installation_id}` | Read one current Workspace integration installation | browserSession |
-| `DELETE` | `/api/v1/integration-installations/{installation_id}` | Disconnect an integration installation | browserSession |
-| `GET` | `/api/v1/integration-installations/{installation_id}/actions` | List typed actions supported by an installation | browserSession |
-| `POST` | `/api/v1/integration-installations/{installation_id}/management-link` | Create a provider installation-management handoff | browserSession |
-| `GET` | `/api/v1/integration-installations/{installation_id}/resources` | List persisted remote resources | browserSession |
-| `POST` | `/api/v1/integration-installations/{installation_id}/resources/refresh` | Refresh one bounded page of provider resources | browserSession |
-| `POST` | `/api/v1/integration-private-connectors/{connector_id}/requests/{request_id}/response` | Return a bounded connector response | integrationPrivateConnector |
-| `GET` | `/api/v1/integration-private-connectors/{connector_id}/requests/next` | Long-poll for the next bounded connector request | integrationPrivateConnector |
-| `PATCH` | `/api/v1/integration-subscriptions/{subscription_id}` | Update, pause, resume, or disable integration behavior | browserSession |
-| `POST` | `/api/v1/integrations/sentry/alert-action` | Validate an Assign Sentry alert action | none |
-| `POST` | `/api/v1/integrations/sentry/issues/create` | Create and link an Assign Task from Sentry | none |
-| `POST` | `/api/v1/integrations/sentry/issues/link` | Link a Sentry issue to an Assign Task | none |
-| `GET` | `/api/v1/integrations/sentry/options/bindings` | List Sentry-native Assign Project binding options | none |
-| `GET` | `/api/v1/integrations/sentry/options/tasks` | List Sentry-native Assign Task options | none |
-| `GET` | `/api/v1/me/integration-identities` | List personal integration identities | browserSession |
-| `DELETE` | `/api/v1/me/integration-identities/{identity_id}` | Disconnect the current User's delegated provider identity | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/integration-bindings` | List current integration bindings for a Project | browserSession |
-| `POST` | `/api/v1/projects/{project_id}/integration-bindings` | Bind a discovered remote resource to a Project | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/rich-entities` | List live external entities linked to a Task | browserSession |
-| `POST` | `/api/v1/webhooks/integrations/{provider_key}` | Verify and route a provider-global webhook | none |
-| `POST` | `/api/v1/webhooks/integrations/{provider_key}/{installation_id}` | Verify and durably enqueue a provider webhook | none |
-| `POST` | `/api/v1/workspaces/{workspace_id}/integration-authorizations` | Begin an installation or personal provider authorization | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/integration-authorizations/credential` | Complete a provider authorization with a user-supplied credential | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/integration-installations` | List current Workspace integration installations | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/integration-private-connectors` | Enroll an outbound private-network integration connector | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/integration-requests` | Request an integration provider | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `POST /api/v1/integration-actions` | Request an idempotent typed remote action | Session |
+| `GET /api/v1/integration-actions/{action_id}` | Read durable remote-action status | Session |
+| `GET /api/v1/integration-authorizations/callback` | Complete a provider authorization callback | Public |
+| `DELETE /api/v1/integration-bindings/{binding_id}` | Disconnect a Project integration binding | Session |
+| `POST /api/v1/integration-bindings/{binding_id}/sentry-readiness` | Verify a Sentry Project binding | Session |
+| `GET /api/v1/integration-bindings/{binding_id}/subscriptions` | List configured behavior for one binding | Session |
+| `POST /api/v1/integration-bindings/{binding_id}/subscriptions` | Configure explicit ongoing integration behavior | Session |
+| `GET /api/v1/integration-catalog` | List Assign integration providers | Session |
+| `GET /api/v1/integration-installations/{installation_id}` | Read one current Workspace integration installation | Session |
+| `DELETE /api/v1/integration-installations/{installation_id}` | Disconnect an integration installation | Session |
+| `GET /api/v1/integration-installations/{installation_id}/actions` | List typed actions supported by an installation | Session |
+| `POST /api/v1/integration-installations/{installation_id}/management-link` | Create a provider installation-management handoff | Session |
+| `GET /api/v1/integration-installations/{installation_id}/resources` | List persisted remote resources | Session |
+| `POST /api/v1/integration-installations/{installation_id}/resources/refresh` | Refresh one bounded page of provider resources | Session |
+| `PATCH /api/v1/integration-subscriptions/{subscription_id}` | Update, pause, resume, or disable integration behavior | Session |
+| `POST /api/v1/integrations/sentry/alert-action` | Validate an Assign Sentry alert action | Public |
+| `POST /api/v1/integrations/sentry/issues/create` | Create and link an Assign Task from Sentry | Public |
+| `POST /api/v1/integrations/sentry/issues/link` | Link a Sentry issue to an Assign Task | Public |
+| `GET /api/v1/integrations/sentry/options/bindings` | List Sentry-native Assign Project binding options | Public |
+| `GET /api/v1/integrations/sentry/options/tasks` | List Sentry-native Assign Task options | Public |
+| `GET /api/v1/me/integration-identities` | List personal integration identities | Session |
+| `DELETE /api/v1/me/integration-identities/{identity_id}` | Disconnect the current User's delegated provider identity | Session |
+| `GET /api/v1/projects/{project_id}/integration-bindings` | List current integration bindings for a Project | Session |
+| `POST /api/v1/projects/{project_id}/integration-bindings` | Bind a discovered remote resource to a Project | Session |
+| `GET /api/v1/tasks/{task_id}/rich-entities` | List live external entities linked to a Task | Session |
+| `POST /api/v1/webhooks/integrations/{provider_key}` | Verify and route a provider-global webhook | Public |
+| `POST /api/v1/webhooks/integrations/{provider_key}/{installation_id}` | Verify and durably enqueue a provider webhook | Public |
+| `POST /api/v1/workspaces/{workspace_id}/integration-authorizations` | Begin an installation or personal provider authorization | Session |
+| `POST /api/v1/workspaces/{workspace_id}/integration-authorizations/credential` | Complete a provider authorization with a user-supplied credential | Session |
+| `GET /api/v1/workspaces/{workspace_id}/integration-installations` | List current Workspace integration installations | Session |
+| `POST /api/v1/workspaces/{workspace_id}/integration-private-connectors` | Enroll an outbound private-network integration connector | Session |
+| `POST /api/v1/workspaces/{workspace_id}/integration-requests` | Request an integration provider | Session |
 
 ## Comments
 
 Task discussion.
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/comments/{comment_id}` | Read a comment | browserSession, bearerToken, developerAccessToken |
-| `PATCH` | `/api/v1/comments/{comment_id}` | Edit a comment | browserSession, bearerToken, developerAccessToken |
-| `DELETE` | `/api/v1/comments/{comment_id}` | Delete a comment | browserSession, bearerToken, developerAccessToken |
-| `PUT` | `/api/v1/comments/{comment_id}/reactions/{reaction}` | Add the caller's reaction to a comment | browserSession, bearerToken, developerAccessToken |
-| `DELETE` | `/api/v1/comments/{comment_id}/reactions/{reaction}` | Remove the caller's reaction from a comment | browserSession, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/tasks/{task_id}/comments` | List Task comments | browserSession, bearerToken, developerAccessToken |
-| `POST` | `/api/v1/tasks/{task_id}/comments` | Add a comment to a Task | browserSession, bearerToken, developerAccessToken |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/comments/{comment_id}` | Read a comment | Session, Token, CLI |
+| `PATCH /api/v1/comments/{comment_id}` | Edit a comment | Session, Token, CLI |
+| `DELETE /api/v1/comments/{comment_id}` | Delete a comment | Session, Token, CLI |
+| `PUT /api/v1/comments/{comment_id}/reactions/{reaction}` | Add the caller's reaction to a comment | Session, Token, CLI |
+| `DELETE /api/v1/comments/{comment_id}/reactions/{reaction}` | Remove the caller's reaction from a comment | Session, Token, CLI |
+| `GET /api/v1/tasks/{task_id}/comments` | List Task comments | Session, Token, CLI |
+| `POST /api/v1/tasks/{task_id}/comments` | Add a comment to a Task | Session, Token, CLI |
 
 ## Documents
 
@@ -321,39 +321,39 @@ Workspace rich-text Documents and their versioned content.
 
 Guide: [Documents](./documents)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/documents/{document_id}` | Read Document metadata | browserSession |
-| `PATCH` | `/api/v1/documents/{document_id}` | Update Document metadata | browserSession |
-| `DELETE` | `/api/v1/documents/{document_id}` | Archive a Document | browserSession |
-| `GET` | `/api/v1/documents/{document_id}/attachments` | List Document attachments | browserSession |
-| `POST` | `/api/v1/documents/{document_id}/attachments` | Attach a completed upload to a Document | browserSession |
-| `GET` | `/api/v1/documents/{document_id}/children` | List direct child Documents | browserSession |
-| `POST` | `/api/v1/documents/{document_id}/collaboration-sessions` | Admit an independent Document collaboration-presence lease | browserSession |
-| `DELETE` | `/api/v1/documents/{document_id}/collaboration-sessions/{session_id}` | End the caller's Document collaboration-presence lease | browserSession |
-| `GET` | `/api/v1/documents/{document_id}/content` | Read versioned Document content | browserSession |
-| `PUT` | `/api/v1/documents/{document_id}/content` | Replace versioned Document content | browserSession |
-| `GET` | `/api/v1/documents/{document_id}/markdown` | Export current or historical Document content as Markdown | browserSession |
-| `PUT` | `/api/v1/documents/{document_id}/markdown` | Replace Document content from Markdown | browserSession |
-| `POST` | `/api/v1/documents/{document_id}/restore` | Restore an archived Document | browserSession |
-| `GET` | `/api/v1/documents/{document_id}/revisions` | List immutable Document revisions | browserSession |
-| `GET` | `/api/v1/documents/{document_id}/revisions/{revision}` | Read one immutable Document revision | browserSession |
-| `POST` | `/api/v1/documents/{document_id}/revisions/{revision}/restore` | Restore a historical snapshot as a new active revision | browserSession |
-| `GET` | `/api/v1/documents/{document_id}/revisions/compare` | Compare two immutable Document revisions | browserSession |
-| `GET` | `/api/v1/public/documents/{public_id}` | Read a published Document | none |
-| `POST` | `/api/v1/public/documents/{public_id}/attachments/{attachment_id}/download` | Authorize a published Document attachment download | none |
-| `POST` | `/api/v1/public/documents/{public_id}/attachments/{attachment_id}/preview` | Authorize a published Document attachment preview | none |
-| `GET` | `/api/v1/workspaces/{workspace_id}/documents` | List Workspace Documents | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/documents` | Create a Document | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/knowledge-repository` | Read the Workspace Git-backed Documents repository | browserSession |
-| `PUT` | `/api/v1/workspaces/{workspace_id}/knowledge-repository` | Validate and connect one existing documentation repository | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/knowledge-repository` | Pause, resume, or disconnect Git-backed Documents | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts` | List open revision-bound synchronization conflicts | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts/{conflict_id}/resolve` | Apply a revision-bound explicit conflict decision | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/knowledge-repository/import` | Import bounded Markdown content from the connected repository | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/knowledge-repository/runs` | List bounded repository synchronization history | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/knowledge-repository/sync` | Synchronize pending Assign and Git changes now | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/reference-options` | Query bounded editor reference and mention candidates | browserSession, bearerToken, developerAccessToken |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/documents/{document_id}` | Read Document metadata | Session |
+| `PATCH /api/v1/documents/{document_id}` | Update Document metadata | Session |
+| `DELETE /api/v1/documents/{document_id}` | Archive a Document | Session |
+| `GET /api/v1/documents/{document_id}/attachments` | List Document attachments | Session |
+| `POST /api/v1/documents/{document_id}/attachments` | Attach a completed upload to a Document | Session |
+| `GET /api/v1/documents/{document_id}/children` | List direct child Documents | Session |
+| `POST /api/v1/documents/{document_id}/collaboration-sessions` | Admit an independent Document collaboration-presence lease | Session |
+| `DELETE /api/v1/documents/{document_id}/collaboration-sessions/{session_id}` | End the caller's Document collaboration-presence lease | Session |
+| `GET /api/v1/documents/{document_id}/content` | Read versioned Document content | Session |
+| `PUT /api/v1/documents/{document_id}/content` | Replace versioned Document content | Session |
+| `GET /api/v1/documents/{document_id}/markdown` | Export current or historical Document content as Markdown | Session |
+| `PUT /api/v1/documents/{document_id}/markdown` | Replace Document content from Markdown | Session |
+| `POST /api/v1/documents/{document_id}/restore` | Restore an archived Document | Session |
+| `GET /api/v1/documents/{document_id}/revisions` | List immutable Document revisions | Session |
+| `GET /api/v1/documents/{document_id}/revisions/{revision}` | Read one immutable Document revision | Session |
+| `POST /api/v1/documents/{document_id}/revisions/{revision}/restore` | Restore a historical snapshot as a new active revision | Session |
+| `GET /api/v1/documents/{document_id}/revisions/compare` | Compare two immutable Document revisions | Session |
+| `GET /api/v1/public/documents/{public_id}` | Read a published Document | Public |
+| `POST /api/v1/public/documents/{public_id}/attachments/{attachment_id}/download` | Authorize a published Document attachment download | Public |
+| `POST /api/v1/public/documents/{public_id}/attachments/{attachment_id}/preview` | Authorize a published Document attachment preview | Public |
+| `GET /api/v1/workspaces/{workspace_id}/documents` | List Workspace Documents | Session |
+| `POST /api/v1/workspaces/{workspace_id}/documents` | Create a Document | Session |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository` | Read the Workspace Git-backed Documents repository | Session |
+| `PUT /api/v1/workspaces/{workspace_id}/knowledge-repository` | Validate and connect one existing documentation repository | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/knowledge-repository` | Pause, resume, or disconnect Git-backed Documents | Session |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts` | List open revision-bound synchronization conflicts | Session |
+| `POST /api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts/{conflict_id}/resolve` | Apply a revision-bound explicit conflict decision | Session |
+| `POST /api/v1/workspaces/{workspace_id}/knowledge-repository/import` | Import bounded Markdown content from the connected repository | Session |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository/runs` | List bounded repository synchronization history | Session |
+| `POST /api/v1/workspaces/{workspace_id}/knowledge-repository/sync` | Synchronize pending Assign and Git changes now | Session |
+| `GET /api/v1/workspaces/{workspace_id}/reference-options` | Query bounded editor reference and mention candidates | Session, Token, CLI |
 
 ## Attachments
 
@@ -361,15 +361,15 @@ Direct-to-object-storage file uploads and downloads.
 
 Guide: [Attachments](./attachments)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/attachment-uploads` | Reserve a direct upload | browserSession |
-| `DELETE` | `/api/v1/attachment-uploads/{upload_id}` | Cancel a reserved upload | browserSession |
-| `POST` | `/api/v1/attachment-uploads/{upload_id}/complete` | Complete a reserved upload | browserSession |
-| `GET` | `/api/v1/attachments/{attachment_id}` | Read attachment metadata | browserSession |
-| `DELETE` | `/api/v1/attachments/{attachment_id}` | Delete an attachment | browserSession |
-| `POST` | `/api/v1/attachments/{attachment_id}/download` | Authorize a direct download | browserSession |
-| `POST` | `/api/v1/attachments/{attachment_id}/preview` | Authorize an inline attachment preview | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `POST /api/v1/attachment-uploads` | Reserve a direct upload | Session |
+| `DELETE /api/v1/attachment-uploads/{upload_id}` | Cancel a reserved upload | Session |
+| `POST /api/v1/attachment-uploads/{upload_id}/complete` | Complete a reserved upload | Session |
+| `GET /api/v1/attachments/{attachment_id}` | Read attachment metadata | Session |
+| `DELETE /api/v1/attachments/{attachment_id}` | Delete an attachment | Session |
+| `POST /api/v1/attachments/{attachment_id}/download` | Authorize a direct download | Session |
+| `POST /api/v1/attachments/{attachment_id}/preview` | Authorize an inline attachment preview | Session |
 
 ## Search
 
@@ -377,9 +377,9 @@ Bounded Workspace-scoped content search.
 
 Guide: [Search](./search)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/workspaces/{workspace_id}/search` | Search Workspace content | browserSession, bearerToken, developerAccessToken |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/workspaces/{workspace_id}/search` | Search Workspace content | Session, Token, CLI |
 
 ## Knowledge
 
@@ -387,10 +387,10 @@ Evidence-backed Workspace Knowledge retrieval projected through Core.
 
 Guide: [Knowledge](./knowledge)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/workspaces/{workspace_id}/knowledge/answer` | Answer a submitted question from bounded Workspace evidence | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/knowledge/search` | Search Workspace Knowledge for evidence | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge/answer` | Answer a submitted question from bounded Workspace evidence | Session |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge/search` | Search Workspace Knowledge for evidence | Session |
 
 ## Discuss
 
@@ -398,75 +398,75 @@ Membership-private persistent conversation with the shared Search Agent.
 
 Guide: [Discuss](./discuss)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/availability` | Resolve the current membership's Discuss access state | browserSession, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/events` | Replay up to 100 ordered private message changes | browserSession, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/events/stream` | Subscribe to membership-private Discuss updates | browserSession, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/files/{file_id}` | Read private file metadata | browserSession |
-| `DELETE` | `/api/v1/workspaces/{workspace_id}/discuss/files/{file_id}` | Delete a private file and release its storage | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/files/{file_id}/download` | Authorize a private file download | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/files/{file_id}/preview` | Authorize a private file preview | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/interactions/{interaction_id}/decision` | Resolve one version-fenced private clarification or approval | browserSession, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/messages` | List the current membership's private Discuss messages | browserSession, bearerToken, developerAccessToken |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/messages` | Queue one private message for the Discuss supervisor | browserSession, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}` | Resolve one exact private message | browserSession, bearerToken, developerAccessToken |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}/cancel` | Request an exact stop for a queued or running response | browserSession, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}/run-events` | List safe activity for one private Discuss response | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/messages/search` | Search the current membership's private Discuss history | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/preferences` | Read private Discuss schedule, ceremony, delivery, and wording preferences | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/discuss/preferences` | Replace private Discuss preferences at an exact revision | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/read-state` | Advance the current membership's Discuss read position | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/references/resolve` | Resolve a native reference with current Workspace permissions | browserSession, bearerToken, developerAccessToken |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/reminders` | List the current membership's private work reminders | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/reminders` | Create an explicitly confirmed private work reminder | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/discuss/reminders/{reminder_id}` | Complete, cancel, or snooze one private reminder | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/specialist-runs` | List private specialist work linked to Discuss | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}` | Get one private Discuss specialist run | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}/cancel` | Request cooperative cancellation of specialist work | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}/resume` | Resolve one AG-UI specialist interrupt | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/turns` | Persist a private turn for server-owned generation | browserSession, bearerToken, developerAccessToken |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/uploads` | Reserve a private file in Workspace storage | browserSession |
-| `DELETE` | `/api/v1/workspaces/{workspace_id}/discuss/uploads/{upload_id}` | Cancel a private upload reservation | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/uploads/{upload_id}/complete` | Verify and complete a private upload | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/discuss/voice/sessions` | Create a private GPT Live WebRTC session | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/evidence-collections` | Capture exact private evidence passages | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/evidence-collections/{id}` | Read an exact private evidence collection | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/evidence-collections/{id}/hydrate` | Read up to twenty currently authorized exact passages | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/evidence-collections/exclusions` | Replace the exclusion set in one investigation version | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/availability` | Resolve the current membership's Discuss access state | Session, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/events` | Replay up to 100 ordered private message changes | Session, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/events/stream` | Subscribe to membership-private Discuss updates | Session, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/files/{file_id}` | Read private file metadata | Session |
+| `DELETE /api/v1/workspaces/{workspace_id}/discuss/files/{file_id}` | Delete a private file and release its storage | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/files/{file_id}/download` | Authorize a private file download | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/files/{file_id}/preview` | Authorize a private file preview | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/interactions/{interaction_id}/decision` | Resolve one version-fenced private clarification or approval | Session, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/messages` | List the current membership's private Discuss messages | Session, Token, CLI |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/messages` | Queue one private message for the Discuss supervisor | Session, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}` | Resolve one exact private message | Session, Token, CLI |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}/cancel` | Request an exact stop for a queued or running response | Session, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/messages/{message_id}/run-events` | List safe activity for one private Discuss response | Session |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/messages/search` | Search the current membership's private Discuss history | Session |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/preferences` | Read private Discuss schedule, ceremony, delivery, and wording preferences | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/discuss/preferences` | Replace private Discuss preferences at an exact revision | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/read-state` | Advance the current membership's Discuss read position | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/references/resolve` | Resolve a native reference with current Workspace permissions | Session, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/reminders` | List the current membership's private work reminders | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/reminders` | Create an explicitly confirmed private work reminder | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/discuss/reminders/{reminder_id}` | Complete, cancel, or snooze one private reminder | Session |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/specialist-runs` | List private specialist work linked to Discuss | Session |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}` | Get one private Discuss specialist run | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}/cancel` | Request cooperative cancellation of specialist work | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/specialist-runs/{specialist_run_id}/resume` | Resolve one AG-UI specialist interrupt | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/turns` | Persist a private turn for server-owned generation | Session, Token, CLI |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/uploads` | Reserve a private file in Workspace storage | Session |
+| `DELETE /api/v1/workspaces/{workspace_id}/discuss/uploads/{upload_id}` | Cancel a private upload reservation | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/uploads/{upload_id}/complete` | Verify and complete a private upload | Session |
+| `POST /api/v1/workspaces/{workspace_id}/discuss/voice/sessions` | Create a private GPT Live WebRTC session | Session |
+| `POST /api/v1/workspaces/{workspace_id}/evidence-collections` | Capture exact private evidence passages | Session |
+| `GET /api/v1/workspaces/{workspace_id}/evidence-collections/{id}` | Read an exact private evidence collection | Session |
+| `GET /api/v1/workspaces/{workspace_id}/evidence-collections/{id}/hydrate` | Read up to twenty currently authorized exact passages | Session |
+| `POST /api/v1/workspaces/{workspace_id}/evidence-collections/exclusions` | Replace the exclusion set in one investigation version | Session |
 
 ## CLI
 
 Bearer-authenticated, code-addressed projections and commands for the Assign CLI.
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/cli/documents` | List Documents in the credential-bound Workspace | bearerToken, developerAccessToken |
-| `GET` | `/api/v1/cli/documents/{document_path}` | Read a Document by its canonical path | bearerToken, developerAccessToken |
-| `POST` | `/api/v1/cli/mcp/token` | Create a short-lived MCP token for the local CLI bridge | bearerToken, developerAccessToken |
-| `GET` | `/api/v1/cli/my-work` | Read the caller's bounded CLI My Work projection | bearerToken, developerAccessToken |
-| `GET` | `/api/v1/cli/projects` | List Projects in the credential-bound Workspace | bearerToken, developerAccessToken |
-| `GET` | `/api/v1/cli/projects/{project_code}` | Read a Project by immutable key | bearerToken, developerAccessToken |
-| `GET` | `/api/v1/cli/projects/{project_code}/tasks` | List Tasks in a Project resolved by immutable key | bearerToken, developerAccessToken |
-| `POST` | `/api/v1/cli/projects/{project_code}/tasks` | Create a Task in a Project resolved by immutable key | bearerToken, developerAccessToken |
-| `GET` | `/api/v1/cli/search` | Search Tasks and Documents in the token-scoped Workspace | bearerToken, developerAccessToken |
-| `GET` | `/api/v1/cli/tasks/{task_code}` | Read a Task by code | bearerToken, developerAccessToken |
-| `GET` | `/api/v1/cli/tasks/{task_code}/comments` | List bounded Task comments by Task code | bearerToken, developerAccessToken |
-| `POST` | `/api/v1/cli/tasks/{task_code}/comments` | Add a Markdown comment to a Task resolved by code | bearerToken, developerAccessToken |
-| `GET` | `/api/v1/cli/tasks/{task_code}/context` | Read a bounded Task context packet | bearerToken, developerAccessToken |
-| `POST` | `/api/v1/cli/tasks/{task_code}/done` | Apply the canonical completion action to a Task | bearerToken, developerAccessToken |
-| `POST` | `/api/v1/cli/tasks/{task_code}/reopen` | Reopen a completed Task | bearerToken, developerAccessToken |
-| `POST` | `/api/v1/cli/tasks/{task_code}/start` | Start and assign a Task to the bearer Actor | bearerToken, developerAccessToken |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/cli/documents` | List Documents in the credential-bound Workspace | Token, CLI |
+| `GET /api/v1/cli/documents/{document_path}` | Read a Document by its canonical path | Token, CLI |
+| `POST /api/v1/cli/mcp/token` | Create a short-lived MCP token for the local CLI bridge | Token, CLI |
+| `GET /api/v1/cli/my-work` | Read the caller's bounded CLI My Work projection | Token, CLI |
+| `GET /api/v1/cli/projects` | List Projects in the credential-bound Workspace | Token, CLI |
+| `GET /api/v1/cli/projects/{project_code}` | Read a Project by immutable key | Token, CLI |
+| `GET /api/v1/cli/projects/{project_code}/tasks` | List Tasks in a Project resolved by immutable key | Token, CLI |
+| `POST /api/v1/cli/projects/{project_code}/tasks` | Create a Task in a Project resolved by immutable key | Token, CLI |
+| `GET /api/v1/cli/search` | Search Tasks and Documents in the token-scoped Workspace | Token, CLI |
+| `GET /api/v1/cli/tasks/{task_code}` | Read a Task by code | Token, CLI |
+| `GET /api/v1/cli/tasks/{task_code}/comments` | List bounded Task comments by Task code | Token, CLI |
+| `POST /api/v1/cli/tasks/{task_code}/comments` | Add a Markdown comment to a Task resolved by code | Token, CLI |
+| `GET /api/v1/cli/tasks/{task_code}/context` | Read a bounded Task context packet | Token, CLI |
+| `POST /api/v1/cli/tasks/{task_code}/done` | Apply the canonical completion action to a Task | Token, CLI |
+| `POST /api/v1/cli/tasks/{task_code}/reopen` | Reopen a completed Task | Token, CLI |
+| `POST /api/v1/cli/tasks/{task_code}/start` | Start and assign a Task to the bearer Actor | Token, CLI |
 
 ## Developer clients
 
 Shared first-party developer-client authorization and credential-bound Workspace operations.
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/dev/workspace` | Read the credential-bound current Workspace | developerAccessToken |
-| `PUT` | `/api/v1/dev/workspace` | Rotate an interactive developer credential to another Workspace | developerAccessToken |
-| `GET` | `/api/v1/dev/workspaces` | List Workspaces available to an interactive developer credential | developerAccessToken |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/dev/workspace` | Read the credential-bound current Workspace | CLI |
+| `PUT /api/v1/dev/workspace` | Rotate an interactive developer credential to another Workspace | CLI |
+| `GET /api/v1/dev/workspaces` | List Workspaces available to an interactive developer credential | CLI |
 
 ## Time tracking
 
@@ -474,33 +474,32 @@ Manual Task time entries, Workspace rounding policy, and personal timesheets.
 
 Guide: [Time tracking](../guides/time-tracking)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/projects/{project_id}/time-totals` | Get Project time totals for a date range | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/time-entries` | List live time entries for a Task | browserSession |
-| `POST` | `/api/v1/tasks/{task_id}/time-entries` | Log manual time against a Task | browserSession |
-| `GET` | `/api/v1/tasks/{task_id}/time-totals` | Get Task time totals | browserSession |
-| `PATCH` | `/api/v1/time-entries/{entry_id}` | Correct a time entry | browserSession |
-| `DELETE` | `/api/v1/time-entries/{entry_id}` | Void a time entry | browserSession |
-| `GET` | `/api/v1/timesheets/me` | List the caller's time entries in a date range | browserSession |
-| `GET` | `/api/v1/timesheets/me/export` | Export the caller's time entries as CSV | browserSession |
-| `GET` | `/api/v1/workspace/time-tracking` | Read the Workspace time-tracking policy | browserSession |
-| `PATCH` | `/api/v1/workspace/time-tracking` | Update the Workspace time-tracking policy | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/projects/{project_id}/time-totals` | Get Project time totals for a date range | Session |
+| `GET /api/v1/tasks/{task_id}/time-entries` | List live time entries for a Task | Session |
+| `POST /api/v1/tasks/{task_id}/time-entries` | Log manual time against a Task | Session |
+| `GET /api/v1/tasks/{task_id}/time-totals` | Get Task time totals | Session |
+| `PATCH /api/v1/time-entries/{entry_id}` | Correct a time entry | Session |
+| `DELETE /api/v1/time-entries/{entry_id}` | Void a time entry | Session |
+| `GET /api/v1/timesheets/me` | List the caller's time entries in a date range | Session |
+| `GET /api/v1/timesheets/me/export` | Export the caller's time entries as CSV | Session |
+| `GET /api/v1/workspace/time-tracking` | Read the Workspace time-tracking policy | Session |
+| `PATCH /api/v1/workspace/time-tracking` | Update the Workspace time-tracking policy | Session |
 
 ## Billing
 
 Provider-neutral Workspace subscription status and invoice references.
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/billing/webhooks/stripe` | Receive a signed Stripe Billing event | none |
-| `GET` | `/api/v1/me/billing-plans` | Read a bounded cross-Workspace billing and plan overview | browserSession |
-| `POST` | `/api/v1/workspace-checkouts` | Start paid Workspace creation | browserSession |
-| `GET` | `/api/v1/workspace-checkouts/{checkout_id}` | Read paid Workspace creation state | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/billing-portal-sessions` | Create a hosted customer billing portal session | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/billing-settings` | Read the provider-neutral Workspace subscription and invoice references | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/billing/knowledge-credit-top-ups` | Create a catalogued Knowledge credit checkout | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/checkout-sessions` | Create a hosted checkout session for a paid Workspace plan | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/me/billing-plans` | Read a bounded cross-Workspace billing and plan overview | Session |
+| `POST /api/v1/workspace-checkouts` | Start paid Workspace creation | Session |
+| `GET /api/v1/workspace-checkouts/{checkout_id}` | Read paid Workspace creation state | Session |
+| `POST /api/v1/workspaces/{workspace_id}/billing-portal-sessions` | Create a hosted customer billing portal session | Session |
+| `GET /api/v1/workspaces/{workspace_id}/billing-settings` | Read the provider-neutral Workspace subscription and invoice references | Session |
+| `POST /api/v1/workspaces/{workspace_id}/billing/knowledge-credit-top-ups` | Create a catalogued Knowledge credit checkout | Session |
+| `POST /api/v1/workspaces/{workspace_id}/checkout-sessions` | Create a hosted checkout session for a paid Workspace plan | Session |
 
 ## Agents
 
@@ -508,66 +507,66 @@ Curated Agent definitions and Workspace-owned desired Agent configuration. Execu
 
 Guide: [Agents](./agents)
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents` | List Workspace-owned Agent instances | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/agents` | Hire one curated Agent into a Workspace | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Read one Workspace Agent instance | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Update one Workspace Agent's bounded configuration | browserSession |
-| `DELETE` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Soft-remove one Agent and stop all unfinished work | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}/quarantine` | Quarantine an Agent, cancel unfinished runs, and invalidate pending approvals | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}/rollback` | Restore the prior qualified definition version in paused state | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs` | List retained safe run history for one Agent | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs` | Durably request a manual Agent run | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}` | Read one safe Agent run projection | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions` | List the run's attributable action and exact approval records | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions/{action_id}/approvals/{approval_id}/decision` | Approve or reject the exact immutable Agent action proposal once | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/cancel` | Request cancellation of a non-terminal Agent run | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/outputs` | List customer-safe comments, reports, and notifications with full Agent provenance | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/definitions` | List curated Agent definitions available to a Workspace | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions` | List custom Agent definitions editable by Workspace managers | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions` | Save a bounded, versioned custom Agent definition | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}` | Read the current editable custom Agent definition | browserSession |
-| `PATCH` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}` | Save a new immutable revision of a custom Agent definition | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/delegations/{task_id}` | Add a revision-fenced Agent responsibility overlay to a Task | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/profile` | Read a member-visible custom Agent profile | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | List permission-filtered custom Agent request outcomes | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | Durably admit a manual or preview-only test request | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/usage` | Read settled and pending credit usage for one custom Agent and period | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/workspaces/{workspace_id}/agents` | List Workspace-owned Agent instances | Session |
+| `POST /api/v1/workspaces/{workspace_id}/agents` | Hire one curated Agent into a Workspace | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Read one Workspace Agent instance | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Update one Workspace Agent's bounded configuration | Session |
+| `DELETE /api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Soft-remove one Agent and stop all unfinished work | Session |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/quarantine` | Quarantine an Agent, cancel unfinished runs, and invalidate pending approvals | Session |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/rollback` | Restore the prior qualified definition version in paused state | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs` | List retained safe run history for one Agent | Session |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs` | Durably request a manual Agent run | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}` | Read one safe Agent run projection | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions` | List the run's attributable action and exact approval records | Session |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions/{action_id}/approvals/{approval_id}/decision` | Approve or reject the exact immutable Agent action proposal once | Session |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/cancel` | Request cancellation of a non-terminal Agent run | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/outputs` | List customer-safe comments, reports, and notifications with full Agent provenance | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/definitions` | List curated Agent definitions available to a Workspace | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions` | List custom Agent definitions editable by Workspace managers | Session |
+| `POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions` | Save a bounded, versioned custom Agent definition | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}` | Read the current editable custom Agent definition | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}` | Save a new immutable revision of a custom Agent definition | Session |
+| `POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/delegations/{task_id}` | Add a revision-fenced Agent responsibility overlay to a Task | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/profile` | Read a member-visible custom Agent profile | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | List permission-filtered custom Agent request outcomes | Session |
+| `POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | Durably admit a manual or preview-only test request | Session |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/usage` | Read settled and pending credit usage for one custom Agent and period | Session |
 
 ## Identity
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/oauth/register` | Register a public native MCP OAuth client | none |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `POST /oauth/register` | Register a public native MCP OAuth client | Public |
 
 ## People
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/workspaces/{workspace_id}/people/{user_id}/profile-picture/content` | Read a workspace member's uploaded profile picture | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/people/{username}` | Get a workspace-scoped person profile | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/people/{username}/activity` | List a person's visible workspace activity | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/workspaces/{workspace_id}/people/{user_id}/profile-picture/content` | Read a workspace member's uploaded profile picture | Session |
+| `GET /api/v1/workspaces/{workspace_id}/people/{username}` | Get a workspace-scoped person profile | Session |
+| `GET /api/v1/workspaces/{workspace_id}/people/{username}/activity` | List a person's visible workspace activity | Session |
 
 ## Commands
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/commands/{command_id}/redo` | Redo a previously undone command | browserSession |
-| `POST` | `/api/v1/commands/{command_id}/undo` | Undo a reversible command | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `POST /api/v1/commands/{command_id}/redo` | Redo a previously undone command | Session |
+| `POST /api/v1/commands/{command_id}/undo` | Undo a reversible command | Session |
 
 ## Labels
 
-| Method | Path | Summary | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/{target_kind}/{target_id}/labels` | List a document, project, or task's label IDs | browserSession |
-| `PUT` | `/api/v1/{target_kind}/{target_id}/labels` | Replace a document, project, or task's complete label assignment set | browserSession |
-| `PATCH` | `/api/v1/label-definitions/{label_id}` | Rename, recolor, or restore a label definition | browserSession |
-| `DELETE` | `/api/v1/label-definitions/{label_id}` | Archive a label definition | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/label-definitions` | List a Project's local task-label definitions | browserSession |
-| `POST` | `/api/v1/projects/{project_id}/label-definitions` | Create a Project-local task-label definition | browserSession |
-| `GET` | `/api/v1/projects/{project_id}/label-overrides` | List a Project's presentation overrides for Workspace Task labels | browserSession |
-| `PUT` | `/api/v1/projects/{project_id}/label-overrides/{label_id}` | Set this Project's presentation of a Workspace Task label | browserSession |
-| `DELETE` | `/api/v1/projects/{project_id}/label-overrides/{label_id}` | Restore the Workspace default presentation of a Task label in this Project | browserSession |
-| `GET` | `/api/v1/workspaces/{workspace_id}/label-definitions` | List active Workspace label definitions | browserSession |
-| `POST` | `/api/v1/workspaces/{workspace_id}/label-definitions` | Create a Workspace-scoped label definition | browserSession |
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/{target_kind}/{target_id}/labels` | List a document, project, or task's label IDs | Session |
+| `PUT /api/v1/{target_kind}/{target_id}/labels` | Replace a document, project, or task's complete label assignment set | Session |
+| `PATCH /api/v1/label-definitions/{label_id}` | Rename, recolor, or restore a label definition | Session |
+| `DELETE /api/v1/label-definitions/{label_id}` | Archive a label definition | Session |
+| `GET /api/v1/projects/{project_id}/label-definitions` | List a Project's local task-label definitions | Session |
+| `POST /api/v1/projects/{project_id}/label-definitions` | Create a Project-local task-label definition | Session |
+| `GET /api/v1/projects/{project_id}/label-overrides` | List a Project's presentation overrides for Workspace Task labels | Session |
+| `PUT /api/v1/projects/{project_id}/label-overrides/{label_id}` | Set this Project's presentation of a Workspace Task label | Session |
+| `DELETE /api/v1/projects/{project_id}/label-overrides/{label_id}` | Restore the Workspace default presentation of a Task label in this Project | Session |
+| `GET /api/v1/workspaces/{workspace_id}/label-definitions` | List active Workspace label definitions | Session |
+| `POST /api/v1/workspaces/{workspace_id}/label-definitions` | Create a Workspace-scoped label definition | Session |
