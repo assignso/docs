@@ -110,3 +110,7 @@ When List is grouped by Status, active work appears first: In Progress, Review, 
 The **Settings** label stays visible on mobile. Settings pages show the Project
 name first, with **Project settings** immediately below it. General, Members,
 Tabs, Task labels and Connected tools keep the same navigation.
+
+### Status colors <Badge type="warning" text="Awaiting deployment" />
+
+In Workspace settings, open Task statuses and choose a color family. You can also select a specific shade. Choose Automatic to use the Status's default color. An existing custom hex color stays unchanged until you replace or clear it.
