@@ -72,3 +72,9 @@ staying a participant. Following a Task never grants access to it.
 ### Milestone loading (awaiting deployment)
 
 If milestones fail to load while creating a Task, choose **Retry milestones**. Your draft stays in place. A selected milestone whose name is temporarily unavailable shows **Milestone unavailable** until its details load. Choose **No milestone** to clear a selection.
+
+## Current task control <Badge type="warning" text="Awaiting deployment" />
+
+The Play icon in the top bar opens your Current task chooser. Use a Task’s Play
+action to make an eligible Task current. This changes your focus; it does not
+start a timer.
