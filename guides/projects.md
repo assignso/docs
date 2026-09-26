@@ -118,3 +118,12 @@ In Workspace settings, open Task statuses and choose a color family. You can als
 ### Project icons <Badge type="warning" text="Awaiting deployment" />
 
 Open Project settings and select the icon beside the Project name. Search the curated choices or choose an emoji. Your existing icon stays visible even if it is no longer offered for new selections. Clear the selection to use the default Project marker.
+
+
+## Personal Project views
+
+<Badge type="warning" text="Awaiting deployment" />
+
+On a Project’s List, Board or Backlog, **Save view** saves your filters and presentation as a personal tab. **Update view** saves later changes. On a narrow screen, open **Saved view actions**. Rename or delete your views under Project Settings → Tabs. These views belong to your account in the current Workspace; they are not shared Project settings.
+
+API and MCP saved-view records can include an optional `definition` with an opaque `project_id`, `layout`, a non-null `parameters` object and `show_cancelled`. Existing query-only records remain valid. The checked `query` remains required; saving a definition requires access to its Project and revision checks apply to updates. Limits are 100 views per membership and 16 KiB per definition.

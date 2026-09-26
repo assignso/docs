@@ -39,3 +39,12 @@ Call `search` with `page_size:20` and no Project/type/cursor filter to receive o
 They do not grant access or establish complete coverage. Current source lifecycle and Project scope
 are checked even when the search index has not caught up. Read entities before acting; private
 Discuss Send and human approval remain outside model-visible tools.
+
+
+## Personal Project views
+
+<Badge type="warning" text="Awaiting deployment" />
+
+On a Project’s List, Board or Backlog, **Save view** saves your filters and presentation as a personal tab. **Update view** saves later changes. On a narrow screen, open **Saved view actions**. Rename or delete your views under Project Settings → Tabs. These views belong to your account in the current Workspace; they are not shared Project settings.
+
+API and MCP saved-view records can include an optional `definition` with an opaque `project_id`, `layout`, a non-null `parameters` object and `show_cancelled`. Existing query-only records remain valid. The checked `query` remains required; saving a definition requires access to its Project and revision checks apply to updates. Limits are 100 views per membership and 16 KiB per definition.
