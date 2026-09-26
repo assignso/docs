@@ -278,7 +278,7 @@ explicit clear flags for description and due date so omitted values are kept.
 ### Structured content and Markdown
 
 Task descriptions and Task comments use Assign's structured editor JSON
-objects. Every structural editor input must include
+objects. Every structural editor input must include a supported version, for example
 `{"schema_version":1,"type":"doc","content":[...]}`. Check the MCP tool
 result for an error and confirm that a successful mutation returns the created
 or updated resource identifier before treating it as complete. Document reads
@@ -287,8 +287,7 @@ bounded valid UTF-8 Markdown; a mutation must supply exactly one, and both
 representations pass through the same authorization, validation, and revision
 checks. Supported Markdown becomes structured editor content. Unsupported
 blocks and inline constructs remain readable inert literals instead of failing
-the whole mutation; raw HTML never executes, and pipe tables remain literal
-until versioned table support is available. Search accepts at most 50 results
+the whole mutation; raw HTML never executes, and schema-1 pipe tables remain literal. Search accepts at most 50 results
 per page; continue with the opaque relevance cursor when another page is
 available.
 
@@ -391,3 +390,12 @@ not browser-route segments.
 ## Discuss and Inbox <Badge type="warning" text="Awaiting deployment" />
 
 The personal Inbox tools exclude generated Discuss message notices from items and unread totals. Read those notices in Discuss; other Agent notifications keep their existing Inbox behavior.
+
+
+## Schema-2 table compatibility
+
+<Badge type="warning" text="Awaiting deployment" />
+
+Schema 2 adds bounded structured tables. Simple tables use GFM Markdown; richer tables use a lossless `assign-table` fenced JSON block. Schema 1 keeps unsupported tables inert. Raw HTML never runs. See [Editor tables](../guides/editor#tables).
+
+For Document or Task collaboration admission, send `X-Assign-Document-Schema: 2` explicitly. Schema-1 admission to schema-2 content returns `409 document_schema_version_unsupported`; upgrade the client rather than downgrade the content. MCP structural content accepts supported schema versions; inspect your connected server’s catalog before writing schema-2 content.

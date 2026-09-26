@@ -190,3 +190,12 @@ For Discuss suggestions, add `surface=discuss` to the reference-options query. T
 ready installed Agents and custom Agents that can receive a Discuss request without a Task-comment tool. The default
 `surface=comment` retains Comment eligibility rules. Both modes check current visibility and
 Workspace entitlement; selecting an option does not grant permission to execute it.
+
+
+## Schema-2 table compatibility
+
+<Badge type="warning" text="Awaiting deployment" />
+
+Schema 2 adds bounded structured tables. Simple tables use GFM Markdown; richer tables use a lossless `assign-table` fenced JSON block. Schema 1 keeps unsupported tables inert. Raw HTML never runs. See [Editor tables](../guides/editor#tables).
+
+For Document or Task collaboration admission, send `X-Assign-Document-Schema: 2` explicitly. Schema-1 admission to schema-2 content returns `409 document_schema_version_unsupported`; upgrade the client rather than downgrade the content. MCP structural content accepts supported schema versions; inspect your connected server’s catalog before writing schema-2 content.
