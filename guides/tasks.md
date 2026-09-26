@@ -100,3 +100,11 @@ On desktop, the Conversation map appears beside the Task when there is enough
 space. Select a tick to scroll to its section. Use the arrow keys, Home and End
 to move between ticks, then Enter to open the section. The map stays hidden on
 phones and in windows that are too narrow or short.
+
+## Following internal references
+
+<Badge type="info" text="Awaiting deployment" />
+
+Follow a reference in a Task description to open its destination within the
+current Workspace. Browser Back returns to the Task. Modified clicks and
+links that open in another tab keep their usual behavior.
