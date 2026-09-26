@@ -38,6 +38,11 @@ the exact view.
   Status, assignee or Milestone, export CSV, archive or delete. Press `Backspace` to clear the
   selection. Tasks that fail stay selected so you can retry them.
 
+## Edit titles on mobile <Badge type="warning" text="Awaiting deployment" />
+
+On mobile List and Backlog views, open the Task to edit its title.
+Desktop rows keep the title-edit button, which appears on hover or keyboard focus.
+
 ## Empty Task attachments <Badge type="warning" text="Awaiting deployment" />
 
 The Project Attachments view hides **Task attachments** when that collection is empty.
