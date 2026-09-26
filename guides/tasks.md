@@ -114,3 +114,7 @@ links that open in another tab keep their usual behavior.
 When more Tasks are available in Project List, choose **Load more tasks** below
 the list. You can focus the button and press Enter. The Tasks already shown stay
 in place while the next page loads.
+
+### Create a subtask inline <Badge type="warning" text="Awaiting deployment" />
+
+From the parent Task, choose Link task and Add as subtask. Type a title in the Task search and press Enter or choose Create subtask. If the Task is created but its parent link fails, Assign shows the new Task and lets you retry linking without creating another Task.
