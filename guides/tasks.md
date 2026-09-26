@@ -84,3 +84,10 @@ start a timer.
 Opening a Comment link scrolls to and focuses that Comment. A light neutral
 background marks the linked row; buttons and links keep their keyboard focus
 indicators.
+
+## Task properties on smaller screens
+
+<Badge type="info" text="Awaiting deployment" />
+
+Task properties wrap into as many rows as they need. The description follows
+them without reserving space for empty rows.
