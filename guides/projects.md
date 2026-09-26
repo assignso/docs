@@ -4,9 +4,9 @@ description: Plan work with Projects, including List and Board views, filters, M
 
 # Projects
 
-Every Project page starts with a **Projects** link, the Project's icon and name, **Create task**
-and the **Project actions** menu. Project settings, **Copy Project link** and **Project overview**
-are in that menu.
+The Project header shows its icon and name, **Settings**, and the **Project actions** menu.
+The shell breadcrumb provides the Projects context. Task views offer **Create task** in their
+view toolbar; **Copy Project link** and **Project overview** remain in Project actions.
 
 ## Views
 
@@ -104,3 +104,9 @@ Choose **Default** to use the Workspace collection order, **Recent** for the lat
 ### List Status groups (awaiting deployment)
 
 When List is grouped by Status, active work appears first: In Progress, Review, Todo, then Backlog. Resolved work follows. Your workflow order still determines positions within each group category.
+
+## Project settings header <Badge type="warning" text="Awaiting deployment" />
+
+The **Settings** label stays visible on mobile. Settings pages show the Project
+name first, with **Project settings** immediately below it. General, Members,
+Tabs, Task labels and Connected tools keep the same navigation.
