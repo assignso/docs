@@ -493,6 +493,13 @@ If an operation rejects authentication, the app checks whether your session is
 still valid before signing you out. It does not automatically repeat a failed
 save. Confirmed invalid sessions and explicit sign-out still clear private data.
 
+### Returning to the native app
+
+After returning from the background, the native app refreshes currently open
+Workspace views. Saves require an online connection and are not queued for
+automatic delivery later. If a save fails, review the error and retry deliberately;
+returning to the app does not repeat the save.
+
 ### Native Task-code reads
 
 Builds with native Task-code support also admit native bearer reads on

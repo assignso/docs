@@ -477,3 +477,14 @@ the Workspace without changing the current selection; select it explicitly.
 The mobile profile menu's **Switch Workspace** opens a drawer with **Create Workspace**;
 the form shows **Open Workspace** after success. Paid creation is not yet supported
 natively. The existing browser creation and checkout workflows are unchanged.
+
+## Native Workspace event stream
+
+First-party native clients may open `GET /api/v1/workspaces/{workspace_id}/events`
+with their native access token in the Authorization Bearer header. Never put the
+token in the URL. The stream uses the same `hello`, `workspace_event`, `heartbeat`
+and `resync_required` frames, signed resume cursors and live Workspace/resource
+permissions as browser clients. An explicit invalid bearer never falls back to
+a browser cookie. Native credential revocation closes an open stream at its next
+poll; reconnect requires a valid credential. A stream hint is not permission to
+read an object or proof that a cached view is current.
