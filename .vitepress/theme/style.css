@@ -208,11 +208,64 @@ body {
 
 /* ---------- Surfaces: hairlines, not shadows ---------- */
 
+/* Tables never widen the page: they fit the column, wrap long cells and scroll only as a last resort. */
 .vp-doc table {
-  display: table;
-  width: 100%;
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+}
+
+.vp-doc th,
+.vp-doc td {
+  padding: 8px 12px;
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
+
+.vp-doc td code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Search: a full-width, easy-to-hit field in the top bar. */
+@media (min-width: 768px) {
+  .VPNavBar .VPNavBarSearch .VPNavBarSearchButton {
+    width: 280px;
+    max-width: 100%;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+    border: 1px solid var(--vp-c-divider);
+    background: var(--vp-c-bg);
+  }
+
+  .VPNavBar .VPNavBarSearch .VPNavBarSearchButton:hover {
+    border-color: var(--vp-c-text-3);
+  }
+
+  .VPNavBar .VPNavBarSearch .VPNavBarSearchButton .text {
+    flex: 1;
+    text-align: left;
+    font-size: 0.9375rem;
+  }
+
+  .VPNavBar .VPNavBarSearch .VPNavBarSearchButton .vp-icon,
+  .VPNavBar .VPNavBarSearch .VPNavBarSearchButton .DocSearch-Search-Icon {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.VPLocalSearchBox .search-bar {
+  padding: 14px 16px;
+}
+
+.VPLocalSearchBox .search-input {
+  font-size: 1.0625rem;
+  padding: 0.5rem 0.75rem;
 }
 
 .vp-doc table,

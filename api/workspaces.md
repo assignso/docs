@@ -1,281 +1,47 @@
-# Workspace governance
+---
+description: Roles, Workspace settings, creation, archiving, members, invitations, AI access, workflow Statuses, realtime events and My Work.
+---
 
-Creating a Workspace, managing who belongs to it, inviting people by email,
-and archiving it. These operations require an authenticated browser session
-(see [Browser authentication](authentication.md)) and follow the shared
-[API conventions](conventions.md).
+# Workspaces
 
-Reading your own Workspaces and the current Workspace's member list is
-covered in [Account and Workspaces](account.md).
+Create a Workspace, manage who belongs to it and configure it. These operations use a browser session
+(see [Authentication](./authentication)) and the [API conventions](./conventions). Reading your own
+Workspaces and members is covered in [Account](./account#workspaces-and-members).
 
 ## Roles
 
-Every membership carries exactly one role:
+Each membership has one role.
 
-| Role | Read Workspace and work | Write work | Manage members | Manage Workspace |
+| Role | Read | Write work | Manage members | Manage Workspace |
 | --- | --- | --- | --- | --- |
 | `owner` | yes | yes | yes | yes |
 | `admin` | yes | yes | yes | yes |
 | `member` | yes | yes | no | no |
 | `viewer` | yes | no | no | no |
 
-`admin` holds the same capabilities as `owner`. The one power that is
-owner-only is archiving, and the one invariant that separates them is that a
-Workspace must always retain at least one **active owner** — the database
-enforces it, so the last owner cannot be demoted, suspended, or removed by any
-route.
-
-`viewer` is read-only. It can read the Workspace and its work and nothing
-else; every write, including comments, is refused.
-
-## Workspace settings
-
-Any active member may read `GET /api/v1/workspaces/{workspace_id}/settings`.
-Owners and administrators update it with `PATCH` plus the returned revision in
-`If-Match`. The revisioned resource contains the optional description and the
-default locale, timezone, first day of week, Project visibility, Task workflow
-category, priority, and assignee policy. An omitted Project or Task creation
-field resolves from these defaults in the creation transaction; an explicit
-caller value always wins.
-
-Workspace icons use the direct-to-S3 attachment reservation/completion flow.
-After cropping to a clean 512 × 512 PNG or JPEG no larger than 5 MiB, an owner
-or administrator associates the completed object with `POST
-/api/v1/workspaces/{workspace_id}/icon` and its attachment ID. `DELETE` removes
-it. Replacement/removal retires the old object and releases quota. The stable
-authenticated `/icon/content` operation redirects to a short-lived inline S3
-credential.
-
-`GET` and revisioned `PATCH
-/api/v1/workspaces/{workspace_id}/knowledge-settings` expose explicit included
-Projects, source toggles, session-learning policy, desired enablement, and
-acknowledgement status. Enablement requires the `workspace_knowledge`
-entitlement and at least one selected Project; without entitlement the response
-is truthfully unavailable. Provisioning and disabling remain pending until the
-Knowledge worker acknowledges them. The read also carries the last acknowledged
-revision, observation and success times, indexed/source sequences, backlog,
-bounded entity counts, and a customer-safe failure code. These fields describe
-derived Knowledge state only and never override canonical Workspace content.
-
-When the private Knowledge ledger is configured, Workspace Billing includes a
-signed, Workspace-scoped balance summary for recurring, promotional,
-purchased, reserved, and available credits. If that projection is unavailable,
-the UI labels it unavailable rather than inventing a zero balance. The expanded
-Workspace settings sidebar links to Billing with a compact plan and
-available-credit summary; default Workspace navigation and Account settings do
-not duplicate it. When the accepted local Stripe test catalog is configured,
-billing managers may start 150, 325, 875, 1,800, 3,700, or 7,600-credit
-credit checkouts with `POST
-/api/v1/workspaces/{workspace_id}/billing/knowledge-credit-top-ups`. A browser
-return grants nothing; only verified payment creates one grant, delayed-payment
-failure creates none, and a verified full refund creates one compensating ledger
-transaction. Production top-ups remain unavailable while production billing is disabled.
-
-An owner or administrator with `workspace.billing.manage` may read `GET
-/api/v1/workspaces/{workspace_id}/billing-settings` for the provider-neutral
-plan, lifecycle, billing cadence, period, customer-presence flag, and a bounded
-invoice summary. `provider_available` is authoritative: it remains false until
-the current environment has a complete mode-consistent provider key, webhook
-secret, six Personal/Team/Growth cadence Price mappings, six credit-pack Price
-mappings, and reviewed return/callback URLs.
-
-When available, `POST
-/api/v1/workspaces/{workspace_id}/checkout-sessions` accepts only a server-known
-plan and cadence, for example `{"plan":"personal","cadence":"monthly"}`. It
-returns a short-lived provider-hosted URL and opaque reference; clients never
-send a Price ID or amount. After the Workspace has a verified provider
-customer, `POST /api/v1/workspaces/{workspace_id}/billing-portal-sessions`
-returns a short-lived hosted portal URL. These billing mutations require the
-browser CSRF header and recent authentication.
-
-`GET /api/v1/me/billing-plans` is the Account-level bounded overview. It lists
-at most 100 active Workspace relationships with each Workspace's independent
-plan/status and whether the current role can manage billing. It includes no
-payment, invoice, tax, provider-customer, or cross-Workspace mutation data;
-those details remain on Workspace Settings → Billing.
-
-When a Workspace is `billing_restricted`, reads, billing repair, archival, and
-safe usage-reduction actions remain available. Ordinary content writes,
-capacity increases, write integrations, Agents, and automation fail closed.
-Numeric `members.active_humans` entitlements count active human memberships and
-reserve one place for every unexpired pending invitation.
-
-Checkout and Portal returns are navigation only. Assign changes the local
-subscription projection only after the Stripe callback signature is verified,
-the event is durably deduplicated, and the referenced subscription is
-reconciled. Exact commercial prices, tax/legal terms, and live activation
-remain separate release gates; local sandbox fixture amounts are not public
-pricing.
-
-## Control AI and MCP access
-
-```http
-GET /api/v1/workspaces/{workspace_id}/ai-access-policy HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-Any active member may read whether AI and MCP access is enabled. The response
-includes a revision in its `ETag`; enabled is the default until an owner or
-admin changes the policy.
-
-```http
-PUT /api/v1/workspaces/{workspace_id}/ai-access-policy HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-If-Match: "2"
-Content-Type: application/json
-
-{"enabled":false}
-```
-
-Changing the policy requires `workspace:manage`. Disabling it immediately
-prevents new authorizations and existing MCP grants from accessing that
-Workspace, without disconnecting the same grant from other authorized
-Workspaces. Re-enabling access restores eligible existing grants. A stale
-revision returns `409 revision_conflict`.
-
-## Workspace-wide workflow Statuses
-
-Workspace-wide Statuses are the shared workflow catalog: each has a null
-`project_id` and can be used by Tasks in every Project. Any active member can
-read a cursor-bounded page; only an owner or admin with `workspace:manage` can
-create one, because a new shared Status changes the Workspace's vocabulary for
-work rather than one Project's board.
-
-```http
-GET /api/v1/workspaces/{workspace_id}/statuses?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-Set `include_archived=true` to include archived catalog entries. The response
-uses the standard cursor page envelope. A Workspace ID other than the current
-session Workspace, a non-member, or an absent Workspace all return `404`.
-
-```http
-POST /api/v1/workspaces/{workspace_id}/statuses HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
-Content-Type: application/json
-
-{"label":"Ready for review","category":"in_review","status_type":"started","icon":"circle-dot","color":"#7C3AED"}
-```
-
-The new Status appends to the Workspace-wide workflow and returns `201` with
-its `ETag`. Clients do not supply a position. Labels are 1–100 characters and
-categories are `backlog`, `todo`, `in_progress`, `in_review`, or `done`.
-`status_type` carries the canonical lifecycle meaning and accepts `backlog`,
-`unstarted`, `started`, `completed`, or `cancelled`; existing clients may omit
-it and continue using the compatible category mapping. Icon and six-digit hex
-color overrides are optional.
-Creation is safely retryable with the same `Idempotency-Key`; callers without
-`workspace:manage` are refused.
-
-Shared Statuses use the same `GET`, revisioned `PATCH`, archival `DELETE`, and
-neighbour-anchor `POST /api/v1/statuses/{status_id}/move` operations documented
-in [Projects and Statuses](projects.md#archive-restore-and-reorder-statuses).
-Those operations require `workspace:manage` for a Workspace-wide Status.
-
-## Realtime Workspace events
-
-```http
-GET /api/v1/workspaces/{workspace_id}/events HTTP/1.1
-Host: api.assign.so
-Accept: text/event-stream
-Cookie: __Host-assign_session=<session>
-Last-Event-ID: <cursor-from-a-previous-frame>
-```
-
-Any active Workspace member can open this authenticated Server-Sent Events
-stream. It begins with a `hello` frame that declares envelope version `1`, an
-opaque stream epoch, a signed current cursor, and heartbeat/retry hints. Send
-`envelope_version=1` on supported clients and echo the epoch on reconnect when
-available. Each `workspace_event` frame has a signed, opaque SSE `id` that the
-client must preserve unchanged through the standard `Last-Event-ID` header or
-the `cursor` query parameter. Connections rotate normally after at most 55
-seconds under a dedicated streaming request budget; reconnecting from the last
-cursor is expected and must not trigger a whole-Workspace refetch.
-
-If a cursor is invalid or expired, the requested version is unsupported, or
-the epoch no longer matches, the server sends a terminal `resync_required`
-frame containing a machine code, a replacement cursor, and the affected
-invalidation scopes. Stop applying queued events, reload the current
-authorized data for those scopes, replace stale local state, and then
-reconnect from the supplied cursor. Do not replay mutations automatically.
-
-The JSON frame contains `id`, `type`, `subject_type`, `subject_id`, optional
-`actor_id`, `occurred_at`, `operation_id`, `payload`, and, for versioned
-aggregates, a positive `aggregate_version`. The payload is a bounded
-reconciliation hint, not a permission grant or complete resource
-representation. Apply only deterministic patches the client understands;
-otherwise reload the named resource once and reject stale data using
-`aggregate_version` when it is present. Treat `operation_id` as opaque
-correlation data. Clients must tolerate events without `aggregate_version`
-while retained historical events are upgraded.
-
-## My Work
-
-My Work is a personal, read-only Task projection. It always uses the signed-in
-member; clients cannot supply another member or actor identifier.
-
-```http
-GET /api/v1/workspaces/{workspace_id}/work?view=today&limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>
-```
-
-`view` is one of `assigned`, `overdue`, `today`, `upcoming`, or `completed`.
-Due dates are date-only values, classified in the persisted IANA timezone
-returned by the response. `as_of_date` makes the calendar boundary explicit;
-completed Tasks carry the server-written `completed_at` instant and remain in
-the completed view for fourteen calendar days. Archived or no-longer-readable
-Tasks are never returned.
-
-The response is bounded to 50 Tasks by default and 100 at most. It contains
-`items`, `next_cursor`, `has_more`, `as_of_date`, and `timezone`; clients must
-use the opaque cursor unchanged and must not rebuild Work buckets from a
-general Task collection.
+`admin` has every `owner` power except archiving. A Workspace always keeps at least one active owner,
+so the last one can't be demoted, suspended or removed. A `viewer` is read-only, including comments.
 
 ## Create a Workspace
 
-### Create the first Workspace
-
-A newly registered account uses a dedicated bootstrap operation before it has
-any Workspace membership:
+**First Workspace.** A new account with no Workspace calls the bootstrap operation:
 
 ```http
 POST /api/v1/workspaces/bootstrap HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Content-Type: application/json
 
 {"name": "Acme", "slug": "acme"}
 ```
 
-The caller must be signed in with an account-only session and have no active
-Workspace membership. `name` is trimmed and must be 1–100 characters. `slug`
-is the unique canonical URL segment and must use 1–63 lowercase letters,
-numbers, and interior hyphens.
+`name` is 1–100 characters. `slug` is the unique URL segment: 1–63 lowercase letters, numbers and
+interior hyphens. The caller becomes owner and the session switches to the new Workspace. An account
+that already has one gets `409 workspace_already_exists`.
 
-Success returns the created Workspace, creates the owner membership and Actor
-and the account's unique Free Workspace claim in the same transaction, and
-replaces both browser-session cookies with a session scoped to the new
-Workspace. Concurrent bootstrap attempts are
-serialized per account, so only one can create the first Workspace. A caller
-that already has a Workspace receives `409 workspace_already_exists` and
-should list its Workspaces and use the normal session-switch operation.
-
-### Create another Workspace
+**Another Workspace.**
 
 ```http
 POST /api/v1/workspaces HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
 Content-Type: application/json
@@ -283,89 +49,37 @@ Content-Type: application/json
 {"name": "Acme", "slug": "acme"}
 ```
 
-```json
-{
-  "id": "<workspace-id>",
-  "name": "Acme",
-  "slug": "acme",
-  "icon_url": null,
-  "revision": 1,
-  "archived_at": null,
-  "created_at": "2026-08-18T09:30:00Z",
-  "updated_at": "2026-08-18T09:30:00Z"
-}
-```
+`slug` is optional and generated if omitted. The session doesn't switch; use
+[Switch Workspace](./authentication#switch-workspace). An account can own up to three Free Workspaces;
+past that you get `409 free_workspace_claim_unavailable`.
 
-This account-level command is available even when the caller is a member of
-another Workspace: the selected Workspace and its role do not grant or deny
-creation. The caller becomes the new Workspace's first `owner`. `name` is
-trimmed and must be 1 to 100 characters. `slug` is optional; when supplied it
-must be a unique canonical path, and when omitted Core generates one.
+`GET /api/v1/workspace-creation-options` tells a client what to offer: `free_available` and the
+currently purchasable paid options.
 
-Each human account may own up to three active Free Workspaces. Repeating the command
-after all three ownership slots are occupied returns `409 free_workspace_claim_unavailable`
-without creating a Workspace, membership, Actor, or event. The idempotency key
-is scoped to the account, so retrying through a different selected Workspace
-still replays the same result.
-
-Creating a Workspace does not switch the calling session into it — see
-[Switch the session's Workspace](authentication.md#switch-the-sessions-workspace).
-
-Before presenting the form, use `GET /api/v1/workspace-creation-options`. It
-returns `free_available`, a claimed Free Workspace summary when applicable,
-and the currently purchasable paid choices. Paid creation remains absent while
-the billing catalog is inactive; the Web flow explains that state instead of
-offering a control Core would reject.
-
-### Create a paid Workspace
-
-Choose one server-issued `quote_id` from the creation-options response. The
-identifier is an Assign catalog key, not a Stripe Price ID:
+**Paid Workspace** <Badge type="warning" text="Awaiting deployment" />. Send a `quote_id` from the creation options:
 
 ```http
 POST /api/v1/workspace-checkouts HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
 Content-Type: application/json
 
-{"name":"Acme Premium","slug":"acme-premium","quote_id":"personal_monthly"}
+{"name": "Acme Premium", "slug": "acme-premium", "quote_id": "personal_monthly"}
 ```
 
-The response contains an opaque checkout `id`, `pending` state, expiry, and a
-provider-hosted `url`. Redirect the browser to that URL. A Checkout success or
-cancel return is navigation only and never proves payment.
+Redirect the browser to the returned `url`. Returning from checkout proves nothing. The Assign
+browser reads the checkout and waits for Account realtime updates; it offers the Workspace
+only after `state` is `activated`. API clients can read
+`GET /api/v1/workspace-checkouts/{checkout_id}` on demand. Other states are `pending`,
+`activating`, `expired`, `canceled`, and `failed`. Only `activated` includes the Workspace.
 
-After a success return, poll
-`GET /api/v1/workspace-checkouts/{checkout_id}`. The resource belongs to the
-current account; a foreign identifier returns `404`. States are `pending`,
-`activating`, `activated`, `expired`, `canceled`, or `failed`. Only
-`activated` includes the created Workspace summary. Assign reaches that state
-after verifying and deduplicating the Stripe event and reconciling an effective
-subscription. Abandoned, canceled, expired, or ineffective checkouts create no
-Workspace.
+## Read, update and archive
 
-## Read a Workspace
-
-```http
-GET /api/v1/workspaces/{workspace_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-Any active member may read it. The `ETag` carries the Workspace revision to
-use in a later `If-Match`.
-
-An archived Workspace answers `404` for everyone except an owner, who can
-still read it in order to un-archive it.
-
-## Rename, change the URL or icon, or un-archive a Workspace
+`GET /api/v1/workspaces/{workspace_id}` returns a Workspace for any active member, with its revision
+in `ETag`. An archived Workspace returns `404` to everyone but its owners.
 
 ```http
 PATCH /api/v1/workspaces/{workspace_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 If-Match: "3"
 Content-Type: application/json
@@ -373,118 +87,111 @@ Content-Type: application/json
 {"name": "Acme Corporation"}
 ```
 
-The body carries exactly one of `name`, `slug`, `icon_url`, or `archived`.
-Renaming and changing the URL or icon require `workspace:manage` — `owner` or
-`admin`. The `slug`
-must be a unique 1–63 character segment made of lowercase letters, numbers,
-and interior hyphens. A claimed URL returns `409 workspace_url_taken`; an
-invalid one returns `400 invalid_workspace_url`.
+Send exactly one of `name`, `slug`, `icon_url` or `archived`. Renaming and changing the URL or icon
+need an owner or admin. A taken `slug` returns `409 workspace_url_taken` and an invalid one
+`400 invalid_workspace_url`. `icon_url` is an HTTPS image URL; an empty string removes it.
+`archived` accepts only `false`, which lets an owner un-archive.
 
-`icon_url` accepts a bounded HTTPS image URL. An empty string removes the icon
-and restores the client's initials fallback.
+Workspace icons can also be uploaded through the [attachment flow](./attachments) (512 × 512 PNG or
+JPEG, 5 MiB at most) and set with `POST /api/v1/workspaces/{workspace_id}/icon`. `DELETE` removes
+it.
 
-`archived` accepts only `false`, which un-archives the Workspace and is
-owner-only; archiving is the `DELETE` below.
+`DELETE /api/v1/workspaces/{workspace_id}` with `If-Match` archives the Workspace (`204`). Only an
+owner can archive, after signing in within the last 15 minutes
+([recent authentication](./account#recent-authentication)). Nothing is deleted, but every session in
+the Workspace ends, it returns `404` to non-owners and all writes stop. Your last Workspace can't be
+archived (`409 last_workspace`).
 
-`If-Match` carries the revision the client last observed. A stale revision is
-refused with `409 revision_conflict` rather than overwriting a concurrent
-edit.
+## Settings
 
-## Archive a Workspace
+Any active member can read `GET /api/v1/workspaces/{workspace_id}/settings`. Owners and admins update
+it with `PATCH` and `If-Match`. It holds the description and the defaults for locale, timezone, first
+day of week, Project visibility and Task workflow category, priority and assignee. New Projects and
+Tasks use these defaults unless the request says otherwise.
 
-```http
-DELETE /api/v1/workspaces/{workspace_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-If-Match: "4"
-```
+`GET` and `PATCH /api/v1/workspaces/{workspace_id}/knowledge-settings` control
+[Workspace Knowledge](./knowledge): the included Projects, sources and whether it's enabled. Enabling
+needs the `workspace_knowledge` entitlement and at least one Project. The response reports setup
+progress and readiness.
 
-Answers `204`. Archiving is **owner-only**, requires authentication within the
-last 15 minutes (see
-[Recent authentication](account.md#recent-authentication)), and is reversible:
-nothing is deleted.
+### Billing
 
-Archiving revokes every session scoped to the Workspace in the same
-transaction, so access ends immediately rather than at the next expiry, and
-every Workspace-scoped route then answers `404` for non-owners. Mutations
-inside an archived Workspace are refused for everyone.
+Billing managers (`workspace.billing.manage`) use these operations. Changes need the CSRF header and
+recent authentication.
 
-A caller's last remaining Workspace cannot be archived — the request is
-refused `409 last_workspace` — because it would leave the account with
-nowhere to sign in to.
+- `GET …/billing-settings` returns the plan, billing cadence, period and a summary of recent
+  invoices. `provider_available` says whether checkout can start.
+- `POST …/checkout-sessions` with a plan and cadence, such as `{"plan":"personal","cadence":"monthly"}`,
+  returns a hosted checkout URL. Clients never send prices.
+- `POST …/billing-portal-sessions` returns a hosted portal URL once the Workspace has a billing
+  customer.
+- `POST …/billing/knowledge-credit-top-ups` starts a credit purchase.
 
-## Add an existing member
+Returning from checkout or the portal changes nothing by itself; the plan updates after Assign
+verifies the payment provider's notification. While a Workspace is `billing_restricted`, you can
+still read, repair billing, archive and reduce usage, but content writes, capacity increases, write
+integrations, Agents and automation are blocked. Active members and unexpired invitations both count
+toward member limits.
 
-```http
-POST /api/v1/workspaces/{workspace_id}/members HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
+## AI and MCP access
 
-{"user_id": "<user-id>"}
-```
-
-This route **reactivates a membership that already exists** in this
-Workspace — someone previously removed, or who left. It cannot add a stranger:
-adding a person who has never been a member is the invitation flow below.
-
-That restriction is deliberate. A route that took an email address and either
-added or rejected would tell the caller whether that address has an Assign
-account, so no endpoint answers that question. A `user_id` that has no
-membership here reports the same `404` as an absent resource.
-
-## Change a membership
+Any member can read `GET …/ai-access-policy`. It's enabled by default.
 
 ```http
-PATCH /api/v1/workspaces/{workspace_id}/members/{member_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+PUT /api/v1/workspaces/{workspace_id}/ai-access-policy HTTP/1.1
 X-CSRF-Token: <csrf-token>
 If-Match: "2"
 Content-Type: application/json
 
-{"role": "admin"}
+{"enabled": false}
 ```
 
-Requires `members:manage`. The body may carry `role`, `state`, or both; an
-omitted field is unchanged. `state` accepts `active` and `suspended` —
-removal is the `DELETE` below.
+Changing it needs an owner or admin. Disabling it immediately blocks new MCP authorizations and
+existing MCP connections for this Workspace only. Enabling restores them. A stale revision returns
+`409 revision_conflict`.
 
-Suspending a membership revokes that member's sessions in this Workspace
-immediately, in the same transaction. Reactivating does not restore them; the
-member signs in again.
+## Workspace-wide Statuses
 
-Callers cannot change their own membership (`422
-self_membership_mutation`): self-demotion and self-suspension are accidents
-rather than intentions, and locking yourself out is not recoverable from
-inside the product. Ask another owner or admin.
-
-Demoting or suspending the last active owner is refused `409 last_owner`.
-
-## Remove a member
+Workspace-wide Statuses (with `project_id: null`) are the shared workflow every Project can use.
 
 ```http
-DELETE /api/v1/workspaces/{workspace_id}/members/{member_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
+GET /api/v1/workspaces/{workspace_id}/statuses?limit=50
 ```
 
-Answers `204`, and answers `204` again if repeated. Removal revokes the
-member's sessions in this Workspace in the same transaction and **retains
-their Actor**, so tasks they created, comments they wrote, and activity they
-generated stay attributed rather than turning anonymous. Removing the last
-active owner is refused `409 last_owner`; removing yourself is refused
-`422 self_membership_mutation`.
+Any member can read this, with `include_archived=true` for archived entries. Creating needs an owner
+or admin:
 
-## Invite someone by email
+```http
+POST /api/v1/workspaces/{workspace_id}/statuses HTTP/1.1
+X-CSRF-Token: <csrf-token>
+Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
+Content-Type: application/json
+
+{"label": "Ready for review", "category": "in_review", "status_type": "started", "color": "#7C3AED"}
+```
+
+The Status is appended and returned with `201`. `label` is 1–100 characters. `category` is
+`backlog`, `todo`, `in_progress`, `in_review` or `done`. `status_type` (optional) is `backlog`,
+`unstarted`, `started`, `completed` or `cancelled`. `icon` and a six-digit hex `color` are optional.
+Update, archive and reorder them as described in
+[Projects and Statuses](./projects#update-archive-restore-and-reorder).
+
+## Members
+
+| Operation | Notes |
+| --- | --- |
+| `POST …/members` with `{"user_id"}` | Reactivates someone who was previously a member. It can't add a stranger; use an invitation. |
+| `PATCH …/members/{member_id}` with `If-Match` | Send `role` and/or `state` (`active` or `suspended`). Suspending ends their sessions in this Workspace. |
+| `DELETE …/members/{member_id}` | `204`, also if repeated. Ends their sessions. Their past Tasks and Comments stay attributed to them. |
+
+All need an owner or admin. You can't change or remove your own membership
+(`422 self_membership_mutation`), and the last owner can't be demoted, suspended or removed
+(`409 last_owner`).
+
+## Invitations
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/invitations HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Idempotency-Key: 0f2c9a71-6f4e-4d8b-8f1a-7b3e6d2c5a04
 Content-Type: application/json
@@ -492,145 +199,80 @@ Content-Type: application/json
 {"email": "jane@example.com", "role": "member"}
 ```
 
-```json
-{
-  "invitation": {
-    "id": "<invitation-id>",
-    "workspace_id": "<workspace-id>",
-    "email": "jane@example.com",
-    "role": "member",
-    "state": "pending",
-    "invited_by_actor_id": "<actor-id>",
-    "expires_at": "2026-08-25T09:30:00Z",
-    "accepted_at": null,
-    "revoked_at": null,
-    "revision": 1,
-    "created_at": "2026-08-18T09:30:00Z"
-  },
-  "token": "<one-time-token>"
-}
-```
+The response carries the `invitation` (`id`, `email`, `role`, `state`, `expires_at`, `revision` …)
+and a one-time `token`, which is returned only once. Assign also emails the address a single-use
+link. If the email can't be sent, the request fails with `503 delivery_unavailable` and creates
+nothing.
 
-Requires `members:manage`. The address is lowercased. Invitations last
-**7 days**.
+- `role` is `admin`, `member` or `viewer`, never `owner`. The address is lowercased and the
+  invitation lasts 7 days.
+- An unexpired invitation for the same address returns `409 invitation_pending`, and an existing
+  member returns `409 already_member`.
+- `GET …/invitations?limit=50` lists them, newest first, without tokens. `state` is `pending`,
+  `accepted`, `revoked` or `expired`.
+- `POST …/invitations/{invitation_id}/resend` revokes the old link and sends a fresh 7-day one. If
+  delivery fails, the original stays valid.
+- `DELETE …/invitations/{invitation_id}` revokes it (`204`).
 
-`role` may be `admin`, `member`, or `viewer` — **not `owner`**. Ownership
-carries the archive power and the last-owner invariant, and is conferred by a
-deliberate membership change on somebody already present, not by whoever opens
-a link in a mailbox.
+All need an owner or admin.
 
-`token` is returned **once**; only its hash is stored. Assign also sends the
-invited address a clickable, single-use Web action link through the configured
-email provider. The email does not display a standalone token. The mutation
-fails if delivery fails, rather than reporting an invitation that never reached
-its recipient. A retried request carrying the same
-`Idempotency-Key` replays the same body, token included, without sending a
-duplicate message.
+### Accept an invitation
 
-If the configured email provider cannot accept the message, the transaction
-rolls back and the endpoint returns `503 delivery_unavailable`. Keep the
-entered address and role and retry after email delivery is restored.
-
-An unexpired pending invitation for the same address is refused
-`409 invitation_pending` rather than silently reissued. Use the resend operation
-when the recipient needs a fresh link. Once that invitation expires, the address can be invited again
-immediately; bounded retention cleanup removes expired invitation rows. An
-address that already belongs to an active member is refused
-`409 already_member`, which discloses nothing an administrator cannot already
-read from the member list.
-
-## List invitations
-
-```http
-GET /api/v1/workspaces/{workspace_id}/invitations?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-Requires `members:manage`; returns one page, newest first, and never contains
-a token. `state` is derived rather than stored: `expired` is computed from
-`expires_at`, so an invitation that lapsed and one already swept from storage
-read the same way.
-
-## Send an invitation again
-
-```http
-POST /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}/resend HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-Idempotency-Key: 6d181c58-44ee-4af8-8e5c-961e9167bbf7
-```
-
-Requires `members:manage`. Assign revokes the pending link, creates a fresh
-seven-day invitation for the same address and role, and sends it before the
-transaction commits. The response has the same shape as invitation creation.
-Repeating the idempotency key returns the same response without sending twice.
-If delivery fails, the replacement and revocation both roll back, so the
-original link remains usable. Accepted, revoked, expired, missing, or
-out-of-Workspace invitations cannot be resent.
-
-## Revoke an invitation
-
-```http
-DELETE /api/v1/workspaces/{workspace_id}/invitations/{invitation_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-```
-
-Answers `204`, and answers `204` again if repeated. The token stops working
-immediately.
-
-## Accept an invitation
-
-Recipients normally open the action link from their email. Opening the page
-does not accept the invitation, so mail scanners and browser prefetchers cannot
-consume it. The Web client removes the token from the visible URL, asks a
-signed-out recipient to log in or create an account with the invited address,
-then presents an explicit **Accept invitation** action. On success it switches
-the browser session to the joined Workspace and opens that Workspace.
-
-API clients may redeem the same token directly:
+Recipients open the emailed link. The web app then asks them to sign in with the invited address and
+confirm **Accept invitation**. API clients can redeem the token directly:
 
 ```http
 POST /api/v1/invitations/accept HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Content-Type: application/json
 
 {"token": "<one-time-token>"}
 ```
 
-Returns the joined Workspace. This route is **not** Workspace-scoped: the
-caller is by definition not yet a member of the target Workspace. Its
-idempotency record is account-scoped, so a freshly registered account can
-accept before it has a Workspace or Actor in the invitation's target.
+This returns the joined Workspace. It isn't Workspace-scoped, so a new account can use it. The
+account must have a verified email matching the invited address.
 
-The caller must be signed in, must have verified their email address, and that
-address must match the invited address. An unverified caller is refused
-`403 email_verification_required` without consuming the link. A signed-in caller
-whose address differs is refused `403 invitation_recipient_mismatch` — a token
-that worked for whoever held it would
-turn a forwarded email into a Workspace membership.
+## Realtime events
 
-An expired invitation answers `410 invitation_expired`; a revoked or already
-accepted one answers `409 invitation_not_pending`. An unknown token answers
-`404`.
+Use the [application WebSocket](./realtime) <Badge type="warning" text="Upcoming" /> for Workspace changes. Its versioned scopes deliver content-free hints; apply canonical reads before acknowledging a checkpoint. The former Workspace SSE endpoint has been removed from the upcoming API contract.
+
+### Rank rebalance events <Badge type="warning" text="Awaiting deployment" />
+
+Reordering a Task or Project may also update neighboring ranks. A rare rebalance sends
+`task.updated` or `project.updated` for each changed neighbor, with `source: rank_rebalance` in the
+payload. Reload each named resource before showing its order.
+
+### Project state replacement events <Badge type="warning" text="Awaiting deployment" />
+
+When a Project lifecycle state is archived with a replacement, each reassigned Project sends
+`project.updated` with `source: project_state_replacement`. Reload each named Project to show its
+current state.
+
+## My Work
+
+A personal, read-only projection of your own Tasks:
+
+```http
+GET /api/v1/workspaces/{workspace_id}/work?view=today&limit=50
+```
+
+`view` is `assigned`, `overdue`, `today`, `upcoming` or `completed`. Due dates are dates, evaluated
+in the timezone returned in the response. Completed Tasks stay in `completed` for 14 days. The
+response has `items`, `next_cursor`, `has_more`, `as_of_date` and `timezone`. Default page size is
+50, maximum 100.
 
 ## Errors
 
-Beyond the shared error codes in [API conventions](conventions.md):
+In addition to the [shared errors](./conventions):
 
 | Status | Code | Meaning |
 | --- | --- | --- |
-| `409` | `last_owner` | The change would leave the Workspace without an active owner. |
-| `409` | `last_workspace` | The caller has no other Workspace to fall back to. |
-| `409` | `invitation_pending` | An unaccepted invitation for that address already exists. |
-| `409` | `already_member` | That address already belongs to an active member. |
+| `409` | `last_owner` | The change would leave no active owner. |
+| `409` | `last_workspace` | It's the caller's only Workspace. |
+| `409` | `invitation_pending` | An unexpired invitation for that address exists. |
+| `409` | `already_member` | The address belongs to an active member. |
 | `409` | `invitation_not_pending` | The invitation was revoked or already accepted. |
-| `410` | `invitation_expired` | The invitation passed its `expires_at`. |
-| `403` | `invitation_recipient_mismatch` | The signed-in account is not the invited address. |
-| `403` | `email_verification_required` | The matching account has not verified its email address. |
-| `422` | `self_membership_mutation` | The caller tried to change their own membership. |
+| `410` | `invitation_expired` | The invitation has expired. |
+| `403` | `invitation_recipient_mismatch` | The signed-in account isn't the invited address. |
+| `403` | `email_verification_required` | The account hasn't verified its email. |
+| `422` | `self_membership_mutation` | You tried to change your own membership. |

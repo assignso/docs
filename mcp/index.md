@@ -42,6 +42,29 @@ The catalog doesn't expose any of the following: deleting a Workspace, Project o
 permanently purging a Task, billing, member administration, credential management, arbitrary
 HTTP, SQL, filesystem access or shell access.
 
+## Break down larger work <Badge type="warning" text="Upcoming skill update" />
+
+With the updated Assign skills loaded, ask your assistant to break a roadmap or large Task into
+work you can resume later. It reviews existing work, proposes a compact structure and saves an
+approved batch through the available MCP tools.
+
+- **Milestones** group Tasks around a meaningful delivery checkpoint. The assistant shows the
+  proposed scope and asks for your confirmation before creating one.
+- **Tasks** describe independently assignable, verifiable outcomes.
+- **Subtasks** track parts of one outcome that need their own owner, Status or blocker.
+- **Checkboxes** capture steps or acceptance checks that share the Task's ownership and lifecycle.
+
+For a large roadmap, the assistant outlines the whole scope and details ready work first. Later
+scope and the next batch stay in a linked plan so another client can continue. You can also request
+a full breakdown, saved in manageable batches. Each Task keeps a short outcome, essential
+constraints and completion checks; detailed requirements stay linked.
+
+For example: “Break this reporting roadmap into manageable work. Reuse existing Tasks, propose
+Milestones for my confirmation, and show the first batch before creating it.”
+
+Skills guide the assistant; connecting MCP alone does not install them. Tool availability and
+permissions still apply. Saved plans and created Tasks are not completed work.
+
 ## How access works
 
 - **The scope is a ceiling.** `assign:read` and `assign:write` cap what a connection can do. Every
@@ -69,5 +92,5 @@ and CIMD.
 Codex is the client with a documented, verified setup path. Instructions for other clients will
 be added here once each one has been tested against Assign.
 
-Clients that support [MCP Apps](./previews) also show interactive Task, Project and Document
-previews. Other clients get the same structured results, text and links.
+[Interactive previews](./previews) will be paused in the next deployment. All clients will use
+the existing structured results, text and links.

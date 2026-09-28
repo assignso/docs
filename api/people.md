@@ -1,9 +1,12 @@
-# People profiles
+---
+description: Read a Workspace member's public profile and activity.
+---
 
-People are workspace-scoped collaboration profiles. Any member who can see a
-workspace member can open that person’s profile. Profiles show the title, bio,
-and status a person chose to publish in their account profile settings, and
-never expose email, phone, or other personal account settings.
+# People
+
+People profiles are Workspace-scoped. Any member who can see a member can open their profile. It shows
+the title, bio and status they chose to publish, and never their email, phone or other account
+settings.
 
 ## Read a profile
 
@@ -11,41 +14,22 @@ never expose email, phone, or other personal account settings.
 GET /api/v1/workspaces/{workspace_id}/people/{username}
 ```
 
-The response includes the person’s display name, current username, current workspace role,
-active status, a workspace actor ID, an `is_you` flag, the optional `title`,
-`bio`, and `profile_status` text (each `null` when the person has not set it),
-and an optional authorized `profile_picture_url`, plus the `avatar_initials`
-letters override (`null` derives letters from the display name) and the
-`avatar_color` background (a Tailwind color family name). The picture URL is an Assign
-route, not a durable object-store address:
+The response has the display name, current username, Workspace role, active status, a Workspace
+`actor_id`, an `is_you` flag and the optional `title`, `bio` and `profile_status` (each `null` if
+unset). It also has `profile_picture_url`, `avatar_initials` (`null` derives them from the name) and
+`avatar_color`. Use the actor ID as `assignee_actor_id` in [Task lists](./tasks#list) to show their
+work.
 
-```http
-GET /api/v1/workspaces/{workspace_id}/people/{user_id}/profile-picture/content
-```
+The picture URL is an Assign route,
+`/api/v1/workspaces/{workspace_id}/people/{user_id}/profile-picture/content`. It rechecks membership
+and redirects to a short-lived URL, or returns `404` if unavailable.
 
-It rechecks active same-Workspace membership and redirects an authorized
-browser to a short-lived inline object URL. It returns the normal content-free
-`404` when the target picture or membership is unavailable.
-Use the actor ID
-with the normal Workspace Task list (`assignee_actor_id`) to show that
-person’s permitted assigned work.
+Usernames are globally unique, lowercase, 3–30 characters. They can change, but every claimed handle
+keeps resolving to the same account. Legacy UUID references still resolve and the web app replaces
+them with the current username. A username never grants access.
 
-## Read person activity
+## Read activity
 
-```http
-GET /api/v1/workspaces/{workspace_id}/people/{username}/activity?limit=50
-```
-
-This is a cursor-paginated collaboration feed, not an audit log. It uses the
-same redaction and current-access rules as Workspace activity. If a person is
-not an active visible member, both requests return the normal `404` response.
-
-Usernames are globally unique, lowercase 3–30 character handles. They may
-change, but every previously claimed handle remains reserved to the same
-account and continues to resolve. Legacy UUIDv7 profile references are accepted
-during migration; the Web app replaces an authorized legacy URL with the
-person's current username. A username is never an authorization credential.
-
-The authenticated person profile loads this feed independently from the
-identity and assigned-work sections. Loading, empty, failure, and continuation
-states therefore do not replace or disclose data from the rest of the profile.
+`GET /api/v1/workspaces/{workspace_id}/people/{username}/activity?limit=50` returns a cursor-paginated
+feed with the same redaction and access rules as [Activity](./activity). An inactive or invisible
+person returns `404`.

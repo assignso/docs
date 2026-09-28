@@ -11,9 +11,8 @@ path:
 https://api.assign.so/api/v1
 ```
 
-The Assign web app, CLI, IDE extensions, mobile apps and MCP server all use this same API. Changes
-made through the API go through the same authorization, validation, revision checks and audit
-history as changes made in the product.
+The web app, CLI, IDE extensions, mobile apps and MCP server all use this API, so a change made
+through it follows the same permissions, validation and history as one made in the product.
 
 ## Authentication
 
@@ -33,9 +32,8 @@ curl https://api.assign.so/api/v1/cli/my-work \
   -H "Accept: application/json"
 ```
 
-The [endpoint index](./endpoints) lists the credentials each operation accepts. Browser sign-in,
-second factors, passkeys and the session and CSRF model are covered in
-[Authentication](./authentication).
+The [endpoint index](./endpoints) lists the credentials each operation accepts. Browser sign-in and
+the session and CSRF model are covered in [Authentication](./authentication).
 
 ## Conventions at a glance
 
@@ -51,12 +49,13 @@ second factors, passkeys and the session and CSRF model are covered in
 - **Isolation.** A resource outside your Workspace returns `404`, the same as a resource that
   doesn't exist.
 
-Read [Conventions](./conventions) and [Versioning](./versioning) before you build an integration.
+Read [Conventions](./conventions) before you build an integration.
 
 ## Resources
 
 <div class="resource-grid">
 
+- [**Application realtime**](./realtime): upcoming browser subscriptions and applied acknowledgements
 - [**Account**](./account): current user, sessions, tokens and connected clients
 - [**Workspaces**](./workspaces): roles, settings, members and invitations
 - [**Projects**](./projects): Projects, Statuses, members and Milestones
@@ -76,14 +75,25 @@ Read [Conventions](./conventions) and [Versioning](./versioning) before you buil
 
 </div>
 
-## SDKs
+## OpenAPI and SDKs
 
-Official SDKs are generated from the same OpenAPI contract:
+The public contract is an [OpenAPI 3.1 document](/openapi.yaml). It is the authoritative source for
+request and response schemas, and the [endpoint index](./endpoints) lists every operation in it.
+Import it into an API client or use it to generate your own client.
+
+Official SDKs are generated from the same document:
 
 | Language | Package |
 | --- | --- |
 | TypeScript | [`@assignso/sdk`](https://www.npmjs.com/package/@assignso/sdk) (release candidate) |
 | PHP | `assignso/php-sdk` (not yet published on Packagist) |
 
-Each SDK is released on its own schedule, and a new SDK major doesn't change API v1. See
-[Versioning](./versioning#sdk-and-client-releases).
+SDKs release on their own schedule. See [Versioning](./versioning#sdk-and-client-releases).
+
+## Page totals <Badge type="warning" text="Awaiting deployment" />
+
+My Work, Workspace Document lists, Activity, Task Comments and Agent run history return
+`total_count` for the collection you can access with the selected filters, before the cursor position.
+Divide it by your requested page size to calculate total pages. The count can change as items change.
+Activity counts events before display grouping; Comments include retained deleted-comment ordinals.
+Totals do not allow arbitrary cursor jumps.

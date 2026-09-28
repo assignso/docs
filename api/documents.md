@@ -1,104 +1,52 @@
+---
+description: List, create, edit, restore, delete, export and publish Documents, and the editor's reference picker.
+---
+
 # Documents
 
-For asynchronous repository mirroring, import, sync history, and conflict
-handling, see [Git-backed Documents](git-backed-documents.md).
+Document operations use a browser session and the [API conventions](./conventions). Full schemas are
+in the [OpenAPI document](/openapi.yaml). For repository mirroring, see
+[Git-backed Documents](./git-backed-documents).
 
-Document operations use the authenticated browser session and the shared
-[API conventions](conventions.md). The complete request and response schemas,
-including examples and error codes, are in the versioned OpenAPI contract.
+Creates need an `Idempotency-Key`. Metadata and content updates need the current `If-Match`, and a
+stale revision returns `409` so you can reload and let the person reconcile.
 
-## Authenticated Documents
+## List and read
 
-Use the Workspace Document collection to list or create root Documents. A
-Document's metadata includes its scope (`workspace`, `project`, or `public`),
-optional Project and parent Document, direct-child count, and public identifier
-when it is published. Read and update an individual Document separately from
-its versioned rich-text content.
+A Document's metadata includes its scope (`workspace`, `project` or `public`), optional Project and
+parent, direct-child count and, when published, a public ID. Content is read and updated separately
+from metadata.
 
-Authenticated Document metadata includes a nullable `summary`. When present,
-it is a one- or two-sentence scanning aid derived from a body of at least 300
-normalized characters and carries the exact `source_revision`. It becomes
-`null` immediately when that revision is no longer current, while generation
-is pending, or when the body is shorter. It does not replace canonical content
-or evidence. Bounded metadata collections carry the same field without loading
-bodies; the deliberately minimal anonymous published-Document response does not.
-Project Overview's bounded recent-Document rows also carry this nullable field.
+`GET /api/v1/workspaces/{workspace_id}/documents` returns a title-ordered page of active root
+Documents.
 
-`GET /api/v1/workspaces/{workspace_id}/documents` returns a bounded,
-title-ordered page of active root Documents. Use `q` (up to 200 characters) to
-match titles and extracted text, `project_id` to restrict the Project, and
-`scope` for `workspace`, `project`, or `public`. A returned `next_cursor` is
-valid only with the same filters and sort; start a new request when either
-changes. Set `archived_only=true` to browse the same bounded, authorized
-collection of archived roots for recovery; active and archived Documents are
-never mixed in one traversal.
+`GET /api/v1/workspaces/{workspace_id}/documents/by-path/{document_path}` resolves an active
+Document's metadata by its canonical path, including a Document outside the current list page.
+The caller needs access to the Workspace and, for a Project Document, that Project. A missing,
+archived or inaccessible path returns `404`. Read the body through
+`GET /api/v1/documents/{document_id}/content` using the returned ID.
 
-Three optional parameters shape the collection. `location` filters by where a
-Document lives: `workspace` returns Documents outside every Project and
-`projects` returns Documents inside a Project. It describes structure only, not
-visibility or access, so it is independent of `scope`; a nested Document belongs
-to the same Project as its parent and is classified the same way. `location=workspace`
-cannot be combined with `project_id`. `sort` orders the page by `title` (the
-default), `updated_desc` (most recently modified first), or `updated_asc`, using
-each Document's own modification time, with the identifier breaking ties. Set
-`include_descendants=true` to return nested Documents as individual rows, each
-once, instead of roots only; those rows carry an `ancestors` array (root first,
-each with `id`, `title`, and `path`) so a search result can show its parent
-path. Omit all three for the original title-ordered roots page.
+| Parameter | Effect |
+| --- | --- |
+| `q` | Match titles and extracted text (up to 200 characters). |
+| `project_id`, `scope` | Restrict to a Project, or to `workspace`, `project` or `public`. |
+| `location` | `workspace` for Documents outside every Project, `projects` for those inside one. It describes structure, not access. It can't combine with `project_id` when `workspace`. |
+| `sort` | `title` (default), `updated_desc` or `updated_asc`. |
+| `include_descendants` | `true` returns nested Documents as rows, each with an `ancestors` array (`id`, `title`, `path`, root first). |
+| `archived_only` | `true` lists archived roots for recovery. Active and archived are never mixed. |
 
-## Collaboration admission and browser relay
+A `next_cursor` is valid only with the same filters and sort. `GET
+/api/v1/documents/{document_id}/children` lists direct children, cursor-paginated.
 
-`POST /api/v1/documents/{document_id}/collaboration-sessions` admits you to a
-short-lived presence lease. It returns an `editor` role when you can edit the
-Document and `viewer` when you can only read it. Each tab receives an independent
-session so opening another tab does not disconnect the first. The connected
-relay renews its lease; disconnected sessions expire. End your own lease with
-`DELETE /api/v1/documents/{document_id}/collaboration-sessions/{session_id}`;
-a retried successful end is safe.
+Metadata includes a nullable `summary`, a one- or two-sentence aid for bodies of 300 or more
+characters, with the `source_revision` it describes. It's `null` while pending, when the body changes
+or when the body is shorter. It doesn't replace the content. Anonymous published responses omit it.
+Documents, Projects and Tasks share the target-label operations in OpenAPI to replace their label set.
 
-The returned admission token is scoped to that Document and session and is not
-an API credential. The Assign browser uses it once to open the same-origin
-`GET /api/v1/documents/{document_id}/collaboration` WebSocket relay. The
-relay performs durable acknowledgement, checkpoint/reconnect recovery, and
-current-access rechecks; permission loss or lease expiry closes the connection.
+## Attachments
 
-That binary Yjs relay is an Assign browser implementation boundary, not a
-general public HTTP, SDK, or MCP API. Do not depend on its frames, pass the
-admission token through a URL, or use it as an alternative credential. Public
-Document content APIs remain the supported integration surface.
-
-## Editor references and mentions
-
-`GET /api/v1/workspaces/{workspace_id}/reference-options` supplies candidates
-for the editor’s `@` picker. Provide `q` and optionally repeat `types` with
-`user`, `document`, `project`, `task`, or `agent`. Results are grouped by type, filtered
-to resources you can read, and exclude archived resources. Each group defaults
-to 10 candidates and never exceeds 20; there is no cursor or total count.
-
-Every candidate includes its stable `assign:` URI for storing in rich text,
-with a display label and, when useful, an email, Project name, Project key, or
-Task ticket reference or Agent responsibility as `secondary_label`. Agent
-candidates are active definitions visible in the Workspace and are available to
-Comment editors; selecting one stores an `assign:agent/` reference and admits
-durable attention when the Comment is created. Blank or whitespace-only `q`
-returns empty groups rather than a Workspace directory.
-
-Direct children are available from `GET /api/v1/documents/{document_id}/children`,
-in title order unless `sort` is `updated_desc` or `updated_asc`.
-The response is cursor-paginated; clients should retain the next cursor rather
-than assuming a Document tree is returned in one response. Documents, Projects,
-and Tasks use the generic target-label operations in the OpenAPI contract to
-replace their complete label set.
-
-Creates require `Idempotency-Key`; metadata and content updates require the
-current `If-Match` value. A stale revision returns `409`, so clients should
-reload and let the person decide how to reconcile their changes.
-
-## Document attachments
-
-List an existing Document's attachment ownership set with
-`GET /api/v1/documents/{document_id}/attachments`. Link a clean, completed
-upload before inserting its ID into rich text:
+`GET /api/v1/documents/{document_id}/attachments` lists a Document's attachments. Link a completed,
+clean upload before inserting its ID into the body:
 
 ```http
 POST /api/v1/documents/{document_id}/attachments HTTP/1.1
@@ -106,90 +54,83 @@ X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"attachment_id":"<attachment-id>"}
+{"attachment_id": "<attachment-id>"}
 ```
 
-The caller needs write access to the Document. Project Documents also enforce
-their Project membership. The link remains after an ordinary edit or archive
-so current and historical revisions can resolve the same attachment. Signed
-preview and download URLs remain short lived and must never be stored in the
-Document body.
+You need write access to the Document, plus Project membership for Project Documents. The link
+survives edits and archiving, so historical revisions still resolve it. Signed preview and download
+URLs are short-lived and don't belong in the body.
 
-## Revision history and recovery
+## Revisions and recovery
 
-Every successful create, metadata edit, content replacement, collaboration
-checkpoint, archive, and restore records an immutable snapshot. List snapshots
-newest first with `GET /api/v1/documents/{document_id}/revisions`, read one at
-`GET /api/v1/documents/{document_id}/revisions/{revision}`, or compare two with
-`GET /api/v1/documents/{document_id}/revisions/compare?from=4&to=9`. Comparison
-returns both authorized snapshots and a stable list of changed fields; it does
-not expose the collaboration update log.
+Every create, metadata edit, content replacement, collaboration checkpoint, archive and restore saves
+an immutable snapshot.
 
-Restore a snapshot with
-`POST /api/v1/documents/{document_id}/revisions/{revision}/restore`. The source
-snapshot remains immutable and its contents become a new active revision, so
-the restore itself can be reviewed or reversed. Send the current Document ETag
-in `If-Match`; a concurrent change returns `409 revision_conflict`.
+- `GET /api/v1/documents/{document_id}/revisions` lists snapshots, newest first, and `…/revisions/{revision}`
+  reads one.
+- `GET …/revisions/compare?from=4&to=9` returns both snapshots and the changed fields.
+- `POST …/revisions/{revision}/restore` with the current `If-Match` makes a snapshot's content a new
+  revision. A concurrent change returns `409 revision_conflict`.
+- Archiving removes a Document from navigation and search without deleting anything.
+  `POST /api/v1/documents/{document_id}/restore` with the archived Document's `ETag` brings it back.
 
-Archiving removes a Document from ordinary navigation and search without
-deleting its content or history. Recover it with
-`POST /api/v1/documents/{document_id}/restore` and the archived Document's
-current ETag. Authorization is re-evaluated for history, comparison, and every
-recovery operation.
+Access is checked again on every history and recovery request.
 
-## Markdown interchange
+## Markdown
 
-`GET /api/v1/documents/{document_id}/markdown` exports the current canonical
-content as deterministic UTF-8 Markdown. Add `?revision={revision}` to export a
-historical snapshot. `PUT /api/v1/documents/{document_id}/markdown` imports up
-to 2 MiB and replaces the current content under `If-Match`.
+`GET /api/v1/documents/{document_id}/markdown` exports deterministic UTF-8 Markdown, and
+`?revision={revision}` exports a snapshot. `PUT` on the same path imports up to 2 MiB and replaces
+the content under `If-Match`.
 
-The interchange format structures the safe Assign CommonMark/GFM profile,
-covering paragraphs, headings, emphasis, inline and fenced code, block quotes,
-ordered and unordered lists, task lists, and horizontal rules. Other bounded,
-valid UTF-8 Markdown is accepted without interpreting unknown syntax:
-unsupported blocks such as raw HTML or GFM tables are preserved as inert
-`markdown` code blocks, and unsupported inline constructs are kept as inline
-code. Raw HTML is never executed. Native editable tables require a later
-versioned editor format. Assign attachments are omitted from Markdown export
-because signed download URLs must not become portable content.
+The supported profile covers paragraphs, headings, emphasis, inline and fenced code, block quotes,
+lists, task lists and horizontal rules. Other valid Markdown is accepted but not interpreted:
+schema-1 unsupported blocks such as raw HTML or tables are kept as inert `markdown` code blocks and
+unsupported inline syntax as inline code. Raw HTML never runs. Attachments are left out of exports,
+because signed URLs shouldn't become portable content.
 
-## Published Documents
+## Publish
 
-Publishing returns an opaque public identifier. Anyone holding it may read the
-minimal rendered source through:
+Publishing gives the Document an opaque public ID. Anyone with it can read the page:
 
 ```http
 GET /api/v1/public/documents/{public_id} HTTP/1.1
 Host: api.assign.so
 ```
 
-The Assign web reader is available at `https://assign.so/d/{public_id}`. It
-renders the same public-safe title and body for people without an Assign
-account; it has no editing, Workspace navigation, or identity metadata. Image
-and file blocks use the public Document attachment authorization operations.
-Core authorizes only attachments linked to the Document and referenced by its
-current body, so removing a block also removes its public access even while an
-older private revision retains the file.
+The web reader is at `https://assign.so/d/{public_id}`, with no editing, navigation or identity.
+Image and file blocks use public attachment access, granted only for attachments linked to the
+Document and referenced in its current body.
 
-This endpoint has no browser-session requirement, is rate limited, and returns
-`Cache-Control: no-store`. Its response contains only `public_id`, `title`,
-`content`, and `updated_at`; it does not reveal Workspace, Project, parent,
-child, author, audit, or revision data. Treat the public identifier as the
-sharing capability; change the Document back to a non-public scope to revoke
-access.
+The endpoint needs no session, is rate-limited and isn't cached. It returns only `public_id`, `title`,
+`content` and `updated_at`, with no Workspace, Project, hierarchy, author or revision data. Treat the
+ID as the sharing capability. To revoke access, change the Document back to a non-public scope.
 
-Document save and connection indicators stay steady during routine work. Unsaved edits
-remain marked until acknowledged; brief reconnects do not flash the status.
-Persistent failures and conflicts remain visible.
+## Live editing
 
-See [versioned work proposals and receipts](work-capabilities.md) for private result sets, drafts,
-reviewed ChangeSets and write recovery in the upcoming update.
+`POST /api/v1/documents/{document_id}/collaboration-sessions` opens a short-lived presence lease and
+returns an `editor` or `viewer` role. Each tab gets its own session, and `DELETE
+…/collaboration-sessions/{session_id}` ends yours safely, even on retry. The browser uses the
+returned admission token once to open the same-origin `GET /api/v1/documents/{document_id}/collaboration`
+WebSocket. That relay is part of the Assign browser and isn't a public API, SDK or MCP interface. Use
+the content operations above for integrations.
 
-For Discuss suggestions, add `surface=discuss` to the reference-options query. This includes
-ready installed Agents and custom Agents that can receive a Discuss request without a Task-comment tool. The default
-`surface=comment` retains Comment eligibility rules. Both modes check current visibility and
-Workspace entitlement; selecting an option does not grant permission to execute it.
+## Editor references
+
+`GET /api/v1/workspaces/{workspace_id}/reference-options` feeds the editor's `@` picker. Pass `q` and
+optionally repeat `types` with `user`, `document`, `project`, `task` or `agent`. Results are grouped
+by type, limited to readable, non-archived resources, with 10 candidates per group by default and 20
+at most, and no cursor. An empty or blank `q` returns empty groups.
+
+Each candidate has a stable `assign:` URI to store in rich text, a display label and, where useful,
+a `secondary_label` such as an email, Project key or Task code. Agent candidates are active
+definitions in the Workspace. Selecting one in a Comment stores an `assign:agent/` reference and
+requests the Agent's attention when the Comment is created.
+
+Add `surface=discuss` to get Agents that can take a [Discuss](./discuss) request without a Task-comment
+tool. The default `surface=comment` applies Comment rules. Both check current visibility and
+entitlement, and choosing an option doesn't grant permission to run it.
+
+For AI-assisted changes, see [Proposals and receipts](./work-capabilities).
 
 ## Schema-2 table compatibility
 
@@ -198,3 +139,20 @@ Workspace entitlement; selecting an option does not grant permission to execute 
 Schema 2 adds bounded structured tables. Simple tables use GFM Markdown; richer tables use a lossless `assign-table` fenced JSON block. Schema 1 keeps unsupported tables inert. Raw HTML never runs. See [Editor tables](../guides/editor#tables).
 
 For Document or Task collaboration admission, send `X-Assign-Document-Schema: 2` explicitly. Schema-1 admission to schema-2 content returns `409 document_schema_version_unsupported`; upgrade the client rather than downgrade the content. MCP structural content accepts supported schema versions; inspect your connected server’s catalog before writing schema-2 content.
+
+
+## Paid public publishing <Badge type="warning" text="Awaiting deployment" />
+
+Publishing public Documents or Projects requires a paid entitlement in that Workspace. Being a paid member of another Workspace does not qualify. A denied publish returns `403 paid_workspace_required`; your content stays unchanged and authorized users can still unpublish.
+
+Public links and new public Document attachment preview/download requests return the usual unavailable result while the entitlement is absent. Stored content and visibility remain intact, so a still-published, unarchived link can become available again when the entitlement returns. Unpublishing or archiving keeps its existing revocation rules.
+
+## Permanently delete a Document
+
+In Documents, open a row's actions menu and choose **Delete**, or choose **Delete document** on the document page. The confirmation names the document and warns that its content and revision history cannot be recovered. **Cancel** leaves it intact. Use **Archive** instead when you want to restore it later.
+
+`DELETE /api/v1/documents/{document_id}/permanent` permanently removes an active or archived document. Send the browser-session CSRF token and the current revision in `If-Match`. Workspace write permission and, for a Project document, Project write permission are required. Success returns `204`; later reads return `404`.
+
+A stale revision returns `409 revision_conflict`. Documents with children, including archived children, return `409 document_has_children`; delete the children first. Git-managed documents return `409 document_git_managed`. A conflict preserves the document. Deletion removes its history and resource links; attachment objects follow their existing cleanup policy.
+
+The existing `DELETE /api/v1/documents/{document_id}` still archives a document. The TypeScript and PHP SDKs expose permanent deletion as `deleteDocument`; native credential admission and a CLI/MCP delete action are not included.

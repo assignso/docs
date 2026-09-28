@@ -1,10 +1,10 @@
-// Regenerates api/endpoints.md from the accepted public OpenAPI contract.
+// Regenerates api/endpoints.md and public/openapi.yaml from the accepted public OpenAPI contract.
 // Usage: npm run generate:api [-- path/to/openapi.yaml]
 // Defaults to the sibling openapi-spec checkout used in the Assign workspace.
 import { readFileSync, writeFileSync } from "node:fs"
 import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
-import { parse } from "yaml"
+import { parse, stringify } from "yaml"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const source = resolve(process.argv[2] ?? process.env.ASSIGN_OPENAPI ?? resolve(root, "../openapi-spec/openapi.yaml"))
@@ -27,6 +27,16 @@ const guides = {
   "Time tracking": "../guides/time-tracking",
 }
 
+const authLabels = {
+  browserSession: "Session",
+  bearerToken: "Token",
+  developerAccessToken: "CLI",
+  nativeAccessToken: "Mobile",
+}
+// Provider callbacks and private connector operations are not part of the public surface.
+const internal = (operation, auth) =>
+  /^Internal\b/.test(operation.description ?? "") || auth.includes("integrationPrivateConnector")
+
 const byTag = new Map((spec.tags ?? []).map((tag) => [tag.name, { ...tag, operations: [] }]))
 for (const [path, item] of Object.entries(spec.paths ?? {})) {
   for (const method of methods) {
@@ -35,12 +45,13 @@ for (const [path, item] of Object.entries(spec.paths ?? {})) {
     const tag = operation.tags?.[0] ?? "Other"
     if (!byTag.has(tag)) byTag.set(tag, { name: tag, operations: [] })
     const auth = [...new Set((operation.security ?? spec.security ?? []).flatMap((entry) => Object.keys(entry)))]
+    if (internal(operation, auth)) continue
     byTag.get(tag).operations.push({
       method: method.toUpperCase(),
       path,
       summary: operation.summary ?? operation.operationId ?? "",
       deprecated: Boolean(operation.deprecated),
-      auth: auth.length ? auth.join(", ") : "none",
+      auth: auth.length ? auth.map((name) => authLabels[name] ?? name).join(", ") : "Public",
     })
   }
 }
@@ -49,7 +60,7 @@ const escape = (value) => String(value).replaceAll("|", "\\|").replace(/\s+/g, "
 const total = [...byTag.values()].reduce((sum, tag) => sum + tag.operations.length, 0)
 const lines = [
   "---",
-  "description: Every public Assign HTTP API operation, grouped by resource.",
+  "description: Every public Assign HTTP API operation, grouped by resource, with a download of the OpenAPI document.",
   "outline: 2",
   "---",
   "",
@@ -57,12 +68,14 @@ const lines = [
   "",
   "# Endpoint index",
   "",
-  `This index lists all ${total} operations in the public contract \`${spec.info.title} ${spec.info.version}\`,`,
-  "grouped by resource. Paths are relative to `https://api.assign.so`. The **Auth** column names",
-  "the security schemes an operation accepts; see [Authentication](./authentication).",
+  `${total} operations from the public contract, **${spec.info.title} ${spec.info.version}**. Paths are`,
+  "relative to `https://api.assign.so`.",
   "",
-  "Some operations are published before the server serves them. See",
-  "[Published but not yet served](./conventions#published-but-not-yet-served).",
+  "- **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,",
+  "  import into Postman or Insomnia, or browse it in any OpenAPI viewer. It is the",
+  "  authoritative source for request and response schemas.",
+  "- **Auth:** `Session` browser session, `Token` personal API token, `CLI` developer-client token,",
+  "  `Mobile` native token, `Public` no credential. See [Authentication](./authentication).",
   "",
 ]
 for (const tag of byTag.values()) {
@@ -70,12 +83,17 @@ for (const tag of byTag.values()) {
   lines.push(`## ${tag.name}`, "")
   if (tag.description) lines.push(escape(tag.description), "")
   if (guides[tag.name]) lines.push(`Guide: [${tag.name}](${guides[tag.name]})`, "")
-  lines.push("| Method | Path | Summary | Auth |", "| --- | --- | --- | --- |")
+  lines.push("| Operation | Summary | Auth |", "| --- | --- | --- |")
   for (const op of tag.operations.sort((a, b) => a.path.localeCompare(b.path) || methods.indexOf(a.method.toLowerCase()) - methods.indexOf(b.method.toLowerCase()))) {
     const summary = op.deprecated ? `${escape(op.summary)} <Badge type="warning" text="Deprecated" />` : escape(op.summary)
-    lines.push(`| \`${op.method}\` | \`${escape(op.path)}\` | ${summary} | ${escape(op.auth)} |`)
+    lines.push(`| \`${op.method} ${escape(op.path)}\` | ${summary} | ${escape(op.auth)} |`)
   }
   lines.push("")
 }
 writeFileSync(resolve(root, "api/endpoints.md"), lines.join("\n"))
-console.log(`api/endpoints.md: ${total} operations from ${spec.info.title} ${spec.info.version}`)
+
+// Publish the contract itself, without the local development server.
+const published = structuredClone(spec)
+published.servers = (published.servers ?? []).filter((server) => !/localhost|127\.0\.0\.1/.test(server.url))
+writeFileSync(resolve(root, "public/openapi.yaml"), stringify(published, { lineWidth: 0 }))
+console.log(`api/endpoints.md: ${total} operations from ${spec.info.title} ${spec.info.version}; public/openapi.yaml written`)

@@ -1,337 +1,175 @@
+---
+description: Format, link, mention and collaborate in Assign's single editor for Documents, Task descriptions and Comments, and how it handles Markdown.
+---
+
 # Writing in Assign
 
-Assign has one editor. Documents, task descriptions, and comments all use it, so
-the same shortcuts, formatting, mentions, and Markdown behave the same way
-everywhere.
-
-Markdown links preserve their chosen destination even when the visible label is
-another URL containing underscores or parentheses. Read-only editors keep copy
-available while shared formatting, link-editing and history actions are disabled.
-
-Pasting a code-only clipboard selection creates a code block, including from
-mobile clipboard providers, and keeps a recognized language hint. Mixed rich
-content keeps its formatting, including multiple code blocks. If a mobile
-clipboard wraps the same fenced Markdown source in plain HTML paragraphs, Assign
-reads that source as Markdown. Pasting into an existing code block keeps literal
-text, tabs, and line breaks, including Markdown markers and URLs.
-
-Editor body text uses a compact, consistent size across Documents, Task
-descriptions, and Comments. Headings remain proportionally larger so the
-document structure stays easy to scan.
-
-## Dividers and quotes
-
-Choose **Divider** from the slash menu or type `---` on an empty paragraph to
-insert a horizontal rule in a Document, Task description, or Comment. Markdown
-imports also accept `***` and `___` and preserve the divider on export.
-
-Type `>` followed by a space at the start of a line to begin a quote. Choosing **Quote** with a
-caret formats the current logical line, including a line separated with
-Shift+Enter, while retaining surrounding text, links, and references. Selecting
-several blocks applies formatting to the selection.
-
-## Finding documents
-
-The **Documents** page separates documents by where they live. Choose
-**Workspace** for documents outside your Projects, **Projects** for documents
-that belong to a Project, or **All documents** for both. Opening Documents from
-the sidebar always starts on Workspace. In Projects, a Project picker starts on
-**All projects** and can narrow the list to one Project; when you look at more
-than one Project, or at All documents, a **Location** column names each
-document's Project or Workspace.
-
-Documents are listed with the most recently edited first. Use the sort menu to
-switch to **Title A–Z** or **Oldest edited**. A document with pages beneath it
-has an arrow: select it to show those pages in place, and select it again to
-hide them. Search looks through titles and text, including pages inside other
-documents, and shows each match with the documents it sits under. If nothing
-matches, choose **Clear search**, or **Search all documents** to look everywhere.
-
-Your scope, Project, search, sort, and page are kept in the URL, so browser
-back/forward and copied links return to the same view. Changing any of them
-returns to page one. Page controls appear only when the list is longer than one
-page.
-
-**New document** starts in the place you are looking: Workspace on Workspace and
-All documents, or the Project you selected. On **All projects**, choose a Project
-before you create it. Use a row's actions menu to copy its link or archive it.
-**Archive** opens the archive for the scope and Project you are viewing and
-offers Restore for recoverable documents; choose **Active documents** to go back.
-Permanent deletion is not currently available.
-
-If live collaboration cannot start for a newly opened document, Assign switches
-to **Versioned editing** after two attempts. Your edits then use the same
-revision-checked autosave and conflict recovery, and collaboration is tried again
-the next time the document is opened.
+Documents, Task descriptions and Comments all use the same editor, so shortcuts, formatting, mentions
+and Markdown work the same everywhere.
 
 ## Formatting
 
-Type Markdown and it becomes formatting as you go:
+Type Markdown and it becomes formatting as you go.
 
-| Type this | To get |
+| Type | Result |
 | --- | --- |
-| `#`, `##`, `###`, followed by a space | Headings |
-| `-` or `*`, followed by a space | A bulleted list |
-| `1.`, followed by a space | A numbered list |
-| `- [ ]`, followed by text | An interactive checklist item |
-| `>`, followed by a space | A quote |
-| ` ``` ` | A code block |
-| `**bold**` | **Bold** |
-| `*italic*` | *Italic* |
-| `++underlined++` | Underlined |
-| `~~struck~~` | ~~Strikethrough~~ |
+| `#`, `##`, `###` and a space | Headings |
+| `-` or `*` and a space | Bulleted list |
+| `1.` and a space | Numbered list |
+| `- [ ]` and text | Checklist item |
+| `>` and a space | Quote |
+| ` ``` ` | Code block |
+| `**bold**`, `*italic*`, `++underlined++`, `~~struck~~` | **Bold**, *italic*, underline, ~~strikethrough~~ |
 | `` `code` `` | `Inline code` |
-| `---` | A divider (documents only) |
+| `---` on an empty line | Divider |
 
-Keyboard shortcuts work too: `Ctrl/Cmd+B` for bold, `Ctrl/Cmd+I` for italic,
-`Ctrl/Cmd+U` for underline, `Ctrl/Cmd+E` for inline code, and `Ctrl/Cmd+K` for a
-link.
+Shortcuts: `Ctrl/Cmd+B` bold, `+I` italic, `+U` underline, `+E` inline code and `+K` link. Selecting
+text opens a formatting toolbar. To keep the controls visible, turn on **Always show editor toolbar**
+in **Account settings → Interface**. Every command is also available from the keyboard and the `/`
+menu.
 
-Selecting text opens a small formatting toolbar. If you would rather keep the
-controls visible all the time, turn on **Always show editor toolbar** in
-**Account settings → Interface**. The choice follows your account and applies
-to documents, task descriptions, and comments. It changes nothing about your
-content, and every command stays available from the keyboard and the `/` menu
-either way.
+Press `/` to insert a block: text, headings, lists, checklists, quote, code block, equation, divider,
+images, files and references. The menu offers only what the current surface supports, so a Comment has
+no headings. Dragging a block shows where it will land, and keyboard and touch block movement are
+also available.
 
-## Inserting blocks
+- **Checklists:** ticking a box doesn't move your cursor, and they nest. `Backspace` at the start of a
+  list item lifts it out of the list.
+- **Quotes:** with the caret in a line, **Quote** formats that line and keeps its text, links and
+  references.
+- **Equations:** **Equation** adds a display equation from LaTeX source, rendered with KaTeX.
+- **Code blocks:** choose a language (Plain text, Bash, CSS, Go, JavaScript, JSON, Mermaid, PHP,
+  Python or TypeScript) for highlighting. A copy button copies the exact code. Long lines scroll.
+  `Tab` inserts two spaces, and `Ctrl/Cmd+Enter` returns to normal writing. Mermaid diagrams render
+  when the source is valid, and invalid source stays readable. Pasting code-only content makes a code
+  block, and pasting into a code block keeps the text literal.
 
-Formatting controls use one Tab stop. Move between their buttons with Left/Right
-Arrow, or use Home/End for the first/last button. Tab leaves the controls; a link
-form retains normal text-input navigation.
+## Images and files
 
-Press `/` anywhere to search the blocks you can insert: text, headings, lists,
-checklists, quote, code block, equation, divider, images, files, and references. The `/`
-menu only offers what the surface you are writing in supports — a comment, for
-example, has no headings.
+In an existing Document or Task description, choose **Image** or **File** from the `/` menu. Images
+show in the editor and files show as download rows. Creation drafts offer these commands once the
+Document or Task exists.
 
-When you drag a block, an accent line shows exactly where it will land before
-you release it. Keyboard and touch block movement remain available when dragging
-isn't practical.
+Select an image to reorder it with the grip, or use **Move image up** and **Move image down**. An
+attachment is a link to the file and counts toward your Workspace's attachment storage, not the
+Document's size. Access is checked whenever someone views or downloads it, so removing access removes
+it everywhere. If a file is deleted or you lose access, the block says so. Images must be attachments,
+so a link to an image elsewhere stays a normal link.
 
-### Checklists
+## Mentions and links
 
-A checklist is a list you can tick off. Start one by typing `- [ ]` and a space,
-or choose **Checklist** from the `/` menu. Ticking a box does not move your
-cursor, so you can keep typing, and checklists nest like any other list.
+Type `@` to search people, Projects, Documents, Tasks and active Agents you can access. A mention
+stores which item you picked, not its name, so it keeps up with renames and moves. If the target is
+deleted or you lose access, the mention shows as unavailable.
 
-Checklists are ordinary content: they export to Markdown as `- [ ]` and `- [x]`,
-and anything that reads GFM Markdown reads them correctly.
+Agent mentions work in Task Comments only. Posting the Comment sends one request to that Agent, and
+editing or replaying it doesn't duplicate the request. Agent instructions are never embedded in the
+Comment.
 
-At the start of a list or checklist item, press `Backspace` to lift it out of
-the list. This works the same way for bulleted, numbered, and checklist items,
-and you can undo it normally.
+Pasting links:
 
-### Images and files
+- Over selected text, the text becomes the link.
+- An Assign Document or Task URL on its own becomes a live reference. A Comment URL keeps a visible
+  **comment** qualifier and the exact destination.
+- Any other link stays a normal link.
 
-In an existing Document or Task description, choose **Image** or **File** from
-the `/` menu. Images appear in the editor, while files appear as named download
-rows. Creation drafts hide these commands until the Document or Task exists.
+`Ctrl/Cmd+Z` undoes the conversion. If a title can't be looked up, you keep a working link. When
+Assign is installed as a browser app, Assign links stay in the app and external links open separately.
 
-Select an image to reveal its reorder controls. Drag the labelled grip to move
-the block, or use **Move image up** and **Move image down** for keyboard and
-touch reordering.
+## Markdown
 
-An attachment is stored as a link to the file, not a copy of it, so it does not
-count against the size of the document itself — it counts against your
-workspace's attachment storage. Every time someone views an image or downloads a
-file, Assign checks that they are still allowed to, so removing someone's access
-removes it everywhere the attachment appears.
+Pasting Markdown keeps its structure. Copying from the editor gives you Markdown, which the MCP server
+and API also read and write. The profile follows CommonMark plus strikethrough, task lists, display
+equations and automatic linking of bare URLs. Complex emphasis and nested lists can differ from other
+Markdown readers. Underline is written `++like this++`, which is an Assign addition, so it shows as
+literal `++` in tools that don't know it.
 
-If a file is deleted, or you lose access to it, the block says so rather than
-showing a broken image. Nothing is silently removed from the document.
-
-Images must be attachments. Pasting a link to an image hosted somewhere else
-leaves you with a normal link — Assign does not load pictures from other sites
-into your documents.
-
-### Equations and code
-
-Choose **Equation** to add a display equation, then enter its LaTeX source.
-Equations use KaTeX for their on-page rendering and export as:
-
-```markdown
-$$
-\\frac{a}{b}
-$$
-```
-
-Each editable code block uses a light neutral surface with a compact control
-panel in its top-right corner. The panel appears when you hover the block, move
-the caret or selection into it, tap it, or focus one of its controls; it stays
-out of the way at rest and does not add an empty row before your first line. Use
-**Code language** to choose Plain text, Bash, CSS, Go, JavaScript,
-JSON, Mermaid diagram, PHP, Python, or TypeScript. Recognized syntax is
-highlighted immediately with the Tiptap CodeBlockLowlight syntax treatment, and
-the selection is retained when the document is converted to and from fenced
-Markdown. The adjacent Lucide Copy icon action copies the exact code and briefly
-shows whether copying succeeded; duplicate, delete, and other editor actions are
-not part of this compact panel. Code remains ordinary
-copyable text if the language is not recognized. Empty headings, lists, quotes,
-code blocks, and equations keep a visible format-specific hint until you type.
-
-Imported language names remain visible even when they are not in the selector's
-standard list. Long code lines scroll within the block; keyboard users can focus
-the code region to scroll it. Enter adds a code line, Tab inserts two spaces,
-Backspace at the very start keeps the code block in place, and Ctrl/Cmd+Enter
-returns to ordinary writing. A corrected Mermaid diagram can
-render again after an invalid draft; invalid source remains readable.
-
-## Mentioning people and linking work
-
-Type `@` to search people, projects, documents, tasks, and active Agents you have access to.
-Results are grouped and limited to a handful of matches, and you only ever see
-targets you are allowed to see.
-
-An inserted mention stores *which* person, project, document, task, or Agent you picked — not a
-copy of its name. If the document is renamed or the task moves, the mention
-keeps up. If the target is deleted, or someone loses access to it, the mention
-shows as unavailable rather than pretending the target is still there.
-
-Agent mentions are available in Task Comments only. Posting the Comment admits
-one durable request for that exact Comment occurrence; editing or replaying it
-does not silently duplicate the request. Agent instructions and private bindings
-are never embedded in the Comment.
-
-## Pasting links
-
-- Paste a link over selected text and the text becomes the link.
-- Paste an Assign document or task URL on its own and it becomes a live
-  reference to that document or task.
-- Paste a Task Comment URL and the live Task reference keeps a visible
-  **comment** qualifier plus the exact Comment destination.
-- Paste any other link and it stays a normal link.
-
-When Assign is installed as a browser app, links to Assign stay inside the app.
-External web links open in a separate browser context so they do not replace the
-standalone Assign window.
-
-One `Ctrl/Cmd+Z` undoes the conversion. Nothing about a
-paste blocks typing: if a link's title cannot be looked up, you are left with a
-working link.
-
-## Markdown in and out
-
-Pasting Markdown keeps its structure. Copying from the editor gives you Markdown
-back, which is also what the Assign MCP server and API-based tools read and
-write.
-
-Assign's Markdown profile follows CommonMark and adds strikethrough, task lists, display
-equations, and automatic linking of bare URLs. Imported `- [ ]` and `- [x]` items become checkboxes;
-clicking a checkbox while editing updates the document, and Markdown export
-preserves its open or completed state.
-
-Setext headings, literal hashes in headings, tabs and backticks in code, and
-escaped reference and attachment labels survive import and export. The profile
-does not support every Markdown dialect; complex emphasis and nested-list cases
-can differ from other Markdown readers. Named and numeric character entities
-decode as text outside code. Ordinary list continuation lines stay in their item,
-and whitespace inside formatting marks survives export through numeric entity
-spelling when needed.
-
-Underline is written `++like this++`. CommonMark has no underline, so this is an
-Assign addition — it means underlining survives a round trip through Markdown
-instead of quietly disappearing, at the cost of showing as literal `++` in a
-tool that does not know it.
-
-A few things have no equivalent in an Assign document and are kept as readable
-text rather than dropped:
+Some Markdown has no equivalent and stays as readable text:
 
 | Markdown | What you get |
 | --- | --- |
-| `![alt](https://other-site/x.png)` | A link with the alt text — images must be attachments |
-| `1. [ ] item` | A numbered item whose text starts with `[ ]`; checkboxes work on bulleted lists |
-| Tables | The table's text, unchanged |
-| Footnotes | The notation and explanation as readable text |
-| Code fence metadata | The language and code; additional metadata is omitted |
-| Raw HTML | The HTML as literal text; it is never rendered |
+| `![alt](https://other-site/x.png)` | A link with the alt text. Images must be attachments. |
+| `1. [ ] item` | A numbered item starting with `[ ]`. Checkboxes work on bulleted lists. |
+| Tables, footnotes | Their text, unchanged. |
+| Code fence metadata | The language and code. |
+| Raw HTML | Literal text. It's never rendered. |
 
-Mentions, references, and attachments travel through Markdown as links such as
-`[Launch checklist](assign:document/doc-launch)`, `[Platform](assign:project/proj-platform)`,
-and `![Q3 chart](assign:attachment/att-q3)`. Another tool reading that Markdown
-still sees a sensible label; Assign turns it back into a live reference or
-attachment when the content comes home. Those links are identifiers, not
-download links — they give nobody access to anything on their own.
+Mentions, references and attachments travel as links, such as
+`[Launch checklist](assign:document/doc-launch)` and `![Q3 chart](assign:attachment/att-q3)`. Other
+tools still see a sensible label, and Assign turns them back into live references. These links are
+identifiers and grant no access.
 
 ## Saving
 
-Documents save on their own as you write. The state beside the title tells you
-where you are: *Unsaved changes*, *Saving…*, or *Saved*. **Saved** means the
-server has confirmed it, not just that you stopped typing. Task descriptions use
-the same editing surface and persist through revision-checked Task updates. If a
-description save fails, Assign keeps the local draft and offers a retry instead
-of discarding the linked or formatted content. Leaving the Task page flushes a
-pending description save; if it still fails, returning to that Task restores
-the draft. If another update wins the revision first, compare both summaries,
-then choose **Load saved version** or **Retry my draft**.
+Documents save as you write. The indicator beside the title shows *Unsaved changes*, *Saving…* or
+*Saved*, and **Saved** means the server confirmed it. Task descriptions save through revision-checked
+updates. If a save fails, Assign keeps your draft and offers a retry, and leaving the page tries to
+save first. If someone else saved first, compare both versions and choose **Load saved version** or
+**Retry my draft**.
 
-Documents support live co-editing after the **Live** connection state appears.
-While Assign is connecting or reconnecting, the last server-saved body remains
-visible and readable, including on mobile, but stays read-only until the live
-session has safely synchronized. If the page shows **Reload required**, reload
-before continuing to edit so Assign can reconcile the durable document with the
-live session.
+Documents support live co-editing once the **Live** state appears. While connecting or reconnecting,
+the last saved body stays visible but read-only. If the page shows **Reload required**, reload before
+editing. Other people's colored carets and selections appear where they write. They're temporary and
+never saved or exported. If live collaboration can't start after two attempts, the Document switches
+to **Versioned editing** with the same autosave and conflict handling, and tries live again next time.
 
-When another person is actively editing the same live document, their colored
-caret, selection, and name appear where they are writing. These indicators are
-temporary: they disappear during a reconnect or when that collaborator leaves,
-and they are never saved into the document or included in exports.
-
-Metadata changes such as title or properties remain revision-checked. If
-someone else saved conflicting metadata while you were editing, Assign does not
-overwrite their work. You keep your draft and choose:
-
-- **Keep my version and save** — your text wins, saved on top of theirs.
-- **Load their version** — their saved version replaces your conflicting draft.
+Metadata such as the title is revision-checked. On a conflict, choose **Keep my version and save** or
+**Load their version**.
 
 ## Comments
 
-The comment box on a task is the same editor, with the commands that make sense
-there. Comments post one at a time; they are not a live shared session. A failed
-post keeps your draft so you can try again. Use **Copy link** below any retained
-comment—even a deleted-comment placeholder—to share a URL that opens and focuses
-that exact place in the Task discussion. If you authored a live comment, its
-**Edit** and **Delete** actions appear beside Copy link below the comment body.
-Live comments also show reaction counts below the body. Select an existing
-reaction to add or remove yours, or use **Add reaction** to choose 👍, ❤️, 🎉,
-😄, 😕, or 👀. When the current Task discussion already uses reactions, the
-picker places its three most-used choices first without storing a separate
-reaction-history preference. Reaction counts update from other connected
-clients without reloading the Task.
-References in a posted comment remain live: Assign resolves visible people,
-Tasks, Projects, and Documents before rendering their links. A deleted or no-longer
-accessible target keeps a readable fallback label without becoming a link.
+The Comment box is the same editor with the commands that suit it. Comments post one at a time, and a
+failed post keeps your draft. Below each retained Comment:
 
-## Collaborating on a Task description
+- **Copy link** opens and focuses that Comment, even a deleted placeholder.
+- **Edit** and **Delete** appear on your own Comments.
+- Reactions show counts. Select one to add or remove yours, or use **Add reaction** to choose 👍, ❤️,
+  🎉, 😄, 😕 or 👀. Counts update live.
 
-Open an existing Task description to edit with other people who have access. Their carets and
-selections show where they are working. Your Task formatting controls and toolbar preference
-stay the same. Task creation drafts and Comments use their usual save behavior.
+References stay live, and a deleted or inaccessible target keeps a plain label without a link.
 
-The saved description stays readable while collaboration connects. If collaboration cannot
-start, versioned editing may become available; conflicting drafts are retained for comparison. A
-session that was already live reconnects automatically and does not switch to a competing save
-path. If access is removed or the description is replaced elsewhere, reload the Task to recover
-the current version. Carets are temporary and do not appear in exports or description history.
+## Task descriptions
 
-## Collaboration connections
+Open an existing Task description to edit with others, with the same carets, selections and toolbar
+preference. The saved description stays readable while collaboration connects, and if it can't start,
+versioned editing may be available with conflicting drafts kept for comparison. If access is removed or
+the description is replaced elsewhere, reload the Task to get the current version.
 
-The collaboration client sends its complete initial bootstrap frame within ten
-seconds of connecting. A stalled connection closes so it can reconnect. Server
-shutdown also closes collaboration connections; supported clients reconnect and
-recover from the retained checkpoint and updates.
+## Finding Documents
 
-## Pasting quotes <Badge type="warning" text="Awaiting deployment" />
+The **Documents** page has three views: **Workspace** for Documents outside Projects, **Projects** for
+Documents inside one, and **All documents**. Opening it from the sidebar starts on Workspace. In
+Projects, a picker starts on **All projects** and can narrow to one, and when you're looking at
+several a **Location** column names each Document's Project.
 
-Paste Markdown beginning with `>` to keep its quote formatting, including when
-your clipboard also supplies matching plain HTML wrappers. Quotes copied as
-rich text keep their formatting. Text pasted into a code block stays literal.
+Documents are sorted by most recently edited, and you can switch to **Title A–Z** or **Oldest edited**.
+Search covers titles and text, including nested pages,
+and shows each match with its parents. If nothing matches, choose **Clear search** or **Search all
+documents**.
+
+### Expand subdocuments <Badge type="warning" text="Awaiting deployment" />
+
+Select **1 subdocument** or **N subdocuments** beside a Document title to expand its children
+in place. Select the count again to collapse them. Select the title to open the Document.
+
+Your scope, Project, search, sort and page are kept in the URL, so back and forward and copied links
+return to the same view. Changing any of them returns to page one.
+
+**New document** starts where you're looking. On **All projects**, choose a Project first. A row's
+actions menu copies its link or archives it. **Archive** shows archived Documents for the current view
+with **Restore**, and **Active documents** goes back. Permanent deletion isn't available.
 
 ## Dividers after a line break <Badge type="warning" text="Awaiting deployment" />
 
 Type `---` on an empty line after `Enter` or `Shift+Enter` to insert a divider.
 The text above stays as written. Undo restores the dashes. Markdown imports
 still interpret `Title` followed directly by `---` as a heading.
+
+## Pasting quotes <Badge type="warning" text="Awaiting deployment" />
+
+Paste Markdown beginning with `>` to keep its quote formatting, including when
+your clipboard also supplies matching plain HTML wrappers. Quotes copied as
+rich text keep their formatting. Text pasted into a code block stays literal.
 
 ## Tables <Badge type="warning" text="Awaiting deployment" />
 

@@ -1,9 +1,12 @@
+---
+description: Log time on Tasks, review timesheets and export CSV, and connect Toggl Track or Clockify.
+---
+
 # Time tracking
 
-Time tracking is optional for each Workspace. A Workspace administrator enables
-it in **Workspace settings → Features**, then opens **Work management → Time tracking**
-to choose exact reporting or upward rounding to 15 or 30 minutes. Exact duration is
-retained for every entry; the policy only determines its reportable duration.
+Time tracking is optional per Workspace. An administrator turns it on in **Workspace settings →
+Features**, then chooses exact reporting or upward rounding to 15 or 30 minutes under **Work management
+→ Time tracking**. Every entry keeps its exact duration, and the policy only sets the reportable one.
 
 ## Log time on a Task
 
@@ -29,38 +32,36 @@ first-day-of-week preference. Work dates are shown using your Account locale and
 date format. The date field itself remains a calendar date and is never shifted
 when you travel or change time zones.
 
-## Toggl Track integration
+## Project reports
 
-A Workspace Owner or Admin can open **Integrations → Toggl Track** and connect
-the default Toggl Track Workspace with the personal API token shown on their
-Toggl Track profile. Toggl does not provide a limited Assign OAuth scope for
-this API, so the page clearly identifies that the token carries the connecting
-person's Toggl permissions. Assign validates it directly with Toggl, sends it
-only in the authenticated connection request, and stores it in the encrypted
-server vault; it is never placed in a URL or saved in browser storage.
-If a connection attempt fails, the page clears the token and shows Assign's
-safe server-reported reason. A provider-unavailable message means the Assign
-operator must enable the Toggl adapter and encrypted integration vault; the
-personal Toggl token does not belong in server runtime configuration.
+When Time tracking is on, open a Project's **Reports** tab and select a date
+range. The report shows exact and reportable totals and Task and contributor
+breakdowns. Contributor details are available to Project managers; other Project
+readers see a redacted contributor section. Project managers can open a Task's
+recorded entries to see their dates, contributors, durations, and notes. Time
+remains attributed to the Project where it was recorded if a Task later moves.
+If a Task is no longer available, its recorded time remains in the totals.
+If the selected range changes while its pages load, the report refreshes the
+whole range before showing it. An incomplete or changing range stays unavailable
+until a consistent read succeeds.
 
-After connecting, select an active Toggl Project and bind it to an Assign
-Project. A confirmed integration action can then create one completed Toggl
-time entry of at most 24 hours against that exact binding. Connecting or binding
-does not import history, start a timer, enable a webhook, or synchronize
-timesheets. Disconnecting removes Assign's encrypted copy. Rotate the token in
-Toggl Track if it may exist anywhere else or if the connecting person's access
-changes.
+## Toggl Track and Clockify
+
+Owners and admins can connect Toggl Track or Clockify under **Integrations** and bind a provider
+project to an Assign Project. A confirmed action then creates one completed time entry of at most 24
+hours on that project. Connecting or binding imports no history and starts no timer or synchronization.
+See [Integrations](../api/integrations#providers).
 
 ## API
 
-The public API provides Workspace policy, Task-entry, Task/Project-total,
-personal-timesheet, and CSV-export operations under `/api/v1`. See the
-machine-readable [OpenAPI contract](../api/endpoints.md#time-tracking) for request
-and response schemas.
+The public API has operations for the Workspace policy, Task entries, Task and Project totals, bounded Project Task groups, manager-only Project Task entries, contributor groups, your
+timesheet and CSV export. See the [endpoint index](../api/endpoints#time-tracking) and the
+[OpenAPI document](/openapi.yaml). Before a Workspace saves its first policy, the policy read reports
+revision `0`, so send `If-Match: "0"` on the first update. Later updates use the revision from the
+preceding read.
+The four Project report reads return `X-Assign-Report-Revision`. Compare this
+value across totals, Task groups, contributor groups, selected Task entries and
+all continuation pages for one range; restart the whole range if it differs.
 
-Before a Workspace has stored its first policy, the policy read reports
-bootstrap revision `0`; use `If-Match: "0"` for that first policy update.
-Later updates use the positive revision returned by the preceding read.
-
-Running timers, payroll workflows, approvals, automatic Agent-written entries,
-and provider report synchronization are not part of this release.
+Running timers, payroll, approvals, Agent-written entries and provider report synchronization aren't
+included.

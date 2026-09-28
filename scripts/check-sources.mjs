@@ -4,7 +4,7 @@
 // Fails when:
 //   - an MCP tool registered in assign-core is missing from mcp/tools.md (or vice versa)
 //   - an assign-cli command is missing from cli/commands.md
-//   - api/endpoints.md is stale relative to openapi-spec/openapi.yaml
+//   - api/endpoints.md or public/openapi.yaml is stale relative to openapi-spec/openapi.yaml
 import { execFileSync } from "node:child_process"
 import { readFileSync, readdirSync, existsSync } from "node:fs"
 import { resolve, dirname, join } from "node:path"
@@ -67,10 +67,12 @@ if (existsSync(cliDir)) {
 
 const openapi = join(workspace, "openapi-spec/openapi.yaml")
 if (existsSync(openapi)) {
-  const before = readFileSync(join(root, "api/endpoints.md"), "utf8")
+  const generated = ["api/endpoints.md", "public/openapi.yaml"]
+  const before = generated.map((file) => readFileSync(join(root, file), "utf8"))
   execFileSync(process.execPath, [join(root, "scripts/generate-api-endpoints.mjs"), openapi], { stdio: "ignore" })
-  const after = readFileSync(join(root, "api/endpoints.md"), "utf8")
-  if (before !== after) problems.push("api/endpoints.md was stale and has been regenerated; review and commit it")
+  generated.forEach((file, index) => {
+    if (before[index] !== readFileSync(join(root, file), "utf8")) problems.push(`${file} was stale and has been regenerated; review and commit it`)
+  })
 } else {
   console.warn(`skip API: ${openapi} not found`)
 }

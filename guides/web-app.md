@@ -20,9 +20,29 @@ a connection, and Assign doesn't store authenticated data for offline use.
 assigned work is sorted by priority (urgent, high, medium, low, then none), with the most recently
 updated first within each priority.
 
+### Home Task details <Badge type="warning" text="Awaiting deployment" />
+
+Priority appears after the Task title. A flag identifies a Task's Milestone; hover over or focus
+it to see the Milestone name. The next line separates the Project, Status and assignee with `·`.
+Following also shows the latest update on that line.
+
 **My Work** lists the Tasks assigned to you with their priority, Status, code, title and due date.
 
+### My Work pagination <Badge type="warning" text="Awaiting deployment" />
+
+Tasks are grouped by Status on each page, with the highest priority and most recently updated
+first inside each group. Group counts show how many tasks are on that page; a Status may continue
+on another page.
+
+Page controls show your current page and the total, such as **Page 2 of 8**. Use **Next**, **Previous**
+or an available numbered page to browse. Some lists unlock pages as you advance. Changing the view
+returns you to its first page. If a page fails to load, your current tasks stay visible; try again.
+
 ## Navigate
+
+<Badge type="warning" text="Awaiting deployment" />
+
+The small dot on your account picture in the sidebar shows live updates for this browser and Workspace. Green means updates are current, amber means Assign is connecting or catching up, and red means live updates are unavailable. Open the account menu for a text description of the current state.
 
 - **Breadcrumbs** show *Assign → Project → Task*. On desktop the ellipsis opens the full trail. On
   phones, tap the page title.
@@ -79,3 +99,8 @@ just the rows on screen.
 ### List motion <Badge type="warning" text="Awaiting deployment" />
 
 Lists gently acknowledge added items and keep nearby rows visually continuous when items are removed. Assign respects your device's reduced-motion preference. Removed items disappear immediately.
+
+## Mark Inbox notifications read <Badge type="warning" text="Awaiting deployment" />
+
+**Mark all read** includes the newest notification in the displayed Inbox. Notifications arriving
+after the read cutoff remain unread. You can still mark individual notifications read or unread.

@@ -26,6 +26,11 @@ Assign won't remove your last usable sign-in method. Keep a password or connecte
 you lose a passkey or authenticator. Active sessions never show device, browser, IP address or
 location, because Assign doesn't collect them.
 
+### Billing & plans refresh <Badge type="warning" text="Awaiting deployment" />
+
+The page refreshes your Free Workspace allowance and the Workspace plans you have loaded when
+their account data changes. It loads up to 1,000 Workspaces and states that limit if more exist.
+
 ## Workspace settings
 
 | Group | Pages |
@@ -37,12 +42,16 @@ location, because Assign doesn't collect them.
 | **Work management** | Labels, Task statuses, Project lifecycle and Time tracking |
 | **Developer tools** | AI integrations, service credentials and integrations |
 
+### Members list recovery <Badge type="warning" text="Awaiting deployment" />
+
+If the Members page cannot refresh its member and invitation lists, it hides both lists and asks you to refresh the page. This prevents an old list from appearing current.
+
 ### AI access
 
 **Developer tools → AI integrations** controls whether MCP clients and AI features can reach the
 Workspace. Turning it off blocks existing and new MCP connections immediately, without
 disconnecting the same client from your other Workspaces. See
-[Control AI and MCP access](../api/workspaces#control-ai-and-mcp-access).
+[Control AI and MCP access](../api/workspaces#ai-and-mcp-access).
 
 ### Service credentials
 

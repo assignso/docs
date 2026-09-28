@@ -1,21 +1,19 @@
+---
+description: Create and manage Projects, members and visibility, public status pages, workflow Statuses, completion policy and Milestones.
+---
+
 # Projects and Statuses
 
-These operations require an authenticated browser session (see
-[Browser authentication](authentication.md)) and follow the shared
-[API conventions](conventions.md), including `Idempotency-Key` on creates and
-`If-Match`/`ETag` on updates. The anonymous public-status read is the explicit exception described below.
+These operations use a browser session (see [Authentication](./authentication)) and the
+[API conventions](./conventions): `Idempotency-Key` on creates and `If-Match` with the `ETag` on
+updates. Send `X-CSRF-Token` on writes. The public status read is the only anonymous operation.
 
-## List Workspace Projects
+## Projects
 
-```http
-GET /api/v1/workspaces/{workspace_id}/projects?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
+### List and read
 
-Returns one page of the Workspace's Projects in their shared manual order. `workspace_id`
-must match the caller's current session Workspace; any other value reports
-the same `404` used for an absent Workspace.
+`GET /api/v1/workspaces/{workspace_id}/projects?limit=50` returns Projects in the Workspace's shared
+manual order. `workspace_id` must be the session's Workspace, otherwise `404`.
 
 ```json
 {
@@ -42,12 +40,26 @@ the same `404` used for an absent Workspace.
 }
 ```
 
-## Create a Project
+`GET /api/v1/projects/{project_id}` returns one Project with its `ETag`. A Project outside your
+Workspace or that you can't read returns `404`.
+
+`GET /api/v1/projects/{project_id}/overview` returns everything an overview screen needs in one
+non-cacheable call: metadata, the first three members and the member count, Task counts, Milestone
+progress, the Status distribution and up to five recent Tasks, activity items, Documents and files,
+plus up to five active Tasks each in `in_progress` and `in_review`. `freshness` says when it was
+generated, and `degradation` names any section that's missing. Use it instead of listing and
+counting yourself.
+
+### Consistent Project pagination <Badge type="warning" text="Awaiting deployment" />
+
+Continue with `next_cursor` to read more Projects. If the order or access changes
+between pages, the next request returns `409 catalog_changed` with no items.
+Discard the partial traversal and restart at the first page.
+
+### Create
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/projects HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
@@ -55,63 +67,15 @@ Content-Type: application/json
 {"name": "Assign", "key": "ASSIGN"}
 ```
 
-Creates a Project with its default `Backlog`/`Todo`/`In Progress`/`Done`
-workflow and returns `201` with the created Project and its `ETag`.
+Returns `201` with the Project, its `ETag` and the default `Backlog`, `Todo`, `In Progress` and
+`Done` workflow. `key` is the ticket prefix, `^[A-Z][A-Z0-9]{1,7}$`, unique in the Workspace and
+permanent. A used key returns `409 project_key_taken`. `path` is generated from the name; build UI
+links from the returned value.
 
-`key` is the uppercase-normalized ticket prefix, `^[A-Z][A-Z0-9]{1,7}$`,
-unique per Workspace and immutable after creation. It is not a substitute
-for the opaque `id`. A key already used in the Workspace returns
-`409 project_key_taken`.
-
-The server generates `path` from `name`. It is a lowercase, hyphen-separated
-browser path unique within the Workspace; the returned Project is the source
-of truth when constructing its UI URL.
-
-## Read a Project
-
-```http
-GET /api/v1/projects/{project_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-Returns the Project with its current `ETag`. A Project outside the caller's
-Workspace is indistinguishable from an absent one (`404`).
-
-## Read a Project overview
-
-```http
-GET /api/v1/projects/{project_id}/overview HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-Returns one private, non-cacheable Project summary for overview screens. The
-response combines Project metadata, the first three owner-first Project
-members and exact member count, lifecycle-aware Task counts, Milestone
-progress, the authoritative Status distribution, and bounded recent data.
-Each Status distribution row includes its stable identifier, lifecycle type,
-optional icon and color, position, and Task count so clients do not infer
-semantics or appearance from the label.
-Recent Tasks, Activity items, Documents, and files each contain at most five
-items. Ongoing work contains at most five active Tasks in each of the stored
-`in_progress` and `in_review` Status categories; Status display names do not
-control that classification, and ongoing work is separate from historical
-Activity.
-
-`freshness` reports when the projection was generated and the newest source
-update it observed. If a nonessential section is unavailable, `degradation`
-names it so a client can show a partial state without downloading full
-collections. Clients should use this operation once rather than listing and
-aggregating Tasks, members, events, Documents, or files themselves. A Project
-that is absent or unreadable returns the same `404` response.
-
-## Update Project identity
+### Update
 
 ```http
 PATCH /api/v1/projects/{project_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 If-Match: "1"
@@ -120,163 +84,73 @@ Content-Type: application/json
 {"name": "Assign Core"}
 ```
 
-Send exactly one of `name`, `path`, `description`, `url`, `visual_identity`,
-`owner_actor_id`, or `project_state_id`, or send the complete nullable
-`start_on`/`target_on` pair.
-A path change uses the same request with, for example,
-`{"path":"assign-core"}`. `path` must match
-`^[a-z0-9]+(?:-[a-z0-9]+)*$`, be at most 63 characters, and be unique within
-the Workspace. `key` cannot be changed by this or any other operation.
-`If-Match` must carry the revision last observed by the client; a stale
-revision returns `409`.
+Send exactly one of `name`, `path`, `description`, `url`, `visual_identity`, `owner_actor_id`,
+`project_state_id`, `visibility` or `show_cancelled_column`, or both `start_on` and `target_on`. A
+stale `If-Match` returns `409`. `key` never changes.
 
-`description` is optional plain text, capped at 500 characters. `url` is an
-optional absolute HTTP or HTTPS link, capped at 2,048 characters. Send either
-field as `null` (or an empty string) to clear it. Both are returned only to
-authenticated Project readers; they never appear in the anonymous public
-Project status response.
+| Field | Rules |
+| --- | --- |
+| `path` | `^[a-z0-9]+(?:-[a-z0-9]+)*$`, at most 63 characters, unique in the Workspace. |
+| `description` | Plain text, at most 500 characters. |
+| `url` | Absolute HTTP or HTTPS link, at most 2,048 characters. |
+| `start_on`, `target_on` | ISO dates or `null`, sent together. The target can't precede the start. |
+| `visual_identity` | `{"kind":"icon","value":"rocket"}` or `{"kind":"emoji","value":"🚀"}`. `null` restores the folder marker. |
+| `show_cancelled_column` | Board presentation only. Project managers can change it. |
 
-`start_on` and `target_on` are date-only planning metadata. Send both keys in
-one revision-checked update, each as an ISO date or `null`; a target date may
-not precede a start date. They are authenticated-only and never appear in the
-anonymous public Project-status response.
+Clear `description` or `url` with `null` or an empty string. Description, URL and dates are visible
+only to signed-in readers. The icon names are listed in the [OpenAPI document](/openapi.yaml). The
+marker supplements the Project name and never replaces it.
 
-Set a decorative Project marker with either an allowlisted icon or one
-fully-qualified Unicode Emoji 17.0 sequence:
+### Archive and reorder
 
-```json
-{"visual_identity":{"kind":"icon","value":"rocket"}}
-```
+`DELETE /api/v1/projects/{project_id}` with `If-Match` and an `Idempotency-Key` archives a Project
+(`204`).
 
-```json
-{"visual_identity":{"kind":"emoji","value":"🚀"}}
-```
-
-Send `{"visual_identity":null}` to restore the default folder marker. The
-marker supplements the Project name and never replaces it. New Projects have
-`visual_identity: null`.
-
-The icon values in this API version are: `activity`, `alarm-clock`, `anchor`,
-`archive`, `award`, `badge-check`, `bell`, `bike`, `blocks`, `book-open`,
-`bookmark`, `box`, `boxes`, `briefcase`, `bug`, `building-2`, `calendar`,
-`camera`, `castle`, `chart-column`, `circle-check-big`, `circuit-board`,
-`cloud`, `code-2`, `coffee`, `compass`, `construction`, `cpu`, `credit-card`,
-`crown`, `database`, `diamond`, `dumbbell`, `earth`, `eye`, `factory`,
-`feather`, `file-text`, `flag`, `flame`, `flask-conical`, `flower-2`, `folder`,
-`folder-kanban`, `gamepad-2`, `gauge`, `gem`, `gift`, `git-branch`, `globe-2`,
-`graduation-cap`, `hammer`, `handshake`, `headphones`, `heart`, `home`, `image`,
-`key-round`, `landmark`, `laptop`, `layers-3`, `leaf`, `library`, `lightbulb`,
-`link-2`, `list-todo`, `mail`, `map`, `map-pin`, `medal`, `megaphone`,
-`message-square`, `microscope`, `monitor`, `mountain`, `music-2`, `package`,
-`palette`, `pen-tool`, `pie-chart`, `puzzle`, `rocket`, `scale`, `search`,
-`settings`, `shield`, `shopping-bag`, `smile`, `sparkles`, `star`, `tags`,
-`target`, `terminal`, `timer`, `trophy`, `users`, `video`, `wallet`,
-`wand-sparkles`, and `zap`.
-
-In the app, members with Project write access can change this marker from
-Project settings. It is shown with the Project name in cards, navigation,
-headers, search results, and Project selectors.
-
-## Project lifecycle and states
-
-Project lifecycle is an optional Workspace capability. It starts disabled and
-does not replace Project archive, trash, restore, or purge. Read its policy with
-`GET /api/v1/workspaces/{workspace_id}/project-lifecycle`; Workspace owners and
-administrators update it with revision headers and
-`PATCH /api/v1/workspaces/{workspace_id}/project-lifecycle`:
-
-```json
-{"enabled":true}
-```
-
-When enabled, `GET`/`POST
-/api/v1/workspaces/{workspace_id}/project-states` reads or appends to the
-maximum-100 custom-label catalog. `PATCH` and `DELETE
-/api/v1/project-states/{state_id}` rename, restore with `{"archived":false}`,
-or archive a state; `POST /api/v1/project-states/{state_id}/move` uses neighbour
-anchors and an expected revision. Labels are 1–80 characters and have no
-required defaults or semantic categories.
-
-An in-use state cannot be archived alone. Move its active Projects atomically
-and archive it with:
-
-```http
-POST /api/v1/project-states/{state_id}/archive-and-replace
-If-Match: "4"
-Idempotency-Key: <opaque-client-key>
-
-{"replacement_state_id":"<active-state-id>"}
-```
-
-Set or clear a Project's state through the normal revision-checked Project
-update with `{"project_state_id":"<active-state-id>"}` or
-`{"project_state_id":null}`. Disabling the capability preserves the catalog
-and existing selections, but refuses catalog/selection mutations and clients
-hide the selector until it is enabled again.
-
-## Archive a Project
-
-```http
-DELETE /api/v1/projects/{project_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-If-Match: "4"
-Idempotency-Key: <opaque-client-key>
-```
-
-Archives the Project and returns `204`. Supply the Project revision most
-recently returned in its `ETag`; stale revisions return `409`. Retrying the
-same request with the same idempotency key replays the original result.
-
-## Move a Project
-
-Move a Project between its current neighbours using opaque Project IDs. The
-manual order is shared by the Workspace: one member's move changes the list
-for every other member. The server owns the fractional rank, so clients must
-not send a position or rank.
+Reorder with neighbour anchors. The order is shared by the whole Workspace and the server owns the
+rank:
 
 ```http
 POST /api/v1/projects/{project_id}/move HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"after_id":"<preceding-project-id>","before_id":"<following-project-id>","expected_revision":4}
+{"after_id": "<preceding-project-id>", "before_id": "<following-project-id>", "expected_revision": 4}
 ```
 
-Either anchor may be `null` to place the Project at an end. With both anchors
-`null`, the server places it at the head of a non-empty collection. The
-response is `200` with the moved Project and its new `ETag`. A stale
-`expected_revision` returns `409 revision_conflict` and a missing, archived,
-or foreign-workspace anchor returns `409 anchor_not_found`; both `409`
-responses carry the current Project and `ETag` so a client can re-anchor
-without a separate read. Anchors in reverse order return `422
-invalid_anchors`. Retrying the same request with the same `Idempotency-Key`
-replays the original result.
+Either anchor can be `null` to place the Project at an end. A stale revision returns
+`409 revision_conflict`, an unknown or archived anchor `409 anchor_not_found` (both include the
+current Project so you can retry), and reversed anchors `422 invalid_anchors`.
 
-## Manage Project members and visibility
+## Lifecycle states
 
-Project visibility is `workspace`, `private`, or `public`. Workspace Projects
-follow normal Workspace capabilities. Private Projects are returned only to
-their explicit Project members, Project owner, and Workspace owners/admins;
-denied Projects and their Tasks, Documents, attachments, search/reference
-results, My Work entries, and Inbox items are omitted or use the same `404` as
-an absent resource. Public affects only the sanitized anonymous status view
-described below.
+Project states are an optional Workspace capability, off by default, separate from archive and trash.
 
-List the actual Project roster, owner first, in pages of at most 100:
+- `GET` and `PATCH /api/v1/workspaces/{workspace_id}/project-lifecycle` read and set
+  `{"enabled": true}`. Updating needs an owner or admin.
+- `GET` and `POST …/project-states` list and append custom states (up to 100, labels 1–80
+  characters).
+- `PATCH` and `DELETE /api/v1/project-states/{state_id}` rename, restore (`{"archived": false}`) or
+  archive one. `POST …/move` reorders with anchors.
+- A state in use can't be archived alone. `POST /api/v1/project-states/{state_id}/archive-and-replace`
+  with `{"replacement_state_id": "<id>"}` moves its Projects and archives it.
+- Set or clear a Project's state with `project_state_id` in the Project update.
 
-```http
-GET /api/v1/projects/{project_id}/members?limit=50 HTTP/1.1
-```
+Disabling the capability keeps states and selections but blocks changes to them.
 
-The response includes `items`, `next_cursor`, `has_more`, and exact
-`total_count`. Each member has `actor_id`, `display_name`, a `manager`,
-`contributor`, or `viewer` role, `is_owner`, and a revision. Project managers
-and Workspace owners/admins may add an active Workspace Actor:
+## Members and visibility
+
+Visibility is `workspace`, `private` or `public`.
+
+- **Workspace:** anyone with Workspace access.
+- **Private:** only Project members, the Project owner and Workspace owners and admins. Hidden
+  Projects and their Tasks, Documents, attachments, search results, My Work and Inbox items are
+  omitted or return `404`.
+- **Public:** only adds the anonymous status page below.
+
+`GET /api/v1/projects/{project_id}/members?limit=50` lists the roster, owner first, with
+`total_count`. Members have `actor_id`, `display_name`, `role` (`manager`, `contributor` or
+`viewer`), `is_owner` and a revision. Project managers and Workspace owners and admins manage it:
 
 ```http
 POST /api/v1/projects/{project_id}/members HTTP/1.1
@@ -284,128 +158,46 @@ X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"actor_id":"<active-workspace-actor-id>","role":"contributor"}
+{"actor_id": "<active-workspace-actor-id>", "role": "contributor"}
 ```
 
-Change a non-owner role with `PATCH
-/api/v1/projects/{project_id}/members/{actor_id}` and `If-Match`, or remove it
-with `DELETE` and the same revision header. The current owner remains a manager
-and cannot be demoted or removed before ownership is transferred. These
-operations change only Project access; they never create or remove Workspace
-membership.
+`PATCH` and `DELETE /api/v1/projects/{project_id}/members/{actor_id}` with `If-Match` change or
+remove a member. The owner stays a manager until ownership is transferred, and these operations never
+change Workspace membership. Someone invited to the Workspace has no Project access until a manager
+adds them.
 
-In the web app, Project settings lists active Workspace members you can add to
-the Project. Workspace owners and admins can also send a Workspace invitation
-from this page. An invited person receives no Project access until they accept
-the invitation and a Project manager adds them with a Project role.
+Switch access with `{"visibility": "private"}` in a Project update. Project responses include
+`owner_actor_id`, `visibility`, `public_id` and `permissions` (`can_manage_members`, `can_publish`);
+use the permissions rather than guessing from a role. To transfer ownership, send
+`{"owner_actor_id": "<active-workspace-actor-id>"}`. The new owner becomes a manager.
 
-Project responses expose `permissions.can_manage_members`. A manager can use
-the revisioned Project update to switch between Workspace and private access:
+### Public status page
 
-```json
-{"visibility":"private"}
-```
-
-## Publish a read-only Project status
-
-Every Project response identifies its current `owner_actor_id`, its `workspace`,
-`private`, or `public` visibility, nullable opaque `public_id`, and explicit
-`permissions.can_publish` and `permissions.can_manage_members`. The creating
-owner is initially the Project lead;
-a later audited transfer may change this identifier. Only the current Project
-owner or a current Workspace owner/admin may publish or unpublish; clients
-must use the permission response rather than infer this from a locally cached
-role.
-
-Transfer ownership (and therefore the Project lead) with the same revisioned
-update. The current owner or a Workspace owner/admin may nominate an active
-Workspace member; the recipient becomes a Project manager atomically:
-
-```json
-{"owner_actor_id":"<active-workspace-actor-id>"}
-```
-
-Publish with the existing revisioned Project update:
+The Project owner or a Workspace owner or admin can publish a read-only status page:
 
 ```http
 PATCH /api/v1/projects/{project_id} HTTP/1.1
-Host: api.assign.so
 X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 If-Match: "4"
 Content-Type: application/json
 
-{"visibility":"public"}
+{"visibility": "public"}
 ```
 
-The returned `public_id` forms the app URL `/p/{public_id}` and the anonymous
-`GET /api/v1/public/projects/{public_id}` API read. The public representation
-contains the Project name, optional visual identity, updated time, and ordered
-workflow Status identifiers, labels, lifecycle types, optional icons/colors,
-positions, and aggregate non-archived Task counts. It does not
-expose the Workspace or owner, members, Task content, Documents, attachments,
-labels, milestones, revisions, or audit data. The route is anonymously
-rate-limited and returns `Cache-Control: no-store`.
+The returned `public_id` forms the page `/p/{public_id}` and the anonymous
+`GET /api/v1/public/projects/{public_id}`. That response has only the Project name, optional
+marker, update time, the workflow Statuses (label, type, icon, color, position) and the count of
+non-archived Tasks in each. It never exposes the Workspace, people, Task content, Documents, files,
+labels, Milestones or history, and it isn't cached.
 
-Unpublish with `{"visibility":"workspace"}`. Unpublish and archive revoke the
-opaque link immediately; publishing again creates a different link. Invalid,
-private, revoked, and archived links all return the same `404`.
+Set `{"visibility": "workspace"}` to unpublish. Unpublishing or archiving revokes the link, and
+publishing again makes a new one. An invalid, revoked, private or archived link returns `404`.
 
-## List Project Statuses
+## Statuses
 
-The authenticated Project representation includes
-`show_cancelled_column`. Project managers update that revisioned Board
-preference through the ordinary Project `PATCH` operation with
-`{"show_cancelled_column":true}`. It changes only Board presentation; it never
-changes Task resolution, All tasks history, Search, or direct-link access.
-
-## Read and update the completion policy
-
-Read the Project's completion defaults:
-
-```http
-GET /api/v1/projects/{project_id}/completion-policy HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-The response carries an `ETag`. A Project without a stored policy returns the
-server-selected active and done defaults with `ETag: "0"`; an applicable review
-Status is included when available, while review remains disabled.
-
-Project managers replace the complete policy with the observed ETag:
-
-```http
-PUT /api/v1/projects/{project_id}/completion-policy HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-If-Match: "0"
-Idempotency-Key: <opaque-client-key>
-Content-Type: application/json
-
-{
-  "requires_review": true,
-  "default_active_status_id": "<active-status-id>",
-  "default_review_status_id": "<review-status-id>",
-  "default_done_status_id": "<done-status-id>"
-}
-```
-
-Every selected Status must be active and applicable to the Project. The
-active, review, and done selections currently use the `in_progress`,
-`in_review`, and `done` categories respectively. Disabling review retains the
-review selection. A stale ETag returns `409 revision_conflict`; an invalid or
-archived Status returns `422 project_completion_policy_invalid`.
-
-```http
-GET /api/v1/projects/{project_id}/statuses?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-Returns one workflow-ordered page combining the Project's own Statuses and
-the Workspace-wide Statuses applicable to it:
+`GET /api/v1/projects/{project_id}/statuses?limit=50` returns the Project's own Statuses and the
+applicable [Workspace-wide ones](./workspaces#workspace-wide-statuses) in workflow order.
 
 ```json
 {
@@ -433,130 +225,101 @@ the Workspace-wide Statuses applicable to it:
 }
 ```
 
-`project_id` is `null` for a Workspace-wide Status applicable to every
-Project. `category` is the compatible visual grouping. `status_type` is the
-canonical lifecycle meaning: `backlog`, `unstarted`, `started`, `completed`,
-or `cancelled`. Completed and cancelled types resolve Tasks regardless of the
-custom label. `icon` and `color` are optional presentation overrides, and
-`marks_task_resolved` is derived. Active lists omit archived Statuses; an
-individual archived Status remains readable so a historical Task can retain
-its workflow label.
+`project_id` is `null` for a Workspace-wide Status. `category` is the visual grouping (`backlog`,
+`todo`, `in_progress`, `in_review`, `done`). `status_type` is the lifecycle meaning: `backlog`,
+`unstarted`, `started`, `completed` or `cancelled`. Completed and cancelled resolve Tasks whatever
+the label. `marks_task_resolved` is derived. Lists omit archived Statuses, but one can still be read
+by ID so an old Task keeps its label.
 
-## Create a Project Status
+### Create
 
 ```http
 POST /api/v1/projects/{project_id}/statuses HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"label":"Ready for review","category":"in_review","status_type":"started","icon":"circle-dot","color":"#7C3AED","position":5}
+{"label": "Ready for review", "category": "in_review", "status_type": "started", "color": "#7C3AED", "position": 5}
 ```
 
-Creates a Project-scoped Status and returns `201` with the Status and its
-`ETag`. The caller needs `work:write` access in the Workspace. The server
-validates the lifecycle category and position; repeating the same idempotency
-key replays the original response.
+Returns `201` with the Status and its `ETag`. It needs work-write access.
 
-## Archive, restore, and reorder Statuses
+### Update, archive, restore and reorder
 
-Read one active or archived Status when rendering a historical Task:
+- `GET /api/v1/statuses/{status_id}` reads one, archived or not.
+- `PATCH /api/v1/statuses/{status_id}` with `If-Match`, `X-CSRF-Token` and `Idempotency-Key` changes
+  the label, `status_type`, `category`, `icon` or `color`. Restore with `{"archived": false}`.
+- `DELETE /api/v1/statuses/{status_id}` with `If-Match` archives it. It returns `409 status_in_use`
+  while non-archived Tasks use it and `409 required_status` if it's the last active `todo`,
+  `in_progress` or `done` Status in its workflow.
+- `POST /api/v1/statuses/{status_id}/archive-and-replace` with `{"replacement_status_id": "<id>"}`
+  moves every non-archived Task to the replacement and archives the source in one step. The
+  replacement must be active, different and in the same workflow, or you get
+  `409 replacement_status_unavailable`. Archived Tasks keep their Status.
+- `GET /api/v1/statuses/{status_id}/lifecycle-preview?status_type=completed` reports how many Tasks a
+  type change affects. Changes run synchronously up to 1,000 Tasks and are rejected above that.
+  A successful change updates all affected Tasks together.
+- `POST /api/v1/statuses/{status_id}/move` reorders with neighbour anchors, like Projects:
+  `{"after_id", "before_id", "expected_revision"}`. Anchors must be in the same workflow or you get
+  `409 anchor_not_found`, and bad order returns `422 invalid_anchors`.
+
+## Completion policy
+
+The completion policy sets the Statuses Tasks move to when work starts, goes into review and
+finishes.
+
+`GET /api/v1/projects/{project_id}/completion-policy` returns it with an `ETag`. A Project with no
+saved policy returns defaults with `ETag: "0"` and review disabled. Project managers replace it:
 
 ```http
-GET /api/v1/statuses/{status_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-The response includes the Status and its current `ETag`. A Status outside the
-caller's Workspace is indistinguishable from an absent one (`404`).
-
-Archive a Status with its current `ETag`:
-
-```http
-DELETE /api/v1/statuses/{status_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+PUT /api/v1/projects/{project_id}/completion-policy HTTP/1.1
 X-CSRF-Token: <csrf-token>
-If-Match: "4"
-Idempotency-Key: <opaque-client-key>
-```
-
-Archival is reversible and never repoints Tasks. It returns `409 status_in_use`
-when non-archived Tasks still reference the Status and `409 required_status`
-when it would remove the final active `todo`, `in_progress`, or `done` Status
-from its Workspace-wide or Project-specific workflow. Restore an archived
-Status with the normal revisioned update:
-
-```json
-{"archived":false}
-```
-
-When active Tasks must move with the retiring Status, use the deliberate
-replacement command instead. It checks the source revision, moves every
-non-archived Task to the active replacement in the same Workspace-wide or
-Project-specific workflow, and then archives the source in one transaction:
-
-```http
-POST /api/v1/statuses/{status_id}/archive-and-replace HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-If-Match: "4"
+If-Match: "0"
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"replacement_status_id":"<active-status-id>"}
+{
+  "requires_review": true,
+  "default_active_status_id": "<active-status-id>",
+  "default_review_status_id": "<review-status-id>",
+  "default_done_status_id": "<done-status-id>"
+}
 ```
 
-The replacement cannot be the source, archived, absent, or in another
-workflow scope; those cases return `409 replacement_status_unavailable`.
-The required-category safeguard still applies, so a replacement cannot remove
-the final active `todo`, `in_progress`, or `done` Status. Archived Tasks retain
-their existing historical Status.
+Each Status must be active and apply to the Project, in the `in_progress`, `in_review` and `done`
+categories respectively. Turning review off keeps the review selection. A stale ETag returns
+`409 revision_conflict` and an invalid Status `422 project_completion_policy_invalid`.
 
-Before changing a Status lifecycle type, request the authoritative impact:
+## Milestones
 
-```http
-GET /api/v1/statuses/{status_id}/lifecycle-preview?status_type=completed HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
+`GET` and `POST /api/v1/projects/{project_id}/milestones` list and create Milestones. A Milestone has
+a name, optional description, an optional `due_on` date and a status of `planned`, `active`,
+`completed` or `cancelled`. `PATCH /api/v1/milestones/{milestone_id}` with `If-Match` updates one,
+and `DELETE` archives it reversibly. Progress is computed from linked Tasks.
 
-The preview reports the current and target type, affected Task count, the
-1,000-Task synchronous migration limit, and whether the change can run
-synchronously. Update a Status label, lifecycle type, compatible category,
-icon, or color with `PATCH /api/v1/statuses/{status_id}` and its current
-`If-Match`, `X-CSRF-Token`, and `Idempotency-Key` headers. A lifecycle change
-above that limit is rejected rather than partially applied. A successful
-change updates every affected Task atomically and returns the revised Status
-and a new `ETag`.
+### Milestone references <Badge type="warning" text="Awaiting deployment" />
 
-Move a Status using neighbour anchors, not numeric positions:
+Milestone responses add optional nullable `milestone_number` and `code`, such as `"1"` and `"FRS-M1"`. The number is a decimal string; keep it as text rather than converting it to a JavaScript number. References remain stable when you rename, reorder, archive or restore a Milestone. During backfill or when reading older responses, either field may be null or absent. Keep using the returned UUID `id` for existing endpoint selectors and Task membership; a code does not grant access. If creation exhausts a Project's signed-64-bit number space, it returns HTTP 409 with `milestone_reference_exhausted` and creates nothing.
 
-```http
-POST /api/v1/statuses/{status_id}/move HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-Idempotency-Key: <opaque-client-key>
-Content-Type: application/json
+### Resolve a Milestone code <Badge type="warning" text="Awaiting deployment" />
 
-{"after_id":"<preceding-status-id>","before_id":"<following-status-id>","expected_revision":4}
-```
+Use `GET /api/v1/projects/{project_id}/milestones/by-code/{milestone_code}` with the Project UUID and a code such as `FRS-M1`. The response contains the canonical Milestone UUID, reference fields, current Task-derived progress and ETag. ASCII casing may vary; canonical output is uppercase. No whitespace, signs, leading zeros or values above `9223372036854775807` are accepted. Malformed codes return 400 `invalid_milestone_code`; missing, inaccessible and wrong-Project codes return 404. Browser sessions and authorized native access tokens use their existing read permissions. Existing UUID endpoints remain valid, including for archived Milestones. The TypeScript and PHP Project API clients provide `getMilestoneByCode`.
 
-Either anchor may be `null` to place the Status at an end. Anchors must belong
-to the same Workspace-wide or Project-specific workflow; a stale, absent, or
-cross-scope anchor returns `409 anchor_not_found`. Invalid anchor order returns
-`422 invalid_anchors`.
+### Milestone list progress <Badge type="warning" text="Awaiting deployment" />
 
-## Manage milestones
+Each item from `GET /api/v1/projects/{project_id}/milestones` includes `progress` with
+`total_tasks`, `completed_tasks`, `incomplete_tasks` and `tasks_by_category`. Counts cover the
+milestone's Tasks independently of which Task pages you have loaded; archived, trashed and purged
+Tasks are excluded. The existing `done` category determines completed Tasks. Use these values
+instead of counting a partial Task list. Treat absent progress as unavailable, not zero.
 
-`GET` and `POST /api/v1/projects/{project_id}/milestones` list and create
-Project milestones. A milestone has a name, optional plain-text description,
-optional date-only `due_on`, and a `planned`, `active`, `completed`, or
-`cancelled` status. `PATCH /api/v1/milestones/{milestone_id}` updates it with
-`If-Match`; `DELETE` archives it reversibly. Progress is computed from linked
-Tasks rather than stored on the milestone.
+### CLI bearer Milestone reads <Badge type="warning" text="Awaiting deployment" />
+
+API/developer bearer credentials with the existing read scope use `GET /api/v1/cli/milestones/{milestone_code}`. The code's Project key resolves within the token's Workspace under normal Project access, then returns the canonical Milestone/progress/ETag. Missing and inaccessible resources return 404; malformed or overflowing codes return 400 `invalid_milestone_code`. ASCII casing normalizes and numbers remain decimal text. Browser/native endpoints and UUID operations retain their credential rules. Generated TypeScript/PHP CLI API clients provide `getCliMilestone`.
+
+
+## Paid public publishing <Badge type="warning" text="Awaiting deployment" />
+
+Publishing public Documents or Projects requires a paid entitlement in that Workspace. Being a paid member of another Workspace does not qualify. A denied publish returns `403 paid_workspace_required`; your content stays unchanged and authorized users can still unpublish.
+
+Public links and new public Document attachment preview/download requests return the usual unavailable result while the entitlement is absent. Stored content and visibility remain intact, so a still-published, unarchived link can become available again when the entitlement returns. Unpublishing or archiving keeps its existing revocation rules.

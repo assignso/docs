@@ -19,6 +19,11 @@ them. If a change is rejected, Assign restores the value and tells you why.
 - **Labels** accept several values, and you can create a missing label from the search box.
 - **Project**: moving a Task to another Project gives it a new URL in that Project.
 
+### Manage label colors <Badge type="warning" text="Awaiting deployment" />
+
+Choose **Manage label colors** in a Task's label picker to open its Project's Task labels settings.
+During Task creation, this link follows the Project you select.
+
 ## Description
 
 The description uses the full [Assign editor](./editor), so several people can edit it at once.
@@ -29,7 +34,7 @@ and creates a new revision, and the text it replaces stays in history.
 
 Comments are listed under the description. The **Post** button appears once you start writing.
 You can edit, delete and react to Comments. Reactions from other people appear live. Deleting a
-Comment removes it from the thread, and links to later Comments keep their numbers.
+Comment clears its text and leaves a deleted entry. Links to later Comments keep their numbers.
 
 A Comment link looks like `…/tasks/WEB-42?comment=3`. Opening it scrolls to that Comment and
 highlights it. Comments posted through an AI assistant show who posted them and through which
@@ -136,3 +141,22 @@ If a Task is created but its initial labels cannot be saved, Assign opens the Ta
 <Badge type="warning" text="Awaiting deployment" />
 
 Changing a Task’s Project keeps its content visible while the move completes, then opens its new Task address. If the move fails, Assign keeps the original page and shows the error. Your selected tab is preserved after a successful move.
+
+## Browse older Comments <Badge type="warning" text="Awaiting deployment" />
+
+Comments open at the newest 100 entries, including places left by deleted Comments.
+Use **Previous** or **Next** to browse history. The range below the thread shows
+which entries are displayed, and your draft stays in place while you browse.
+
+Opening a Comment link loads the entries around that Comment and focuses it.
+Deleted Comments keep their place, so later links keep the same number.
+You can browse history on an archived or trashed Task when you still have access.
+Printing includes the displayed entries and their range.
+
+
+## Linked development <Badge type="warning" text="Awaiting deployment" />
+
+Linked GitHub, GitLab and Bitbucket items appear above Attachments on the Task page.
+They stay visible when you switch between Comments, Activity and Suggestions.
+Select the **Linked development** heading to collapse or expand its items, just like
+Attachments and Related tasks. Activity shows the history of development changes.

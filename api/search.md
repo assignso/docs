@@ -1,30 +1,26 @@
+---
+description: Search Projects, Tasks, Documents, Comments and People in a Workspace, with filters and pagination.
+---
+
 # Search
 
-`GET /api/v1/workspaces/{workspace_id}/search` searches Project, Task,
-Document, Comment, and active workspace People in the caller's current
-Workspace. Browser sessions, scoped personal API tokens, and registered
-developer-client credentials are accepted. The Workspace boundary and read
-authorization are enforced by the server, so a result never confirms the
-existence of an inaccessible resource.
+`GET /api/v1/workspaces/{workspace_id}/search` searches Projects, Tasks, Documents, Comments and
+active People in the current Workspace. It accepts browser sessions, scoped personal API tokens and
+developer-client credentials. Results never reveal that an inaccessible resource exists.
 
 ## Request
 
-The `q` query parameter is required. It accepts 2–200 characters after leading
-and trailing whitespace are ignored. The operation supports the standard
-bounded pagination parameters `limit` (1–50) and `cursor`, plus three optional
-filters:
+`q` is required, 2–200 characters after trimming. Other parameters:
 
-- `project_id` limits results to one Project.
-- `resource_type` is `project`, `task`, `document`, `comment`, or `person`.
-  Person results include the workspace role as `subtitle`, never email.
-- `include_archived=true` explicitly includes archived Projects, Tasks,
-  Documents, and Comments. Archived resources are excluded by default; active
-  People are unaffected.
-
-For example:
+| Parameter | Effect |
+| --- | --- |
+| `limit`, `cursor` | Page size 1–50 and the cursor from the previous page. A cursor works only with the same Workspace, query and filters. |
+| `project_id` | Limit results to one Project. |
+| `resource_type` | `project`, `task`, `document`, `comment` or `person`. People show their Workspace role as `subtitle`, never email. |
+| `include_archived` | `true` includes archived Projects, Tasks, Documents and Comments. Excluded by default. |
 
 ```http
-GET /api/v1/workspaces/018f0d5a-ef50-7fa3-8c11-2ddc6b30dc11/search?q=launch&resource_type=task&include_archived=true&limit=20
+GET /api/v1/workspaces/018f0d5a-ef50-7fa3-8c11-2ddc6b30dc11/search?q=launch&resource_type=task&limit=20
 ```
 
 ## Response
@@ -45,38 +41,22 @@ GET /api/v1/workspaces/018f0d5a-ef50-7fa3-8c11-2ddc6b30dc11/search?q=launch&reso
 }
 ```
 
-`project_id` is `null` for a Project result. Use `next_cursor` only with the
-same Workspace, query, and filters that produced it.
+`project_id` is `null` for a Project. Results are bounded and have no score or exact total.
 
-## Current scope
+Ranking prefers exact IDs and titles, then title prefixes, full-text relevance, typo-tolerant matches
+and recency. Documents and Comments also match their text, and People match display names. Snippets
+are plain text of up to 240 characters, centered on a match where possible. The index catches up in
+the background, and Search withholds rows whose source is no longer available.
 
-Results are bounded and do not return a score or exact total. Content results
-are backed by the search projection; People are a live active-membership
-projection, so removed members do not remain discoverable through search.
+If a request is rate-limited or slow, you get `503 search_unavailable`. Wait for the `Retry-After`
+delay instead of retrying immediately.
 
-Exact immutable identifiers and exact titles rank first, followed by title
-prefixes, weighted full-text relevance, typo-tolerant matches, and recency.
-Documents and Comments use their authorized extracted text as well as titles;
-People match active members by display name and return only their Workspace
-role. Result snippets are plain text, centered near a matching term when
-possible, stripped of control characters, and bounded to 240 Unicode
-characters.
+## Ask Discuss about results <Badge type="warning" text="Upcoming" />
 
-Projection rebuilds replay the durable Workspace event log into an isolated
-replacement generation before activation. Callers keep reading the prior
-generation until the replacement catches up, so rebuilds do not create a
-partially empty index. Search also has a dedicated request rate limit and a
-short database query deadline. When workload protection trips, retry after the
-`Retry-After` delay from `503 search_unavailable`; do not loop immediately.
+Search stays deterministic, including on Enter. **Inspect work-result context** shows your query, the
+Workspace scope and the page version, and **Ask Discuss about work results** opens Discuss with a
+removable context chip. Nothing is sent, and no AI credits are used, until you send a message. People
+aren't included.
 
-## Inspect and ask Discuss <Badge type="warning" text="Upcoming" />
-
-Search remains deterministic, including Enter. **Inspect work-result context** shows your query,
-Workspace work scope and the returned page version. **Ask Discuss about work results** opens the
-Discuss page with a removable context chip. Write a message and explicitly Send to continue; opening
-Discuss does not use AI credits. People remain searchable and are excluded from this work handoff.
-
-The first unfiltered, non-archived page with `limit=20` may include `result_version`. Other filters,
-limits and later pages omit it. It identifies the observed work results, not exhaustive coverage or
-current entity content. Search withholds stale index rows when the source is no longer available in
-its indexed scope. Normal entity reads remain authoritative.
+The first unfiltered, non-archived page at `limit=20` may include `result_version`, identifying the
+observed results, not complete coverage or current content. Normal reads remain authoritative.

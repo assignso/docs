@@ -1,83 +1,46 @@
+---
+description: Read the access-filtered activity feeds for a Workspace, Project, Task or person, with grouping and provenance.
+---
+
 # Activity
 
-Activity is Assign's access-filtered record of meaningful changes to work. It
-is distinct from the security and compliance audit log: sign-in, identity,
-restricted, and administrative membership-change events are not included.
+Activity is the access-filtered record of meaningful changes to work. It's separate from the security
+audit log, so sign-ins, identity changes and membership administration don't appear.
 
 ## What appears
 
-The Workspace, Project, and person feeds show changes that affect progress,
-ownership, commitments, or shared understanding: a Task created, completed, or
-reopened; a changed status, assignee, due date, priority, or Milestone; a
-blocking dependency added or removed; a new comment; a saved Document change;
-and Project or Milestone lifecycle changes. They leave out personal
-preferences (following or muting a Task), ordinary emoji reactions, ordinary
-title corrections, workspace configuration, and integration or Agent execution
-detail. Ordinary property changes stay available in the item's own history:
-the Task endpoint returns them in addition to the feed's entries.
+Feeds show changes that affect progress, ownership, commitments or shared understanding: Tasks
+created, completed or reopened; changes to status, assignee, due date, priority or Milestone;
+dependencies; new Comments; saved Document changes; and Project and Milestone lifecycle. They leave
+out personal preferences (follow or mute), emoji reactions, title corrections, Workspace
+configuration and integration or Agent execution detail. A Task's own history includes the ordinary
+property changes too.
 
-Activity does not decide notifications. Whether someone is notified about a
-change is governed separately by their Inbox settings.
+Activity doesn't decide notifications. Those follow each person's [Inbox](./inbox) settings.
 
-## Grouped entries
+## Grouping
 
-One action produces one entry. A bulk change, such as moving 18 Tasks to a
-Milestone, is a single item whose `count` is 18 and whose `affected` array
-lists up to 25 of the resources it touched. Consecutive saves of one Document,
-comments on one Task, and routine priority, due-date or Milestone edits by one
-person collapse into a bounded editing session while nobody else acts on the
-resource. The fallback session ends after 90 seconds idle, after five minutes,
-or at a UTC date boundary. Routine Task sessions report only the lasting
-oldest-to-newest differences and disappear when all three properties return to
-their starting values. Grouping never merges different people. Workflow and
-lifecycle changes remain separate, so a Task that went In progress, Done, then
-Reopened keeps three entries. Every resource listed in `affected` is one the
-caller can currently read.
+One action is one entry. A bulk change such as moving 18 Tasks to a Milestone is a single item with
+`count` 18 and an `affected` array of up to 25 resources you can read.
 
-## Read Workspace activity
+Consecutive saves of a Document, Comments on a Task and routine priority, due-date or Milestone edits
+by one person collapse into one session while nobody else acts on the resource. A session ends after
+90 seconds idle, five minutes or a UTC date change. Task sessions show only the lasting differences
+and vanish if the values return to where they started. Grouping never merges different people, and
+workflow changes stay separate, so In progress, Done and Reopened are three entries.
 
-```http
-GET /api/v1/workspaces/{workspace_id}/activity?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
+## Read
 
-## Read Task activity
+| Feed | Request |
+| --- | --- |
+| Workspace | `GET /api/v1/workspaces/{workspace_id}/activity?limit=50` |
+| Project | `GET /api/v1/projects/{project_id}/activity?limit=50` (a Project you can't read returns `404`) |
+| Task | `GET /api/v1/tasks/{task_id}/activity?limit=50` (includes Comment and relation activity) |
+| Person | `GET /api/v1/workspaces/{workspace_id}/people/{username}/activity?limit=50` (a current or former username resolves to the same user) |
 
-```http
-GET /api/v1/tasks/{task_id}/activity?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-## Read Project activity
-
-```http
-GET /api/v1/projects/{project_id}/activity?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-This returns the same admitted entries as the Workspace feed, limited to one
-Project: its own changes plus its Tasks, comments, Documents, and Milestones.
-Project read access is checked on every request, so a Project the caller
-cannot read answers `404` rather than an empty page.
-
-## Read a person's activity
-
-```http
-GET /api/v1/workspaces/{workspace_id}/people/{username}/activity?limit=50 HTTP/1.1
-```
-
-This returns activity authored by that active workspace member, using the
-same safe collaboration projection and cursor behavior. A current or former
-username resolves to the same immutable User; legacy UUID references remain
-accepted only for link migration.
-
-All endpoints return newest-first opaque cursor pages. `limit` defaults to
-50 and accepts 1 through 100. A cursor is scoped to the resource it came from.
-The Task feed includes the Task's comment and relation activity as well as its
-own updates.
+Feeds are newest first with opaque cursors that only work on the feed they came from. `limit` accepts
+1–100 and defaults to 50. It bounds the events examined, so a page can hold fewer items once they're
+grouped. Rely on `has_more`.
 
 ```json
 {
@@ -100,39 +63,36 @@ own updates.
 }
 ```
 
-`limit` bounds the events examined for a page, so a page can hold fewer items
-than `limit` once events are grouped; `has_more` alone says whether more
-history exists. `count`, `operation_id`, and `affected` are additive: a
-missing `count` means 1 and a missing `affected` means none. The item's `id`
-and `occurred_at` are those of its newest event.
-
-`action` is a stable localization key, not a sentence. `summary` contains
-only bounded scalar metadata; it never returns comment text, Document content,
-or other free-form content. A grouped routine Task session can set
-`group_kind` to `session`, mark `priority_changed`, `due_changed`, or
-`milestone_changed`, and include their scalar previous/current values; explicit
-JSON `null` means no value while a missing key means historical evidence was
-unavailable. Visibility is evaluated at read time using current
-access, so removed access immediately removes affected activity from reads.
-Workspace feeds apply private-Project access before pagination, so inaccessible
-events do not affect returned items, `has_more`, or cursors.
-
-`provenance` is `null` for a direct Assign browser or first-party API action.
-Otherwise it identifies the bounded, presentation-safe invocation channel:
-`delegated_connection`, `mcp`, `automation`, or `external_actor`, plus a safe
-client/provider name. It supplements rather than replaces `actor`; for example,
-an action by Ada through Codex remains attributed to Ada and is presented as
-“Performed via MCP by Codex.” Credentials, prompts, tool arguments, and private
-provider metadata are never returned.
+- `id` and `occurred_at` belong to the item's newest event. A missing `count` means 1 and a missing
+  `affected` means none.
+- `action` is a stable localization key, not a sentence. `summary` holds bounded scalar metadata and
+  never Comment text or Document content. Routine Task sessions set `group_kind` to `session` and can
+  include `priority_changed`, `due_changed` and `milestone_changed` with previous and current values.
+  An explicit `null` means no value, and a missing key means the history isn't available.
+- Access is checked on read, so removing access removes the activity, and private Projects are
+  filtered before pagination.
+- `provenance` is `null` for direct Assign or first-party API actions. Otherwise it names the channel
+  (`delegated_connection`, `mcp`, `automation` or `external_actor`) and a safe client name. It adds to
+  `actor` rather than replacing it, so Ada acting through Codex stays Ada, shown as "Performed via
+  MCP by Codex".
 
 ### Task development history <Badge type="warning" text="Upcoming" />
 
-Task history can return `task.development_updated` for a linked GitHub, GitLab or Bitbucket item.
-Its bounded scalar summary can include `provider`, `rich_entity_id`, `entity_type`,
-`human_identifier`, `title`, `url` and `provider_state`. The timestamp records Assign's observation;
-it does not establish when the original provider action occurred. The actor may be absent, with
-`external_actor` provenance naming the provider. Repeated observations of the same state are omitted.
-These entries appear in Task history, while delivery and retry events remain excluded.
+Task history can include `task.development_updated` for a linked GitHub, GitLab or Bitbucket item,
+with `provider`, `rich_entity_id`, `entity_type`, `human_identifier`, `title`, `url` and
+`provider_state`. The time is when Assign observed it, not when it happened at the provider, and the
+actor can be absent, with `external_actor` provenance. Repeated observations of the same state are
+omitted.
 
-Task history also includes `attachment.linked`. A boolean `description_changed` flag identifies
-description edits without returning the description itself. Existing paging and access rules apply.
+Task history also includes `attachment.linked`, and a boolean `description_changed` marks description
+edits without returning the text.
+
+## Read one day <Badge type="warning" text="Awaiting deployment" />
+
+For Workspace activity, pass `day=2026-09-18&time_zone=Europe%2FBudapest` to read that calendar day.
+Supply both parameters. The timezone determines midnight boundaries, including daylight-saving changes.
+Follow `next_cursor` with the same parameters until `has_more` is false. A cursor from another day
+or timezone interval is invalid. The existing 90-day retention limit still applies.
+
+The Day page retrieves the selected day's activity automatically. Its date follows your Account
+timezone, and an empty result appears only after retrieval completes.

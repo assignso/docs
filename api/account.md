@@ -1,10 +1,13 @@
-# Account and Workspaces
+---
+description: The current user's profile, sessions, personal API tokens, linked identities and connected MCP clients.
+---
 
-These operations require an authenticated browser session (see
-[Browser authentication](authentication.md)) and follow the shared
-[API conventions](conventions.md).
+# Account
 
-## Read the current user and Workspace
+These operations use an authenticated browser session (see [Authentication](./authentication)) and
+follow the [API conventions](./conventions). Writes need the `X-CSRF-Token` header.
+
+## Current user
 
 ```http
 GET /api/v1/me HTTP/1.1
@@ -12,8 +15,8 @@ Host: api.assign.so
 Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 ```
 
-Returns the authenticated user and, when selected, the session's current
-Workspace, the caller's Actor within it, and their role:
+Returns the user's profile and display preferences plus, once a Workspace is selected, the session's
+`workspace`, your `actor_id`, your `role` and an `authorization_revision`:
 
 ```json
 {
@@ -21,199 +24,96 @@ Workspace, the caller's Actor within it, and their role:
   "email": "jane@example.com",
   "display_name": "Jane Doe",
   "username": "jane",
-  "profile_picture_url": "https://cdn.example.com/jane.jpg",
+  "profile_picture_url": null,
   "avatar_initials": null,
   "avatar_color": "indigo",
   "title": "Engineering manager",
-  "phone": "+36 30 123 4567",
-  "bio": "Building calm collaboration tools.",
-  "profile_status": "Heads-down until 15:00",
   "totp_enabled": true,
   "name_display": "full_name",
   "first_day_of_week": "monday",
-  "first_day_of_week_inherited": false,
-  "editor_controls": "contextual",
   "timezone": "Europe/Budapest",
-  "timezone_inherited": false,
   "locale": "en-GB",
-  "locale_inherited": false,
   "date_format": "day_month_year",
   "time_format": "twenty_four_hour",
   "number_format": "comma_decimal",
-  "workspace": {
-    "id": "<workspace-id>",
-    "name": "Acme",
-    "slug": "acme"
-  },
+  "workspace": { "id": "<workspace-id>", "name": "Acme", "slug": "acme" },
   "actor_id": "<actor-id>",
   "role": "member",
   "authorization_revision": "<opaque-revision>"
 }
 ```
 
-`role` is one of `owner`, `admin`, `member`, or `viewer`; see
-[Roles](workspaces.md#roles). To act in a different
-Workspace the caller belongs to, switch the session first — see
-[Switch the session's Workspace](authentication.md#switch-the-sessions-workspace).
-`authorization_revision` is an opaque cache-admission value for this exact Actor
-and Workspace. It changes when the Actor's visible private projection may change.
-Clients may compare it for equality before displaying persisted data, but must
-never infer permissions from it; every request remains server-authorized.
+- `role` is `owner`, `admin`, `member` or `viewer`. See [Roles](./workspaces#roles).
+- `authorization_revision` is an opaque value you can compare for equality to decide whether cached
+  data is still valid. Never infer permissions from it.
+- An account without a Workspace omits `workspace`, `actor_id`, `role` and `authorization_revision`.
+- The response also includes optional fields such as `phone`, `bio` and `profile_status`, plus
+  `*_inherited` flags (below). See the [OpenAPI document](/openapi.yaml) for the full schema.
 
-A newly registered account-only session has no selected Workspace. Its response
-contains the account and interface-preference fields shown above;
-`workspace`, `actor_id`, `role`, and `authorization_revision` are omitted until the first
-Workspace is created. The username is allocated from the full name during registration.
-Optional `profile_picture_url` and `title` values may be `null`.
-`avatar_initials` (1–2 characters, `null` derives letters from the full name)
-and `avatar_color` (a shared palette color such as `indigo` or `indigo-200`,
-the same vocabulary as label colors; a random family name at registration) drive the two-letter SVG avatar shown without a picture.
-`totp_enabled` is read-only and true only after an authenticator-app setup has
-been confirmed; clients use it to render the correct setup, recovery-code, or
-disable state and must still rely on the security endpoints for authorization.
-
-## Review Workspace plans
-
-`GET /api/v1/me/billing-plans` returns a cursor-paginated Account → Billing & plans
-overview with at most 100 active Workspace memberships per page. Each row contains the
-Workspace identity, the current user's relationship, that Workspace's
-independent plan and canonical lifecycle state, and whether the relationship
-may navigate to Workspace billing management. The response also reports
-whether another slot in the account's three-Free-Workspace allowance is available.
-
-This is a read-only overview, not an account subscription. It omits payment,
-invoice, tax, billing-contact, provider-customer, and entitlement detail and
-never becomes a cross-Workspace mutation boundary. Sensitive controls remain
-under Workspace Settings → Billing and require `workspace.billing.manage` plus
-recent authentication.
-
-## Synchronize Project shortcuts
-
-`GET /api/v1/workspaces/{workspace_id}/project-shortcuts` returns the current
-user's nine Project-shortcut slots for the session's selected Workspace. Each
-slot is either a Project UUID or `null`; a Project can occupy only one slot.
-The response includes `customized`, a positive `revision`, `updated_at`, and an
-`ETag`. When no custom value exists, the server creates a default from the first
-nine active Projects the user can read and reports `customized: false`.
-
-`PUT /api/v1/workspaces/{workspace_id}/project-shortcuts` replaces all nine
-slots. Send the previous response revision in `If-Match`, the browser CSRF
-token, and exactly nine UUID-or-null values:
-
-```http
-PUT /api/v1/workspaces/{workspace_id}/project-shortcuts HTTP/1.1
-X-CSRF-Token: <csrf-token>
-If-Match: "4"
-Content-Type: application/json
-
-{"slots":["<project-id>",null,null,null,null,null,null,null,null]}
-```
-
-The server rejects duplicate or malformed assignments, returns
-`409 revision_conflict` for a stale revision, and returns
-`422 project_unavailable` when a selected Project is archived or no longer
-readable. Reads remove inaccessible, archived, or deleted Projects before
-returning the current set, so every device receives the same authorized view.
-
-## Update the current profile
+## Update the profile
 
 ```http
 PATCH /api/v1/me HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
 If-Match: "3"
 Content-Type: application/json
 
 {"username": "jane_q", "title": "Staff engineer", "first_day_of_week": "sunday"}
 ```
 
-The request may contain one or more of `display_name`, `username`, `title`,
-`phone`, `bio`, `profile_status`, `name_display`, `first_day_of_week`,
-`editor_controls`, `avatar_initials`, `avatar_color`,
-`timezone`, `locale`, `date_format`, `time_format`, `number_format`, and the
-synchronized Voice preferences. Full names are 1–100 characters. Usernames are
-globally unique,
-lowercase, 3–30 characters, and use letters, numbers, underscores, or interior
-hyphens. A username may change, but every successfully claimed value remains
-reserved to the same account so old profile links cannot be transferred. The
-username cannot be cleared. An empty optional profile text value removes it.
-An empty `avatar_initials` clears the letters override; `avatar_color` always
-carries one of `slate`, `gray`, `zinc`, `neutral`, `stone`, `red`, `orange`,
-`amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`,
-`indigo`, `violet`, `purple`, `fuchsia`, `pink`, or `rose`, optionally pinned to
-one Tailwind step with a suffix (`-50`, `-100` … `-900`, `-950`). A bare name lets
-clients choose the rendered shade; a pinned value such as `amber-400` renders that
-exact shade.
-`name_display` is `username` or `full_name`, and username display requires a
-selected username. `first_day_of_week` is `sunday` or
-`monday`. `editor_controls` is `contextual` or `persistent` and changes only
-the formatting-control presentation across Document, Task-description, and
-Comment editors. `timezone` uses an IANA identifier and `locale` uses BCP 47.
-Phone is private, unverified profile metadata: it is not used for sign-in,
-MFA, recovery, SMS, or notification delivery.
+Send any of `display_name`, `username`, `title`, `phone`, `bio`, `profile_status`, `name_display`,
+`first_day_of_week`, `editor_controls`, `avatar_initials`, `avatar_color`, `timezone`, `locale`,
+`date_format`, `time_format` and `number_format`. `If-Match` carries the revision from the last
+`ETag`; a stale one returns `409 revision_conflict`. The response is the same body as `GET /me`.
 
-`timezone_inherited`, `locale_inherited`, and
-`first_day_of_week_inherited` explicitly select the current Workspace's
-corresponding default. Existing Accounts retain concrete preferences until a
-User enables inheritance. A `GET /me` response always returns the effective
-timezone, locale, and first day plus the inheritance flags, so presentation
-consumers do not need to fetch Workspace settings separately. Setting a flag
-false keeps the supplied concrete Account value.
+| Field | Rules |
+| --- | --- |
+| `display_name` | 1–100 characters. |
+| `username` | Unique, lowercase, 3–30 characters: letters, numbers, underscores and interior hyphens. It can change but can't be cleared. |
+| `name_display` | `username` or `full_name`. Username needs a username set. |
+| `first_day_of_week` | `sunday` or `monday`. |
+| `editor_controls` | `contextual` or `persistent`. |
+| `timezone`, `locale` | IANA identifier, BCP 47 tag. |
+| `avatar_initials` | 1–2 characters. Empty derives them from the name. |
+| `avatar_color` | A palette name (`slate`, `red`, `indigo`, `rose` …), optionally with a shade suffix such as `amber-400`. Without a suffix, clients pick the shade. |
+| Optional text | An empty value removes it. Phone is private profile data only. |
 
-Changing the primary email is deliberately separate from profile editing:
+Setting `timezone_inherited`, `locale_inherited` or `first_day_of_week_inherited` to `true` follows
+the Workspace default. `GET /me` always returns the effective value.
+
+### Change your email
 
 ```http
 POST /api/v1/me/email-change
 If-Match: "3"
 Content-Type: application/json
 
-{"email":"jane.new@example.com"}
+{"email": "jane.new@example.com"}
 ```
 
-The request requires authentication within the last 15 minutes and sends a
-30-minute, single-use link to the new inbox. The old address remains active.
-The link opens the supported Web client, which removes its token from browser
-history and calls `POST /api/v1/me/email-change/verify` with that token. Only
-the same browser session can complete it. Success changes the verified address,
-invalidates pending identity/password tokens, revokes other sessions, and
-sends a security notice to the old address.
+This needs sign-in within the last 15 minutes and emails a single-use link, valid 30 minutes, to the
+new address. The web app completes it with `POST /api/v1/me/email-change/verify`, from the same
+browser session. On success the address changes, other sessions are revoked and the old address gets
+a security notice.
 
-`If-Match` carries the user revision the client last observed, taken from the
-`ETag` of a previous `GET` or `PATCH` of `/api/v1/me`. A stale revision is
-refused with `409 revision_conflict` rather than overwriting a concurrent
-edit. The response is the same body `GET /api/v1/me` returns, with the new
-revision in its `ETag`.
+### Profile picture
 
-## Profile picture uploads
-
-Profile pictures use the normal direct-to-S3 attachment reservation and
-completion flow. Crop the image to a 512 × 512 PNG or JPEG before upload; the
-completed object must be clean and no larger than 5 MiB. Associate it with:
+Crop to a 512 × 512 PNG or JPEG (5 MiB at most), upload it through the
+[attachment flow](./attachments), then:
 
 ```http
 POST /api/v1/me/profile-picture
 If-Match: "3"
 Content-Type: application/json
 
-{"attachment_id":"<completed-attachment-id>"}
+{"attachment_id": "<completed-attachment-id>"}
 ```
 
-`DELETE /api/v1/me/profile-picture` removes it. Replacement and removal
-soft-delete the previous object and release its storage quota. The stable
-authenticated `/api/v1/me/profile-picture/content` URL redirects to a short-lived
-inline S3 credential; clients must not persist the signed destination URL.
+`DELETE /api/v1/me/profile-picture` removes it. `/api/v1/me/profile-picture/content` redirects to a
+short-lived URL, so don't store the destination.
 
-## List current-user sessions
+## Sessions
 
-```http
-GET /api/v1/me/sessions?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-Returns the caller's live sessions across every Workspace, newest first.
-Revoked and expired sessions are omitted:
+`GET /api/v1/me/sessions?limit=50` lists your live sessions across Workspaces, newest first:
 
 ```json
 {
@@ -234,269 +134,110 @@ Revoked and expired sessions are omitted:
 }
 ```
 
-Sessions carry no IP address, user agent, device name, or location: none is
-recorded. An account-only onboarding session omits `workspace_id`. Otherwise,
-distinguish sessions by Workspace and `last_seen_at`, and use `current`
-to identify the session making the request.
+Sessions don't record IP address, device or location. Tell them apart by Workspace and
+`last_seen_at`.
 
-`authenticated_at` is when credentials were last actually presented. Staying
-signed in does not move it, and it is the value the 15-minute
-recent-authentication window below is measured against.
+| Operation | Result |
+| --- | --- |
+| `DELETE /api/v1/me/sessions` | Revokes every session except the current one. Returns `{"revoked_count": 3}`. Needs recent authentication. |
+| `DELETE /api/v1/me/sessions/{session_id}` | `204`, also when already revoked. Revoking the current session clears the cookies. |
 
-## Manage personal API tokens
+## Personal API tokens
 
-Personal API tokens authorize non-interactive API and CLI use in the one
-Workspace selected by the current browser session. They are separate from
-browser sessions and MCP connections. A token stops working if it expires, is
-revoked, the user loses that Workspace membership, or the Workspace is
-archived.
+A personal token authorizes scripts and the CLI in the one Workspace of the session that created it.
+It stops working when it expires, is revoked, you leave the Workspace, or the Workspace is archived.
 
-List active tokens with `GET /api/v1/me/api-tokens`. The response contains
-only metadata (name, scopes, prefix, creation, last-use, and expiry times),
-never a token secret.
-
-Create one with recent authentication and CSRF protection:
+- `GET /api/v1/me/api-tokens` lists metadata (name, scopes, prefix, created, last used, expiry). The
+  secret is never returned again.
+- `DELETE /api/v1/me/api-tokens/{token_id}` revokes a token (`204`).
 
 ```http
 POST /api/v1/me/api-tokens HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 X-CSRF-Token: <csrf-token>
 Content-Type: application/json
 
-{"name":"terminal","scopes":["assign:read","assign:discuss"]}
+{"name": "terminal", "scopes": ["assign:read", "assign:discuss"]}
 ```
 
-The `201` response is the only time the raw `token` is returned. Store it in a
-secret manager or `ASSIGN_TOKEN`; do not place it in a URL, terminal command,
-or checked-in file. The default expiry is 90 days and the maximum requested
-expiry is one year. `assign:read` permits the shipped CLI My Work view;
-`assign:write` permits the CLI's supported Task mutations; and
-`assign:discuss` permits canonical Discuss history, messages, events,
-cancellation, and interaction decisions. The Discuss availability and
-Workspace authorization checks still apply.
+Creating a token needs recent authentication. The `201` response is the only time the `token` value
+is shown, so store it in a secret manager or `ASSIGN_TOKEN`, not in a URL or a file you commit. The
+default expiry is 90 days, at most one year. Scope and Workspace can't be changed later.
 
-Revoke a token with `DELETE /api/v1/me/api-tokens/{token_id}` and the same
-CSRF header. It returns `204`; future API-host bearer requests fail
-immediately. Revoke a token rather than sharing it or trying to rename its
-scope or Workspace (those properties are immutable).
+| Scope | Allows |
+| --- | --- |
+| `assign:read` | Reading, including the CLI's My Work view. |
+| `assign:write` | The CLI's supported Task changes. |
+| `assign:discuss` | Discuss history, messages and events. Plan and permission checks still apply. |
 
-## Sign out everywhere else
+## Linked identities
 
-```http
-DELETE /api/v1/me/sessions HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-```
-
-Revokes every session belonging to the caller except the one making the
-request, and reports how many changed:
-
-```json
-{"revoked_count": 3}
-```
-
-Revocation takes effect immediately everywhere. Repeating the call revokes
-nothing further and reports `0`. To end the current session as well, call
-[sign out](authentication.md) afterwards.
-
-This operation requires authentication within the last 15 minutes; see
-[Recent authentication](#recent-authentication).
-
-## Revoke one session
-
-```http
-DELETE /api/v1/me/sessions/{session_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-```
-
-Answers `204`. Revoking the calling session is allowed, and the response then
-also expires the session and CSRF cookies. Revoking a session that is already
-revoked also answers `204`, so a retried request is safe. A session that is
-not the caller's reports the same `404` used for an absent resource.
-
-## List linked identities
-
-```http
-GET /api/v1/me/identities HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-```json
-{
-  "items": [
-    {
-      "id": "<identity-id>",
-      "provider": "google",
-      "provider_email": "jane@example.com",
-      "provider_email_verified": true,
-      "created_at": "2026-08-18T09:30:00Z"
-    }
-  ],
-  "next_cursor": null,
-  "has_more": false
-}
-```
-
-The provider's subject identifier is never returned. `provider_email` is the
-address the provider disclosed, if any, and may be `null`. During ordinary
-provider sign-in, a verified provider email matching the account's normalized
-address can establish ownership and attach a previously unseen provider
-identity. An unverified address cannot.
-
-## Link an external identity
-
-```http
-POST /api/v1/me/identities HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
-
-{"provider": "github"}
-```
-
-```json
-{
-  "authorization_url": "https://github.com/login/oauth/authorize?...",
-  "expires_at": "2026-08-18T09:45:00Z"
-}
-```
-
-Send the user to `authorization_url`. The endpoint never accepts a provider
-token or identity assertion — the ceremony state is created server-side and
-bound to the calling user and session, so no client-supplied credential can
-decide who owns an account. The provider then returns to Assign's existing
-callback, which completes the link and redirects to the identity settings
-page rather than issuing a new session.
-
-An identity already linked to a different account is refused with
-`409 identity_already_linked` and is never transferred. This explicit ceremony
-is bound to the already authenticated account and does not choose its target
-from the provider email. Linking an identity already linked to the caller
-changes nothing. Ordinary sign-in may separately attach a previously unseen
-identity when its provider verifies the same normalized account email; see
-[Sign in with an identity provider](authentication.md#sign-in-with-an-identity-provider).
-
-This operation requires authentication within the last 15 minutes; see
-[Recent authentication](#recent-authentication).
-
-## Unlink an external identity
-
-```http
-DELETE /api/v1/me/identities/{identity_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-```
-
-Answers `204`. If removing the identity would leave the account with no way
-to sign in — counting a password, each registered passkey, and each remaining
-linked identity — the request is refused with `409 last_sign_in_method`.
-Repeating a delete that already succeeded answers `204`; an identity that is
-not the caller's reports `404`.
-
-This operation requires authentication within the last 15 minutes; see
-[Recent authentication](#recent-authentication).
+- `GET /api/v1/me/identities` lists linked providers (`provider`, `provider_email`,
+  `provider_email_verified`, `created_at`).
+- `POST /api/v1/me/identities` with `{"provider": "github"}` returns an `authorization_url` to send
+  the user to. The provider then returns to Assign, which links the identity without creating a
+  session. An identity linked to another account returns `409 identity_already_linked`.
+- `DELETE /api/v1/me/identities/{identity_id}` unlinks (`204`). It returns `409 last_sign_in_method`
+  if the account would have no way left to sign in.
 
 ## Recent authentication
 
-Some operations change how an account can be accessed, and require that
-credentials were presented within the last **15 minutes**: signing out every
-other session, linking an identity, unlinking an identity, changing a
-password, and disabling a second factor.
+Signing out other sessions, linking or unlinking an identity, changing a password, changing an email
+and disabling a second factor need sign-in within the last **15 minutes**. Otherwise you get
+`403 reauthentication_required`. Ask for the password or passkey and retry; don't show it as a
+permission error.
 
-Staying signed in does not satisfy this; only a fresh sign-in does. When it is
-not satisfied the response is `403` with the code
-`reauthentication_required`, which is deliberately distinct from an ordinary
-permission error — prompt for the password or passkey and retry rather than
-telling the user they lack access.
+## Connected MCP clients
 
-## Manage connected MCP clients
+`GET /api/v1/me/mcp/grants?limit=50` lists your active MCP connections: client, scopes, authorized
+Workspaces and last use. `DELETE /api/v1/me/mcp/grants/{grant_id}` revokes one immediately (`204`).
+See [MCP](../mcp/).
 
-```http
-GET /api/v1/me/mcp/grants?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
+## Workspaces and members
 
-Returns a cursor-bounded list of the current user's active MCP connections,
-including the reviewed client family, granted scopes, authorized Workspaces,
-last use, and refresh-grant expiry. Assign clients refresh short-lived access
-tokens silently, so an active connection does not require frequent browser
-reauthorization.
-
-```http
-DELETE /api/v1/me/mcp/grants/{grant_id} HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-```
-
-Answers `204` and immediately revokes the connection's access and refresh
-tokens. A grant belonging to another user reports the same `404` as an absent
-grant. See [Connect an MCP client](../mcp/index.md) for the client authorization and
-session lifecycle.
-
-## List current-user Workspaces
+`GET /api/v1/me/billing-plans` is a read-only overview of the plan and state of each Workspace you
+belong to (up to 100 per page), and whether you can open its billing settings. Payment and invoice
+details stay in Workspace billing settings.
 
 ```http
 GET /api/v1/workspaces?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
 ```
-
-Returns one page of the caller's active Workspace memberships, ordered by
-Workspace name:
 
 ```json
 {
   "items": [
-    {"id": "<workspace-id>", "name": "Acme", "slug": "acme", "icon_url": null, "role": "owner"}
+    { "id": "<workspace-id>", "name": "Acme", "slug": "acme", "icon_url": null, "role": "owner" }
   ],
   "next_cursor": null,
   "has_more": false
 }
 ```
 
-Follow `next_cursor` per the pagination rules in [API conventions](conventions.md).
-This list is scoped to the caller, not to the session's current Workspace.
+This lists your Workspaces by name, regardless of the session's current one.
+`GET /api/v1/workspaces/{workspace_id}/members?limit=50` lists the current Workspace's members for
+assignee pickers and mentions (`membership_id`, `user_id`, `actor_id`, `display_name`, `role`). Any
+other Workspace ID returns `404`.
 
-## List Workspace members
+## Project shortcuts
+
+Each user has nine shortcut slots for their Projects in a Workspace. `GET
+/api/v1/workspaces/{workspace_id}/project-shortcuts` returns them as Project IDs or `null`, with
+`customized`, `revision` and an `ETag`. Until you customize them, they default to the first nine
+active Projects you can read.
+
+`PUT` on the same path replaces all nine:
 
 ```http
-GET /api/v1/workspaces/{workspace_id}/members?limit=50 HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+PUT /api/v1/workspaces/{workspace_id}/project-shortcuts HTTP/1.1
+X-CSRF-Token: <csrf-token>
+If-Match: "4"
+Content-Type: application/json
+
+{"slots": ["<project-id>", null, null, null, null, null, null, null, null]}
 ```
 
-Returns one page of the Workspace's active memberships, for assignee
-pickers and mention candidates:
-
-```json
-{
-  "items": [
-    {
-      "membership_id": "<membership-id>",
-      "user_id": "<user-id>",
-      "actor_id": "<actor-id>",
-      "display_name": "Jane Doe",
-      "role": "owner"
-    }
-  ],
-  "next_cursor": null,
-  "has_more": false
-}
-```
-
-`workspace_id` must match the caller's current session Workspace; any other
-value — including a Workspace the caller belongs to under a different
-session — reports the same `404` used for an absent Workspace, per the
-conventions' discoverability rule.
+A Project can occupy one slot. Duplicates are rejected, a stale revision returns
+`409 revision_conflict`, and an archived or unreadable Project returns `422 project_unavailable`.
+Reads drop Projects you can no longer access.
 
 ## Project display preferences
 
@@ -526,3 +267,10 @@ The body limit is 64 KiB. Use the last `ETag` as `If-Match`; a stale revision re
 missing precondition returns `428`. Missing or unavailable Projects return `422` without revealing
 private Project details. Retry an identical request with the same idempotency key. Both operations
 currently require a browser session; token, native-client and MCP access are not available.
+
+## Private realtime reads <Badge type="warning" text="Upcoming" />
+
+Current-Account, session, identity and passkey reads can opt into private replay
+custody using the matching `X-Assign-Realtime-Baseline` scope. This interface is
+under development and not deployed. See [Application realtime](./realtime) for
+canonical reads, session-bound cursors and applied acknowledgements.

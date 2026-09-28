@@ -24,6 +24,11 @@ view toolbar; **Copy Project link** and **Project overview** remain in Project a
 On small screens three views stay visible and the rest are under **More**. The view you're on is
 always shown.
 
+### Task Milestones <Badge type="warning" text="Awaiting deployment" />
+
+A flag after a Task title shows that it belongs to a Milestone. Hover over or focus the flag
+to see the Milestone name. This works in grouped and ungrouped Task lists.
+
 ## Filter and sort
 
 **Filters** opens Milestone, Status, assignee and priority filters. The sort icon next to it
@@ -65,6 +70,14 @@ The upload area for the Project's own files stays available.
 Create and edit Milestones on their own pages. A Milestone's card links to the List filtered to
 that Milestone. Use the card menu to copy the filtered link or archive the Milestone.
 
+### Milestone autosave <Badge type="warning" text="Awaiting deployment" />
+
+Milestone forms save the name on Enter or when you leave the field, the description when you
+leave the field, and the target date and Status when you change them. A valid name creates the
+Milestone; further edits save to that Milestone while the form stays open. **Back to milestones**
+saves your current edits before returning to the list. If saving fails, your edits stay in the
+form and you can choose **Retry**.
+
 ## Statuses
 
 Workspace owners and admins manage Statuses in **Workspace settings → Task statuses**. Statuses are
@@ -77,6 +90,11 @@ every Project that uses the Status.
 A Project's owner and managers can switch it between **Workspace** access, which includes every
 member, and **Private** access, which includes only Project members plus Workspace owners and
 admins. Project roles are *manager*, *contributor* and *viewer*.
+
+Open **Project settings → Members** to review or change Project access. The list refreshes when
+another manager changes it. If the list cannot be refreshed, it is hidden until you select
+**Retry**. Removing someone from a Private Project also removes that Project and its Tasks from
+their available work.
 
 ## Public status link
 
@@ -98,6 +116,8 @@ Use the priority icon beside the assignee avatar to choose a priority without op
 Swipe horizontally to move between Board columns. Columns settle near the center of the screen, including the first and last column.
 
 ### Project sorting (awaiting deployment)
+
+In **Custom** grid order, drag the grip at the bottom right of a Project card to move it. Swipe the rest of the card to scroll, or tap it to open the Project. Tap the grip for **Move earlier** and **Move later**, or focus the card and use `Alt`+arrow keys.
 
 Choose **Default** to use the Workspace collection order, **Recent** for the latest activity, **Created** for newest Projects, or **Custom** for your saved order. The choice and custom order are saved to your Account for this Workspace. Home’s Recent projects always uses recent activity, regardless of your Projects-page choice.
 
@@ -137,3 +157,7 @@ Sort and reorder wait for the saved preference to load. If saving fails, retry t
 device saved first, refresh the current order before trying again. Earlier browser-only choices are
 not automatically copied to your Account. Choose your sort again to save it. Grid/list layout remains
 a separate browser preference. Native Mobile's current Projects preview does not use this preference.
+
+### List group header scrolling (awaiting deployment)
+
+As you scroll a grouped Task List, the next group heading pushes the current heading upward and replaces it below the toolbar. Scrolling back restores the previous heading.

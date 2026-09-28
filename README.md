@@ -23,7 +23,7 @@ npm run check      # markdownlint and a production build; the build fails on dea
 | `cli/` | Install, authentication, command reference, Discuss, MCP setup and scripting |
 | `mcp/` | MCP overview, client setup, tool catalog, previews, security and troubleshooting |
 | `api/` | API overview, conventions, versioning, authentication and resource guides |
-| `api/endpoints.md` | Generated endpoint index; don't edit by hand |
+| `api/endpoints.md`, `public/openapi.yaml` | Generated endpoint index and the published OpenAPI document; don't edit by hand |
 | `.vitepress/` | Site config and the Assign theme |
 | `public/` | Static files: favicons, `CNAME` and `robots.txt` |
 
@@ -34,7 +34,7 @@ The CLI, MCP and API reference pages mirror a source of truth elsewhere, and
 touches one of those sources, update the matching page and run:
 
 ```sh
-npm run generate:api     # regenerate api/endpoints.md from openapi-spec
+npm run generate:api     # regenerate api/endpoints.md and public/openapi.yaml from openapi-spec
 npm run check:sources    # local drift check for the MCP catalog, CLI reference and endpoint index
 npm run check
 ```

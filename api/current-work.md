@@ -1,27 +1,20 @@
+---
+description: Read and set the one Task you're working on, across Workspaces.
+---
+
 # Current work
 
-Current work is the signed-in User's account-wide pointer to zero or one Task.
-It is independent of the active Workspace, the page currently open, Task
-status, and time tracking.
+Current work is your account-wide pointer to zero or one Task. It's independent of the open Workspace
+or page, Task status and time tracking.
 
-`GET /api/v1/me/current-work` returns the nullable current Task, the
-current-work revision, its update time, and whether any eligible Task exists.
-The response is private, uses `Cache-Control: no-store`, and returns its
-revision in `ETag`.
+- `GET /api/v1/me/current-work` returns the current Task (or `null`), its revision, the update time and
+  whether any eligible Task exists. It isn't cached, and the revision is in `ETag`.
+- `GET /api/v1/me/current-work/candidates?limit=25` lists up to 25 eligible alternatives, most recently
+  updated first, never including the current Task. A Task is eligible if it's active, in an In
+  progress category, assigned to you and readable through your Workspace and Project membership.
+- `PUT /api/v1/me/current-work` with `{"task_id": "..."}` sets it, and `DELETE` clears it. Both need
+  `X-CSRF-Token` and the last `ETag` in `If-Match`.
 
-`GET /api/v1/me/current-work/candidates?limit=25` lists the most recently
-updated eligible alternatives. A Task is eligible only while it is active, in
-an In progress workflow category, assigned to the current User, and readable
-through an active Workspace and Project membership. The list never includes
-the selected Task and never exceeds 25 items.
-
-Set the selection with `PUT /api/v1/me/current-work` and
-`{"task_id":"..."}`. Clear it with `DELETE /api/v1/me/current-work`. Both
-mutations require the browser CSRF header and the last observed current-work
-ETag in `If-Match`. A concurrent change returns `409 revision_conflict`; an
-ineligible target returns `409 task_not_eligible`. Re-read the summary before
-retrying either conflict.
-
-Changing or clearing current work does not change Task status and never starts
-or stops a timer. Assign clears a selection when assignment, workflow,
-lifecycle, membership, or private-Project access makes it ineligible.
+A concurrent change returns `409 revision_conflict` and an ineligible Task `409 task_not_eligible`.
+Re-read before retrying. Changing current work never changes Task status or starts a timer. Assign
+clears it when assignment, workflow, lifecycle, membership or Project access makes it ineligible.

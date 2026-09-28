@@ -1,47 +1,25 @@
+---
+description: Connect Codex or another remote MCP client to Assign with OAuth, or use a local bridge, and review or disconnect clients.
+---
+
 # Connect a client
 
-Assign provides a remote Model Context Protocol server at
-`https://mcp.assign.so/`. Add that exact URL as a remote MCP server in a
-supported client. The client opens Assign in a browser, where you choose a
-Workspace and approve read and, when needed, write access.
+Add `https://mcp.assign.so/` as a remote MCP server in a client that supports OAuth. The client opens
+Assign in a browser where you choose a Workspace and approve read and, if needed, write access.
 
 ## Codex
 
-Codex users only need that server URL. Assign discovers Codex through its
-published client metadata (CIMD) and accepts the temporary localhost callback
-port that Codex opens for the sign-in. No client ID or client secret is
-required, and Assign intentionally does not offer open dynamic client
-registration (DCR).
-
-With the Codex CLI, register the server and complete browser authorization:
+Codex needs only the server URL. Assign identifies it through its published client metadata (CIMD) and
+accepts the temporary localhost callback port Codex opens. You don't need to supply a client ID or secret.
 
 ```sh
 assign mcp setup codex
 ```
 
-This convenience command first ensures interactive Assign CLI login, then uses
-Codex's own supported MCP registration and OAuth commands. The existing browser
-session normally avoids another credential entry, but Codex still receives a
-separate, revocable MCP credential; the Assign CLI token is never shared.
+This signs in to the Assign CLI if needed, then registers the server and starts authorization through
+Codex's own commands. Codex gets its own revocable MCP credential, and your CLI token is never shared.
 
-### Local stdio bridge
-
-For a client that needs stdio, opt in explicitly:
-
-```sh
-assign mcp setup codex --transport stdio --scopes assign:read
-```
-
-The local process forwards MCP JSON and streaming responses to the same remote
-Assign MCP catalog. It exchanges the CLI credential for a short-lived,
-non-refreshable MCP token whose scopes and lifetime can only be narrower than
-the parent. The process remains bound to its first Workspace; reconnect after a
-Workspace switch. Direct remote OAuth remains the default and is usually the
-simplest choice.
-
-### Manual Codex setup
-
-You can also perform the same Codex steps directly:
+To do the same steps by hand:
 
 ```sh
 codex mcp add assign --url https://mcp.assign.so/ \
@@ -52,40 +30,22 @@ codex mcp login assign --scopes assign:read,assign:write \
 codex mcp list
 ```
 
-Use only `assign:read` in the login command when the client should remain
-read-only, or run `assign mcp setup codex --scopes assign:read`. Codex desktop,
-the Codex CLI, and the Codex IDE integration share
-the same MCP configuration. A trusted repository may instead declare the
-remote server in `.codex/config.toml`; do not commit a bearer value. For a
-non-interactive service, reference an environment variable with
-`bearer_token_env_var` and store the secret in the service's approved secret
-manager.
+Use only `assign:read` to keep the client read-only, or run
+`assign mcp setup codex --scopes assign:read`. Codex desktop, CLI and IDE share one MCP configuration.
+A trusted repository can declare the server in `.codex/config.toml`, but never commit a bearer value.
+For a service, set `bearer_token_env_var` and keep the secret in your secret manager.
 
-## Permissions at request time
+### Local stdio bridge
 
-Every request uses current Assign permissions. Disconnecting a client,
-revoking a service credential, disabling Workspace AI access, or losing
-Workspace membership takes effect immediately.
+If a client needs stdio:
 
-## Connection lifetime
+```sh
+assign mcp setup codex --transport stdio --scopes assign:read
+```
 
-Supported clients renew 15-minute access tokens in the background with a
-rotating refresh credential. Normal access-token expiry does not require
-another browser sign-in. A connection asks you to authorize again only after it
-is disconnected, its credential is replayed or invalidated for security, it
-remains unused for 90 days, every authorized Workspace membership is lost, or
-the one-year authorization lifetime ends.
-
-## Review or disconnect clients
-
-Open **Account settings → MCP access**. Each connected client shows its scopes,
-authorized Workspaces, last use, and authorization expiry. Choose
-**Disconnect** to revoke its access and refresh credentials immediately.
-
-Workspace owners and admins can open **Workspace settings → Developer tools**
-and disable **AI integrations**. This immediately blocks existing and new MCP
-access to that Workspace without disconnecting the same client from another
-authorized Workspace.
+The local process forwards MCP traffic to the same remote catalog. It exchanges your CLI credential for a
+short-lived, non-refreshable MCP token with equal or narrower scopes and lifetime. It stays bound to
+its first Workspace, so reconnect after switching. Remote OAuth is the default and usually simpler.
 
 ## Native OAuth clients <Badge type="warning" text="Awaiting deployment" />
 
@@ -96,8 +56,30 @@ A registered client receives no access until you approve it. Its name appears as
 If registration is temporarily unavailable, wait for the server’s retry interval before trying again.
 
 Hosted web clients with HTTPS callbacks need a reviewed registration. Registration support alone
-doesn't establish compatibility with a particular client. Task previews also depend on MCP Apps
-support; clients without it use the normal text and structured responses.
+doesn't establish compatibility with a particular client. [Interactive previews](./previews) will be paused in the next deployment; clients will use
+the normal text and structured responses.
+
+## Permissions and lifetime
+
+Every request uses your current Assign permissions. Disconnecting a client, revoking a service
+credential, disabling Workspace AI access or losing membership takes effect immediately.
+
+Clients renew 15-minute access tokens in the background, so normal expiry needs no new sign-in. You
+authorize again only if the connection is disconnected, invalidated for security, unused for 90 days,
+left without any authorized Workspace or past its one-year lifetime.
+
+## Review or disconnect
+
+Open **Account settings → MCP access** to see each client's scopes, authorized Workspaces, last use
+and expiry. The page shows up to 100 connections at a time; use **Next page** to see more or
+**Back to first page** to start again. The visible page updates when a connection changes.
+**Disconnect** revokes its access immediately.
+
+Workspace owners and admins can turn off **AI integrations** in **Workspace settings → Developer
+tools**. That blocks existing and new MCP access to that Workspace without disconnecting the client
+from others.
+The policy and service-credential list update when Workspace access changes.
+Expired credentials disappear from the list at their expiry time.
 
 ## Reviewed native metadata <Badge type="warning" text="Awaiting deployment" />
 

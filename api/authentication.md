@@ -1,133 +1,41 @@
-# Browser and native authentication
+---
+description: Browser sessions and CSRF, password, second-factor, passkey and provider sign-in, and developer-client and native tokens.
+---
 
-Assign authenticates browser requests with two host-only cookies:
+# Authentication
 
-- `__Host-assign_session` contains the opaque session secret. It is `Secure`,
-  `HttpOnly`, `SameSite=Lax`, and has `Path=/` with no `Domain` attribute.
-- `__Host-assign_csrf` contains the session-bound CSRF token. It has the same
-  transport attributes but remains readable by the browser application so it
-  can be copied into the `X-CSRF-Token` request header.
+Which credential to use is summarized in the [API overview](./index#authentication). This page covers
+sign-in and session operations. For scripts, use a personal API token in the `Authorization` header
+instead.
 
-Browser sessions expire after 30 days even if continuously active. A session
-also expires after 7 days without activity. Expired, invalid, and revoked
-sessions receive `401 authentication_required` and both cookies are expired by
-the response.
+## Browser sessions
 
-## Developer-client browser authentication
+Browser requests use two host-only cookies:
 
-The first-party `assign` CLI, VS Code extension, and JetBrains plugin use
-client-bound credential families separate from browser cookies, personal API
-tokens, native mobile credentials, and MCP OAuth. Shared authorization, token,
-revocation, current-Workspace, Workspace-list, and Workspace-switch operations
-live under `/api/v1/dev/*`. CLI-only code-addressed conveniences remain under
-`/api/v1/cli/*`; IDE product capabilities use canonical public REST resources.
+| Cookie | Purpose |
+| --- | --- |
+| `__Host-assign_session` | The opaque session secret (`Secure`, `HttpOnly`, `SameSite=Lax`). |
+| `__Host-assign_csrf` | The CSRF token. Readable by your app so it can copy it into `X-CSRF-Token`. |
 
-`assign login` binds an ephemeral callback at `http://127.0.0.1:{port}/callback`
-before opening `GET /api/v1/dev/oauth/authorize` in the system browser. The
-fixed public client is `assign-cli`; it has no secret and must use PKCE `S256`,
-an opaque state value, and the exact loopback callback. `localhost`, non-loopback
-hosts, alternate paths, custom schemes, query-bearing callbacks, and PKCE
-downgrade are rejected.
+A session expires after 30 days, or after 7 days without activity. Sign-in requests accept an
+optional `remember_me` boolean: `false` issues cookies without an expiry, so the browser discards
+them when it closes, and the session lasts at most 48 hours. Omitting it
+keeps the 30-day session. An expired or revoked session
+returns `401 authentication_required` and clears both cookies.
 
-The five-minute authorization code is single-use. The token endpoint returns a
-15-minute opaque API access token and a rotating refresh token with 90-day idle
-and one-year absolute family expiry. Consumed-refresh replay revokes the whole
-family. `POST /api/v1/dev/oauth/revoke` revokes the calling developer-client
-family. These tokens are accepted only at the bounded API-host developer-client
-operations admitted for the grant and are never accepted by the MCP resource
-host.
+Every browser-session authenticated `POST`, `PUT`, `PATCH` and `DELETE` must send the CSRF cookie's value in
+`X-CSRF-Token`. A missing or mismatched token returns `403 invalid_csrf_token`.
 
-Local loopback callbacks are the supported P0 IDE flow. Remote extension-host
-callback support is deferred and must not be emulated with browser cookies or
-credentials in URLs.
+```http
+POST /api/v1/auth/logout HTTP/1.1
+Host: api.assign.so
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+X-CSRF-Token: <csrf-token>
+```
 
-New CLI families receive `assign:read`, `assign:write`, and
-`assign:discuss`. A family created before the Discuss grant was introduced must
-complete `assign login` again before it can use `assign discuss`. A personal API
-token may carry the same dedicated `assign:discuss` scope for non-interactive
-credential selection; it does not bypass Workspace plan or authorization
-checks.
+Logging out revokes the current session only and returns `204`.
 
-The optional local MCP bridge exchanges a current CLI OAuth credential or
-personal API token at `POST /api/v1/cli/mcp/token`. The response is a
-short-lived, non-refreshable MCP bearer for the same Workspace. Requested
-scopes may narrow but never expand the parent. Parent expiry or revocation is
-checked on every MCP authentication, so the derived token stops working
-immediately. Applications should use the CLI setup command rather than calling
-this exchange directly.
-
-### JetBrains development client
-
-The undistributed JetBrains plugin uses the same loopback Authorization Code +
-PKCE protocol with its own fixed public client ID, `assign-jetbrains`. Its grants
-and rotating refresh families are client-bound and cannot be exchanged with
-`assign-cli`. JetBrains grants receive `assign:read` and `assign:write`, not the
-CLI terminal client's `assign:discuss` scope. Refresh credentials belong only
-in IntelliJ Platform PasswordSafe;
-access credentials remain short lived and must not be written to project files,
-settings, logs, URLs, or analytics. This registration is implemented for local
-development and does not mean the plugin is published or available from
-JetBrains Marketplace.
-
-### VS Code development client
-
-The undistributed VS Code extension uses the same loopback Authorization Code +
-PKCE protocol with the distinct fixed public client ID `assign-vscode`. Its
-grants and rotating refresh families are client-bound and cannot be exchanged
-with CLI or JetBrains credentials. The extension stores refresh credentials
-only in VS Code `SecretStorage`, keeps access credentials in memory, and receives
-only `assign:read` and `assign:write`. This registration is for local extension
-development and does not mean the extension is published or available from a
-marketplace.
-
-## Native mobile OAuth
-
-The API implements native mobile OAuth and push-device operations. A particular
-mobile app can sign in only after its public client ID, platform, and exact
-callback URI have been registered by the Assign operator. An unregistered app
-must keep native sign-in disabled; push registration also remains unavailable
-until the separately managed native push-token encryption key is installed.
-
-When available, mobile sign-in starts only in the system browser at
-`GET /api/v1/mobile/oauth/authorize`. The request uses a registered public
-client, exact callback URI, high-entropy state and installation identifier,
-and PKCE `S256`; there is no mobile client secret. Production returns through
-the Assign universal/app link at
-`https://api.assign.so/mobile/oauth/callback`. The app exchanges the returned
-five-minute one-time code and PKCE verifier at
-`POST /api/v1/mobile/oauth/token` for a 15-minute opaque bearer access token
-and a rotating refresh token. Both tokens belong only in platform-secure
-storage, never a URL, log, analytics event, or ordinary application storage.
-
-Each refresh rotates the refresh token. A consumed-token replay revokes the
-credential family and requires a fresh browser sign-in. `POST
-/api/v1/mobile/oauth/revoke` revokes the calling device credential and its
-push registration; browser account security can list or revoke native
-credentials under `/api/v1/me/mobile-credentials`. See the machine-readable
-contract for the exact request/response schemas.
-
-## Sign in with an identity provider
-
-Start Google, GitHub, or Apple sign-in at
-`GET /api/v1/auth/providers/{provider}/authorize`. Assign validates the
-provider callback, creates a fresh browser session, sets both cookies, and
-redirects directly to the signed-in Workspace. An account that does not yet
-belong to a Workspace is redirected to Workspace creation instead.
-
-Assign first resolves an identity by its provider and immutable provider
-subject. If this is the first sign-in from that provider identity and the
-provider reports a **verified** email matching an existing Assign account,
-Assign attaches the identity and signs in that existing account automatically.
-The user does not need to connect the provider beforehand, and no duplicate
-account is created. Matching is case-normalized; an absent or unverified
-provider email cannot attach to an account.
-
-After attachment, future sign-ins resolve the immutable provider identity, not
-the provider's mutable email. A provider email change therefore does not move
-the identity to another account. Apple private-relay addresses match only that
-exact normalized relay address.
-
-## Register and sign in with a password
+## Password sign-in
 
 ```http
 POST /api/v1/auth/register HTTP/1.1
@@ -137,323 +45,106 @@ Content-Type: application/json
 {"email": "person@example.com", "password": "<passphrase>", "display_name": "Person"}
 ```
 
-Registration returns `201` with the account and sets both browser-session
-cookies. It derives a globally unique lowercase username from the supplied
-full display name, adding a numeric suffix when needed. The username may be
-changed later, while every previously claimed username remains reserved to the
-same account so existing profile links keep working. Registration creates
-account data only: no Workspace, membership, or Actor is
-created, and the response omits all Workspace fields. The resulting
-account-only session can read account-level resources and create the first
-Workspace, but cannot use Workspace-scoped operations. Continue with
-[Create the first Workspace](workspaces.md#create-the-first-workspace).
-Passwords must be 12–128 characters and are refused if they appear in a
-known-breach list; a rejected password returns `400` with a message describing
-the rule it failed. A taken address returns `409` — registration necessarily
-reveals whether an address can be registered, and a vague failure would only
-strand someone who already has an account.
-
-The address starts unverified and a verification message is sent. The message
-contains a clickable `/verify-email?token=...` link rather than a standalone
-token to copy. **Verification gates recovery, not access**: the account works
-right away, but no password reset is issued until the address is verified.
+Registration returns `201`, sets both cookies and creates an account without a Workspace. That
+session can read account resources and [create the first Workspace](./workspaces#create-a-workspace)
+but nothing Workspace-scoped. Passwords are 12–128 characters and can't appear in a known-breach
+list. A taken address returns `409`. The address starts unverified: the account works immediately,
+but password reset isn't available until it's verified.
 
 ```http
 POST /api/v1/auth/login HTTP/1.1
 Host: api.assign.so
 Content-Type: application/json
 
-{"email": "person@example.com", "password": "<passphrase>"}
+{"email": "person@example.com", "password": "<passphrase>", "remember_me": true}
 ```
 
-Sign-in returns `200`. **The body has two shapes and you must branch on them.**
-Without a second factor the response is the account and both cookies are set. If
-the account has a second factor, no cookies are set and the body is a challenge
-instead:
+Sign-in returns `200` with one of two bodies. Branch on `mfa_required`:
+
+- **No second factor:** the account, with both cookies set.
+- **Second factor enabled:** no cookies, and a challenge you exchange in the next section.
 
 ```json
 {"mfa_required": true, "mfa_token": "<challenge>", "expires_at": "2026-08-17T18:35:00Z"}
 ```
 
-Branch on whether `mfa_required` is present. A challenge is not a session: until
-it is exchanged (below), the caller can read nothing.
+Every failure returns the same `401 invalid_credentials`.
 
-Every sign-in failure returns the same `401 invalid_credentials` — unknown
-address, no password on the account, wrong password — and takes comparable time,
-so the endpoint cannot be used to find out which addresses are registered.
-
-`POST /api/v1/auth/email/verify` redeems the token carried by the verification
-email link, and
-`POST /api/v1/auth/email/resend-verification` sends a new one. Resend answers
-`202` with an empty body whatever happens, including for an address that is not
-registered; treat it as "we will act if there is anything to act on", never as
-confirmation that an account exists.
-
-`POST /api/v1/auth/password/forgot` and `POST /api/v1/auth/password/reset`
-request and redeem a reset token. The forgot operation emails a clickable
-`/reset-password?token=...` link that remains valid for four hours; it answers
-`202` and empty on the same reasoning as resend. A reset **revokes every
-session**, including the one that performed it, because a reset is what someone
-whose account was taken over performs and the attacker's session must not
-survive it.
-
-If the account's email is not yet verified, the forgot operation does not issue
-a reset token. It sends a fresh clickable verification link instead; after
-following that link, request another password reset email. This still returns
-the same empty `202` response as every other outcome.
-
-`POST /api/v1/auth/password/change` replaces the password for a signed-in user
-and requires `current_password`, since an unattended browser must not be enough
-to lock the owner out. Unlike a reset it keeps the calling session and revokes
-the others. An account that signs in only through an identity provider has no
-password to change and receives `409`.
+| Operation | Use |
+| --- | --- |
+| `POST /api/v1/auth/email/verify` | Redeem the token from the verification link. |
+| `POST /api/v1/auth/email/resend-verification` | Send a new link. Always `202`, whether or not the address exists. |
+| `POST /api/v1/auth/password/forgot` | Email a reset link, valid for four hours. Always `202`. An unverified address gets a verification link instead. |
+| `POST /api/v1/auth/password/reset` | Set a new password. Revokes every session. |
+| `POST /api/v1/auth/password/change` | Change the password (needs `current_password`). Keeps this session and revokes the others. Returns `409` for accounts without a password. |
 
 ## Second factor
 
-Assign supports a time-based one-time password (TOTP) factor from any standard
-authenticator app, with ten single-use recovery codes.
+Assign supports a TOTP authenticator app and ten single-use recovery codes.
 
-### Complete a sign-in
-
-Exchange the challenge from `login` for a session:
+Complete a sign-in with the challenge from `login`. `code` is a TOTP or recovery code:
 
 ```http
 POST /api/v1/auth/mfa/verify HTTP/1.1
 Host: api.assign.so
 Content-Type: application/json
 
-{"mfa_token": "<challenge>", "code": "123456"}
+{"mfa_token": "<challenge>", "code": "123456", "remember_me": true}
 ```
 
-On success this returns `200` with the account and sets both cookies. `code` may
-be a TOTP code or a recovery code; recovery codes match regardless of spacing
-and letter case, so a code read off paper works however it was written down.
+Send the same `remember_me` value you sent at the first step; the session is created here.
 
-A wrong code returns `401 invalid_code`, identically whatever was wrong with it.
-A TOTP code is accepted only once, so a code that was already used is refused
-for the rest of its window. The challenge itself expires after five minutes and
-gives up after five wrong codes; either way the response is
-`401 invalid_challenge` and the user must sign in again.
+Success returns `200` with the account and both cookies. A wrong code returns `401 invalid_code`. The
+challenge expires after five minutes or five wrong codes (`401 invalid_challenge`), and the user
+signs in again.
 
-### Enrol
+Manage the factor from a signed-in session (session and CSRF headers as above):
 
-```http
-POST /api/v1/auth/mfa/totp/setup HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-```
-
-Returns `201` with `provisioning_uri` — render it as a QR code — and `secret`,
-the manual-entry fallback. **The secret is returned exactly once and is never
-readable again**; a client that loses it must start setup over. Starting setup
-again replaces the previous secret, so an earlier QR code stops working.
-
-Setup on its own changes nothing: sign-in still works as before until the
-enrolment is confirmed, so an abandoned setup cannot lock anyone out.
-
-```http
-POST /api/v1/auth/mfa/totp/confirm HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
-
-{"code": "123456"}
-```
-
-Returns `201` with `recovery_codes` and enables the factor. **Those ten codes are
-also shown exactly once** — only their hashes are stored — so present them for
-saving before the user can navigate away. An account that already has a
-confirmed factor receives `409`; replacing a live factor is not allowed, since
-it would let whoever holds an open session swap the protection out silently.
-
-### Recovery codes and removal
-
-```http
-POST /api/v1/auth/mfa/recovery-codes/regenerate HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
-
-{"current_password": "<passphrase>"}
-```
-
-Returns `201` with a fresh set and invalidates every previous code, including
-unused ones. The current password is required because these codes are themselves
-a way past the factor.
-
-```http
-DELETE /api/v1/auth/mfa/totp HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
-
-{"current_password": "<passphrase>", "code": "123456"}
-```
-
-Returns `204` and removes the factor along with its recovery codes. Removal
-requires **both** the current password and a current code (TOTP or recovery):
-either on its own would let a stolen session or a stolen phone take the
-protection off by itself. An account with no confirmed factor receives `409`.
+| Operation | Result |
+| --- | --- |
+| `POST /api/v1/auth/mfa/totp/setup` | `201` with `provisioning_uri` (render as a QR code) and `secret`. The secret is shown once. Nothing changes until you confirm. |
+| `POST /api/v1/auth/mfa/totp/confirm` with `{"code": "123456"}` | `201` with `recovery_codes`, shown once, and enables the factor. `409` if a factor is already enabled. |
+| `POST /api/v1/auth/mfa/recovery-codes/regenerate` with `current_password` | `201` with a new set. Every earlier code stops working. |
+| `DELETE /api/v1/auth/mfa/totp` with `current_password` and `code` | `204`. Removes the factor and its recovery codes. `409` if none is enabled. |
 
 ## Passkeys
 
-A passkey is strong authentication on its own. Signing in with one **never**
-asks for a second factor, even on an account that has TOTP enabled — the
-authenticator already verified the user, which is the assurance the second
-factor exists to add.
+A passkey sign-in never asks for a second factor. Passkey operations return `404` on deployments
+where passkeys aren't configured.
 
-Passkey operations are served only by a deployment with a configured relying
-party. Where none is configured they return `404` like any other unrouted path,
-so check before building against them.
+Each ceremony has two steps: get options, pass them to the browser, then return the result with the
+single-use `ceremony_token` (valid five minutes).
 
-Every ceremony has two steps: ask Assign for options, hand them to the browser,
-send the result back with the ceremony token. The token is single-use and
-expires after five minutes.
+| Step | Operation |
+| --- | --- |
+| Sign in | `POST /api/v1/auth/passkeys/login/options`, then `navigator.credentials.get()` with `options` unchanged, then `POST …/login/verify` with `{"ceremony_token", "response"}`. Returns the account and both cookies. Every failure is `401`. |
+| Register (signed in) | `POST /api/v1/auth/passkeys/register/options`, then `navigator.credentials.create()`, then `POST …/register/verify` with `{"ceremony_token", "name", "response"}`. Returns `201`. An account can hold ten passkeys (`409` beyond that). |
+| Manage | `GET /api/v1/auth/passkeys` lists. `PATCH` renames and `DELETE` removes `/api/v1/auth/passkeys/{passkey_id}`. |
 
-### Sign in
+Passkey fields worth showing in a UI: `backup_eligible` and `backup_state` say whether it's synced or
+tied to one device. `disabled` is `true` when Assign stopped trusting it; it can't be re-enabled, so
+ask the user to remove it and register a new one.
 
-```http
-POST /api/v1/auth/passkeys/login/options HTTP/1.1
-Host: api.assign.so
-```
-
-Returns `201` with `ceremony_token` and `options`. Pass `options` to
-`navigator.credentials.get()` unchanged — it is the WebAuthn structure defined
-by the specification, not a shape this API invents, so a WebAuthn client library
-will handle the base64url decoding for you.
-
-The ceremony names no account and lists no allowed credentials: sign-in is
-usernameless, the authenticator proposes the account, and as a result this
-endpoint cannot be used to find out whether an account or credential exists.
-
-```http
-POST /api/v1/auth/passkeys/login/verify HTTP/1.1
-Host: api.assign.so
-Content-Type: application/json
-
-{"ceremony_token": "<token>", "response": { ... }}
-```
-
-On success this returns `200` with the account and sets both session cookies.
-Every failure is `401` and says nothing more — unknown or expired ceremony, an
-already-used one, or an assertion that did not verify all look alike. Start a
-new ceremony and try again.
-
-### Register
-
-```http
-POST /api/v1/auth/passkeys/register/options HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-```
-
-Returns `201` with a ceremony for `navigator.credentials.create()`. The options
-require a discoverable credential and user verification, which is what makes the
-resulting passkey usable for usernameless sign-in. Credentials already on the
-account are excluded, so an authenticator that is already enrolled declines
-rather than making a duplicate. An account at the ten-passkey limit gets `409`.
-
-```http
-POST /api/v1/auth/passkeys/register/verify HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
-
-{"ceremony_token": "<token>", "name": "Work laptop", "response": { ... }}
-```
-
-Returns `201` with the stored passkey. `name` is the user's own label for the
-device — ask for something they will recognize in a list a year from now.
-
-### Manage
-
-`GET /api/v1/auth/passkeys` lists the account's passkeys. `PATCH
-/api/v1/auth/passkeys/{passkey_id}` renames one, and `DELETE` on the same path
-removes it. Deleting removes Assign's side only; the user clears the
-authenticator's copy in their own platform settings.
-
-Two response fields are worth surfacing in a UI. `backup_eligible` and
-`backup_state` together say whether the passkey is synced to the user's
-provider account or bound to one device — the difference between losing a phone
-being an inconvenience and being a lockout. And `disabled` is `true` when Assign
-took the credential out of use because its signature counter failed to advance,
-which indicates a second copy of the private key exists. A disabled passkey
-cannot sign in and cannot be re-enabled: tell the user plainly, and have them
-remove it and register a new one.
-
-Deleting the account's **last remaining sign-in method** is refused with `409
-last_sign_in_method`. A password, a linked identity provider, or another working
-passkey each count; a disabled one does not.
+Removing the account's last working sign-in method returns `409 last_sign_in_method`.
 
 ## Sign in with a provider
 
-Sign-in is a two-step redirect flow against `google`, `github`, or `apple`:
+Start Google, GitHub or Apple sign-in at `GET /api/v1/auth/providers/{provider}/authorize`, which
+redirects (`302`) to the provider. The provider returns to
+`/api/v1/auth/providers/{provider}/callback`, by `GET` for Google and GitHub and by form `POST` for
+Apple.
 
-```http
-GET /api/v1/auth/providers/{provider}/authorize HTTP/1.1
-Host: api.assign.so
-```
+On success both cookies are set and the browser is redirected to the account's Workspace, or to
+Workspace creation for an account without one. A malformed callback returns `400 invalid_request`;
+any other failure redirects to the login page with `?error=authentication_failed`.
 
-This redirects the browser (`302`) to the provider's consent screen. An
-unknown or disabled provider name returns the same `404` used for any other
-absent resource, so provider availability cannot be enumerated.
+A first sign-in from a provider identity whose **verified** email matches an existing account attaches
+to that account. After that, the identity is matched by the provider's subject, so an email change
+at the provider doesn't move it.
 
-The provider then returns control to Assign at the callback path:
+## Switch Workspace
 
-```http
-GET /api/v1/auth/providers/{provider}/callback?state=...&code=... HTTP/1.1
-Host: api.assign.so
-```
-
-Google and GitHub redirect here with a `state`/`code` query string; Apple
-instead posts the same two fields as `application/x-www-form-urlencoded` to
-the identical path (`POST`), since it uses the OIDC `form_post` response
-mode. A missing or malformed `state`/`code` is a genuine client error and
-returns `400 invalid_request`. Any other authentication failure — an
-unrecognized provider, a rejected code exchange — does not leak details:
-the browser is redirected (`302`) to the web application's login page with
-an opaque `?error=authentication_failed` query parameter and no cookies are
-set. On success, both browser-session cookies are set and the browser is
-redirected to that account's current Workspace project list. An account-only
-session is redirected to Workspace creation.
-
-## Cross-site request protection
-
-Every authenticated `POST`, `PUT`, `PATCH`, and `DELETE` request must send the
-value of `__Host-assign_csrf` in the `X-CSRF-Token` header. Assign verifies that
-the cookie and header match and that the token belongs to the authenticated
-session. A missing or invalid token receives `403 invalid_csrf_token`.
-
-## Log out
-
-`POST /api/v1/auth/logout` revokes only the current browser session and expires
-both cookies. Send the session and CSRF cookies with the request and include the
-CSRF token header:
-
-```http
-POST /api/v1/auth/logout HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-X-CSRF-Token: <csrf-token>
-```
-
-A successful logout returns `204 No Content` with `Cache-Control: no-store`.
-
-## Switch the session's Workspace
-
-A browser session is normally scoped to exactly one Workspace at a time (see
-`workspace` on [`GET /api/v1/me`](account.md#read-the-current-user-and-workspace)).
-A newly registered account may temporarily have an account-only session until
-it creates its first Workspace.
-Moving to a different Workspace the caller actively belongs to requires a
-new session — there is no in-place reauthorization of an existing session
-onto a new scope:
+A browser session is scoped to one Workspace. To change it:
 
 ```http
 PUT /api/v1/auth/session/workspace HTTP/1.1
@@ -465,13 +156,39 @@ Content-Type: application/json
 {"workspace_id": "<workspace-id>"}
 ```
 
-On success this revokes the current session, creates a new one scoped to
-`workspace_id`, and returns `204 No Content` with `Set-Cookie` fields that
-replace both `__Host-assign_session` and `__Host-assign_csrf` with freshly
-rotated values. Clients must re-read the CSRF cookie before issuing further
-mutating requests. A Workspace the caller does not actively belong to
-returns `403 workspace_access_denied` and leaves the current session
-untouched.
+This returns `204` and replaces both cookies, so re-read the CSRF cookie before your next write. A
+Workspace you don't belong to returns `403 workspace_access_denied` and leaves the session as it was.
+
+## Developer-client tokens
+
+The Assign CLI signs in with a browser authorization-code flow using PKCE (`S256`) and a loopback
+callback at `http://127.0.0.1:{port}/callback`. Use `assign login` rather than implementing it. The
+public client is `assign-cli`.
+
+- The authorization code is single-use and lasts five minutes.
+- The access token lasts 15 minutes. The refresh token rotates on every use, and replaying a used one
+  revokes the whole family.
+- `POST /api/v1/dev/oauth/revoke` revokes the calling credential.
+- Grants carry `assign:read`, `assign:write` and `assign:discuss`. Sign in again to gain a scope your
+  session predates.
+- These tokens work only on the operations that accept them (see the endpoint index) and never on the
+  MCP server.
+
+`POST /api/v1/cli/mcp/token` exchanges a CLI or personal API token for a short-lived MCP token that
+can narrow, but not widen, the parent's scopes. Use [`assign mcp setup`](../cli/mcp) instead of
+calling it.
+
+## Native mobile OAuth
+
+Native credentials are distinct from browser sessions, personal API tokens and developer-client tokens. Send the native access token in `Authorization: Bearer <native-access-token>` only to operations whose OpenAPI security alternatives include `nativeAccessToken`. Native requests do not need cookies or `X-CSRF-Token`; each operation still requires its documented revision and idempotency headers.
+
+The development contract includes supporting Workspace/Project/Task reads, ordinary Search and reference options, Document reads, Task comments and reactions, attachments, Account profile and image operations, settings reads and Git context. Workspace label definitions require exactly one `purpose=task`; generic label assignment reads support only `target_kind=task`. Project label override lists return `409 catalog_incomplete` above 100 records.
+
+Use the explicit Workspace in the path or upload request. Account profile operations apply to the authenticated caller. Invalid, expired, revoked or duplicate bearer credentials return an authentication error even when a valid browser cookie is present.
+
+Upload file bytes to the HTTPS URL returned by the reservation using only its required storage headers. Never forward the native token to storage. Profile image content returns a storage redirect; resolve it separately and fetch the image without Assign credentials.
+
+These additions are implemented and tested locally. Production availability and iOS/Android device qualification are pending. See [Availability](./conventions#availability) and the [OpenAPI contract](./index#openapi-and-sdks).
 
 ## Post-login destinations
 

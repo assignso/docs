@@ -1,27 +1,21 @@
+---
+description: Upload files directly to storage and attach them to Tasks, Projects and Documents, with previews, downloads and safety rules.
+---
+
 # Attachments
 
-Files can be attached to Tasks, Projects, and Documents. The browser first reserves a direct
-upload, sends file bytes to a short-lived object-storage URL, completes server
-verification, and then links the attachment to the chosen resource.
-File bytes never pass through Assign's API servers.
+Files can be attached to Tasks, Projects and Documents. The client reserves a direct upload, sends
+the bytes to a short-lived storage URL, completes verification and then links the attachment to a
+resource. File bytes never pass through Assign's API servers.
 
-> **Pre-launch safety notice:** the current production-configured acceptance
-> environment does not malware-scan uploaded files. They report
-> `scan_state: not_scanned`; treat them as untrusted. Inline preview and rich-text
-> embedding remain disabled, while Task/Project linking and forced download are available.
+## Upload and attach
 
-There is no client-side MIME allowlist. Server-side byte inspection still
-rejects executable, script, HTML, and XHTML content. Stored-byte inspection
-recognizes PNG/APNG, JPEG, GIF, WebP, AVIF, BMP, TIFF/BigTIFF, ICO/CUR, JPEG
-2000, JPEG XL, Photoshop, and HEIC/HEIF still and sequence images rather than
-trusting a client MIME label or filename. SVG files are supported as forced
-downloads only and are never previewed or rendered inside Assign.
-
-Before public launch, Assign will require private malware scanning again. Scanner
-unavailability will fail closed; a detected file will be quarantined and cannot
-be linked, previewed, or downloaded.
-
-## Attach a completed upload
+| Step | Operation |
+| --- | --- |
+| Reserve | `POST /api/v1/attachment-uploads` returns a short-lived upload URL. |
+| Send | Upload the bytes to that URL. |
+| Complete | `POST /api/v1/attachment-uploads/{upload_id}/complete` verifies the file. `DELETE` on the upload cancels a reservation. |
+| Link | `POST /api/v1/tasks/{task_id}/attachments`, `/api/v1/projects/{project_id}/attachments` or `/api/v1/documents/{document_id}/attachments` |
 
 ```http
 POST /api/v1/tasks/{task_id}/attachments HTTP/1.1
@@ -29,64 +23,47 @@ X-CSRF-Token: <csrf-token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"attachment_id":"<attachment-id>"}
+{"attachment_id": "<attachment-id>"}
 ```
 
-Use `/api/v1/projects/{project_id}/attachments` for a Project or
-`/api/v1/documents/{document_id}/attachments` for a Document. Each operation
-returns `201` with the attachment metadata. A file may belong to more than one
-resource in the same Workspace.
+Linking returns `201` with the attachment's metadata. A file can belong to several resources in the
+same Workspace. `GET` on any of these paths lists up to 100 attachments, newest first. A Document
+keeps its link when a block is removed, because saved revisions may still use it. The link ends when
+the Document is purged or the attachment is deleted.
 
-`GET` on any parent path returns a bounded, newest-first `items` list (maximum
-100 attachments). A Document keeps its link when a block is removed because a
-saved revision may still contain that block. The link is removed when the
-Document is permanently purged or the attachment itself is deleted.
+## Read, download and delete
 
-The Document and Task-description editors complete an upload and create the
-parent link before inserting an image or file block. If linking fails
-conclusively, the browser deletes the newly completed attachment and leaves the
-content unchanged. If the link response is lost, it first reads the parent
-attachment collection so a committed link is never deleted.
+- `GET /api/v1/attachments/{attachment_id}` reads metadata.
+- `POST /api/v1/attachments/{attachment_id}/download` and `…/preview` return short-lived URLs. Don't
+  store them.
+- `DELETE /api/v1/attachments/{attachment_id}` deletes the attachment everywhere. It hides every
+  Task, Project and Document link, and isn't a removal from one parent.
 
-Published Documents use separate anonymous authorization operations:
+Published Documents use anonymous equivalents:
+`POST /api/v1/public/documents/{public_id}/attachments/{attachment_id}/preview` (or `download`). It
+returns a five-minute URL only if the attachment is linked to that Document and its current body
+references it. Unpublishing or archiving revokes access.
 
-```http
-POST /api/v1/public/documents/{public_id}/attachments/{attachment_id}/preview HTTP/1.1
-```
+## Safety
 
-Replace `preview` with `download` for a forced download. Core issues a
-five-minute URL only if the attachment belongs to that published Document and
-its current body still references the ID. An attachment retained only for an
-older revision is not public. Unpublishing or archiving the Document revokes
-both operations.
+- Assign inspects the stored bytes and rejects executable, script, HTML and XHTML content, whatever
+  the filename or MIME type says. It recognizes common image formats, including PNG, JPEG, GIF, WebP,
+  AVIF, HEIC and TIFF, for previews.
+- SVG is supported only as a forced download and is never rendered inside Assign.
+- `scan_state` reports malware scanning. A deployment without scanning reports `not_scanned`. Treat
+  those files as untrusted: they can be linked and force-downloaded, but not previewed inline or
+  embedded in rich text. A file detected as malicious is quarantined and can't be linked, previewed or
+  downloaded.
 
-## User experience and safety
+## In the web app
 
-In an existing Document or Task description, use the image or file command in
-the editor toolbar or slash menu. The editor stores the attachment ID instead
-of a signed URL, so image blocks can be reordered without re-uploading the
-file. Creation drafts enable these commands after the Document or Task exists.
+In an existing Document or Task description, use the image or file command in the toolbar or slash
+menu. The editor stores the attachment ID, not a signed URL, so blocks can move without
+re-uploading. On a Task, attachments appear after the description and before Relations. On a Project,
+they're in the **Attachments** tab after **Documents**.
 
-On a Ticket, attachments appear after the ticket body and before Relations. On
-a Project, they appear in the **Attachments** tab immediately after
-**Documents**. Use **Add files** or drop files anywhere over the applicable
-page. The page shows a drop indicator, keeps queued, uploading, and verifying
-files visible, allows cancellation and retry, and gives one success
-notification for a multi-file selection or drop. If the saved-file list cannot
-be loaded, the Attachments region shows a contextual **Try again** action while
-the rest of the Task or Project page remains usable.
-
-Saved Project files appear as a centered responsive grid: one column on smaller
-screens and two columns on desktop, with cards filling their grid cells.
-Clean raster-image cards load a short-lived thumbnail near the viewport. Every
-recognized raster format uses the same preview path; formats unsupported by the
-current browser fall back to the image icon without affecting download.
-Unscanned files, SVG, and non-image files remain icon-only. Activating a raster-image or PDF title
-displays it in a new browser tab through a separately authorized inline URL.
-The card-wide action and separate labelled icon still force a download; another
-labelled icon globally deletes the
-attachment. Global deletion hides every Task, Project, and Document link under the existing
-soft-delete rules; it is not a current-parent unlink. Each open, preview, or
-download flow uses a short-lived URL that applications must not store. SVG is
-always a download—never an inline preview or content embedded in an
-authenticated Assign page.
+Use **Add files** or drop files onto the page. Queued, uploading and verifying files stay visible with
+cancel and retry, and a multi-file drop gives one success notice. Project files show as a grid.
+Clean raster images show a thumbnail, and unscanned files, SVG and non-image files show an icon.
+Selecting a raster image or PDF title opens it in a new tab, and the card and its download icon force
+a download.

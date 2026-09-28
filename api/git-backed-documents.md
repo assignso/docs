@@ -1,76 +1,63 @@
+---
+description: Mirror a Workspace's Documents to a Git repository as Markdown, with sync modes, conflict handling and API endpoints.
+---
+
 # Git-backed Documents
 
-Git-backed Documents keep a Workspace's Assign Documents mirrored as readable
-Markdown in one repository. Assign remains the canonical collaborative copy;
-Git synchronization happens asynchronously and never blocks an editor save.
+A Git-backed Workspace mirrors its Assign Documents to one repository as readable Markdown. Assign
+stays the canonical copy. Synchronization runs in the background and never blocks an editor save.
 
 ## Connect a repository
 
-Open **Workspace settings → Knowledge → Git Repository**. Choose **Use existing
-repository**, select an active GitHub connection and repository, then choose an
-existing branch, a documentation root and a sync mode. Confirm the repository
-reader disclosure before connecting. Repository creation is not available in
-the initial GitHub adapter, so **Create documentation repository** remains
-unavailable when that capability is absent.
+Open **Workspace settings → Knowledge → Git Repository** and choose **Use existing repository**. Pick
+an active GitHub connection and repository, a branch, a documentation root and a sync mode, then
+confirm the reader disclosure. Creating a repository from Assign isn't available yet.
 
-The connection uses only repository access already granted under Integrations.
-People who can read the repository can read every synchronized Document,
-including preserved frontmatter. Do not connect a repository whose readers
-should not receive that content.
+The connection uses only repository access already granted under Integrations. Anyone who can read
+the repository can read every synchronized Document, including frontmatter, so don't connect a
+repository whose readers shouldn't see that content.
 
-## Synchronization behavior
+## How sync works
 
-- Assign edits are grouped before a conditional direct commit to the selected
-  branch. Synchronization never force-pushes or creates a pull request.
-- Edits made while a sync is exporting remain pending for the next pass; the
-  completed run acknowledges only the version actually exported.
-- **Sync now** starts an immediate bounded reconciliation, but still applies
-  authorization, conflict, provider and rate limits.
-- In bidirectional mode, verified provider pushes cause Assign to reread the
-  configured branch and apply supported Markdown changes under the selected
-  documentation root.
-- Deleting a bound Markdown file archives its Assign Document. Returning the
-  same portable identity restores it. Known renames retain the binding identity.
-- Provider outages leave canonical Assign editing available. Use the status,
-  pending count and recent run history to diagnose delayed synchronization.
+- Edits in Assign are batched into a direct commit to the branch. Sync never force-pushes or opens a
+  pull request.
+- Edits made during an export wait for the next pass.
+- **Sync now** starts an immediate bounded reconciliation, still subject to permission, conflict and
+  rate limits.
+- In bidirectional mode, verified pushes make Assign reread the branch and apply supported Markdown
+  changes under the documentation root.
+- Deleting a bound Markdown file archives its Document, and bringing the same file back restores it.
+  Renames keep the binding.
+- If the provider is down, Assign editing keeps working. The status, pending count and run history
+  show what's delayed.
 
-Assign stores `.assign.yaml` and `.assign/documents.json` inside the configured
-documentation root. The manifest maps paths to portable identities; do not edit
-it casually. Markdown remains usable without those files, but a clean import
-without the manifest creates new Assign identities.
+Assign writes `.assign.yaml` and `.assign/documents.json` in the documentation root to map paths to
+Documents. Don't edit them by hand. Without them, an import creates new Documents.
 
 ## Frontmatter and conflicts
 
-Unknown frontmatter is preserved byte-for-byte while the Markdown body is
-edited through Assign's supported Markdown profile. Frontmatter does not change
-fixed Assign Document properties in the first release.
+Unknown frontmatter is preserved exactly while the body is edited through Assign. Frontmatter doesn't
+change Document properties.
 
-When Git and Assign both change from the last common version, synchronization
-stops for that Document. The settings page offers **Keep Assign**, **Use Git**
-and a merged-Markdown action. Each choice rechecks the current Git head and
-Document revision; a stale choice is rejected instead of overwriting newer work.
+If Git and Assign both changed a Document since the last sync, sync stops for it. Settings offers
+**Keep Assign**, **Use Git** and a merged-Markdown option. Each choice rechecks the current Git head
+and Document revision, and a stale choice is rejected rather than overwriting newer work.
 
-Pausing or disconnecting stops future repository writes but does not delete
-Documents. A Markdown mirror does not include comments, access controls, Tasks,
-complete revision history, collaboration updates, credentials or secrets, so it
-is not a replacement for Workspace backups.
+Pausing or disconnecting stops repository writes but deletes nothing. The mirror leaves out
+Comments, access controls, Tasks, full revision history, collaboration data and secrets, so it's not
+a backup.
 
 ## HTTP API
 
-The public API exposes the connection at
-`/api/v1/workspaces/{workspace_id}/knowledge-repository`, with explicit import,
-sync, bounded run-history, conflict-list and conflict-resolution operations.
-Use the generated SDK for the current request and response schemas. New Git-sync
-management tools are not currently exposed through Assign MCP; existing
-authorized Document and Knowledge retrieval remains available there.
+The connection is at `/api/v1/workspaces/{workspace_id}/knowledge-repository`, with operations for
+import, sync, run history and conflict listing and resolution. The
+[OpenAPI document](/openapi.yaml) has the schemas. MCP doesn't expose Git sync management, but
+Document and Knowledge retrieval works there as usual.
 
-Connection setup is naturally idempotent when the same active configuration is
-submitted again. State changes use the repository revision, and sync/conflict
-operations recheck the current Document revision and Git head. If a mutation's
-HTTP result is lost, read the repository, run history or conflict list before
-retrying; this first contract does not replay mutation responses by an
-idempotency key.
+Submitting the same active connection again is safe. State changes use the repository revision, and
+sync and conflict operations recheck the Document revision and Git head. Mutations aren't replayed by
+idempotency key, so if a response is lost, read the repository, run history or conflict list before
+retrying.
 
-Repository reads are limited to 2,000 eligible files, 20 MiB total and 1 MiB per
-file. Sync also limits loaded canonical content and frontmatter to 20 MiB; a
-local corpus over that limit needs to be reduced before it can synchronize.
+Limits: 2,000 eligible files, 20 MiB total and 1 MiB per file when reading a repository, and 20 MiB of
+Documents and frontmatter per sync.

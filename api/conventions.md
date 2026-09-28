@@ -1,66 +1,35 @@
+---
+description: Identifiers, timestamps, pagination, idempotency, concurrency and errors shared by every Assign API operation.
+---
+
 # API conventions
 
-Assign's public product API uses JSON over HTTPS beneath `/api/v1`.
+These rules apply to every operation under `/api/v1`. The [OpenAPI document](/openapi.yaml) defines the
+exact requirements of each one.
 
-- Assign-owned identifiers are opaque UUIDv7 strings. Clients must not infer
-  creation time, tenant, resource type, or ordering from an identifier.
-- Timestamps are RFC 3339 values in UTC.
-- Collection operations are bounded and use opaque cursor pagination. Clients
-  must not construct or modify cursors.
-- Retryable create operations identify their idempotency contract with `Idempotency-Key`.
-- Concurrent edits use entity tags and `If-Match` where required by the operation.
-- Errors contain a stable machine-readable code, a safe message, and, when available, the request ID.
-- Error responses use `Cache-Control: no-store`; clients and intermediaries must
-  not retain them.
-- A resource outside the caller's workspace is never discoverable merely by knowing its identifier.
+| Topic | Rule |
+| --- | --- |
+| Identifiers | Opaque UUIDv7 strings. Don't infer time, tenant, type or order from them. |
+| Timestamps | RFC 3339 in UTC. Calendar dates are `YYYY-MM-DD`. |
+| Pagination | Bounded pages with opaque cursors (`next_cursor`, `has_more`). Never build or edit a cursor. |
+| Idempotency | Retryable creates take an `Idempotency-Key`. Reuse a key only for the identical request. |
+| Concurrency | Updates send the resource's revision in `If-Match`. A stale revision returns `409`. |
+| Errors | A stable machine-readable `code`, a safe message and, when available, a request ID. Error responses aren't cacheable. |
+| Isolation | A resource outside your Workspace returns `404`, the same as one that doesn't exist. |
 
-API v1 spans independent server, client, and SDK releases; additive changes stay
-in v1, while broad incompatible changes require a new API major. See
-[API and client versioning](versioning.md) for compatibility, SDK releases,
-capabilities, and deprecation.
+## Availability
 
-The OpenAPI contract defines the exact requirements for each operation. See
-[Browser authentication](authentication.md), [Account and Workspaces](account.md),
-[Projects and Statuses](projects.md), [Tasks](tasks.md), and [Search](search.md) for the currently
-released operations; most domain-resource operations remain unreleased.
+The contract can list operations before they're available. Treat an operation as available when its
+guide describes it. Native mobile OAuth, credential management and push-device operations are
+published for planning only and shouldn't be used yet.
 
-## Published but not yet served
+Two deployment notes:
 
-The contract is published ahead of the server for some resources, so the
-generated SDKs expose methods before the API answers them.
+- Attachment operations need object storage, and files report `scan_state: not_scanned` until malware
+  scanning is enabled. See [Attachments](./attachments).
+- Passkey operations return `404` where passkeys aren't configured.
 
-**Comments**, **documents**, and **attachments** are now implemented and no
-longer fall into this category. Two caveats apply to attachments: a deployment
-that has no object storage configured does not serve the attachment operations
-at all, and the current pre-launch acceptance environment does not scan files
-for malware. Those files truthfully report `scan_state: not_scanned`; they may be
-linked to Tasks/Projects and force-downloaded, but cannot be previewed inline or
-embedded in rich text. Scanner-required fail-closed behavior returns before
-public launch.
+## Related
 
-**Password sign-in, the TOTP second factor, and passkeys** are implemented; see
-[Browser authentication](authentication.md). Passkey operations are the one
-group whose availability depends on the deployment: they are served only where a
-WebAuthn relying party is configured, and return `404` elsewhere.
-
-The seven **current-user profile, session, and identity** operations under
-`/api/v1/me` are served as of 2026-08-18: updating your profile, listing your
-sessions, revoking one or all of them, and listing, linking, or unlinking an
-external identity. See [Account and Workspaces](account.md).
-
-The Workspace **search** operation is served for Project and Task titles. Its
-bounded result shape and current limitations are documented in [Search](search.md).
-
-The native mobile OAuth, native-bearer Inbox/My Work, credential-management,
-and push-device methods are intentionally published **contract-only**. Their
-schemas are stable for SDK planning, but they are not an availability promise;
-clients must not enable those workflows until the backend release is announced.
-
-Everything not documented on the pages listed above remains contract-only and
-will fail if called.
-
-Treat an operation as available only once its documentation explicitly marks it
-served. Contract-only operations are published early so client authors
-can review shapes and plan work, not as an availability promise; their request
-and response schemas are accepted and are not expected to change
-incompatibly before release, but their release date is not fixed.
+[Versioning](./versioning) covers compatibility and deprecation. [Authentication](./authentication)
+covers credentials.

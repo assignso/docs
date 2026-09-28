@@ -57,6 +57,7 @@ lastUpdated: false
     <li><a href="/cli/scripting">Scripting with the CLI <span>Exit codes and tokens</span></a></li>
     <li><a href="/api/conventions">API conventions <span>IDs, cursors, idempotency</span></a></li>
     <li><a href="/api/endpoints">Endpoint index <span>Every public operation</span></a></li>
+    <li><a href="/openapi.yaml">OpenAPI document <span>Import or generate a client</span></a></li>
     <li><a href="/guides/editor">Writing in Assign <span>Blocks, Markdown, mentions</span></a></li>
     <li><a href="/guides/keyboard-shortcuts">Keyboard shortcuts <span>Move without the mouse</span></a></li>
   </ul>

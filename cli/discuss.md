@@ -1,44 +1,29 @@
 ---
-description: Open your Workspace's Discuss thread in an interactive terminal client.
+description: Open your Workspace's Discuss conversation in an interactive terminal client.
 ---
 
 # Discuss in the terminal
-
-Open the current Workspace's Discuss thread in an interactive terminal:
 
 ```sh
 assign discuss
 ```
 
-The command checks Discuss availability before loading history. Full access
-shows history and a composer. Read-only access shows canonical history without
-a composer. Preview access shows the plan boundary and does not load private
-messages.
+The command needs a terminal (TTY). It checks Discuss availability first. Full access shows history and
+a composer, read-only access shows history without a composer, and preview access shows the plan
+boundary without loading private messages.
 
-The terminal renders typed Task, action receipt, operation receipt,
-clarification, approval, evidence-reference, and tool-activity widgets. Unknown
-parts use a compact safe fallback instead of printing their raw payload. Reply
-in the composer to resolve an open clarification or approval. Use
-`/undo <action-group-id>` to request reversal through the same canonical
-Discuss thread. Press Escape or Ctrl+C to leave.
+The terminal shows Task cards, action and operation receipts, clarifications, approvals, evidence
+references and tool activity. Unknown parts get a compact fallback rather than raw data. Reply in the
+composer to answer a clarification or approval, and use `/undo <action-group-id>` to request a reversal.
+Press Escape or Ctrl+C to leave.
 
-Responses update over the private Discuss stream and recover from routine
-connection rotation without creating another conversation. Task cards print the
-exact Task URL; saved work receipts print an exact versioned review URL when the
-receipt contains one. Opening either URL rechecks your current Web access.
+- Responses stream in and recover from routine reconnects without starting another conversation.
+- Task cards and receipts print exact URLs, which recheck your web access when opened.
+- Assign is the only source of messages and changes. The client runs no local model and keeps no
+  separate thread.
+- While a response is queued or running, focus **Stop** and activate it to cancel. Completed actions
+  and receipts stay completed and are never shown as rolled back.
+- Sessions created before `assign:discuss` existed need one `assign login`. A personal token used as
+  `ASSIGN_TOKEN` must include `assign:discuss`. Workspace plan and permission checks still apply.
 
-`assign discuss` requires a TTY. It uses Assign Core as the only source of
-messages, interactions, and work changes; it does not run a local model or
-maintain a separate thread store. The Go CLI retains the credential and exposes
-only a narrow, process-lifetime loopback broker to the bundled terminal
-renderer. The renderer receives no access or refresh token. Release archives
-include its standalone executable, so users do not need Node.js or Bun.
-
-While a response is queued or running, move focus to **Stop** and activate it
-to request canonical cancellation. A completed action and its receipt remain
-completed; Stop does not present them as rolled back.
-
-CLI sessions issued before `assign:discuss` was added must run `assign login`
-once to receive the new grant. A personal API token used through
-`ASSIGN_TOKEN` must include `assign:discuss`. Workspace plan and authorization
-checks still apply.
+See [Discuss](../api/discuss) for what you can ask.

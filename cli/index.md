@@ -71,6 +71,30 @@ to you in the current Workspace. Each row uses the Task code shown in the web ap
 PRO-123  Ship the slice
 ```
 
+## Break down large work <Badge type="warning" text="Upcoming" /> {#break-down-large-work}
+
+Use the CLI with your shell or external Agent tool to work through a large milestone in
+small batches. Read a page of Tasks, inspect the selected Task's context, create ordinary
+Tasks for smaller pieces, and record progress in comments.
+
+```sh
+assign project tasks PRO --limit 50 --format json
+assign task context PRO-123 --compact
+assign task create "Implement one acceptance criterion" --project PRO --field code
+assign task comment PRO-123 "Child work is ready; parent acceptance is still pending."
+```
+
+These commands are upcoming and may not appear in your installed binary yet. Check
+`assign task --help` and `assign project tasks --help` before using them.
+
+The CLI provides explicit reads and writes. Your external runner chooses the work and
+manages each Agent session. Task creation does not automatically link a parent or assign a
+Milestone, and command success does not mean the whole milestone is complete.
+
+Follow [Milestone work loops](./scripting#milestone-work-loops) for the batch workflow,
+[paged Task output](./commands#project-task-pages) for queue reads, and
+[retry handling](./scripting#retries) for uncertain writes.
+
 ## Where to next
 
 <div class="next-steps">

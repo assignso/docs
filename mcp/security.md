@@ -33,3 +33,26 @@ create a replacement when rotating access.
 
 Registering a client again does not reactivate a revoked client. A disabled client
 cannot resume access merely by publishing or resubmitting its registration metadata.
+
+
+## Paid public publishing <Badge type="warning" text="Awaiting deployment" />
+
+Public Document creation and Project publishing also require that Workspace's paid publishing entitlement. A denied tool call returns `paid_workspace_required` without publishing; existing OAuth scopes and actor permissions still apply. Authorized unpublishing remains available. `document_update` replaces content and does not change publication scope.
+
+## Resource scopes <Badge type="warning" text="Awaiting deployment" />
+
+A client can request `assign:<resource>:read` or `assign:<resource>:write` to limit which tool operations its connection can use.
+
+| Read and write | Read only |
+| --- | --- |
+| projects, tasks, comments, relations, documents, attachments, labels, milestones, inbox, knowledge, memory, discuss, agents, operations | workspaces, statuses, members, activity, search, code, context |
+
+Request read and write separately when both are needed. Granular write permits the mutation and its normal response, but does not grant separate read tools. Existing broad `assign:read` and `assign:write` retain their behavior; omit them when you want narrow access. Broad mutations still require both broad scopes.
+
+For a Task-editing connection, request `assign:tasks:read` and `assign:tasks:write`. Add `assign:workspaces:read` and `assign:projects:read` when the client needs to discover those identifiers, and comment scopes when it needs comment tools. Missing discovery access does not authorize guessing identifiers or switching credentials to bypass a denial.
+
+Scopes limit tool operations; existing authorized result previews retain their current content. `assign:context:read` allows the cross-resource Task context packet. Operations scopes cover reviewed change sets and receipts, including eligible undo. Agent write permits routed actions across authorized resources. Knowledge write manages evidence collections. Approve these aggregate capabilities only when your workflow needs them. Current role, Workspace, Project, policy and entitlement checks still apply.
+
+OAuth metadata advertises the supported set. Each advertised tool identifies its granular scope in `assign/resource_scope` metadata. Calls are checked again even when a client has cached the tool list. An insufficient grant returns `insufficient_scope` without executing the tool.
+
+The service-credential creation API accepts the same finite scope values, with at most 37 distinct entries. The current Web form continues broad read-only or read/write choices. A refresh token cannot add or reinterpret scopes; request fresh consent or create a replacement credential to change access. Existing credentials are not rewritten automatically.

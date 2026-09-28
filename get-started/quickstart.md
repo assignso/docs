@@ -63,4 +63,4 @@ curl https://api.assign.so/api/v1/cli/my-work \
   -H "Accept: application/json"
 ```
 
-Start with the [API overview](../api/) and [conventions](../api/conventions).
+Start with the [API overview](../api/) and [conventions](../api/conventions). The [OpenAPI document](/openapi.yaml) describes every operation.

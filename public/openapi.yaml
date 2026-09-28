@@ -11,6 +11,8 @@ servers:
   - url: https://api.assign.so
     description: Production
 tags:
+  - name: Realtime
+    description: Browser application WebSocket admission and authorized replay custody. Upcoming; not deployed.
   - name: Authentication
     description: Browser-session and native OAuth credential lifecycle operations.
   - name: Account
@@ -46,6 +48,150 @@ tags:
   - name: Agents
     description: Curated Agent definitions and Workspace-owned desired Agent configuration. Execution remains in the private Knowledge service.
 paths:
+  /api/v1/realtime:
+    get:
+      tags:
+        - Realtime
+      operationId: openApplicationRealtime
+      summary: Upgrade an authenticated browser application socket
+      description: |
+        Upcoming, not deployed. Requires the current browser session, exactly one
+        configured browser Origin and WebSocket subprotocol assign.realtime.v1.
+        No query parameters or Authorization header are accepted. Account-only
+        sessions are allowed; Workspace scopes still require the current Workspace.
+        This operation is a WebSocket upgrade, not a JSON GET. HTTP SDK methods do
+        not implement the upgraded transport; use the application WebSocket owner.
+        JSON control frames negotiate bounded subscriptions and independent applied
+        ACKs. Account/security scopes omit workspace_id and carry no client-supplied
+        User identity. Inbox and personal Project scopes require workspace_id.
+        A visible application owner may send presence_renew with an applied
+        Workspace subscription ID and cursor. It renews only that owner's
+        eligible human Workspace lease; transport pongs do not renew presence.
+        An applied Workspace owner may send presence_observe with that cursor and
+        up to 256 distinct active human member User IDs. An empty list clears
+        observation. Authorized snapshots carry an epoch, revision and complete
+        selected online states; presence_unknown clears confidence on source,
+        observer or authorization loss. Wake recovery requires a fresh snapshot.
+        Ordinary Workspace subscriptions exclude private collection hints.
+        The discuss scope uses a separate session-bound private sequence and
+        content-free message identity hints; its cursor is not a Workspace
+        journal position.
+        Source health is separate from canonical applied state. See the public
+        realtime guide for authentication, scope and recovery rules.
+      security:
+        - browserSession: []
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uri
+        - name: Sec-WebSocket-Protocol
+          in: header
+          required: true
+          schema:
+            type: string
+            enum:
+              - assign.realtime.v1
+      responses:
+        "101":
+          description: WebSocket established; versioned control frames follow.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          description: Admission capacity is temporarily unavailable; retry with bounded backoff.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/realtime/baseline:
+    get:
+      tags:
+        - Realtime
+      operationId: getApplicationRealtimeBaseline
+      summary: Capture authorized realtime routing custody or a domain page
+      description: |
+        Upcoming, not deployed. Omitted scope captures ordinary Workspace routing
+        custody. The account, account_security, inbox and personal_projects scopes
+        accept only the scope query parameter and return content-free routing
+        custody. The discuss scope returns private conversation sequence custody
+        without message content or an atomic transcript snapshot. They do not
+        establish an atomic domain snapshot. Account scopes
+        work without a Workspace. All private cursors bind the current User and
+        browser session; Workspace-private cursors also bind current membership.
+        projects and task_comments return a canonical page and its same-snapshot
+        cursor. task_comments requires a canonical UUID resource_id and admits at
+        most two items. Canonical private reads use X-Assign-Realtime-Baseline
+        instead. Unknown or duplicate query parameters are rejected.
+      security:
+        - browserSession: []
+      parameters:
+        - name: scope
+          in: query
+          schema:
+            type: string
+            enum:
+              - projects
+              - task_comments
+              - account
+              - account_security
+              - inbox
+              - personal_projects
+              - discuss
+        - name: resource_id
+          in: query
+          description: Task UUID, required only for task_comments.
+          schema:
+            type: string
+            format: uuid
+        - name: continuation
+          in: query
+          description: Opaque signed domain-page cursor; only projects or task_comments.
+          schema:
+            type: string
+            maxLength: 4096
+        - name: limit
+          in: query
+          description: Domain-page item bound; projects allows 1–100 and task_comments allows 1–2.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Authorized routing custody or canonical domain page; never reusable after session/authority loss.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeBaseline"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          description: Canonical baseline temporarily unavailable; do not publish partial state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /oauth/register:
     post:
       tags:
@@ -107,7 +253,8 @@ paths:
                       - code
                 scope:
                   type: string
-                  description: Space-separated assign:read and/or assign:write scopes.
+                  description: Space-separated supported MCP scopes
+                  including additive assign:resource:read or assign:resource:write groups. Legacy broad scopes remain supported; grants and refresh never expand the approved scope set.: null
       responses:
         "201":
           description: Public client registered; no secret or token issued.
@@ -1141,66 +1288,6 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
-  /api/v1/workspaces/{workspace_id}/events:
-    get:
-      tags:
-        - Workspaces
-      operationId: streamWorkspaceEvents
-      summary: Stream Workspace reconciliation events
-      description: |
-        Opens an authenticated Server-Sent Events stream. A connection starts
-        with `hello`, followed by `workspace_event` or `heartbeat` frames.
-        Each event has a signed resume cursor in its SSE `id`; reconnect with
-        that value through `Last-Event-ID` or `cursor`. The client declares
-        envelope version `1` and may echo the prior stream epoch. When a
-        cursor or epoch cannot be resumed, the server emits
-        `resync_required` and closes; replace affected authorized data before
-        reconnecting from its issued cursor. Event payloads are bounded
-        reconciliation hints, never permission grants or rich content.
-      security:
-        - browserSession: []
-        - bearerToken: []
-        - developerAccessToken: []
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - name: cursor
-          in: query
-          description: Signed cursor from a prior SSE frame
-          schema:
-            $ref: "#/components/schemas/Cursor"
-        - name: Last-Event-ID
-          in: header
-          description: Standard SSE resume cursor; takes precedence over `cursor`.
-          schema:
-            $ref: "#/components/schemas/Cursor"
-        - name: envelope_version
-          in: query
-          description: Client-supported Workspace event envelope version. Defaults to `1`; unsupported values receive a `resync_required` frame.
-          schema:
-            type: integer
-            enum:
-              - 1
-            default: 1
-        - name: stream_epoch
-          in: query
-          description: Opaque epoch from the prior `hello` frame. A mismatched value receives a `resync_required` frame.
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 100
-      responses:
-        "200":
-          description: A `text/event-stream` response carrying `hello`, `workspace_event`, `heartbeat`, or terminal `resync_required` frames.
-          content:
-            text/event-stream:
-              schema:
-                $ref: "#/components/schemas/WorkspaceEventStreamFrame"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
-          $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/activity:
     get:
       tags:
@@ -1229,12 +1316,28 @@ paths:
         `has_more` says whether history continues. `provenance` distinguishes
         mediated actions while preserving the stable Actor; a group carries
         the least direct classification among its members.
+        Optional paired `day` and `time_zone` select one civil day's inclusive
+        local midnight to exclusive next midnight, including DST changes.
+        The indexed time range applies before pagination and counting; cursors
+        are bound to that interval. Existing 90-day retention still applies.
       security:
         - browserSession: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/PageLimit"
+        - name: day
+          in: query
+          description: Civil date; requires time_zone. Invalid or unpaired inputs return 400 invalid_request.
+          schema:
+            type: string
+            format: date
+        - name: time_zone
+          in: query
+          description: IANA timezone for day; requires day. Local is not accepted.
+          schema:
+            type: string
+            example: Europe/Budapest
       responses:
         "200":
           description: Activity page
@@ -1304,6 +1407,7 @@ paths:
         determines which Tasks are in progress.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/ProjectId"
         - $ref: "#/components/parameters/Cursor"
@@ -1342,6 +1446,7 @@ paths:
         `assignee_actor_id` filter.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - $ref: "#/components/parameters/PersonUsername"
@@ -1367,6 +1472,7 @@ paths:
       description: Redirects an authorized Workspace member to a short-lived object-storage URL. The target must still be an active member of the same Workspace.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - name: user_id
@@ -1442,6 +1548,14 @@ paths:
           schema:
             $ref: "#/components/schemas/NotificationCategory"
           description: Optional typed category filter. Pagination cursors are bound to this filter.
+        - name: X-Assign-Realtime-Baseline
+          in: header
+          required: false
+          description: Upcoming browser-session canonical read custody. The named private scope captures this response and a signed replay cursor in one snapshot. Successful responses include X-Assign-Realtime-Cursor and X-Assign-Realtime-Position. Apply all required retained state before acknowledging the corresponding socket checkpoint. Failed or incomplete baselines return no cursor.
+          schema:
+            type: string
+            enum:
+              - inbox
       responses:
         "200":
           description: Inbox items and the current unread count
@@ -1449,6 +1563,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InboxList"
+          headers:
+            X-Assign-Realtime-Cursor:
+              description: Signed scope/User/session-bound replay custody; only when the requested canonical baseline succeeds.
+              schema:
+                type: string
+                maxLength: 4096
+            X-Assign-Realtime-Position:
+              description: Decimal-string snapshot position; only with a successful baseline cursor.
+              schema:
+                type: string
+                pattern: ^(0|[1-9][0-9]*)$
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1514,6 +1639,7 @@ paths:
       summary: Read shared Workspace defaults
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
       responses:
@@ -1844,8 +1970,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/agents/studio/definitions:
@@ -1854,12 +1978,14 @@ paths:
         - Agents
       operationId: listWorkspaceCustomAgents
       summary: List custom Agent definitions editable by Workspace managers
+      description: Returns updated-at ordered pages under current Studio authority. A continuation cursor binds the prior page's commit-ordered Workspace journal position. A catalog change returns 409 catalog_changed; restart from the first page.
       security:
         - browserSession: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - $ref: "#/components/parameters/PageLimit"
         - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Cursor-paginated custom Agent definitions.
@@ -1867,6 +1993,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CustomAgentDefinitionList"
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1875,6 +2006,10 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
     post:
       tags:
         - Agents
@@ -1931,22 +2066,31 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Identifier"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Current custom Agent definition.
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/CustomAgentDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
     patch:
       tags:
         - Agents
@@ -2006,9 +2150,15 @@ paths:
             $ref: "#/components/schemas/Identifier"
         - $ref: "#/components/parameters/PageLimit"
         - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Cursor-paginated visible request outcomes.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -2087,6 +2237,7 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Identifier"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Safe custom Agent profile.
@@ -2094,6 +2245,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CustomAgentProfile"
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "402":
@@ -2106,6 +2264,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/delegations/{task_id}:
     post:
       tags:
@@ -2183,9 +2343,15 @@ paths:
           schema:
             $ref: "#/components/schemas/Timestamp"
           description: Exclusive period end; defaults to request time.
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Reconciled usage aggregate.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -2212,6 +2378,7 @@ paths:
         - browserSession: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Workspace Agent instances.
@@ -2219,12 +2386,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AgentInstanceList"
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
     post:
@@ -2265,8 +2437,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/agents/{agent_id}:
@@ -2284,22 +2454,27 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Identifier"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Workspace Agent instance.
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AgentInstance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
     patch:
@@ -2345,8 +2520,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
     delete:
@@ -2472,9 +2645,15 @@ paths:
             $ref: "#/components/schemas/Identifier"
         - $ref: "#/components/parameters/PageLimit"
         - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Cursor-paginated Agent run history.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -2485,8 +2664,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
     post:
@@ -2529,8 +2706,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}:
@@ -2553,9 +2728,15 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Identifier"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Safe Agent run projection.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -2564,8 +2745,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/cancel:
@@ -2614,8 +2793,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions:
@@ -2638,9 +2815,15 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Identifier"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Action records.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -2669,9 +2852,15 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Identifier"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Provenance-bound outputs.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -2746,6 +2935,7 @@ paths:
         - browserSession: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/WorkspaceRealtimeDerivedBaseline"
         - name: q
           in: query
           required: true
@@ -2771,6 +2961,10 @@ paths:
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -2781,8 +2975,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/knowledge/answer:
@@ -2796,6 +2988,7 @@ paths:
         - browserSession: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/WorkspaceRealtimeDerivedBaseline"
         - name: q
           in: query
           required: true
@@ -2809,6 +3002,10 @@ paths:
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -2819,8 +3016,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/discuss/availability:
@@ -2850,8 +3045,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/discuss/messages:
@@ -2895,8 +3088,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
     post:
       tags:
         - Discuss
@@ -2941,8 +3132,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/discuss/references/resolve:
@@ -3359,86 +3548,6 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
-  /api/v1/workspaces/{workspace_id}/discuss/events/stream:
-    get:
-      tags:
-        - Discuss
-      operationId: streamDiscussEvents
-      summary: Subscribe to membership-private Discuss updates
-      description: |
-        Cookie-authenticated SSE; private content never uses the Workspace event audience.
-        Frames are hello, discuss_event, heartbeat and terminal resync_required.
-        A new subscription starts at the current cursor. After hello, reconcile the
-        existing bounded HTTP event feed from the last acknowledged numeric cursor,
-        then apply streamed messages by ID and increasing revision. SSE ids are signed
-        opaque cursors bound to Workspace, private stream and envelope version.
-        Last-Event-ID takes precedence over cursor. Unsupported version, epoch mismatch,
-        invalid/expired/future cursor or a replay gap emits resync_required then closes.
-        Refresh authorized snapshots before reconnecting; never replay an approval or
-        mutation. Reads reauthorize membership. Connections last at most 55 seconds,
-        with 15-second heartbeats and bounded write deadlines. Viewer disconnect or
-        backgrounding never cancels execution. Generated buffered HTTP methods expose
-        the contract; incremental clients use their platform streaming transport.
-        Clients may request text_deltas=true. Only when hello confirms text_deltas=true,
-        discuss_event may instead carry DiscussTextStreamEvent without an SSE id.
-        These transient frames never advance the durable cursor. Text offsets count UTF-8
-        bytes; gaps, changed producer fence/generation or lost text require an authorized
-        snapshot refresh. A new connection receives the current transient snapshot.
-        Maximum encoded frame size is 512 KiB; text is at most 64 KiB UTF-8 per part
-        and 2 KiB per delta. Keep provisional text separate from saved snapshots/drafts.
-      security:
-        - browserSession: []
-        - bearerToken: []
-        - developerAccessToken: []
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - name: cursor
-          in: query
-          description: Signed private stream cursor.
-          schema:
-            $ref: "#/components/schemas/Cursor"
-        - name: Last-Event-ID
-          in: header
-          description: Signed resume cursor, preferred over the query value.
-          schema:
-            $ref: "#/components/schemas/Cursor"
-        - name: envelope_version
-          in: query
-          schema:
-            type: integer
-            enum:
-              - 1
-            default: 1
-        - name: stream_epoch
-          in: query
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 100
-        - name: text_deltas
-          in: query
-          description: Opt in to transient text frames only after hello confirms support.
-          schema:
-            type: boolean
-            default: false
-      responses:
-        "200":
-          description: Private SSE frames with explicit snapshot recovery.
-          headers:
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-          content:
-            text/event-stream:
-              schema:
-                $ref: "#/components/schemas/DiscussEventStreamFrame"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "503":
-          $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/discuss/events:
     get:
       tags:
@@ -3628,12 +3737,17 @@ paths:
             minimum: 1
             maximum: 50
             default: 20
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Private specialist projections.
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -3663,12 +3777,17 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Identifier"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Current canonical specialist projection.
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -3850,8 +3969,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
   /api/v1/workspaces/{workspace_id}/discuss/read-state:
     post:
       tags:
@@ -3885,8 +4002,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
   /api/v1/workspaces/{workspace_id}/discuss/preferences:
     get:
       tags:
@@ -3911,8 +4026,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
     patch:
       tags:
         - Discuss
@@ -3953,8 +4066,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
   /api/v1/workspaces/{workspace_id}/discuss/reminders:
     get:
       tags:
@@ -3979,8 +4090,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
     post:
       tags:
         - Discuss
@@ -4019,8 +4128,6 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
   /api/v1/workspaces/{workspace_id}/discuss/reminders/{reminder_id}:
     patch:
       tags:
@@ -4067,8 +4174,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
   /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context:
     get:
       tags:
@@ -4080,6 +4185,7 @@ paths:
         - browserSession: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/WorkspaceRealtimeDerivedBaseline"
         - name: task_id
           in: path
           required: true
@@ -4091,6 +4197,10 @@ paths:
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -4101,8 +4211,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/tasks/{task_id}/suggestion-feedback:
@@ -4146,8 +4254,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/billing-settings:
@@ -4197,8 +4303,6 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
   /api/v1/workspaces/{workspace_id}/checkout-sessions:
     post:
       tags:
@@ -4233,8 +4337,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/billing-portal-sessions:
@@ -4265,8 +4367,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/billing/knowledge-credit-top-ups:
@@ -4444,6 +4544,14 @@ paths:
         - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
+        - name: X-Assign-Realtime-Baseline
+          in: header
+          required: false
+          description: Upcoming browser-session canonical read custody. The named private scope captures this response and a signed replay cursor in one snapshot. Successful responses include X-Assign-Realtime-Cursor and X-Assign-Realtime-Position. Apply all required retained state before acknowledging the corresponding socket checkpoint. Failed or incomplete baselines return no cursor.
+          schema:
+            type: string
+            enum:
+              - inbox
       responses:
         "200":
           description: Effective category preferences
@@ -4451,6 +4559,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationPreferenceList"
+          headers:
+            X-Assign-Realtime-Cursor:
+              description: Signed scope/User/session-bound replay custody; only when the requested canonical baseline succeeds.
+              schema:
+                type: string
+                maxLength: 4096
+            X-Assign-Realtime-Position:
+              description: Decimal-string snapshot position; only with a successful baseline cursor.
+              schema:
+                type: string
+                pattern: ^(0|[1-9][0-9]*)$
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -4468,6 +4587,14 @@ paths:
         - browserSession: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
+        - name: X-Assign-Realtime-Baseline
+          in: header
+          required: false
+          description: Upcoming browser-session canonical read custody. The named private scope captures this response and a signed replay cursor in one snapshot. Successful responses include X-Assign-Realtime-Cursor and X-Assign-Realtime-Position. Apply all required retained state before acknowledging the corresponding socket checkpoint. Failed or incomplete baselines return no cursor.
+          schema:
+            type: string
+            enum:
+              - personal_projects
       responses:
         "200":
           description: Canonical private Project display preferences.
@@ -4476,6 +4603,16 @@ paths:
               $ref: "#/components/headers/CacheControlNoStore"
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Assign-Realtime-Cursor:
+              description: Signed scope/User/session-bound replay custody; only when the requested canonical baseline succeeds.
+              schema:
+                type: string
+                maxLength: 4096
+            X-Assign-Realtime-Position:
+              description: Decimal-string snapshot position; only with a successful baseline cursor.
+              schema:
+                type: string
+                pattern: ^(0|[1-9][0-9]*)$
           content:
             application/json:
               schema:
@@ -4535,8 +4672,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/project-shortcuts:
@@ -4550,6 +4685,14 @@ paths:
         - browserSession: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
+        - name: X-Assign-Realtime-Baseline
+          in: header
+          required: false
+          description: Upcoming browser-session canonical read custody. The named private scope captures this response and a signed replay cursor in one snapshot. Successful responses include X-Assign-Realtime-Cursor and X-Assign-Realtime-Position. Apply all required retained state before acknowledging the corresponding socket checkpoint. Failed or incomplete baselines return no cursor.
+          schema:
+            type: string
+            enum:
+              - personal_projects
       responses:
         "200":
           description: Current Project shortcut set.
@@ -4558,6 +4701,16 @@ paths:
               $ref: "#/components/headers/CacheControlNoStore"
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Assign-Realtime-Cursor:
+              description: Signed scope/User/session-bound replay custody; only when the requested canonical baseline succeeds.
+              schema:
+                type: string
+                maxLength: 4096
+            X-Assign-Realtime-Position:
+              description: Decimal-string snapshot position; only with a successful baseline cursor.
+              schema:
+                type: string
+                pattern: ^(0|[1-9][0-9]*)$
           content:
             application/json:
               schema:
@@ -4610,8 +4763,6 @@ paths:
           $ref: "#/components/responses/PayloadTooLarge"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/me/push-endpoints/browser/config:
@@ -4775,12 +4926,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TimeTrackingPolicy"
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
     patch:
       tags:
         - Time tracking
@@ -4829,6 +4989,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/TaskId"
         - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Time entries
@@ -4836,6 +4997,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TimeEntryList"
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4893,6 +5061,7 @@ paths:
         - browserSession: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Exact and reportable Task totals
@@ -4900,6 +5069,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TimeTotals"
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4930,6 +5106,7 @@ paths:
           schema:
             type: string
             format: date
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Exact and reportable Project totals
@@ -4937,6 +5114,196 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TimeTotals"
+          headers:
+            X-Assign-Report-Revision:
+              $ref: "#/components/headers/ProjectTimeReportRevision"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/projects/{project_id}/time-task-breakdown:
+    get:
+      tags:
+        - Time tracking
+      operationId: listProjectTimeTaskBreakdown
+      summary: List a Project's recorded time grouped by Task
+      description: Groups entries by captured Project attribution. Missing Task metadata does not remove historical totals. Pages are ordered by Task ID and must be recaptured from the beginning after a realtime invalidation. The signed continuation is bound to the Workspace, Actor, Project and date range.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
+      responses:
+        "200":
+          description: Authorized bounded Task groups
+          headers:
+            X-Assign-Report-Revision:
+              $ref: "#/components/headers/ProjectTimeReportRevision"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectTimeTaskBreakdown"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/projects/{project_id}/time-task-entries:
+    get:
+      tags:
+        - Time tracking
+      operationId: listProjectTimeTaskEntries
+      summary: List recorded entries for one Task in a Project report
+      description: Project managers only. Uses the Project captured when each entry was recorded, even if the Task has moved. Pages are ordered by entry ID and must be recaptured from the beginning after a realtime invalidation. The signed continuation is bound to Workspace, Actor, Project, Task and selected range.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+        - name: task_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
+      responses:
+        "200":
+          description: Bounded recorded entries for the selected Task and Project range
+          headers:
+            X-Assign-Report-Revision:
+              $ref: "#/components/headers/ProjectTimeReportRevision"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectTimeTaskEntries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/projects/{project_id}/time-contributor-breakdown:
+    get:
+      tags:
+        - Time tracking
+      operationId: listProjectTimeContributorBreakdown
+      summary: List a Project's recorded time grouped by contributor
+      description: Returns identity-level rows to Project managers and an empty redacted result to other authorized Project readers. Historical Actor attribution is retained when a user is removed; unavailable display names are null. Pages are ordered by Actor ID and must be recaptured from the beginning after a realtime invalidation. The signed continuation is bound to the Workspace, Actor, Project and date range.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
+      responses:
+        "200":
+          description: Bounded contributor groups or a redacted empty result
+          headers:
+            X-Assign-Report-Revision:
+              $ref: "#/components/headers/ProjectTimeReportRevision"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectTimeContributorBreakdown"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5048,6 +5415,7 @@ paths:
             type: string
             format: date
         - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Personal timesheet
@@ -5055,6 +5423,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Timesheet"
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5085,6 +5458,7 @@ paths:
             type: string
             format: date
         - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: CSV timesheet export
@@ -5093,6 +5467,11 @@ paths:
               schema:
                 type: string
                 format: binary
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5632,6 +6011,16 @@ paths:
               $ref: "#/components/headers/RequestId"
             X-Content-Type-Options:
               $ref: "#/components/headers/ContentTypeOptions"
+            X-Assign-Realtime-Cursor:
+              description: Signed scope/User/session-bound replay custody; only when the requested canonical baseline succeeds.
+              schema:
+                type: string
+                maxLength: 4096
+            X-Assign-Realtime-Position:
+              description: Decimal-string snapshot position; only with a successful baseline cursor.
+              schema:
+                type: string
+                pattern: ^(0|[1-9][0-9]*)$
           content:
             application/json:
               schema:
@@ -5644,6 +6033,15 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+      parameters:
+        - name: X-Assign-Realtime-Baseline
+          in: header
+          required: false
+          description: Upcoming browser-session canonical read custody. The named private scope captures this response and a signed replay cursor in one snapshot. Successful responses include X-Assign-Realtime-Cursor and X-Assign-Realtime-Position. Apply all required retained state before acknowledging the corresponding socket checkpoint. Failed or incomplete baselines return no cursor.
+          schema:
+            type: string
+            enum:
+              - account_security
   /api/v1/auth/passkeys/{passkey_id}:
     parameters:
       - name: passkey_id
@@ -6063,6 +6461,12 @@ paths:
             type: string
             maxLength: 4096
             example: /oauth/authorize?client_id=https%3A%2F%2Fchatgpt.com%2Foauth%2Fcodex%2Fclient.json
+        - name: remember_me
+          in: query
+          required: false
+          description: 'Pass `false` to decline "Remember this device": the session issued when the provider callback completes is a browser-session cookie bounded to 48 hours (idle and absolute). Any other value, or omitting it, issues the persistent session.'
+          schema:
+            type: boolean
       responses:
         "302":
           description: Redirects to the provider's authorization endpoint.
@@ -6229,8 +6633,6 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
   /api/v1/dev/oauth/token:
@@ -6264,8 +6666,6 @@ paths:
                 $ref: "#/components/schemas/DeveloperOAuthTokenSet"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
   /api/v1/dev/oauth/revoke:
@@ -6285,8 +6685,6 @@ paths:
               $ref: "#/components/headers/CacheControlNoStore"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
   /api/v1/mobile/workspaces/bootstrap:
@@ -6327,8 +6725,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6374,8 +6770,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6425,8 +6819,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6476,8 +6868,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6577,8 +6967,6 @@ paths:
               $ref: "#/components/headers/CacheControlNoStore"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6618,8 +7006,6 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6646,8 +7032,6 @@ paths:
               $ref: "#/components/headers/CacheControlNoStore"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6701,8 +7085,6 @@ paths:
           $ref: "#/components/responses/ReauthenticationRequired"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6729,8 +7111,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6769,8 +7149,6 @@ paths:
           $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6791,8 +7169,6 @@ paths:
               $ref: "#/components/headers/CacheControlNoStore"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6870,6 +7246,16 @@ paths:
               $ref: "#/components/headers/CacheControlNoStore"
             ETag:
               $ref: "#/components/headers/ETag"
+            X-Assign-Realtime-Cursor:
+              description: Signed scope/User/session-bound replay custody; only when the requested canonical baseline succeeds.
+              schema:
+                type: string
+                maxLength: 4096
+            X-Assign-Realtime-Position:
+              description: Decimal-string snapshot position; only with a successful baseline cursor.
+              schema:
+                type: string
+                pattern: ^(0|[1-9][0-9]*)$
           content:
             application/json:
               schema:
@@ -6880,6 +7266,16 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+      parameters:
+        - name: X-Assign-Realtime-Baseline
+          in: header
+          required: false
+          description: Upcoming browser-session canonical read custody. The named private scope captures this response and a signed replay cursor in one snapshot. Successful responses include X-Assign-Realtime-Cursor and X-Assign-Realtime-Position. Apply all required retained state before acknowledging the corresponding socket checkpoint. Failed or incomplete baselines return no cursor.
+          schema:
+            type: string
+            enum:
+              - account
+              - account_security
     patch:
       tags:
         - Account
@@ -6895,8 +7291,9 @@ paths:
         rather than silently overwriting a concurrent edit.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
         - $ref: "#/components/parameters/IfMatch"
       requestBody:
         required: true
@@ -6979,8 +7376,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
   /api/v1/me/email-change/verify:
@@ -7035,8 +7430,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
   /api/v1/me/profile-picture:
@@ -7047,8 +7440,9 @@ paths:
       summary: Associate a cropped S3-hosted profile picture
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
         - $ref: "#/components/parameters/IfMatch"
       requestBody:
         required: true
@@ -7085,8 +7479,9 @@ paths:
       summary: Remove the current profile picture and retire its stored object
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
         - $ref: "#/components/parameters/IfMatch"
       responses:
         "200":
@@ -7110,6 +7505,7 @@ paths:
       summary: Redirect to a short-lived inline S3 URL for the current profile picture
       security:
         - browserSession: []
+        - nativeAccessToken: []
       responses:
         "200":
           description: Image bytes after a client follows the redirect.
@@ -7183,8 +7579,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/ReauthenticationRequired"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -7248,8 +7642,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
     delete:
@@ -7280,8 +7672,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
   /api/v1/me/current-work/candidates:
@@ -7339,8 +7729,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -7365,12 +7753,30 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/PageLimit"
+        - name: X-Assign-Realtime-Baseline
+          in: header
+          required: false
+          description: Upcoming browser-session canonical read custody. The named private scope captures this response and a signed replay cursor in one snapshot. Successful responses include X-Assign-Realtime-Cursor and X-Assign-Realtime-Position. Apply all required retained state before acknowledging the corresponding socket checkpoint. Failed or incomplete baselines return no cursor.
+          schema:
+            type: string
+            enum:
+              - account_security
       responses:
         "200":
           description: A page of sessions.
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            X-Assign-Realtime-Cursor:
+              description: Signed scope/User/session-bound replay custody; only when the requested canonical baseline succeeds.
+              schema:
+                type: string
+                maxLength: 4096
+            X-Assign-Realtime-Position:
+              description: Decimal-string snapshot position; only with a successful baseline cursor.
+              schema:
+                type: string
+                pattern: ^(0|[1-9][0-9]*)$
           content:
             application/json:
               schema:
@@ -7603,8 +8009,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -7648,8 +8052,6 @@ paths:
           $ref: "#/components/responses/ReauthenticationRequired"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -7679,8 +8081,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -7740,6 +8140,16 @@ paths:
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            X-Assign-Realtime-Cursor:
+              description: Signed scope/User/session-bound replay custody; only when the requested canonical baseline succeeds.
+              schema:
+                type: string
+                maxLength: 4096
+            X-Assign-Realtime-Position:
+              description: Decimal-string snapshot position; only with a successful baseline cursor.
+              schema:
+                type: string
+                pattern: ^(0|[1-9][0-9]*)$
           content:
             application/json:
               schema:
@@ -7750,6 +8160,15 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+      parameters:
+        - name: X-Assign-Realtime-Baseline
+          in: header
+          required: false
+          description: Upcoming browser-session canonical read custody. The named private scope captures this response and a signed replay cursor in one snapshot. Successful responses include X-Assign-Realtime-Cursor and X-Assign-Realtime-Position. Apply all required retained state before acknowledging the corresponding socket checkpoint. Failed or incomplete baselines return no cursor.
+          schema:
+            type: string
+            enum:
+              - account_security
     post:
       tags:
         - Account
@@ -7935,8 +8354,6 @@ paths:
                 $ref: "#/components/schemas/WorkspaceCreationOptions"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -8023,8 +8440,6 @@ paths:
                 $ref: "#/components/schemas/WorkspaceCreationOptions"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -8068,8 +8483,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspace-checkouts/{checkout_id}:
@@ -8087,12 +8500,29 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Identifier"
+        - name: X-Assign-Realtime-Baseline
+          in: header
+          required: false
+          description: Upcoming browser-session canonical Account read. Captures the checkout response and a signed Account replay cursor in one read-only snapshot. Apply the response before acknowledging the socket checkpoint. An ordinary read may expire a pending checkout; a canonical baseline never mutates it.
+          schema:
+            type: string
+            enum:
+              - account
       responses:
         "200":
           description: Current pending or terminal checkout state.
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            X-Assign-Realtime-Cursor:
+              description: Signed Account replay cursor on a successful canonical baseline.
+              schema:
+                type: string
+            X-Assign-Realtime-Position:
+              description: Account source position captured with the canonical baseline.
+              schema:
+                type: integer
+                format: int64
           content:
             application/json:
               schema:
@@ -8101,8 +8531,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces:
@@ -8587,6 +9015,7 @@ paths:
         not-found response as an absent Workspace.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - $ref: "#/components/parameters/Cursor"
@@ -8687,6 +9116,7 @@ paths:
         response an absent Workspace produces.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
       responses:
@@ -9169,6 +9599,7 @@ paths:
         - browserSession: []
         - bearerToken: []
         - developerAccessToken: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - name: q
@@ -9243,6 +9674,7 @@ paths:
         - browserSession: []
         - bearerToken: []
         - developerAccessToken: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - name: q
@@ -9296,8 +9728,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9322,8 +9752,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9360,8 +9788,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9391,8 +9817,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9420,8 +9844,6 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9448,8 +9870,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9480,8 +9900,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9525,8 +9943,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9562,8 +9978,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9597,8 +10011,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9633,8 +10045,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/cli/search:
@@ -9681,8 +10091,6 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/cli/mcp/token:
@@ -9721,6 +10129,49 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/cli/milestones/{milestone_code}:
+    get:
+      tags:
+        - CLI
+      operationId: getCliMilestone
+      summary: Read a Milestone by code within the bearer Workspace
+      description: Resolves the code's Project key by indexed authorized lookup in the token-scoped Workspace, then uses the shared typed Milestone resolver. Includes archived Milestones and canonical Task-derived progress. ASCII casing normalizes; no generic resource dispatch, collection scan or domain write. Existing UUID and browser/native operations remain unchanged.
+      security:
+        - bearerToken: []
+        - developerAccessToken: []
+      parameters:
+        - name: milestone_code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z][A-Za-z0-9]{1,7}-[Mm][1-9][0-9]{0,18}$
+            maxLength: 29
+            example: FRS-M1
+          description: Positive signed-64-bit Project Milestone code; numeric maximum 9223372036854775807, without whitespace, signs or leading zeros.
+      responses:
+        "200":
+          description: Authorized Milestone and canonical progress.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Milestone"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+          description: invalid_milestone_code for malformed syntax or numeric overflow.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -9758,8 +10209,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9947,8 +10396,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -9988,8 +10435,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -10001,9 +10446,12 @@ paths:
       operationId: listWorkspaceProjects
       summary: List Workspace Projects
       description: |
-        Returns one page of the Workspace's Projects, ordered by name.
+        Returns one bounded page of authorized Workspace Projects in shared manual order.
         Every bearer caller resolves current membership for the requested
         Workspace; browser callers retain their current session behavior.
+        A continuation binds the prior page's Workspace Project and authority
+        revision. A reorder or permission change returns 409 catalog_changed
+        with no items; restart the traversal from the first page.
       security:
         - browserSession: []
         - nativeAccessToken: []
@@ -10026,6 +10474,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -10119,6 +10569,10 @@ paths:
         Applies an optimistic compare-and-swap to exactly one of `name`, `path`,
         `description`, `url`, `visual_identity`, `visibility`, or `owner_actor_id`, or sends the complete nullable `start_on`/`target_on` date pair. `If-Match` must carry the revision last observed by
         the client. Send `visual_identity: null` to restore the default marker.
+        Setting visibility to public requires the Workspace's public-publishing billing
+        entitlement; denial returns 403 paid_workspace_required. Unpublishing remains
+        available subject to normal authorization. Public reads return the existing privacy-safe
+        404 while that entitlement is absent, without changing stored visibility or content.
       security:
         - browserSession: []
       parameters:
@@ -10222,8 +10676,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -10444,6 +10896,7 @@ paths:
       description: Returns an owner-first, stable, cursor-bounded projection of active Project membership. It never substitutes the Workspace roster and is unavailable from public Project views.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/ProjectId"
         - $ref: "#/components/parameters/Cursor"
@@ -11015,8 +11468,6 @@ paths:
           $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -11179,6 +11630,16 @@ paths:
           schema:
             $ref: "#/components/schemas/Identifier"
           description: Start strictly after this current Task in the chosen rank direction. Must belong to this Project and Status. Cannot accompany cursor or resolved_desc. Other history filters are not accepted with column orders.
+        - name: milestone_id
+          in: query
+          description: Match any selected milestone before pagination. Supported with number order only; an unknown or other-Project ID matches no Tasks.
+          schema:
+            type: array
+            maxItems: 100
+            items:
+              $ref: "#/components/schemas/Identifier"
+          style: form
+          explode: true
       responses:
         "200":
           description: A page of Tasks.
@@ -11253,8 +11714,10 @@ paths:
         - Projects
       operationId: listProjectMilestones
       summary: List Project milestones
+      description: Every returned milestone includes canonical progress for its non-archived, non-trashed Tasks, aggregated independently of loaded Task pages.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/ProjectId"
         - $ref: "#/components/parameters/Cursor"
@@ -11309,6 +11772,53 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+          description: Idempotency conflict or milestone_reference_exhausted when the Project has issued every positive signed-64-bit reference number. No Milestone or event is committed on exhaustion.
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/projects/{project_id}/milestones/by-code/{milestone_code}:
+    get:
+      tags:
+        - Projects
+      operationId: getMilestoneByCode
+      summary: Resolve a Milestone code within an authorized Project
+      description: Resolves only Milestones in the selected Workspace and Project, including archived Milestones. ASCII input casing is normalized; canonical output is uppercase. Codes do not grant access or fall through to Tasks or Documents. Invalid syntax or signed-64-bit overflow is rejected. Existing UUID operations remain valid.
+      security:
+        - browserSession: []
+        - nativeAccessToken: []
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+        - name: milestone_code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z][A-Za-z0-9]{1,7}-[Mm][1-9][0-9]{0,18}$
+            maxLength: 29
+            example: FRS-M1
+          description: Project-key Milestone code with a positive signed-64-bit number, at most 9223372036854775807. No leading zeros or whitespace.
+      responses:
+        "200":
+          description: The authorized Milestone and canonical Task-derived progress.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Milestone"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+          description: invalid_milestone_code for malformed syntax or numeric overflow.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/milestones/{milestone_id}:
@@ -11319,6 +11829,7 @@ paths:
       summary: Read a milestone with computed progress
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/MilestoneId"
       responses:
@@ -11419,6 +11930,7 @@ paths:
       summary: List Project attachments
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/ProjectId"
       responses:
@@ -11481,6 +11993,7 @@ paths:
       description: Newest-first files attached to the Project's current Tasks. A Task moved to another Project takes its files with it.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/ProjectId"
       responses:
@@ -11599,6 +12112,7 @@ paths:
       security:
         - browserSession: []
       parameters:
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
         - $ref: "#/components/parameters/WorkspaceId"
         - $ref: "#/components/parameters/Cursor"
         - name: limit
@@ -11613,6 +12127,11 @@ paths:
       responses:
         "200":
           description: Current Workspace integration installations
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -11627,6 +12146,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+          description: Maintenance or canonical baseline unavailable (realtime_baseline_unavailable). No cursor is returned; honor Retry-After when present.
   /api/v1/workspaces/{workspace_id}/integration-authorizations:
     post:
       tags:
@@ -11658,8 +12178,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/integration-private-connectors:
@@ -11693,8 +12211,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/integration-private-connectors/{connector_id}/requests/next:
@@ -11725,8 +12241,6 @@ paths:
           description: No work became available during the bounded poll.
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
   /api/v1/integration-private-connectors/{connector_id}/requests/{request_id}/response:
     post:
       tags:
@@ -11795,8 +12309,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/integration-authorizations/callback:
@@ -11869,8 +12381,6 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/me/integration-identities:
@@ -11889,6 +12399,7 @@ paths:
       security:
         - browserSession: []
       parameters:
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
         - $ref: "#/components/parameters/Cursor"
         - name: limit
           in: query
@@ -11902,6 +12413,11 @@ paths:
       responses:
         "200":
           description: Personal integration identities in the session Workspace
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -11916,6 +12432,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+          description: Maintenance or canonical baseline unavailable (realtime_baseline_unavailable). No cursor is returned; honor Retry-After when present.
   /api/v1/me/integration-identities/{identity_id}:
     delete:
       tags:
@@ -12014,6 +12531,7 @@ paths:
       security:
         - browserSession: []
       parameters:
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
         - name: installation_id
           in: path
           required: true
@@ -12022,10 +12540,17 @@ paths:
       responses:
         "200":
           description: Current Workspace integration installation
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/IntegrationInstallation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -12034,6 +12559,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+          description: Maintenance or canonical baseline unavailable (realtime_baseline_unavailable). No cursor is returned; honor Retry-After when present.
     delete:
       tags:
         - Integrations
@@ -12074,6 +12600,7 @@ paths:
       security:
         - browserSession: []
       parameters:
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
         - name: installation_id
           in: path
           required: true
@@ -12090,12 +12617,22 @@ paths:
       responses:
         "200":
           description: Current discovered resources
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/IntegrationResourceList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+          description: Maintenance or canonical baseline unavailable (realtime_baseline_unavailable). No cursor is returned; honor Retry-After when present.
   /api/v1/integration-installations/{installation_id}/management-link:
     post:
       tags:
@@ -12132,8 +12669,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/integration-installations/{installation_id}/resources/refresh:
@@ -12167,8 +12702,6 @@ paths:
                 $ref: "#/components/schemas/IntegrationResourceList"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/projects/{project_id}/integration-bindings:
@@ -12188,7 +12721,9 @@ paths:
         with zero subscriptions is valid and enables no ongoing behavior.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
         - $ref: "#/components/parameters/ProjectId"
         - $ref: "#/components/parameters/Cursor"
         - name: limit
@@ -12203,6 +12738,11 @@ paths:
       responses:
         "200":
           description: Current display-safe Project integration bindings
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -12217,12 +12757,13 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+          description: Maintenance or canonical baseline unavailable (realtime_baseline_unavailable). No cursor is returned; honor Retry-After when present.
     post:
       tags:
         - Integrations
       operationId: createProjectIntegrationBinding
       summary: Bind a discovered remote resource to a Project
-      description: Owners/Admins create or reactivate a binding. No subscription or ongoing behavior is created implicitly.
+      description: Owners/Admins create or reactivate a binding. Connecting a GitHub repository, GitLab project or Bitbucket repository atomically enables incoming development linkage and queues reconciliation when no development subscription exists. Existing subscriptions, including paused or disabled behavior, are preserved. Task status mappings and provider writeback remain off. Other resources create no implicit ongoing behavior.
       security:
         - browserSession: []
       parameters:
@@ -12284,6 +12825,7 @@ paths:
       security:
         - browserSession: []
       parameters:
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
         - name: binding_id
           in: path
           required: true
@@ -12292,12 +12834,22 @@ paths:
       responses:
         "200":
           description: Binding subscriptions
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/IntegrationSubscriptionList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+          description: Maintenance or canonical baseline unavailable (realtime_baseline_unavailable). No cursor is returned; honor Retry-After when present.
     post:
       tags:
         - Integrations
@@ -12412,6 +12964,7 @@ paths:
       security:
         - browserSession: []
       parameters:
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
         - name: installation_id
           in: path
           required: true
@@ -12420,16 +12973,24 @@ paths:
       responses:
         "200":
           description: Typed remote actions
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/IntegrationActionDefinitionList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+          description: Maintenance or canonical baseline unavailable (realtime_baseline_unavailable). No cursor is returned; honor Retry-After when present.
   /api/v1/integration-actions:
     post:
       tags:
@@ -12468,8 +13029,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/integration-actions/{action_id}:
@@ -12478,10 +13037,11 @@ paths:
         - Integrations
       operationId: getIntegrationAction
       summary: Read durable remote-action status
-      description: Supports recovery and polling after an accepted action. Results are bounded normalized provider output and never contain credentials.
+      description: Read after an accepted action, an integrations invalidation, or recovery; reading never repeats the provider action. Results are bounded normalized provider output and never contain credentials.
       security:
         - browserSession: []
       parameters:
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
         - name: action_id
           in: path
           required: true
@@ -12490,16 +13050,24 @@ paths:
       responses:
         "200":
           description: Current action state
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/IntegrationAction"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+          description: Maintenance or canonical baseline unavailable (realtime_baseline_unavailable). No cursor is returned; honor Retry-After when present.
   /api/v1/webhooks/integrations/{provider_key}/{installation_id}:
     post:
       tags:
@@ -12836,6 +13404,7 @@ paths:
         target is an HTTPS URL.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
         - $ref: "#/components/parameters/Cursor"
@@ -13369,6 +13938,7 @@ paths:
       description: Returns immutable primary-assignee periods newest first. Imported periods can have an unknown assignment instant.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
         - $ref: "#/components/parameters/Cursor"
@@ -13399,6 +13969,7 @@ paths:
       description: Returns the Task creator, current primary assignee, and previous primary assignees without implying subscription or notification state.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
         - $ref: "#/components/parameters/PageLimit"
@@ -13603,6 +14174,7 @@ paths:
       summary: List Task attachments
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
       responses:
@@ -13627,9 +14199,10 @@ paths:
       summary: Attach a completed upload to a Task
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         required: true
@@ -13699,8 +14272,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -13720,10 +14291,20 @@ paths:
         - browserSession: []
         - bearerToken: []
         - developerAccessToken: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/PageLimit"
+        - name: from_number
+          in: query
+          required: false
+          description: Creation-order window start including tombstones. Zero selects the newest window. Mutually exclusive with cursor; omitted preserves cursor pagination.
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            maximum: 1000000
       responses:
         "200":
           description: A page of comments.
@@ -13757,6 +14338,7 @@ paths:
         - browserSession: []
         - bearerToken: []
         - developerAccessToken: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
         - $ref: "#/components/parameters/BrowserCSRFToken"
@@ -13803,6 +14385,7 @@ paths:
         - browserSession: []
         - bearerToken: []
         - developerAccessToken: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/CommentId"
       responses:
@@ -13841,6 +14424,7 @@ paths:
         - browserSession: []
         - bearerToken: []
         - developerAccessToken: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/CommentId"
         - $ref: "#/components/parameters/BrowserCSRFToken"
@@ -13894,6 +14478,7 @@ paths:
         - browserSession: []
         - bearerToken: []
         - developerAccessToken: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/CommentId"
         - $ref: "#/components/parameters/BrowserCSRFToken"
@@ -13924,6 +14509,7 @@ paths:
         - browserSession: []
         - bearerToken: []
         - developerAccessToken: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/CommentId"
         - $ref: "#/components/parameters/CommentReaction"
@@ -13962,6 +14548,7 @@ paths:
         - browserSession: []
         - bearerToken: []
         - developerAccessToken: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/CommentId"
         - $ref: "#/components/parameters/CommentReaction"
@@ -14051,9 +14638,11 @@ paths:
       tags:
         - Labels
       operationId: listWorkspaceLabelDefinitions
+      description: Returns an ordered, cursor-bounded page of Workspace definitions. Continue with next_cursor using the same purpose and include_archived filters. Each page checks current Workspace authority and the commit-ordered Workspace journal version captured with the prior page. A change returns 409 catalog_changed; restart from page one. Native credentials require exactly one purpose=task query value. Other purposes are browser-only.
       summary: List active Workspace label definitions
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - name: purpose
@@ -14070,6 +14659,8 @@ paths:
           schema:
             type: boolean
             default: false
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/PageLimit"
       responses:
         "200":
           description: Label definitions.
@@ -14077,10 +14668,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LabelDefinitionList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
     post:
@@ -14118,8 +14713,10 @@ paths:
         - Labels
       operationId: listProjectLabelDefinitions
       summary: List a Project's local task-label definitions
+      description: Returns an ordered, cursor-bounded page under current private Project read authority. Continue with next_cursor and the same include_archived filter. The cursor binds the prior page's commit-ordered Workspace journal version; a change returns 409 catalog_changed and requires a fresh first-page read.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/ProjectId"
         - name: include_archived
@@ -14128,6 +14725,8 @@ paths:
           schema:
             type: boolean
             default: false
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/PageLimit"
       responses:
         "200":
           description: Label definitions.
@@ -14135,12 +14734,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LabelDefinitionList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
     post:
@@ -14175,6 +14778,31 @@ paths:
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/label-definitions/{label_id}:
+    get:
+      tags:
+        - Labels
+      operationId: getLabelDefinition
+      summary: Read one authorized label definition
+      description: Returns current or archived metadata in the active Workspace. Private Project access is required for Project-scoped definitions. Native credential admission is not included.
+      security:
+        - browserSession: []
+      parameters:
+        - name: label_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Identifier"
+      responses:
+        "200":
+          description: Authorized label definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
     patch:
       tags:
         - Labels
@@ -14246,9 +14874,11 @@ paths:
       tags:
         - Labels
       operationId: listTargetLabelAssignments
+      description: Native mobile credentials may read Task assignments only (target_kind=task).
       summary: List a document, project, or task's label IDs
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - name: target_kind
           in: path
@@ -14327,10 +14957,20 @@ paths:
         A sparse list: only Workspace Task labels with an active Project
         override appear. A label with no entry here is shown with its
         Workspace name and color in this Project.
+        Returns up to `limit` overrides in label ID order. Continue with
+        `next_cursor` while `has_more` is true. Cursors are signed and bound
+        to the current Workspace and Project. Restart from the first page
+        after a catalog change when a complete current view is required.
+        The cursor binds the prior page's commit-ordered Workspace journal
+        version. A change returns 409 catalog_changed before another page
+        can be applied.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
           description: Project Task label overrides.
@@ -14338,12 +14978,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProjectTaskLabelOverrideList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/projects/{project_id}/label-overrides/{label_id}:
@@ -14419,6 +15063,7 @@ paths:
       operationId: getPublicDocument
       summary: Read a published Document
       description: |
+        Public access requires the owning Workspace's public-publishing billing entitlement; absence returns the same privacy-safe 404 as an unavailable identifier.
         Returns only the public-safe title and content of an unarchived
         Document. The opaque public identifier is revoked when the Document
         is unpublished or archived. This route does not disclose Workspace,
@@ -14455,6 +15100,7 @@ paths:
       operationId: authorizePublicDocumentAttachmentDownload
       summary: Authorize a published Document attachment download
       description: |
+        Public access requires the owning Workspace's public-publishing billing entitlement; absence returns the same privacy-safe 404 as an unavailable identifier.
         Mints a short-lived download URL only when the attachment is owned by
         the published Document and is referenced by its current public body.
         Historical ownership alone never exposes a removed attachment.
@@ -14480,8 +15126,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -14493,6 +15137,7 @@ paths:
       operationId: authorizePublicDocumentAttachmentPreview
       summary: Authorize a published Document attachment preview
       description: |
+        Public access requires the owning Workspace's public-publishing billing entitlement; absence returns the same privacy-safe 404 as an unavailable identifier.
         Mints a short-lived cookie-less inline URL for a previewable attachment
         that is both owned by and referenced from the current public body.
       security: []
@@ -14517,8 +15162,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -14530,6 +15173,7 @@ paths:
       operationId: getPublicProject
       summary: Read a published Project status
       description: |
+        Public access requires the owning Workspace's public-publishing billing entitlement; absence returns the same privacy-safe 404 as an unavailable identifier.
         Returns a deliberately minimal read-only Project status: its name,
         optional visual marker, and ordered workflow Status labels with
         aggregate Task counts. The opaque identifier is revoked on unpublish
@@ -14554,8 +15198,6 @@ paths:
                 $ref: "#/components/schemas/PublicProject"
         "404":
           $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -14585,6 +15227,7 @@ paths:
         flattened result can show where it lives.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - name: project_id
@@ -14683,6 +15326,10 @@ paths:
         Restoring an older Document revision retains an existing schema 2 floor.
         Creates a Document with optional initial content. Omitting `content`
         creates an empty Document.
+        Public Document creation and transitions to public visibility require the Workspace's
+        public-publishing billing entitlement; denial returns 403 paid_workspace_required.
+        Unpublishing and ordinary edits of an existing publication remain available subject to
+        normal authorization. Public links are unavailable while the entitlement is absent.
       security:
         - browserSession: []
       parameters:
@@ -14721,6 +15368,48 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/workspaces/{workspace_id}/documents/by-path/{document_path}:
+    get:
+      tags:
+        - Documents
+      operationId: getDocumentByPath
+      summary: Resolve active Document metadata by Workspace path
+      description: |
+        Resolves an exact active Document path within the requested Workspace.
+        Applies the same Workspace and Project read permissions as the Document
+        identifier read. A missing, archived, or inaccessible Document returns 404.
+        Use the returned identifier for content and subsequent Document reads.
+      security:
+        - browserSession: []
+        - nativeAccessToken: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: document_path
+          in: path
+          required: true
+          description: Exact Document path within the Workspace.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+      responses:
+        "200":
+          description: The Document metadata.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/documents/{document_id}:
     get:
       tags:
@@ -14729,6 +15418,7 @@ paths:
       summary: Read Document metadata
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/DocumentId"
       responses:
@@ -14758,6 +15448,10 @@ paths:
         Applies an optimistic compare-and-swap to Document metadata. Content
         is replaced through the separate content operation so a title rename
         never competes with an autosave for the same revision.
+        Public Document creation and transitions to public visibility require the Workspace's
+        public-publishing billing entitlement; denial returns 403 paid_workspace_required.
+        Unpublishing and ordinary edits of an existing publication remain available subject to
+        normal authorization. Public links are unavailable while the entitlement is absent.
       security:
         - browserSession: []
       parameters:
@@ -14825,6 +15519,46 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/documents/{document_id}/permanent:
+    delete:
+      tags:
+        - Documents
+      operationId: deleteDocument
+      summary: Permanently delete a Document
+      description: |
+        Permanently removes an active or archived leaf Document, including its
+        revision history, collaboration state and resource links. Requires the
+        same Workspace and owning Project write permission as editing.
+        Documents with any child (including archived children) return 409
+        document_has_children. Git-bound Documents return 409 document_git_managed.
+        A stale If-Match returns 409 revision_conflict. Attachment objects retain
+        their existing cleanup policy. Archive and Restore use separate operations.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/IfMatch"
+      responses:
+        "204":
+          description: The Document is permanently deleted.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/documents/{document_id}/restore:
     post:
       tags:
@@ -14868,6 +15602,7 @@ paths:
       description: Returns the bounded durable ownership set, including attachments retained for historical revisions.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/DocumentId"
       responses:
@@ -15148,6 +15883,7 @@ paths:
       description: Returns one cursor-paginated page of direct children the caller may read, title-ordered unless `sort` selects modified-time order.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/DocumentId"
         - name: sort
@@ -15188,6 +15924,7 @@ paths:
       summary: Read versioned Document content
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/DocumentId"
       responses:
@@ -15462,8 +16199,9 @@ paths:
         it rather than inferred from an implementation.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         required: true
@@ -15520,9 +16258,10 @@ paths:
         previewed, or downloaded.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/UploadId"
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
       requestBody:
         required: false
         content:
@@ -15563,9 +16302,10 @@ paths:
         and succeeds for an already-cancelled or already-expired reservation.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/UploadId"
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
       responses:
         "204":
           description: The reservation is released.
@@ -15590,6 +16330,7 @@ paths:
       summary: Read attachment metadata
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/AttachmentId"
       responses:
@@ -15619,9 +16360,10 @@ paths:
         automatically by quota exhaustion.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/AttachmentId"
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
       responses:
         "204":
           description: The attachment is deleted.
@@ -15661,9 +16403,10 @@ paths:
         cacheable read.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/AttachmentId"
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
       responses:
         "201":
           description: A short-lived presigned download target.
@@ -15708,9 +16451,10 @@ paths:
         cacheable read.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/AttachmentId"
-        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/BrowserCSRFToken"
       responses:
         "201":
           description: A short-lived presigned inline preview target.
@@ -15780,6 +16524,24 @@ components:
       bearerFormat: Assign private connector token
       description: Workspace-scoped token returned exactly once during connector enrollment and accepted only by the bounded connector polling protocol.
   parameters:
+    WorkspaceRealtimeDerivedBaseline:
+      name: X-Assign-Realtime-Baseline
+      in: header
+      required: false
+      description: Upcoming browser-session derived read. Set to '1' to capture an authorized Workspace replay boundary before remote Knowledge retrieval. Core joins occur in newer snapshots; the result can still report index lag. Apply retained results before acknowledging the socket checkpoint. Failed reads return no cursor.
+      schema:
+        type: string
+        enum:
+          - "1"
+    WorkspaceRealtimeBaseline:
+      name: X-Assign-Realtime-Baseline
+      in: header
+      required: false
+      description: Upcoming browser-session canonical read. Set to '1' to capture the authorized response and a signed Workspace replay cursor in one snapshot. Apply every required retained read before acknowledging a socket checkpoint. Failed or incomplete reads return no cursor.
+      schema:
+        type: string
+        enum:
+          - "1"
     DocumentSchemaCapability:
       name: X-Assign-Document-Schema
       in: header
@@ -16025,6 +16787,21 @@ components:
       schema:
         $ref: "#/components/schemas/Identifier"
   headers:
+    ProjectTimeReportRevision:
+      description: Workspace report snapshot revision. Compare across every page and all four Project time reads in one selected range; restart the entire range after a mismatch. The value may advance for unrelated Workspace writes.
+      schema:
+        type: string
+        pattern: ^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|none):(0|[1-9][0-9]*)$
+    RealtimeReadCursor:
+      description: Signed Workspace/User/session-bound replay custody; present only after a successful requested canonical baseline.
+      schema:
+        type: string
+        maxLength: 4096
+    RealtimeReadPosition:
+      description: Decimal-string snapshot position; present only with a successful baseline cursor.
+      schema:
+        type: string
+        pattern: ^(0|[1-9][0-9]*)$
     RequestId:
       description: Correlation identifier for the request.
       schema:
@@ -16047,6 +16824,50 @@ components:
         type: string
         pattern: ^"[1-9][0-9]*"$
   schemas:
+    RealtimeBaseline:
+      type: object
+      required:
+        - version
+        - scope
+        - cursor
+      properties:
+        version:
+          type: integer
+          enum:
+            - 1
+        scope:
+          type: string
+          enum:
+            - workspace
+            - projects
+            - task_comments
+            - account
+            - account_security
+            - inbox
+            - personal_projects
+            - discuss
+        cursor:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        resource_id:
+          type: string
+          description: Task UUID for task_comments; empty for projects; absent for routing custody.
+        through:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+          description: Decimal-string page snapshot position; absent for routing-only baselines.
+        next_page:
+          type: string
+          description: Opaque domain continuation; empty on the final page.
+        items:
+          type: array
+          maxItems: 100
+          description: Present only for projects or task_comments; canonical resource projections.
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Project"
+              - $ref: "#/components/schemas/Comment"
     EvidenceCapture:
       type: object
       properties:
@@ -17345,6 +18166,139 @@ components:
         - reportable_duration_seconds
         - entry_count
       properties:
+        exact_duration_seconds:
+          type: integer
+          minimum: 0
+        reportable_duration_seconds:
+          type: integer
+          minimum: 0
+        entry_count:
+          type: integer
+          minimum: 0
+    ProjectTimeTaskBreakdown:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/ProjectTimeTaskBreakdownRow"
+        next:
+          type: string
+          description: Signed continuation for the next page; absent on the terminal page.
+    ProjectTimeTaskBreakdownRow:
+      type: object
+      required:
+        - task_id
+        - task_number
+        - task_title
+        - exact_duration_seconds
+        - reportable_duration_seconds
+        - entry_count
+      properties:
+        task_id:
+          type: string
+          format: uuid
+        task_number:
+          type:
+            - integer
+            - "null"
+        task_title:
+          type:
+            - string
+            - "null"
+        exact_duration_seconds:
+          type: integer
+          minimum: 0
+        reportable_duration_seconds:
+          type: integer
+          minimum: 0
+        entry_count:
+          type: integer
+          minimum: 0
+    ProjectTimeTaskEntries:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/ProjectTimeTaskEntryRow"
+        next:
+          type: string
+          description: Signed continuation for the next page; absent on the terminal page.
+    ProjectTimeTaskEntryRow:
+      type: object
+      required:
+        - id
+        - task_id
+        - actor_id
+        - work_date
+        - exact_duration_seconds
+        - reportable_duration_seconds
+        - revision
+      properties:
+        id:
+          type: string
+          format: uuid
+        task_id:
+          type: string
+          format: uuid
+        actor_id:
+          type: string
+          format: uuid
+        work_date:
+          type: string
+          format: date
+        exact_duration_seconds:
+          type: integer
+          minimum: 1
+        reportable_duration_seconds:
+          type: integer
+          minimum: 1
+        note:
+          type: string
+          maxLength: 2000
+        revision:
+          type: integer
+          minimum: 1
+    ProjectTimeContributorBreakdown:
+      type: object
+      required:
+        - items
+        - redacted
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/ProjectTimeContributorBreakdownRow"
+        next:
+          type: string
+          description: Signed continuation for the next page; absent on the terminal page.
+        redacted:
+          type: boolean
+          description: True when the caller may read Project aggregates but not contributor identities.
+    ProjectTimeContributorBreakdownRow:
+      type: object
+      required:
+        - actor_id
+        - display_name
+        - exact_duration_seconds
+        - reportable_duration_seconds
+        - entry_count
+      properties:
+        actor_id:
+          type: string
+          format: uuid
+        display_name:
+          type:
+            - string
+            - "null"
         exact_duration_seconds:
           type: integer
           minimum: 0
@@ -18673,12 +19627,47 @@ components:
         scopes:
           type: array
           minItems: 1
-          maxItems: 2
+          maxItems: 37
           uniqueItems: true
           items:
             type: string
             enum:
+              - assign:activity:read
+              - assign:agents:read
+              - assign:agents:write
+              - assign:attachments:read
+              - assign:attachments:write
+              - assign:code:read
+              - assign:comments:read
+              - assign:comments:write
+              - assign:context:read
+              - assign:discuss:read
+              - assign:discuss:write
+              - assign:documents:read
+              - assign:documents:write
+              - assign:inbox:read
+              - assign:inbox:write
+              - assign:knowledge:read
+              - assign:knowledge:write
+              - assign:labels:read
+              - assign:labels:write
+              - assign:members:read
+              - assign:memory:read
+              - assign:memory:write
+              - assign:milestones:read
+              - assign:milestones:write
+              - assign:operations:read
+              - assign:operations:write
+              - assign:projects:read
+              - assign:projects:write
               - assign:read
+              - assign:relations:read
+              - assign:relations:write
+              - assign:search:read
+              - assign:statuses:read
+              - assign:tasks:read
+              - assign:tasks:write
+              - assign:workspaces:read
               - assign:write
         workspaces:
           type: array
@@ -18768,12 +19757,47 @@ components:
         scopes:
           type: array
           minItems: 1
-          maxItems: 2
+          maxItems: 37
           uniqueItems: true
           items:
             type: string
             enum:
+              - assign:activity:read
+              - assign:agents:read
+              - assign:agents:write
+              - assign:attachments:read
+              - assign:attachments:write
+              - assign:code:read
+              - assign:comments:read
+              - assign:comments:write
+              - assign:context:read
+              - assign:discuss:read
+              - assign:discuss:write
+              - assign:documents:read
+              - assign:documents:write
+              - assign:inbox:read
+              - assign:inbox:write
+              - assign:knowledge:read
+              - assign:knowledge:write
+              - assign:labels:read
+              - assign:labels:write
+              - assign:members:read
+              - assign:memory:read
+              - assign:memory:write
+              - assign:milestones:read
+              - assign:milestones:write
+              - assign:operations:read
+              - assign:operations:write
+              - assign:projects:read
+              - assign:projects:write
               - assign:read
+              - assign:relations:read
+              - assign:relations:write
+              - assign:search:read
+              - assign:statuses:read
+              - assign:tasks:read
+              - assign:tasks:write
+              - assign:workspaces:read
               - assign:write
         project_ids:
           type: array
@@ -18807,12 +19831,47 @@ components:
         scopes:
           type: array
           minItems: 1
-          maxItems: 2
+          maxItems: 37
           uniqueItems: true
           items:
             type: string
             enum:
+              - assign:activity:read
+              - assign:agents:read
+              - assign:agents:write
+              - assign:attachments:read
+              - assign:attachments:write
+              - assign:code:read
+              - assign:comments:read
+              - assign:comments:write
+              - assign:context:read
+              - assign:discuss:read
+              - assign:discuss:write
+              - assign:documents:read
+              - assign:documents:write
+              - assign:inbox:read
+              - assign:inbox:write
+              - assign:knowledge:read
+              - assign:knowledge:write
+              - assign:labels:read
+              - assign:labels:write
+              - assign:members:read
+              - assign:memory:read
+              - assign:memory:write
+              - assign:milestones:read
+              - assign:milestones:write
+              - assign:operations:read
+              - assign:operations:write
+              - assign:projects:read
+              - assign:projects:write
               - assign:read
+              - assign:relations:read
+              - assign:relations:write
+              - assign:search:read
+              - assign:statuses:read
+              - assign:tasks:read
+              - assign:tasks:write
+              - assign:workspaces:read
               - assign:write
         project_ids:
           type: array
@@ -20101,6 +21160,10 @@ components:
         version_digest:
           type: string
           pattern: ^sha256:[0-9a-f]{64}$
+        updated_at:
+          type: string
+          pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]{1,9})?Z$
+          description: UTC RFC3339 current catalog sort position when returned by the Studio list; absent from immutable revision snapshots and detail responses.
         slug:
           type: string
           pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
@@ -20782,6 +21845,10 @@ components:
           $ref: "#/components/schemas/Timestamp"
         updated_at:
           $ref: "#/components/schemas/Timestamp"
+        catalog_updated_at:
+          type: string
+          pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]{1,9})?Z$
+          description: UTC RFC3339 instance sort position on catalog list items; absent from detail and mutation responses.
     AgentDefinitionList:
       type: object
       additionalProperties: false
@@ -20933,6 +22000,11 @@ components:
         - items
         - has_more
       properties:
+        total_count:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Authorized collection size before cursor bounds; refreshed at read time. Activity counts admitted events before display grouping and Comments include retained ordinals.
         items:
           type: array
           maxItems: 50
@@ -21409,129 +22481,6 @@ components:
           type: string
           enum:
             - extractive
-    DiscussEventStreamFrame:
-      description: |
-        SSE framing. hello data uses DiscussEventStreamHello; heartbeat data uses
-        WorkspaceEventStreamHeartbeat. discuss_event data uses DiscussStreamEvent and
-        its id is a signed cursor. resync_required uses WorkspaceEventStreamResyncRequired
-        with invalidation_scopes [discuss_messages, discuss_runs]. Private stream epochs
-        and cursors are independent of Workspace reconciliation streams.
-        Opted-in text uses DiscussTextStreamEvent without an id; it is disposable
-        presentation and cannot authorize any action or replace a final message.
-      oneOf:
-        - $ref: "#/components/schemas/DiscussEventStreamHello"
-        - $ref: "#/components/schemas/DiscussStreamEvent"
-        - $ref: "#/components/schemas/DiscussTextStreamEvent"
-        - $ref: "#/components/schemas/WorkspaceEventStreamHeartbeat"
-        - $ref: "#/components/schemas/WorkspaceEventStreamResyncRequired"
-    DiscussEventStreamHello:
-      type: object
-      additionalProperties: false
-      required:
-        - envelope_version
-        - cursor
-        - stream_epoch
-        - heartbeat_interval_ms
-        - retry_after_ms
-      properties:
-        envelope_version:
-          type: integer
-          enum:
-            - 1
-        cursor:
-          $ref: "#/components/schemas/Cursor"
-        stream_epoch:
-          type: string
-          minLength: 1
-          maxLength: 100
-        heartbeat_interval_ms:
-          type: integer
-          minimum: 1
-        retry_after_ms:
-          type: integer
-          minimum: 0
-        text_deltas:
-          type: boolean
-          description: True only when the requested transient text transport is supported.
-    DiscussTextStreamEvent:
-      type: object
-      additionalProperties: false
-      required:
-        - stream_id
-        - text_delta
-      properties:
-        stream_id:
-          $ref: "#/components/schemas/Identifier"
-        text_delta:
-          $ref: "#/components/schemas/DiscussTextProjection"
-    DiscussTextProjection:
-      type: object
-      additionalProperties: false
-      required:
-        - kind
-        - run_id
-        - message_id
-        - part_id
-        - producer_fence
-        - producer_sequence
-        - generation
-        - revision
-        - offset
-        - text
-      properties:
-        kind:
-          type: string
-          enum:
-            - text_delta
-            - text_snapshot
-        run_id:
-          $ref: "#/components/schemas/Identifier"
-        message_id:
-          $ref: "#/components/schemas/Identifier"
-        part_id:
-          $ref: "#/components/schemas/Identifier"
-        producer_fence:
-          type: integer
-          format: int64
-          minimum: 1
-        producer_sequence:
-          type: integer
-          format: int64
-          minimum: 1
-        generation:
-          type: integer
-          format: int64
-          minimum: 1
-        revision:
-          type: integer
-          format: int64
-          minimum: 1
-        offset:
-          type: integer
-          format: int64
-          minimum: 0
-          maximum: 65536
-          description: Exact UTF-8 byte append offset; zero for a full snapshot.
-        text:
-          type: string
-          maxLength: 65536
-          description: At most 2048 UTF-8 bytes per delta or 65536 per snapshot.
-    DiscussStreamEvent:
-      type: object
-      additionalProperties: false
-      required:
-        - stream_id
-        - sequence
-        - message
-      properties:
-        stream_id:
-          $ref: "#/components/schemas/Identifier"
-        sequence:
-          type: integer
-          format: int64
-          minimum: 1
-        message:
-          $ref: "#/components/schemas/DiscussMessage"
     DiscussEventPage:
       type: object
       additionalProperties: false
@@ -24460,6 +25409,22 @@ components:
             - type: "null"
         progress:
           $ref: "#/components/schemas/MilestoneProgress"
+        milestone_number:
+          description: Stable Project-local positive signed-64-bit number as canonical decimal text (maximum 9223372036854775807), independent of Task numbering and rank. Null or absent while a historical Milestone awaits reference backfill; never derive it client-side.
+          type:
+            - string
+            - "null"
+          pattern: ^[1-9][0-9]{0,18}$
+          maxLength: 19
+          example: "1"
+        code:
+          description: Canonical uppercase Project-key Milestone reference, for example FRS-M1. Stable across rename, reorder and archive/restore. Null or absent with milestone_number during historical backfill. UUID selectors and foreign keys remain authoritative; knowing a code grants no access.
+          type:
+            - string
+            - "null"
+          pattern: ^[A-Z][A-Z0-9]{1,7}-M[1-9][0-9]{0,18}$
+          maxLength: 29
+          example: FRS-M1
     MilestoneProgress:
       type: object
       additionalProperties: false
@@ -25268,6 +26233,7 @@ components:
           type: array
           maxItems: 32
           uniqueItems: true
+          description: Empty means all incoming event types. For incoming or bidirectional GitHub development subscriptions (github.development_activity or legacy development.activity on a GitHub binding), create/update adds github.pull.request.review and github.workflow.run to a nonempty explicit list and returns the sorted unique union. The union must fit 32 entries or the request fails with 400 invalid_request; other providers and subscription types are unchanged. Existing explicit lists require a revision-checked update to receive the added event types.
           items:
             type: string
             pattern: ^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$
@@ -26457,6 +27423,11 @@ components:
         - items
         - has_more
       properties:
+        total_count:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Authorized collection size before cursor bounds; refreshed at read time. Activity counts admitted events before display grouping and Comments include retained ordinals.
         items:
           type: array
           items:
@@ -26467,111 +27438,6 @@ components:
             - type: "null"
         has_more:
           type: boolean
-    WorkspaceEvent:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - type
-        - subject_type
-        - subject_id
-        - occurred_at
-        - payload
-        - operation_id
-      properties:
-        id:
-          $ref: "#/components/schemas/Identifier"
-        type:
-          type: string
-          minLength: 1
-          maxLength: 100
-        subject_type:
-          type: string
-          minLength: 1
-          maxLength: 100
-        subject_id:
-          $ref: "#/components/schemas/Identifier"
-        actor_id:
-          $ref: "#/components/schemas/Identifier"
-        occurred_at:
-          $ref: "#/components/schemas/Timestamp"
-        aggregate_version:
-          type: integer
-          minimum: 1
-          description: Present for currently versioned aggregates; absent for retained historical/rolling-upgrade events.
-        payload:
-          type: object
-          additionalProperties: true
-          description: Bounded, safe event-specific reconciliation data; never rich content or authority. `attachment.linked` supplies only `parent_type` (`task` or `project`) and `parent_id` so clients can refresh that one attachment collection.
-        operation_id:
-          $ref: "#/components/schemas/Identifier"
-    WorkspaceEventStreamFrame:
-      oneOf:
-        - $ref: "#/components/schemas/WorkspaceEventStreamHello"
-        - $ref: "#/components/schemas/WorkspaceEvent"
-        - $ref: "#/components/schemas/WorkspaceEventStreamHeartbeat"
-        - $ref: "#/components/schemas/WorkspaceEventStreamResyncRequired"
-    WorkspaceEventStreamHello:
-      type: object
-      additionalProperties: false
-      required:
-        - envelope_version
-        - cursor
-        - stream_epoch
-        - heartbeat_interval_ms
-        - retry_after_ms
-      properties:
-        envelope_version:
-          type: integer
-          enum:
-            - 1
-        cursor:
-          $ref: "#/components/schemas/Cursor"
-        stream_epoch:
-          type: string
-          minLength: 1
-          maxLength: 100
-        heartbeat_interval_ms:
-          type: integer
-          minimum: 1
-        retry_after_ms:
-          type: integer
-          minimum: 0
-    WorkspaceEventStreamHeartbeat:
-      type: object
-      additionalProperties: false
-      required:
-        - stream_epoch
-        - sent_at
-      properties:
-        stream_epoch:
-          type: string
-          minLength: 1
-          maxLength: 100
-        sent_at:
-          $ref: "#/components/schemas/Timestamp"
-    WorkspaceEventStreamResyncRequired:
-      type: object
-      additionalProperties: false
-      required:
-        - code
-        - cursor
-        - invalidation_scopes
-      properties:
-        code:
-          type: string
-          minLength: 1
-          maxLength: 100
-        cursor:
-          $ref: "#/components/schemas/Cursor"
-        invalidation_scopes:
-          type: array
-          minItems: 1
-          maxItems: 20
-          items:
-            type: string
-            minLength: 1
-            maxLength: 100
     InboxList:
       type: object
       additionalProperties: false
@@ -26903,6 +27769,11 @@ components:
         - as_of_date
         - timezone
       properties:
+        total_count:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Authorized collection size before cursor bounds; refreshed at read time. Activity counts admitted events before display grouping and Comments include retained ordinals.
         items:
           type: array
           items:
@@ -28345,6 +29216,11 @@ components:
         - created_at
         - updated_at
       properties:
+        number:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Creation-order ordinal within this Task, including deletion tombstones; use for numbered Comment links.
         id:
           $ref: "#/components/schemas/Identifier"
         workspace_id:
@@ -28458,6 +29334,11 @@ components:
         - items
         - has_more
       properties:
+        total_count:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Authorized collection size before cursor bounds; refreshed at read time. Activity counts admitted events before display grouping and Comments include retained ordinals.
         items:
           type: array
           items:
@@ -29100,6 +29981,11 @@ components:
         - items
         - has_more
       properties:
+        total_count:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Authorized collection size before cursor bounds; refreshed at read time. Activity counts admitted events before display grouping and Comments include retained ordinals.
         items:
           type: array
           items:
@@ -29164,6 +30050,15 @@ components:
           $ref: "#/components/schemas/EmailAddress"
         password:
           $ref: "#/components/schemas/Password"
+        remember_me:
+          type: boolean
+          description: |
+            Whether to remember this device. `true` (the default when omitted,
+            which preserves earlier client behavior) issues a persistent
+            session cookie with the 7-day idle and 30-day absolute lifetimes.
+            `false` issues a browser-session cookie that the browser discards
+            when it closes, and the server bounds the session to 48 hours,
+            idle and absolute.
     EmailRequest:
       type: object
       additionalProperties: false
@@ -29290,6 +30185,15 @@ components:
           maxLength: 128
         code:
           $ref: "#/components/schemas/MFACode"
+        remember_me:
+          type: boolean
+          description: |
+            Whether to remember this device; use the value chosen at the first sign-in step. `true` (the default when omitted,
+            which preserves earlier client behavior) issues a persistent
+            session cookie with the 7-day idle and 30-day absolute lifetimes.
+            `false` issues a browser-session cookie that the browser discards
+            when it closes, and the server bounds the session to 48 hours,
+            idle and absolute.
     MFACodeRequest:
       type: object
       additionalProperties: false
@@ -29445,6 +30349,15 @@ components:
             The `PublicKeyCredential` returned by
             `navigator.credentials.get()`, serialized as JSON in the form a
             WebAuthn client library produces.
+        remember_me:
+          type: boolean
+          description: |
+            Whether to remember this device. `true` (the default when omitted,
+            which preserves earlier client behavior) issues a persistent
+            session cookie with the 7-day idle and 30-day absolute lifetimes.
+            `false` issues a browser-session cookie that the browser discards
+            when it closes, and the server bounds the session to 48 hours,
+            idle and absolute.
     PasskeyRenameRequest:
       type: object
       additionalProperties: false

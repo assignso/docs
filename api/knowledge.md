@@ -1,117 +1,68 @@
+---
+description: Search Workspace Knowledge for evidence across Tasks, Documents, integrations and code, and get short cited answers.
+---
+
 # Workspace Knowledge
 
-Workspace Knowledge is an optional evidence layer across authorized Assign
-work, Documents, integrations, repository facts, and code. It does not replace
-canonical resources or ordinary lexical [Search](search.md).
+Workspace Knowledge is an optional evidence layer across the work, Documents, integrations, repository
+facts and code you can access. It doesn't replace your resources or [Search](./search). The web app
+uses it for related Task evidence, Search questions and private [Discuss](./discuss) answers.
 
-The Web client uses Knowledge in contextual features such as related Task
-evidence, committed ordinary Search questions, and private Discuss responses.
+Knowledge updates in the background after changes to included Projects, Tasks, Documents and, if
+enabled, Comments. A rebuild or outage can delay new evidence. Access is checked on every read, so
+moved, deleted or excluded content can disappear before replacement evidence is ready. Turning off a
+source option removes its derived content but not the original resources.
 
-## Search evidence
+These operations need a browser session and an active Knowledge entitlement and policy for the
+Workspace. Responses are private and never include scores, prompts, model details or traces.
+For an upcoming application WebSocket subscription, the three GETs below accept
+`X-Assign-Realtime-Baseline: 1` and return a replay cursor and position on a
+successful canonical read. See [Application realtime](./realtime); this is not
+deployed yet.
 
-Knowledge updates asynchronously after changes to included Projects, Tasks,
-Documents and enabled Comments. A rebuild or temporary service outage can delay
-new evidence. Retrieval checks current access and source visibility; moved,
-deleted or excluded content may disappear before replacement evidence is ready.
-Turning off a source option removes its derived content asynchronously while
-preserving the original Assign resources.
-
-`GET /api/v1/workspaces/{workspace_id}/knowledge/search` requires
-browser-session authentication and the current Workspace's active Knowledge
-entitlement and policy.
-
-Parameters:
-
-- `q` is required and contains 2–200 characters after trimming.
-- `project_id` optionally restricts retrieval to one currently authorized
-  included Project plus permitted shared material.
-- `limit` is optional, defaults to 20, and cannot exceed 20.
-
-Example:
+## Search
 
 ```http
 GET /api/v1/workspaces/018f0d5a-ef50-7fa3-8c11-2ddc6b30dc11/knowledge/search?q=launch%20readiness&limit=20
 ```
 
-The response state is `ready`, `empty`, or `unavailable`. Known disabled,
-unentitled, unready, not-current, and temporary service conditions use the
-explicit `unavailable` projection so callers can keep ordinary Workspace work
-available. Unexpected service failures may return `503 knowledge_unavailable`.
+| Parameter | Rules |
+| --- | --- |
+| `q` | Required, 2–200 characters after trimming. |
+| `project_id` | Limits results to one authorized, included Project plus permitted shared material. |
+| `limit` | Default and maximum 20. |
 
-Each result includes a display-safe kind, title, bounded excerpt, explanation,
-`authoritative`, `extracted`, or `inferred` provenance, source time, and nullable
-current-resource navigation metadata. Code evidence may also carry a repository
-identifier, repository path, and symbol. Treat `stale` and `truncated` as
-warnings that the projection may be behind or incomplete; never infer absence
-from a bounded result. Available domains may still return results when the code index is
-unavailable; such a result is marked incomplete. External source citation references are opaque
-identities, not reusable download URLs. Use authorized resource navigation metadata when present.
+The response state is `ready`, `empty` or `unavailable`. When Knowledge is disabled, unentitled or not
+ready, you get `unavailable` so ordinary work carries on. Unexpected failures can return
+`503 knowledge_unavailable`.
 
-Responses are `private, no-store`. The API never exposes raw Knowledge scores,
-prompts, provider/model identity, graph identifiers, topology, credentials, or
-traces.
+Each result has a kind, title, bounded excerpt, explanation, provenance (`authoritative`, `extracted`
+or `inferred`), source time and, where available, navigation metadata. Code results can include a
+repository, path and symbol. If the code index is unavailable, other results are marked incomplete.
+Source citations are opaque identities, not download URLs. Treat `stale` and `truncated` as warnings,
+and never conclude that something doesn't exist from a bounded result.
 
-## Concise answers
+## Answers
 
-`GET /api/v1/workspaces/{workspace_id}/knowledge/answer?q=...` runs only after
-an explicit submission. It returns an extractive one-sentence answer and at
-most five current, authorized sources. `supported`, `partial`, `conflicting`,
-and `none` make uncertainty and abstention explicit. Assign does not call this
-route for each keystroke, and ordinary lexical Search remains usable when the
-Knowledge service is unavailable.
+`GET /api/v1/workspaces/{workspace_id}/knowledge/answer?q=...` runs only on an explicit submission,
+never per keystroke. It returns a one-sentence extractive answer and up to five current, authorized
+sources. Its `supported`, `partial`, `conflicting` and `none` states make uncertainty explicit, and
+Search still works when Knowledge is down.
 
 ## Related Task context
 
-`GET /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` remains
-the smaller fail-open Task-detail projection. It returns at most five related
-items and never blocks the Task workflow. Globally unconfigured, disabled,
-unentitled, unacknowledged, empty-scope, and out-of-scope conditions use the
-empty state so Task detail renders no error or placeholder. The unavailable
-state is reserved for genuine retrieval/currentness failures after eligibility.
+`GET /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` returns up to five related
+items for a Task's **Suggestions** tab, with a `confidence` of `high`, `medium` or `low`. It never
+blocks the Task. When Knowledge is off or not ready, it's empty, and `unavailable` means a genuine
+retrieval failure. Results are direct, permission-filtered neighbors such as the Project, parent,
+dependencies, relations, Comments and explicit references. A shared title, assignee, status or
+Project, or similarity, isn't treated as proof of a relationship. Users confirm or discard results
+with the feedback operation in [Tasks](./tasks#related-context-and-suggestions).
 
-Task context contains only direct, permission-filtered canonical neighbors such as
-the owning Project, parent, explicit dependencies and Task relations, Comments, and
-explicit Task/Document references. It does not treat a shared title, assignee,
-status, Project, semantic similarity, or graph proximity as proof that two Tasks
-concern the same work. A shared Project may appear as context, but Assign does not
-expand through it to every Task in that Project. The requested result limit is a
-maximum; when there is no supported connection, the result is empty.
+## MCP
 
-A Task with only a title remains searchable and keeps its real canonical links.
-Similar Tasks and Documents can still be discovered through Knowledge search, but
-similarity is not returned as a factual relationship or promoted to a Task
-dependency.
-
-Assign MCP clients may use `gather_information` for the same concise bounded
-answer. They may also use the existing `knowledge_search`, `knowledge_context`,
-`knowledge_related`, `knowledge_path`, and `knowledge_impact` tools rather than
-this browser-session route.
-
-Each related-context result now also carries a `confidence` bucket, and a
-companion `suggestion-feedback` endpoint records the user's confirm/discard
-decision on a result — see [Read linked external context](tasks.md#read-linked-external-context)
-for the full contract. Neither is exposed as an MCP tool; this remains a
-browser Task-detail-only surface.
-
-Each Knowledge MCP response declares `match_status` and coverage for canonical,
-lexical, semantic, source-assertion, cross-domain, and code retrieval. Coverage
-can be `ready`, `partial`, `stale`, or `unavailable`, with a safe reason when
-useful. `no_match` means no result inside that declared coverage; it does not
-turn missing or stale coverage into proof that nothing exists. Use
-`knowledge_status` for the same content-free diagnostic before retrying or when
-the service cannot answer a graph question. Graph tools also accept bounded
-relation and provenance filters. Extracted source assertions retain their
-source revision and modality and remain distinct from canonical Assign
-relations. To traverse an extracted claim, use `knowledge_path` or
-`knowledge_impact`, include `source_asserts` in `relation_types`, and list the
-claim types you want in `assertion_modalities`. The accepted values are
-`proposed`, `accepted`, `rejected`, `reported`, and `inferred`. Assign does not
-include source assertions in `knowledge_context` or `knowledge_related`.
-
-Optional MCP session memory is separate from this shared evidence layer.
-`memory_remember` stores a bounded note in an explicitly consented 30-day scope
-bound to the current Workspace, Actor and OAuth client; `memory_recall` searches
-only that scope, `memory_export` returns its unexpired notes and `memory_forget`
-purges and revokes it. Notes never appear in this HTTP response, shared
-`knowledge_*`/`code_*` tools or automatic Agent learning. Production
-availability is staged separately from the local P8 contract.
+MCP clients can use `gather_information` for the same bounded answer, plus `knowledge_search`,
+`knowledge_context`, `knowledge_related`, `knowledge_path` and `knowledge_impact`. Each response
+states its coverage (`ready`, `partial`, `stale` or `unavailable`) and a `match_status`. `no_match`
+means nothing was found within that coverage, not that nothing exists. `knowledge_status` gives a
+content-free diagnostic. See the [tool catalog](../mcp/tools).
