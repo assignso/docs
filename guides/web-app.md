@@ -59,6 +59,11 @@ Choose **Search** in the header, or press `/` or `Cmd/Ctrl+K`. Results include
 Projects, Tasks, Documents and, when available, People from the current Workspace. Search runs on
 the server, so results always reflect your current access.
 
+### Updates while Search is open <Badge type="warning" text="Awaiting deployment" />
+
+Open results refresh after indexed work, People, Task, Project or Status changes. If a
+read fails, choose **Try again** in the Search dialog.
+
 ## Current task
 
 The **Current task** control in the top bar marks the one in-progress Task you're working on now,
