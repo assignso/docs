@@ -119,3 +119,13 @@ next message.
 On a Project’s List, Board or Backlog, **Save view** saves your filters and presentation as a personal tab. **Update view** saves later changes. On a narrow screen, open **Saved view actions**. Rename or delete your views under Project Settings → Tabs. These views belong to your account in the current Workspace; they are not shared Project settings.
 
 API and MCP saved-view records can include an optional `definition` with an opaque `project_id`, `layout`, a non-null `parameters` object and `show_cancelled`. Existing query-only records remain valid. The checked `query` remains required; saving a definition requires access to its Project and revision checks apply to updates. Limits are 100 views per membership and 16 KiB per definition.
+
+
+### Label selection in personal Project views <Badge type="warning" text="Awaiting deployment" />
+
+A Project view definition's `parameters` accepts `label: [UUID, ...]` with up to
+100 unique values. This matches any selected assigned Task label alongside the
+other Project filters on Tasks loaded in that view. It does not change the Task
+list endpoint's pagination or aggregate totals. The separate `labels` parameter
+continues to accept `shown` or `hidden` for badge visibility. HTTP and MCP saved
+views use the same validation and private access rules.

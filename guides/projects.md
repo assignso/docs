@@ -161,3 +161,24 @@ a separate browser preference. Native Mobile's current Projects preview does not
 ### List group header scrolling (awaiting deployment)
 
 As you scroll a grouped Task List, the next group heading pushes the current heading upward and replaces it below the toolbar. Scrolling back restores the previous heading.
+
+
+## Show Task labels <Badge type="warning" text="Awaiting deployment" />
+
+Open **Display → Show labels** to show or hide assigned labels in List, Backlog
+and Board. On a narrow screen, use **View options**. Labels are shown by default.
+In Task rows, labels appear immediately after the title; narrow screens keep
+these badges hidden. Board labels appear below the title. Your List choice is
+remembered in this browser, and saved views keep their own choice.
+
+
+## Filter by Task labels <Badge type="warning" text="Awaiting deployment" />
+
+In List, Board or Backlog, open **Filter → Labels** and select one or more labels.
+Tasks with any selected label match; your other filters still apply. Remove a
+Label chip or choose **Clear all** to clear the selection. Filtering works even
+when **Show labels** is off. Your List choice is remembered in this browser, and
+saved views retain it.
+
+This filters Tasks loaded in the current view. Load more Tasks to include them
+in the results; collection totals keep their existing meaning.

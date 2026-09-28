@@ -17584,9 +17584,10 @@ components:
             - backlog
         parameters:
           type: object
-          maxProperties: 12
+          maxProperties: 13
           propertyNames:
             enum:
+              - label
               - milestone
               - status
               - assignee
@@ -17604,7 +17605,7 @@ components:
             maxItems: 100
             items:
               type: string
-          description: Existing Project Task URL parameters. Milestone and status accept UUIDs; assignee accepts UUIDs or unassigned. Priority accepts none, urgent, high, medium or low. Due accepts overdue, today, next7, next30 or none; created and updated accept today, last7 or last30. These date parameters also accept an inclusive YYYY-MM-DD..YYYY-MM-DD range with either endpoint optionally omitted. Group accepts none, status, assignee or milestone; sort accepts manual, newest, oldest or priority; completed accepts recent, week, month or all; done and labels accept shown or hidden. Singleton parameters reject multiple values.
+          description: Existing Project Task URL parameters. Label, milestone and status accept UUIDs; assignee accepts UUIDs or unassigned. Label selections match any selected assigned Task label and compose with the other filters on the bounded loaded Project collection; label filtering does not change server pagination or aggregate totals. Priority accepts none, urgent, high, medium or low. Due accepts overdue, today, next7, next30 or none; created and updated accept today, last7 or last30. These date parameters also accept an inclusive YYYY-MM-DD..YYYY-MM-DD range with either endpoint optionally omitted. Group accepts none, status, assignee or milestone; sort accepts manual, newest, oldest or priority; completed accepts recent, week, month or all; done and labels accept shown or hidden. Singleton parameters reject multiple values.
         show_cancelled:
           type: boolean
       required:
