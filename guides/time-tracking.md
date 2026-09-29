@@ -27,6 +27,12 @@ then choose a bounded date range, review your reportable and exact totals, and
 download the same range as CSV. The CSV includes the work date, Project, Task,
 reportable and exact seconds, and optional note.
 
+The selected range can contain up to 800 entries. If a wider range exceeds that
+limit, choose shorter dates and retry the report or CSV export.
+
+Task time ledgers can show up to 800 entries. If a Task exceeds that limit, its
+time ledger and totals show an error with a retry action instead of a partial list.
+
 The initial range is your current week according to your Account timezone and
 first-day-of-week preference. Work dates are shown using your Account locale and
 date format. The date field itself remains a calendar date and is never shifted

@@ -22,8 +22,8 @@ Browser application WebSocket admission and authorized replay custody. Upcoming;
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/realtime` | Upgrade an authenticated application socket | Session, Mobile |
-| `GET /api/v1/realtime/baseline` | Capture authorized realtime routing custody or a domain page | Session, Mobile |
+| `GET /api/v1/realtime` | Upgrade an authenticated application socket | Session, Mobile, CLI |
+| `GET /api/v1/realtime/baseline` | Capture authorized realtime routing custody or a domain page | Session, Mobile, CLI |
 
 ## Authentication
 
@@ -500,7 +500,7 @@ Guide: [Time tracking](../guides/time-tracking)
 | `GET /api/v1/projects/{project_id}/time-task-breakdown` | List a Project's recorded time grouped by Task | Session |
 | `GET /api/v1/projects/{project_id}/time-task-entries` | List recorded entries for one Task in a Project report | Session |
 | `GET /api/v1/projects/{project_id}/time-totals` | Get Project time totals for a date range | Session |
-| `GET /api/v1/tasks/{task_id}/time-entries` | List live time entries for a Task | Session |
+| `GET /api/v1/tasks/{task_id}/time-entries` | List live time entries for a Task in a bounded revision-fenced collection | Session |
 | `POST /api/v1/tasks/{task_id}/time-entries` | Log manual time against a Task | Session |
 | `GET /api/v1/tasks/{task_id}/time-totals` | Get Task time totals | Session |
 | `PATCH /api/v1/time-entries/{entry_id}` | Correct a time entry | Session |
