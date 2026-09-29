@@ -43,6 +43,8 @@ recovery. It loads up to 1,000 Workspaces and states that limit if more exist.
 | **Work management** | Labels, Task statuses, Project lifecycle and Time tracking |
 | **Developer tools** | AI integrations, service credentials and integrations |
 
+If you switch Workspaces or lose access while Billing is opening checkout, the billing portal or a sandbox credit top-up, the old page will not send you to that session when it responds. <Badge type="warning" text="Awaiting deployment" />
+
 ### Members list recovery <Badge type="warning" text="Awaiting deployment" />
 
 If the Members page cannot refresh its member and invitation lists, it hides both lists and asks you to refresh the page. This prevents an old list from appearing current.
