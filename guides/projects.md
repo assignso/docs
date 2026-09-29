@@ -43,10 +43,9 @@ the exact view.
   Status, assignee or Milestone, export CSV, archive or delete. Press `Backspace` to clear the
   selection. Tasks that fail stay selected so you can retry them.
 
-## Edit titles on mobile <Badge type="warning" text="Awaiting deployment" />
+## Edit Task titles <Badge type="warning" text="Awaiting deployment" />
 
-On mobile List and Backlog views, open the Task to edit its title.
-Desktop rows keep the title-edit button, which appears on hover or keyboard focus.
+In List and Backlog, open the Task to edit its title. Rows will no longer offer an inline title editor; Status and assignee controls remain in the row.
 
 ## Empty Task attachments <Badge type="warning" text="Awaiting deployment" />
 
@@ -169,6 +168,9 @@ a separate browser preference. Native Mobile's current Projects preview does not
 As you scroll a grouped Task List, the next group heading pushes the current heading upward and replaces it below the toolbar. Scrolling back restores the previous heading.
 
 ## Show Task labels <Badge type="warning" text="Awaiting deployment" />
+
+Project List and Backlog keep Status and assignee controls at the right of each row.
+Labels sit beside short Task titles. Long titles keep room to read when space is tight, while label badges give way to a count.
 
 Open **Display → Show labels** to show or hide assigned labels in List, Backlog
 and Board. On a narrow screen, use **View options**. Labels are shown by default.
