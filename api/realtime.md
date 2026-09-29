@@ -99,6 +99,19 @@ its cursor from `/api/v1/realtime/baseline?scope=discuss`, then read and apply
 the authorized bounded transcript and retained run state before acknowledging a
 checkpoint. This cursor cannot be used as a Workspace journal position.
 
+## Upcoming Web behavior
+
+The upcoming Web application refreshes its displayed Tasks, Project Overview,
+settings and current Task cards through the shared connection. A card follows the
+Task's current identity and link after a move. Background settings updates preserve
+an unsaved name or URL draft. Loading or failed required reads keep synchronization
+pending; a connected socket alone does not mean displayed data is current.
+
+Collection limits remain explicit. A retained Task view can load up to 20 pages;
+Day can cover up to 128 Activity pages. Reaching a limit reports incomplete retrieval
+instead of presenting the result as complete. These limits are not performance or
+availability guarantees. This behavior remains upcoming and has not been deployed.
+
 ## Read, apply and acknowledge
 
 For a private canonical read, set `X-Assign-Realtime-Baseline` to the matching
@@ -141,7 +154,12 @@ request returns `realtime_baseline_invalid`; an unavailable snapshot returns
 
 A `billing` or `credits` hint contains only the Workspace ID. Refresh the
 currently displayed authorized billing, credit balance, and feature-availability
-reads before acknowledging it. Billing-account and invoice changes are released
+reads before acknowledging it. Discuss availability is one of those reads:
+`GET /api/v1/workspaces/{workspace_id}/discuss/availability` accepts
+`X-Assign-Realtime-Baseline: 1` and returns the access decision with the Workspace
+cursor from the same snapshot. Account-global current work does not. `GET /api/v1/me/current-work`
+and `GET /api/v1/me/current-work/candidates` stay outside Workspace snapshot capture.
+Billing-account and invoice changes are released
 only to Workspace billing managers. The hint never contains payment-provider or
 credit-ledger details.
 

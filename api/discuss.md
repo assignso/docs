@@ -77,11 +77,12 @@ Document or Project. Permissions are rechecked and revoked access makes a refere
 
 ## Availability
 
-The upcoming browser realtime contract lets `GET …/discuss/specialist-runs`
-and `GET …/discuss/specialist-runs/{specialist_run_id}` accept
+The upcoming browser realtime contract lets `GET …/discuss/availability`,
+`GET …/discuss/specialist-runs`, and
+`GET …/discuss/specialist-runs/{specialist_run_id}` accept
 `X-Assign-Realtime-Baseline: 1`. Successful reads then return the signed
-Workspace cursor and position alongside the private, currently authorized
-specialist projection. This is not yet deployed; see [application realtime](/api/realtime).
+Workspace cursor and position alongside the authorized body. Availability returns
+the access decision from that same snapshot. This is not yet deployed; see [application realtime](/api/realtime).
 
 `GET /api/v1/workspaces/{workspace_id}/discuss/availability` returns the access decision before you
 load history. Branch on `access` and `reason`, not `minimum_plan_key` or `minimum_plan_label`, which
