@@ -162,7 +162,6 @@ a separate browser preference. Native Mobile's current Projects preview does not
 
 As you scroll a grouped Task List, the next group heading pushes the current heading upward and replaces it below the toolbar. Scrolling back restores the previous heading.
 
-
 ## Show Task labels <Badge type="warning" text="Awaiting deployment" />
 
 Open **Display → Show labels** to show or hide assigned labels in List, Backlog
@@ -170,7 +169,6 @@ and Board. On a narrow screen, use **View options**. Labels are shown by default
 In Task rows, labels appear immediately after the title; narrow screens keep
 these badges hidden. Board labels appear below the title. Your List choice is
 remembered in this browser, and saved views keep their own choice.
-
 
 ## Filter by Task labels <Badge type="warning" text="Awaiting deployment" />
 

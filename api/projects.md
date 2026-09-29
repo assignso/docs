@@ -317,7 +317,6 @@ instead of counting a partial Task list. Treat absent progress as unavailable, n
 
 API/developer bearer credentials with the existing read scope use `GET /api/v1/cli/milestones/{milestone_code}`. The code's Project key resolves within the token's Workspace under normal Project access, then returns the canonical Milestone/progress/ETag. Missing and inaccessible resources return 404; malformed or overflowing codes return 400 `invalid_milestone_code`. ASCII casing normalizes and numbers remain decimal text. Browser/native endpoints and UUID operations retain their credential rules. Generated TypeScript/PHP CLI API clients provide `getCliMilestone`.
 
-
 ## Paid public publishing <Badge type="warning" text="Awaiting deployment" />
 
 Publishing public Documents or Projects requires a paid entitlement in that Workspace. Being a paid member of another Workspace does not qualify. A denied publish returns `403 paid_workspace_required`; your content stays unchanged and authorized users can still unpublish.

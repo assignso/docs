@@ -52,6 +52,7 @@ Categories: `assignment`, `mention`, `comment`, `due`, `dependency`, `agent`, `i
   action may not appear on the very next read.
 - Rapid activity can update one grouped item. `aggregation_count` and `last_event_at` report it.
 - Archived items, and items whose Task is inactive, inaccessible or no longer followed, are hidden.
+
 ### Discuss notices <Badge type="warning" text="Awaiting deployment" />
 
 Read generated Discuss message notices in Discuss. They are excluded from Inbox items and unread totals, including older notices. Other Agent notifications remain in Inbox. Your configured email and push preferences still apply.

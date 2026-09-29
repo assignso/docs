@@ -34,7 +34,6 @@ create a replacement when rotating access.
 Registering a client again does not reactivate a revoked client. A disabled client
 cannot resume access merely by publishing or resubmitting its registration metadata.
 
-
 ## Paid public publishing <Badge type="warning" text="Awaiting deployment" />
 
 Public Document creation and Project publishing also require that Workspace's paid publishing entitlement. A denied tool call returns `paid_workspace_required` without publishing; existing OAuth scopes and actor permissions still apply. Authorized unpublishing remains available. `document_update` replaces content and does not change publication scope.

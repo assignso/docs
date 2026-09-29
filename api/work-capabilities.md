@@ -120,7 +120,6 @@ On a Project’s List, Board or Backlog, **Save view** saves your filters and pr
 
 API and MCP saved-view records can include an optional `definition` with an opaque `project_id`, `layout`, a non-null `parameters` object and `show_cancelled`. Existing query-only records remain valid. The checked `query` remains required; saving a definition requires access to its Project and revision checks apply to updates. Limits are 100 views per membership and 16 KiB per definition.
 
-
 ### Label selection in personal Project views <Badge type="warning" text="Awaiting deployment" />
 
 A Project view definition's `parameters` accepts `label: [UUID, ...]` with up to

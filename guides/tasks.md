@@ -153,7 +153,6 @@ Deleted Comments keep their place, so later links keep the same number.
 You can browse history on an archived or trashed Task when you still have access.
 Printing includes the displayed entries and their range.
 
-
 ## Linked development <Badge type="warning" text="Awaiting deployment" />
 
 Linked GitHub, GitLab and Bitbucket items appear above Attachments on the Task page.

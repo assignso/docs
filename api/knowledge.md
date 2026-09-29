@@ -42,6 +42,10 @@ repository, path and symbol. If the code index is unavailable, other results are
 Source citations are opaque identities, not download URLs. Treat `stale` and `truncated` as warnings,
 and never conclude that something doesn't exist from a bounded result.
 
+Passage excerpts quote source content. When a result includes separate retrieval context, use its
+source, Project and section labels to locate the work; those labels do not add requirements or facts
+to the quoted passage. Search can remain available while background evidence is being rebuilt.
+
 ## Answers
 
 `GET /api/v1/workspaces/{workspace_id}/knowledge/answer?q=...` runs only on an explicit submission,

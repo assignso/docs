@@ -298,6 +298,8 @@ downgrade.
 - `knowledge_context` and `knowledge_related` return direct canonical neighbors. To traverse extracted
   claims, use `knowledge_path` or `knowledge_impact` with `source_asserts` in `relation_types` and an
   `assertion_modalities` list.
+- Passage excerpts contain source text. Optional `retrieval_context` attributes identify the
+  source, Project and section separately; treat them as navigation context, not quoted evidence.
 - Evidence handles are short-lived, Workspace-bound locators, not access grants. Resolve 1–20 from the
   same result with `knowledge_get_evidence`. Access is rechecked, and revoked sources aren't returned.
   Evidence links look like `assign://knowledge/evidence/{workspace_id}/{evidence_id}`.
@@ -364,7 +366,6 @@ The example is a `task_comment_create` argument object; JSON encodes the real ne
 Use `document_create` with `markdown` and the intended `project_id` to save a reusable note or specification as a Project Document. Keep related Task Comments short and link the returned Document URL. Choose a file attachment when you need the original bytes or a downloadable file. Creating a Document does not remove an existing attachment.
 
 Check for an existing Document before creating another. Updating its Markdown replaces its content and needs the current revision. Use your connection's advertised tool fields and permissions; attachment-to-Document conversion is not currently offered.
-
 
 ### Paid public publishing <Badge type="warning" text="Awaiting deployment" />
 

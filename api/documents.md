@@ -140,7 +140,6 @@ Schema 2 adds bounded structured tables. Simple tables use GFM Markdown; richer 
 
 For Document or Task collaboration admission, send `X-Assign-Document-Schema: 2` explicitly. Schema-1 admission to schema-2 content returns `409 document_schema_version_unsupported`; upgrade the client rather than downgrade the content. MCP structural content accepts supported schema versions; inspect your connected server’s catalog before writing schema-2 content.
 
-
 ## Paid public publishing <Badge type="warning" text="Awaiting deployment" />
 
 Publishing public Documents or Projects requires a paid entitlement in that Workspace. Being a paid member of another Workspace does not qualify. A denied publish returns `403 paid_workspace_required`; your content stays unchanged and authorized users can still unpublish.
