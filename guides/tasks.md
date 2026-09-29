@@ -42,9 +42,13 @@ client, for example **Codex · via MCP**.
 
 ## Relations
 
-Use **Add** under Relations to choose a relation type, such as *blocks*, *blocked by*, *parent of*
-or *subtask of*, and then pick a Task. The relation is saved once both are chosen. Assign rejects
+Use **Link task** under Relations to choose a relation type, such as *blocks*, *duplicates*, *relates to*
+or *Add as subtask*, and then pick a Task. The relation is saved once both are chosen. Assign rejects
 relations that would create a cycle.
+
+### Linked Documents <Badge type="warning" text="Awaiting deployment" />
+
+Choose **Link document** to select a Document. The link saves on selection and appears on both items. Open a linked Document from its title. **Remove relation** asks for confirmation and preserves both items. Project Documents must belong to the Task's Project; Workspace Documents can link across Projects you can access. [Document links](../api/documents#link-documents-to-tasks-and-milestones) explains permissions and the reciprocal Milestone workflow.
 
 ## Attachments
 

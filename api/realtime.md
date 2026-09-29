@@ -27,6 +27,28 @@ ends its subscriptions; reconnect with a valid token and obtain a new baseline.
 Do not put a token in the URL. Native app migration and qualification remain
 separate from this upcoming Core contract.
 
+## IDE authentication
+
+The upcoming socket also accepts a developer OAuth access token issued to
+`assign-jetbrains` or `assign-vscode` with `assign:read`. Use
+`Authorization: Bearer cli_at_…`, omit `Origin` and cookies, and request
+`assign.realtime.v1`. The OAuth grant fixes the Workspace; if supplied,
+`X-Assign-Workspace-ID` must match that Workspace on both the handshake and
+baseline request. CLI, MCP and personal API tokens are not admitted.
+
+IDE credentials support only `workspace`, `projects`, and `task_comments`.
+Account and Discuss scopes are unavailable. Sign in through the system browser
+using the host's registered client and loopback PKCE flow; store refresh tokens
+in the host credential store and keep access tokens in memory. Never copy browser
+cookies or put credentials in a URL. The extension host must support handshake
+headers; browser WebSocket APIs cannot authenticate this way.
+
+Expiry, grant revocation, Workspace switching and membership loss invalidate
+socket authority. Refresh through the same IDE client, capture fresh baseline
+custody and reconcile canonical reads before acknowledging events. A transport
+connection alone does not establish current data. IDE owners and host
+qualification remain pending; this contract is not deployed.
+
 ## Subscribe to a scope
 
 After the server's `hello`, choose a supported scope and a unique subscription ID.

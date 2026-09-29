@@ -155,3 +155,12 @@ In Documents, open a row's actions menu and choose **Delete**, or choose **Delet
 A stale revision returns `409 revision_conflict`. Documents with children, including archived children, return `409 document_has_children`; delete the children first. Git-managed documents return `409 document_git_managed`. A conflict preserves the document. Deletion removes its history and resource links; attachment objects follow their existing cleanup policy.
 
 The existing `DELETE /api/v1/documents/{document_id}` still archives a document. The TypeScript and PHP SDKs expose permanent deletion as `deleteDocument`; native credential admission and a CLI/MCP delete action are not included.
+
+
+## Link Documents to Tasks and Milestones <Badge type="warning" text="Awaiting deployment" />
+
+On an existing Document, choose **Link task or milestone** under Relations. Choose the kind and pick an item; a Workspace Document first asks you to select a Project. Selection saves the link automatically. Tasks and existing Milestone pages show the reciprocal **Linked documents** list with **Link document**. Links open the related item. Choose **Remove relation** and confirm to remove only the link.
+
+You need permission to edit both items. A Project Document links within its Project; a Workspace Document can link to any Project you can access. Links do not grant access or publish related items. Archived items are omitted. A failed save keeps your selection for Retry.
+
+Read associations with `GET /api/v1/documents/{document_id}/links`, `GET /api/v1/tasks/{task_id}/documents` or `GET /api/v1/milestones/{milestone_id}/documents`. Follow `next_cursor` even when an authorized page is empty. Create with `POST /api/v1/documents/{document_id}/links/{target_kind}/{target_id}` and remove with `DELETE` on the same path, using the browser session, CSRF token and Idempotency-Key. `target_kind` is `task` or `milestone`. These operations are not currently exposed through MCP or native credentials. See the [endpoint reference](./endpoints) for schemas.

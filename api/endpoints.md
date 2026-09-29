@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-400 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+407 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -152,6 +152,8 @@ Guide: [Workspaces](./workspaces)
 | `POST /api/v1/workspaces/{workspace_id}/members` | Restore a former member | Session |
 | `PATCH /api/v1/workspaces/{workspace_id}/members/{member_id}` | Change a member's role or state | Session |
 | `DELETE /api/v1/workspaces/{workspace_id}/members/{member_id}` | Remove a member | Session |
+| `GET /api/v1/workspaces/{workspace_id}/milestone-lifecycle` | Read configured Milestone stages | Session |
+| `PUT /api/v1/workspaces/{workspace_id}/milestone-lifecycle` | Configure Milestone stages | Session |
 | `GET /api/v1/workspaces/{workspace_id}/settings` | Read shared Workspace defaults | Session, Mobile |
 | `PATCH /api/v1/workspaces/{workspace_id}/settings` | Update shared Workspace defaults | Session |
 | `GET /api/v1/workspaces/{workspace_id}/statuses` | List Workspace-wide workflow Statuses | Session |
@@ -344,6 +346,9 @@ Guide: [Documents](./documents)
 | `DELETE /api/v1/documents/{document_id}/collaboration-sessions/{session_id}` | End the caller's Document collaboration-presence lease | Session |
 | `GET /api/v1/documents/{document_id}/content` | Read versioned Document content | Session, Mobile |
 | `PUT /api/v1/documents/{document_id}/content` | Replace versioned Document content | Session |
+| `GET /api/v1/documents/{document_id}/links` | List Document work links | Session |
+| `POST /api/v1/documents/{document_id}/links/{target_kind}/{target_id}` | Link a Document to a Task or Milestone | Session |
+| `DELETE /api/v1/documents/{document_id}/links/{target_kind}/{target_id}` | Remove a Document work link | Session |
 | `GET /api/v1/documents/{document_id}/markdown` | Export current or historical Document content as Markdown | Session |
 | `PUT /api/v1/documents/{document_id}/markdown` | Replace Document content from Markdown | Session |
 | `DELETE /api/v1/documents/{document_id}/permanent` | Permanently delete a Document | Session |
@@ -352,9 +357,11 @@ Guide: [Documents](./documents)
 | `GET /api/v1/documents/{document_id}/revisions/{revision}` | Read one immutable Document revision | Session |
 | `POST /api/v1/documents/{document_id}/revisions/{revision}/restore` | Restore a historical snapshot as a new active revision | Session |
 | `GET /api/v1/documents/{document_id}/revisions/compare` | Compare two immutable Document revisions | Session |
+| `GET /api/v1/milestones/{milestone_id}/documents` | List Milestone Documents | Session |
 | `GET /api/v1/public/documents/{public_id}` | Read a published Document | Public |
 | `POST /api/v1/public/documents/{public_id}/attachments/{attachment_id}/download` | Authorize a published Document attachment download | Public |
 | `POST /api/v1/public/documents/{public_id}/attachments/{attachment_id}/preview` | Authorize a published Document attachment preview | Public |
+| `GET /api/v1/tasks/{task_id}/documents` | List Task Documents | Session |
 | `GET /api/v1/workspaces/{workspace_id}/documents` | List Workspace Documents | Session, Mobile |
 | `POST /api/v1/workspaces/{workspace_id}/documents` | Create a Document | Session |
 | `GET /api/v1/workspaces/{workspace_id}/documents/by-path/{document_path}` | Resolve active Document metadata by Workspace path | Session, Mobile |

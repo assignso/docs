@@ -50,8 +50,7 @@ tags:
 paths:
   /api/v1/realtime:
     get:
-      tags:
-        - Realtime
+      tags: [Realtime]
       operationId: openApplicationRealtime
       summary: Upgrade an authenticated application socket
       description: |
@@ -62,6 +61,15 @@ paths:
         and the same subprotocol. The optional X-Assign-Workspace-ID header selects
         a current authorized Workspace for native Workspace scopes; omit it for
         Account-only scopes. No query parameters or URL credentials are accepted.
+        IDE admission also accepts a developer OAuth bearer issued to
+        assign-jetbrains or assign-vscode with assign:read. It forbids Origin,
+        Cookie and URL credentials. The grant fixes the Workspace; an optional
+        X-Assign-Workspace-ID must match it. IDE tokens admit only workspace,
+        projects and task_comments scopes, never Account or Discuss scopes.
+        CLI, MCP and personal API tokens do not admit application sockets.
+        Every active subscription rechecks the exact access token, grant, client,
+        scope and current membership; reconnect after expiry/revocation requires
+        valid authentication and new baseline custody.
         This operation is a WebSocket upgrade, not a JSON GET. HTTP SDK methods do
         not implement the upgraded transport; use the application WebSocket owner.
         JSON control frames negotiate bounded subscriptions and independent applied
@@ -82,51 +90,43 @@ paths:
         Source health is separate from canonical applied state. See the public
         realtime guide for authentication, scope and recovery rules.
       security:
-        - browserSession: []
-        - nativeAccessToken: []
+      - browserSession: []
+      - nativeAccessToken: []
+      - developerAccessToken: []
       parameters:
-        - name: Origin
-          in: header
-          required: false
-          description: Required for browser sessions; forbidden for native bearer admission.
-          schema:
-            type: string
-            format: uri
-        - name: X-Assign-Workspace-ID
-          in: header
-          required: false
-          description: Native bearer Workspace selection; resolved against current membership.
-          schema:
-            type: string
-            format: uuid
-        - name: Sec-WebSocket-Protocol
-          in: header
-          required: true
-          schema:
-            type: string
-            enum:
-              - assign.realtime.v1
+      - name: Origin
+        in: header
+        required: false
+        description: Required for browser sessions; forbidden for native bearer admission.
+        schema: {type: string, format: uri}
+      - name: X-Assign-Workspace-ID
+        in: header
+        required: false
+        description: Native bearer Workspace selection; resolved against current membership.
+        schema: {type: string, format: uuid}
+      - name: Sec-WebSocket-Protocol
+        in: header
+        required: true
+        schema: {type: string, enum: [assign.realtime.v1]}
       responses:
-        "101":
+        '101':
           description: WebSocket established; versioned control frames follow.
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "503":
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
           description: Admission capacity is temporarily unavailable; retry with bounded backoff.
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: {$ref: '#/components/schemas/ErrorResponse'}
   /api/v1/realtime/baseline:
     get:
-      tags:
-        - Realtime
+      tags: [Realtime]
       operationId: getApplicationRealtimeBaseline
       summary: Capture authorized realtime routing custody or a domain page
       description: |
@@ -144,77 +144,59 @@ paths:
         task_comments return a canonical page and its same-snapshot
         cursor. task_comments requires a canonical UUID resource_id and admits at
         most two items. Canonical private reads use X-Assign-Realtime-Baseline
-        instead. Unknown or duplicate query parameters are rejected.
+        instead. IDE developer bearers (assign-jetbrains or assign-vscode)
+        admit only omitted scope/workspace custody, projects and task_comments.
+        Their grant fixes the Workspace; an optional Workspace header must match.
+        They omit Origin and Cookie. Private Account and Discuss baselines are
+        denied. Unknown or duplicate query parameters are rejected.
       security:
-        - browserSession: []
-        - nativeAccessToken: []
+      - browserSession: []
+      - nativeAccessToken: []
+      - developerAccessToken: []
       parameters:
-        - name: X-Assign-Workspace-ID
-          in: header
-          required: false
-          description: Native bearer Workspace selection; omit for Account-only scopes.
-          schema:
-            type: string
-            format: uuid
-        - name: scope
-          in: query
-          schema:
-            type: string
-            enum:
-              - projects
-              - task_comments
-              - account
-              - account_security
-              - inbox
-              - personal_projects
-              - discuss
-        - name: resource_id
-          in: query
-          description: Task UUID, required only for task_comments.
-          schema:
-            type: string
-            format: uuid
-        - name: continuation
-          in: query
-          description: Opaque signed domain-page cursor; only projects or task_comments.
-          schema:
-            type: string
-            maxLength: 4096
-        - name: limit
-          in: query
-          description: Domain-page item bound; projects allows 1–100 and task_comments allows 1–2.
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
+      - name: X-Assign-Workspace-ID
+        in: header
+        required: false
+        description: Native bearer Workspace selection; omit for Account-only scopes.
+        schema: {type: string, format: uuid}
+      - name: scope
+        in: query
+        schema: {type: string, enum: [projects, task_comments, account, account_security, inbox, personal_projects, discuss]}
+      - name: resource_id
+        in: query
+        description: Task UUID, required only for task_comments.
+        schema: {type: string, format: uuid}
+      - name: continuation
+        in: query
+        description: Opaque signed domain-page cursor; only projects or task_comments.
+        schema: {type: string, maxLength: 4096}
+      - name: limit
+        in: query
+        description: Domain-page item bound; projects allows 1–100 and task_comments allows 1–2.
+        schema: {type: integer, minimum: 1, maximum: 100}
       responses:
-        "200":
+        '200':
           description: Authorized routing custody or canonical domain page; never reusable after session/authority loss.
           headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
+            Cache-Control: {schema: {type: string, const: no-store}}
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/RealtimeBaseline"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "503":
+              schema: {$ref: '#/components/schemas/RealtimeBaseline'}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
           description: Canonical baseline temporarily unavailable; do not publish partial state.
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: {$ref: '#/components/schemas/ErrorResponse'}
   /oauth/register:
     post:
       tags:
@@ -8724,6 +8706,74 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/workspaces/{workspace_id}/milestone-lifecycle:
+    get:
+      tags:
+        - Workspaces
+      operationId: getWorkspaceMilestoneLifecycle
+      summary: Read configured Milestone stages
+      description: Requires work:read. Returns at most 100 retained stages in presentation order. A Workspace without a saved catalog returns the four default stages at revision 1.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Ordered Milestone catalog
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MilestoneLifecycle"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+    put:
+      tags:
+        - Workspaces
+      operationId: updateWorkspaceMilestoneLifecycle
+      summary: Configure Milestone stages
+      description: Requires workspace:manage. Atomically replaces the bounded catalog under If-Match. Every semantic category retains active coverage. Referenced IDs and categories cannot be removed or changed. Archiving an in-use stage requires a same-category active replacement; at most 1000 active Milestones are moved atomically. Archived Milestones retain historical selections. Conflicts include revision_conflict, milestone_stage_in_use and lifecycle_migration_too_large. Names are trimmed; no transition graph is introduced.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MilestoneLifecycleUpdateRequest"
+      responses:
+        "200":
+          description: Updated Milestone catalog
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MilestoneLifecycle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspaces/{workspace_id}/project-lifecycle:
     get:
       tags:
@@ -15429,6 +15479,204 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/documents/{document_id}/links:
+    get:
+      tags:
+        - Documents
+      operationId: listDocumentWorkLinks
+      summary: List Document work links
+      description: Scans at most 100 associations per page and returns only currently authorized live pairs. An empty page may have a continuation. Cursors are bound to the owner and Workspace. Links confer no access.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: Current authorized associations.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentWorkLinkList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/tasks/{task_id}/documents:
+    get:
+      tags:
+        - Documents
+      operationId: listTaskDocuments
+      summary: List Task Documents
+      description: Scans at most 100 associations per page and returns only currently authorized live pairs. An empty page may have a continuation. Cursors are bound to the owner and Workspace. Links confer no access.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: Current authorized associations.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentWorkLinkList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/milestones/{milestone_id}/documents:
+    get:
+      tags:
+        - Documents
+      operationId: listMilestoneDocuments
+      summary: List Milestone Documents
+      description: Scans at most 100 associations per page and returns only currently authorized live pairs. An empty page may have a continuation. Cursors are bound to the owner and Workspace. Links confer no access.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/MilestoneId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: Current authorized associations.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentWorkLinkList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/documents/{document_id}/links/{target_kind}/{target_id}:
+    post:
+      tags:
+        - Documents
+      operationId: createDocumentWorkLink
+      summary: Link a Document to a Task or Milestone
+      description: Requires write authority for both participants. Project-owned Documents can link only within their Project. A Workspace Document can link to any authorized Project. Pair creation and removal are idempotent. Public Document visibility does not publish associations.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: target_kind
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - task
+              - milestone
+        - name: target_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Identifier"
+      responses:
+        "200":
+          description: Created or existing association.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentWorkLink"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+    delete:
+      tags:
+        - Documents
+      operationId: deleteDocumentWorkLink
+      summary: Remove a Document work link
+      description: Requires write authority for both participants. Project-owned Documents can link only within their Project. A Workspace Document can link to any authorized Project. Pair creation and removal are idempotent. Public Document visibility does not publish associations.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - name: target_kind
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - task
+              - milestone
+        - name: target_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Identifier"
+      responses:
+        "204":
+          description: Association removed or already absent.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -25377,6 +25625,72 @@ components:
         - medium
         - high
         - urgent
+    MilestoneStage:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - label
+        - status
+        - archived
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[a-zA-Z0-9_-]{1,64}$
+        label:
+          type: string
+          minLength: 1
+          maxLength: 80
+        status:
+          type: string
+          enum:
+            - planned
+            - active
+            - completed
+            - cancelled
+        archived:
+          type: boolean
+    MilestoneLifecycle:
+      type: object
+      additionalProperties: false
+      required:
+        - workspace_id
+        - stages
+        - revision
+      properties:
+        workspace_id:
+          $ref: "#/components/schemas/Identifier"
+        stages:
+          type: array
+          minItems: 4
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/MilestoneStage"
+        revision:
+          type: integer
+          minimum: 1
+    MilestoneLifecycleUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - stages
+      properties:
+        stages:
+          type: array
+          minItems: 4
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/MilestoneStage"
+        replacements:
+          description: Source stage ID to same-category active replacement stage ID for atomic archival migration.
+          type: object
+          maxProperties: 100
+          additionalProperties:
+            type: string
+            minLength: 1
+            maxLength: 64
     Milestone:
       type: object
       additionalProperties: false
@@ -25393,6 +25707,13 @@ components:
         - updated_at
         - archived_at
       properties:
+        stage_id:
+          description: Optional stable Workspace Milestone stage ID. Must select an active stage whose category agrees with status; null clears the selection. An explicit legacy status update without stage_id clears a custom selection.
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 64
         id:
           $ref: "#/components/schemas/Identifier"
         workspace_id:
@@ -25478,6 +25799,13 @@ components:
       required:
         - name
       properties:
+        stage_id:
+          description: Optional stable Workspace Milestone stage ID. Must select an active stage whose category agrees with status; null clears the selection. An explicit legacy status update without stage_id clears a custom selection.
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 64
         name:
           type: string
           minLength: 1
@@ -25505,6 +25833,13 @@ components:
       additionalProperties: false
       minProperties: 1
       properties:
+        stage_id:
+          description: Optional stable Workspace Milestone stage ID. Must select an active stage whose category agrees with status; null clears the selection. An explicit legacy status update without stage_id clears a custom selection.
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 64
         name:
           type: string
           minLength: 1
@@ -25654,6 +25989,67 @@ components:
         related_task:
           description: Summary of whichever participant is not the Task this relation was listed for.
           $ref: "#/components/schemas/RelatedTaskSummary"
+    DocumentWorkLink:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - document_id
+        - document_title
+        - document_path
+        - target_kind
+        - target_id
+        - target_title
+        - target_code
+        - project_id
+        - project_path
+        - can_remove
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        document_id:
+          $ref: "#/components/schemas/Identifier"
+        document_title:
+          type: string
+        document_path:
+          type: string
+        target_kind:
+          type: string
+          enum:
+            - task
+            - milestone
+        target_id:
+          $ref: "#/components/schemas/Identifier"
+        target_title:
+          type: string
+        target_code:
+          type: string
+          description: Human-readable Task code; empty for Milestones until their reference projection is available.
+        project_id:
+          $ref: "#/components/schemas/Identifier"
+        project_path:
+          type: string
+        can_remove:
+          type: boolean
+          description: Current write authority for both participants; rechecked on mutation.
+    DocumentWorkLinkList:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - has_more
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/DocumentWorkLink"
+        next_cursor:
+          oneOf:
+            - $ref: "#/components/schemas/Cursor"
+            - type: "null"
+        has_more:
+          type: boolean
     TaskRelationList:
       type: object
       additionalProperties: false

@@ -78,6 +78,12 @@ Milestone; further edits save to that Milestone while the form stays open. **Bac
 saves your current edits before returning to the list. If saving fails, your edits stay in the
 form and you can choose **Retry**.
 
+### Update a Milestone's Tasks <Badge type="warning" text="Awaiting deployment" />
+
+Open a Milestone card's menu to move its Tasks to Todo or Backlog, set their priority, or set their assignee. Choose the value and confirm the displayed Task count. Archived and deleted Tasks are excluded; resolved Tasks are included. These actions change Tasks, not the Milestone's own stage.
+
+One operation supports up to 1,000 Tasks. For larger Milestones, choose **View milestone tasks** and update selections of up to 100 from the List's **Modify** menu, which also offers Backlog and priority. Updates run in batches, so some may succeed while others fail. Review the result and choose **Reload tasks** before another attempt; changed Tasks and later additions may produce a different selection.
+
 ## Statuses
 
 Workspace owners and admins manage Statuses in **Workspace settings → Task statuses**. Statuses are
@@ -180,3 +186,9 @@ saved views retain it.
 
 This filters Tasks loaded in the current view. Load more Tasks to include them
 in the results; collection totals keep their existing meaning.
+
+## Milestone forms and stages <Badge type="warning" text="Awaiting deployment" />
+
+Milestone create and edit pages use inline name and description fields, with compact Status and Target date pickers. The issued Milestone code appears on the form. Press Enter or leave the name field to save; leave the description field to save it. Status/date choices save immediately, and the date picker supports clearing. Failed saves keep your draft and show Retry. Back to milestones saves valid pending edits before leaving.
+
+Workspace owners and administrators configure **Workspace settings → Work management → Milestone lifecycle**. Add named stages within Planned, Active, Completed and Cancelled; rename, reorder, archive or restore them. Each category needs an active stage. If active Milestones use a stage being archived, choose a replacement in the same category. Progress remains derived from Tasks. Task statuses and Project lifecycle retain their own rules while using the same editing controls.
