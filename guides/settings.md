@@ -29,7 +29,8 @@ location, because Assign doesn't collect them.
 ### Billing & plans refresh <Badge type="warning" text="Awaiting deployment" />
 
 The page refreshes your Free Workspace allowance and the Workspace plans you have loaded when
-their account data changes. It loads up to 1,000 Workspaces and states that limit if more exist.
+their account data changes or the connection recovers. It reloads previously loaded pages after
+recovery. It loads up to 1,000 Workspaces and states that limit if more exist.
 
 ## Workspace settings
 
