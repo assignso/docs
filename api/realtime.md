@@ -1,5 +1,5 @@
 ---
-description: Upcoming browser application subscriptions, canonical reads and applied acknowledgements.
+description: Upcoming application subscriptions, canonical reads and applied acknowledgements.
 ---
 
 # Application realtime <Badge type="warning" text="Upcoming" />
@@ -9,14 +9,23 @@ client use. Existing integrations should keep their deployed transport until the
 migration is announced. The upcoming contract removes the Workspace and private
 Discuss SSE endpoints; clients using those endpoints must migrate to authorized
 WebSocket subscriptions and canonical reads when the cutover is released. Native
-clients have a separately owned migration and should not assume browser session
-authentication or browser lifecycle behavior.
+client adoption and lifecycle handling have a separately owned migration.
 
 The browser application connects to `/api/v1/realtime` using the WebSocket
 subprotocol `assign.realtime.v1` and its existing session cookie. The handshake
 requires the configured browser origin. Tokens in URLs and bearer authentication
 are not accepted by this browser adapter. Generated HTTP SDK methods describe the
 upgrade but do not implement a WebSocket connection.
+
+A native client may instead send its mobile OAuth access token in
+`Authorization: Bearer mob_at_…`. It must omit `Origin` and cookies. For a
+Workspace scope, send the selected Workspace UUID in `X-Assign-Workspace-ID`
+on the socket handshake and baseline request. Account scopes omit that header.
+The server checks current Workspace membership and token validity at admission
+and while the subscription remains active. A revoked or expired access token
+ends its subscriptions; reconnect with a valid token and obtain a new baseline.
+Do not put a token in the URL. Native app migration and qualification remain
+separate from this upcoming Core contract.
 
 ## Subscribe to a scope
 
