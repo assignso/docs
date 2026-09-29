@@ -22,8 +22,8 @@ Browser application WebSocket admission and authorized replay custody. Upcoming;
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/realtime` | Upgrade an authenticated browser application socket | Session |
-| `GET /api/v1/realtime/baseline` | Capture authorized realtime routing custody or a domain page | Session |
+| `GET /api/v1/realtime` | Upgrade an authenticated application socket | Session, Mobile |
+| `GET /api/v1/realtime/baseline` | Capture authorized realtime routing custody or a domain page | Session, Mobile |
 
 ## Authentication
 

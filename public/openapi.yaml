@@ -53,12 +53,15 @@ paths:
       tags:
         - Realtime
       operationId: openApplicationRealtime
-      summary: Upgrade an authenticated browser application socket
+      summary: Upgrade an authenticated application socket
       description: |
-        Upcoming, not deployed. Requires the current browser session, exactly one
-        configured browser Origin and WebSocket subprotocol assign.realtime.v1.
-        No query parameters or Authorization header are accepted. Account-only
-        sessions are allowed; Workspace scopes still require the current Workspace.
+        Upcoming, not deployed. Browser admission requires the current session,
+        exactly one configured browser Origin, no Authorization header, and the
+        WebSocket subprotocol assign.realtime.v1. Native mobile admission requires
+        one native access-token Authorization bearer, no Origin or Cookie header,
+        and the same subprotocol. The optional X-Assign-Workspace-ID header selects
+        a current authorized Workspace for native Workspace scopes; omit it for
+        Account-only scopes. No query parameters or URL credentials are accepted.
         This operation is a WebSocket upgrade, not a JSON GET. HTTP SDK methods do
         not implement the upgraded transport; use the application WebSocket owner.
         JSON control frames negotiate bounded subscriptions and independent applied
@@ -80,13 +83,22 @@ paths:
         realtime guide for authentication, scope and recovery rules.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
         - name: Origin
           in: header
-          required: true
+          required: false
+          description: Required for browser sessions; forbidden for native bearer admission.
           schema:
             type: string
             format: uri
+        - name: X-Assign-Workspace-ID
+          in: header
+          required: false
+          description: Native bearer Workspace selection; resolved against current membership.
+          schema:
+            type: string
+            format: uuid
         - name: Sec-WebSocket-Protocol
           in: header
           required: true
@@ -125,14 +137,25 @@ paths:
         without message content or an atomic transcript snapshot. They do not
         establish an atomic domain snapshot. Account scopes
         work without a Workspace. All private cursors bind the current User and
-        browser session; Workspace-private cursors also bind current membership.
-        projects and task_comments return a canonical page and its same-snapshot
+        browser session or native access-token identity; Workspace-private cursors
+        also bind current membership. Native mobile callers use a single bearer
+        with no Origin or Cookie, and select a Workspace with
+        X-Assign-Workspace-ID when the scope requires one. Projects and
+        task_comments return a canonical page and its same-snapshot
         cursor. task_comments requires a canonical UUID resource_id and admits at
         most two items. Canonical private reads use X-Assign-Realtime-Baseline
         instead. Unknown or duplicate query parameters are rejected.
       security:
         - browserSession: []
+        - nativeAccessToken: []
       parameters:
+        - name: X-Assign-Workspace-ID
+          in: header
+          required: false
+          description: Native bearer Workspace selection; omit for Account-only scopes.
+          schema:
+            type: string
+            format: uuid
         - name: scope
           in: query
           schema:
@@ -25770,7 +25793,7 @@ components:
             - healthy
             - needs_attention
             - paused
-          description: Display-safe server-derived health for the current lifecycle.
+          description: Display-safe server-derived health for the current lifecycle. An active GitLab installation linked to a non-online private connector reports needs_attention from stored connector state.
         revision:
           type: integer
           format: int64

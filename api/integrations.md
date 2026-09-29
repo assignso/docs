@@ -26,6 +26,10 @@ don't belong to returns `404`.
 | `GET /api/v1/projects/{project_id}/integration-bindings?limit=20` | The remote resources bound to a Project, with lifecycle, capability group, optional HTTPS link and counts of total, enabled and attention-needed behaviors. A binding with no behaviors is valid. |
 
 Lists default to 20 items and cap at 100. Pass `next_cursor` back unchanged.
+An active GitLab installation linked to a private connector reports <Badge type="warning" text="Upcoming" />
+`needs_attention` while the connector's stored status is offline or revoked.
+An authenticated connector poll restores online status. Health is read from
+Assign's stored state; it is not a live network probe.
 
 ## Who can do what
 
