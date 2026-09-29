@@ -17,6 +17,30 @@ requires the configured browser origin. Tokens in URLs and bearer authentication
 are not accepted by this browser adapter. Generated HTTP SDK methods describe the
 upgrade but do not implement a WebSocket connection.
 
+## Migration from SSE
+
+The upcoming contract removes these two event-stream operations:
+
+| Removed operation | Replacement subscription | Recovery read |
+| --- | --- | --- |
+| `GET /api/v1/workspaces/{workspace_id}/events` | `workspace` and any required named private scopes on `/api/v1/realtime` | Authorized Workspace resource reads |
+| `GET /api/v1/workspaces/{workspace_id}/discuss/events/stream` | `discuss` on `/api/v1/realtime` | `GET /api/v1/workspaces/{workspace_id}/discuss/events` and retained message/run reads |
+
+At the announced cutover, replace SSE connection and retry code with one
+authenticated application WebSocket owner. Capture a new baseline for each scope,
+read and apply the currently retained resources, then subscribe and acknowledge
+each checkpoint only after its required reads publish. SSE cursor and
+`Last-Event-ID` values cannot be used as WebSocket cursors. On a gap, lost access
+or reconnect, obtain new authorized baseline custody; do not infer currentness
+from a connected socket. The bounded Discuss HTTP events page remains an ordinary
+recovery read, not an SSE subscription. Generated HTTP SDKs expose the canonical
+reads but do not manage socket lifecycle or applied acknowledgements.
+
+The CLI terminal's Discuss view uses the removed private Discuss stream through
+its local broker. It needs a separately owned WebSocket transport update before
+the upcoming contract can support that view; this page does not indicate that
+the CLI migration has shipped.
+
 A native client may instead send its mobile OAuth access token in
 `Authorization: Bearer mob_at_…`. It must omit `Origin` and cookies. For a
 Workspace scope, send the selected Workspace UUID in `X-Assign-Workspace-ID`
