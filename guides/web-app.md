@@ -109,3 +109,7 @@ Lists gently acknowledge added items and keep nearby rows visually continuous wh
 
 **Mark all read** includes the newest notification in the displayed Inbox. Notifications arriving
 after the read cutoff remain unread. You can still mark individual notifications read or unread.
+
+## First Workspace and Project recovery <Badge type="warning" text="Awaiting deployment" />
+
+After creating your first Workspace, Home offers a place to start a Project or Task. If a newly created Project is still refreshing, use **Retry** on the Project view or **Retry Projects** in the collection. The Project may already be saved even while a read fails. Workspace and Project access still follows your current permissions.

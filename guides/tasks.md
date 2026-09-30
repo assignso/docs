@@ -163,3 +163,7 @@ Linked GitHub, GitLab and Bitbucket items appear above Attachments on the Task p
 They stay visible when you switch between Comments, Activity and Suggestions.
 Select the **Linked development** heading to collapse or expand its items, just like
 Attachments and Related tasks. Activity shows the history of development changes.
+
+## When Task creation fails <Badge type="warning" text="Awaiting deployment" />
+
+The creation form keeps your title, description, properties and queued attachments when the write is rejected. Read the message beside **Create task**, check your connection and retry from the same form. If the Task was created but its Project view is temporarily unavailable, open **Work** to find it rather than submitting a duplicate.
