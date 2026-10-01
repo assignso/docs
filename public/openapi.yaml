@@ -291,8 +291,7 @@ paths:
                       - code
                 scope:
                   type: string
-                  description: Space-separated supported MCP scopes
-                  including additive assign:resource:read or assign:resource:write groups. Legacy broad scopes remain supported; grants and refresh never expand the approved scope set.: null
+                  description: Space-separated supported MCP scopes, including additive assign:resource:read or assign:resource:write groups. Legacy broad scopes remain supported; grants and refresh never expand the approved scope set.
       responses:
         "201":
           description: Public client registered; no secret or token issued.
@@ -3069,12 +3068,17 @@ paths:
         - developerAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/WorkspaceRealtimeBaseline"
       responses:
         "200":
           description: Current Workspace and membership-specific Discuss availability.
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
           content:
             application/json:
               schema:
@@ -12062,11 +12066,13 @@ paths:
         - Projects
       operationId: listProjectAttachments
       summary: List Project attachments
+      description: Returns the newest 100 linked files. Optional attachment_id values select up to 100 exact linked targets regardless of age; deleted, unlinked and private Discuss files are omitted after parent authorization.
       security:
         - browserSession: []
         - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/AttachmentTargetIds"
       responses:
         "200":
           description: Project attachments
@@ -12074,6 +12080,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AttachmentList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -14306,11 +14314,13 @@ paths:
         - Tasks
       operationId: listTaskAttachments
       summary: List Task attachments
+      description: Returns the newest 100 linked files. Optional attachment_id values select up to 100 exact linked targets regardless of age; deleted, unlinked and private Discuss files are omitted after parent authorization.
       security:
         - browserSession: []
         - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/TaskId"
+        - $ref: "#/components/parameters/AttachmentTargetIds"
       responses:
         "200":
           description: Task attachments
@@ -14318,6 +14328,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AttachmentList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -15931,12 +15943,13 @@ paths:
         - Documents
       operationId: listDocumentAttachments
       summary: List Document attachments
-      description: Returns the bounded durable ownership set, including attachments retained for historical revisions.
+      description: Returns the newest 100 linked files. Optional attachment_id values select up to 100 exact linked targets regardless of age; deleted, unlinked and private Discuss files are omitted after parent authorization.
       security:
         - browserSession: []
         - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/DocumentId"
+        - $ref: "#/components/parameters/AttachmentTargetIds"
       responses:
         "200":
           description: Document attachments.
@@ -15944,6 +15957,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AttachmentList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -16856,6 +16871,20 @@ components:
       bearerFormat: Assign private connector token
       description: Workspace-scoped token returned exactly once during connector enrollment and accepted only by the bounded connector polling protocol.
   parameters:
+    AttachmentTargetIds:
+      name: attachment_id
+      in: query
+      required: false
+      style: form
+      explode: true
+      description: Exact attachment targets linked to this authorized parent, independent of the newest-file window. Repeat the query key for multiple IDs. At most 100 values; invalid or empty values return 400. Omit for the ordinary newest-100 shelf.
+      schema:
+        type: array
+        minItems: 1
+        maxItems: 100
+        items:
+          type: string
+          format: uuid
     WorkspaceRealtimeDerivedBaseline:
       name: X-Assign-Realtime-Baseline
       in: header
@@ -18676,8 +18705,7 @@ components:
         next:
           allOf:
             - $ref: "#/components/schemas/Cursor"
-          description: Continuation for the same actor
-          date range and report revision; absent on the last page.: null
+          description: Continuation for the same actor, date range and report revision; absent on the last page.
     Identifier:
       type: string
       format: uuid

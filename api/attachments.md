@@ -31,6 +31,19 @@ same Workspace. `GET` on any of these paths lists up to 100 attachments, newest 
 keeps its link when a block is removed, because saved revisions may still use it. The link ends when
 the Document is purged or the attachment is deleted.
 
+## Resolve older linked files <Badge type="warning" text="Awaiting deployment" />
+
+To resolve files outside the newest-100 window, add `attachment_id` to a Task, Project or Document
+attachment-list request. Repeat the key for multiple IDs, up to 100 values per request:
+
+```http
+GET /api/v1/documents/{document_id}/attachments?attachment_id={first_id}&attachment_id={second_id}
+```
+
+The result includes only files linked to that parent that you can read. Deleted, unlinked and
+private Discuss files are omitted. An empty or invalid ID, or more than 100 values, returns `400`.
+Omit the filter to read the ordinary newest-file list.
+
 ## Read, download and delete
 
 - `GET /api/v1/attachments/{attachment_id}` reads metadata.
