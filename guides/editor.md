@@ -184,3 +184,10 @@ An older editor may show newer table content as read-only. Update to a client th
 <Badge type="warning" text="Awaiting deployment" />
 
 Leaving Document creation after entering content asks for confirmation. Your existing local title and body draft stays in this browser when draft storage is available. Selected labels are not part of that local draft.
+
+## Saving during live collaboration <Badge type="warning" text="Awaiting deployment" />
+
+An unchanged collaboration save does not add another content-history revision. If you keep typing
+while an earlier save finishes, your newer changes remain unsaved until the server confirms them.
+A Document can briefly show **Unsaved changes** while live collaboration initializes, even before
+you type. Wait for **Saved** before closing it.
