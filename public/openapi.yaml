@@ -19309,6 +19309,15 @@ components:
         - snippet
         - updated_at
       properties:
+        identifier:
+          type: string
+          description: Canonical ticket reference for Tasks and Comments, Project code, or Document path. Available independently of client collection loading.
+        project_path:
+          type: string
+          description: Canonical Project path for navigation and parent context.
+        project_code:
+          type: string
+          description: Recognizable parent Project code.
         resource_type:
           $ref: "#/components/schemas/SearchResourceType"
         resource_id:
@@ -29169,6 +29178,7 @@ components:
             - $ref: "#/components/schemas/TaskResolution"
             - type: "null"
         label_ids:
+          description: Task collections include the complete assignment identifier set; an empty array means no labels. Non-collection responses may omit this field; use the target-label read when absent.
           type: array
           maxItems: 20
           items:

@@ -264,6 +264,34 @@ per page, continued with its cursor.
    don't log or share it.
 4. Call `task_attachment_complete` with the Task, upload ID, the same digest and a different
    idempotency key. Assign verifies, scans and links the file.
+5. To show an image inside the body, wait for a `clean` scan state, then save
+   `![description](assign:attachment/UUID)` through the body write tool. For other files, use
+   `[filename](assign:attachment/UUID)`. Linking an attachment to a Task does not insert it into
+   its description. Read the saved body back to check the reference and surrounding formatting.
+
+A local path identifies the source file on your computer; other readers cannot open it. Use an
+uploaded attachment for screenshots and supplied image evidence. SVG remains a downloadable file.
+If scanning has not completed successfully, report that blocker and keep the existing body intact.
+
+#### Body references <Badge type="warning" text="Awaiting deployment" />
+
+Prefer images in the Task description when they explain the work. Read the Task first,
+then pass its current revision as `description_revision` to `task_attachment_complete`.
+Assign completes the upload, links it and appends the image in one operation. The returned
+`task_revision` confirms the saved description revision. A revision conflict or server policy refusal
+leaves the description unchanged. Omit this field when you want only an attachment.
+
+For an image at a specific position or inside a Comment, use the body-write workflow below.
+
+Attachment completion, metadata and list results include `markdown_reference_state`. When it is
+`ready`, insert the returned `markdown_reference` into the body. `scan_not_clean` and `unavailable`
+provide no ready reference. Readiness follows server policy; the original `scan_state` remains
+available and is not rewritten. Authorization is checked again when you save.
+
+Markdown writes containing local image paths or local image-file links return
+`attachment_upload_required` with upload instructions. Inline and fenced code examples remain
+literal. For Documents, use only the parent-upload tools advertised by your connection; report
+a missing capability instead of creating an unrelated Task to hold the file.
 
 Never send file bytes, raw or base64, in a tool input. `task_attachment_list` and `attachment_get`
 read metadata without minting URLs, and `attachment_download` returns a five-minute URL. They need the
@@ -343,6 +371,10 @@ Schema 2 adds bounded structured tables. Simple tables use GFM Markdown; richer 
 For Document or Task collaboration admission, send `X-Assign-Document-Schema: 2` explicitly. Schema-1 admission to schema-2 content returns `409 document_schema_version_unsupported`; upgrade the client rather than downgrade the content. MCP structural content accepts supported schema versions; inspect your connected server’s catalog before writing schema-2 content.
 
 ## Markdown Task and Comment bodies <Badge type="warning" text="Awaiting deployment" />
+
+Editor JSON text nodes contain literal text. Putting Markdown inside a text node does not format it. Use the advertised Markdown field, or supply structured headings, lists, links and marks when connecting to an older server.
+
+Document edits require one replacement body: `markdown` or `content`. An explicit empty `markdown` clears the Document. Sending neither body, or sending both even when Markdown is empty, is rejected by the upcoming validation update.
 
 When the connected tool schema advertises these fields, use `description_markdown` for `task_create` or `task_update`, and `body_markdown` for `task_comment_create` or `task_comment_update`. Supply one representation: omit `description` or `body` when using Markdown. Document tools already accept `markdown` instead of `content`.
 

@@ -113,3 +113,16 @@ after the read cutoff remain unread. You can still mark individual notifications
 ## First Workspace and Project recovery <Badge type="warning" text="Awaiting deployment" />
 
 After creating your first Workspace, Home offers a place to start a Project or Task. If a newly created Project is still refreshing, use **Retry** on the Project view or **Retry Projects** in the collection. The Project may already be saved even while a read fails. Workspace and Project access still follows your current permissions.
+
+## Keep searching while you work <Badge type="warning" text="Awaiting deployment" />
+
+Type directly in the header's Search field, or focus it with `Cmd/Ctrl+K`. Search keeps your query
+and filters when you close it or open a result. Use Clear search to start again.
+
+Task results show ticket numbers alongside their titles. Results are links: use right-click,
+middle-click or `Cmd/Ctrl`-click to open them in another tab. Use the type and Project filters to
+narrow the list, or choose View all results to browse more matches. The results page keeps the query
+and filters in its URL, so you can return with Back or share the search with a Workspace member.
+
+If a search fails, your query stays in place. Choose Retry search to try again. People load
+independently, so a delayed People lookup does not hold up your work results.

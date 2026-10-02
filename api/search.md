@@ -53,10 +53,17 @@ delay instead of retrying immediately.
 
 ## Ask Discuss about results <Badge type="warning" text="Upcoming" />
 
-Search stays deterministic, including on Enter. **Inspect work-result context** shows your query, the
+Search stays deterministic, including on Enter. **Use work results in Discuss** shows your query, the
 Workspace scope and the page version, and **Ask Discuss about work results** opens Discuss with a
 removable context chip. Nothing is sent, and no AI credits are used, until you send a message. People
 aren't included.
 
 The first unfiltered, non-archived page at `limit=20` may include `result_version`, identifying the
 observed results, not complete coverage or current content. Normal reads remain authoritative.
+
+## Result navigation fields <Badge type="warning" text="Awaiting deployment" />
+
+Results may include `identifier`, `project_path` and `project_code`. Use `identifier` to display a
+Task or Comment's ticket number, or to identify a Document's path. Project results include their
+canonical `project_path`. These fields let you build links without loading the whole collection.
+Clients should continue to accept responses that omit these optional fields.

@@ -1,6 +1,6 @@
 # Docs repository rules
 
-This repository is public. Everything in it, including Git history, can be read by anyone.
+Apply the [workspace rules](../architecture/operations/workspace-agent-rules.md). This repository and its Git history are public.
 
 ## Audience and boundary
 
@@ -52,5 +52,3 @@ release-candidate numbers or deployment dates into pages; they go stale.
 npm run check:sources   # local only; needs the sibling Assign checkouts
 npm run check           # markdownlint + production build
 ```
-
-Commit subjects are plain imperative English without Conventional Commit prefixes.
