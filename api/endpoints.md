@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-407 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+409 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -523,6 +523,15 @@ Provider-neutral Workspace subscription status and invoice references.
 | `GET /api/v1/workspaces/{workspace_id}/billing-settings` | Read the provider-neutral Workspace subscription and invoice references | Session |
 | `POST /api/v1/workspaces/{workspace_id}/billing/knowledge-credit-top-ups` | Create a catalogued Knowledge credit checkout | Session |
 | `POST /api/v1/workspaces/{workspace_id}/checkout-sessions` | Create a hosted checkout session for a paid Workspace plan | Session |
+
+## Activity
+
+Upcoming versioned grouped Activity companion reads.
+
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/workspaces/{workspace_id}/activity/groups` | Read authorized daily Activity groups | Session, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/activity/groups/{group_id}/children` | Expand an authorized Activity group | Session, Token, CLI |
 
 ## Agents
 

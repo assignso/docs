@@ -80,3 +80,12 @@ cancel and retry, and a multi-file drop gives one success notice. Project files 
 Clean raster images show a thumbnail, and unscanned files, SVG and non-image files show an icon.
 Selecting a raster image or PDF title opens it in a new tab, and the card and its download icon force
 a download.
+
+## Attachment preview modal <Badge type="warning" text="Awaiting deployment" />
+
+Select a Task or Project attachment to open its preview. Images and PDFs display in the modal,
+Markdown is rendered, and code and text preserve their formatting. HTML stays visible as source;
+it never renders as a web page. The upload safety rules above still apply.
+
+Use **Download** to save the file. Text previews are limited to 1 MiB; larger or unsupported files
+remain available to download. Press Escape to close the preview and return to the file card.

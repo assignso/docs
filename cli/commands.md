@@ -380,3 +380,24 @@ JSON uses `schema: assign.cli.milestone-task-page.v1` and contains the Milestone
 Normal `partial`/`more_pages` results exit 0; text modes put continuation guidance on stderr. Follow the checked cursor lineage explicitly. Core binds filters, caller and collection/visibility versions; a change can invalidate the scan. `stale`/`collection_or_visibility_changed` and `partial`/`scan_limit` return an explicit JSON receipt but exit 1. At the ten-page/1,000-row cap, a partial result can have `has_more=false`: inspect coverage and the exit code. Next-cursor scalar mode emits no misleading blank line on these failures. Discard invalidated or capped selections before starting a fresh scan; never append restarted results to an old lineage. Missing metadata or malformed responses fail before output. The response decoder is bounded to 2 MiB; lower the page limit if a rich Task response exceeds it.
 
 A complete scan proves filtered membership at its observation boundary. It does not prove dependency readiness, claim work, execute an agent or complete a Milestone. Authentication and existing exit categories apply.
+
+## Activity — Upcoming
+
+These commands are not yet released. They print one grouped Activity JSON page and do not
+follow continuation cursors automatically.
+
+```sh
+assign activity groups --workspace <workspace-uuid> --scope workspace --day 2026-10-03 --time-zone Europe/Budapest
+assign activity children <group-id> --workspace <workspace-uuid> --scope workspace --day 2026-10-03 --time-zone Europe/Budapest --group-revision <revision> --snapshot <snapshot>
+```
+
+Use `--scope workspace|account|person|project|task`. Person, Project and Task require
+`--resource-id <uuid>`; Workspace and Account omit it. Account selects the current human account.
+Choose `--day`, or paired `--from-day` and `--before-day` within 90 days. Omitting `--time-zone`
+uses the effective account/Workspace setting. Optional `--actor-id`, `--project-id` and `--type`
+filters accept comma-separated values, at most 50 each. `--include-previews=false` omits previews.
+
+`--limit` defaults to 10 groups or 25 children, with maximums of 50 and 25. Continue with
+`--cursor <next-cursor>` and unchanged selectors. Children require the parent's ID, revision
+and snapshot. Refresh stale roots or parents instead of reusing their cursors. Counts and coverage
+remain exactly as returned by the server. See [Activity](../api/activity) for the upcoming contract.

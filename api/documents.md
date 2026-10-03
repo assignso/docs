@@ -156,7 +156,6 @@ A stale revision returns `409 revision_conflict`. Documents with children, inclu
 
 The existing `DELETE /api/v1/documents/{document_id}` still archives a document. The TypeScript and PHP SDKs expose permanent deletion as `deleteDocument`; native credential admission and a CLI/MCP delete action are not included.
 
-
 ## Link Documents to Tasks and Milestones <Badge type="warning" text="Awaiting deployment" />
 
 On an existing Document, choose **Link task or milestone** under Relations. Choose the kind and pick an item; a Workspace Document first asks you to select a Project. Selection saves the link automatically. Tasks and existing Milestone pages show the reciprocal **Linked documents** list with **Link document**. Links open the related item. Choose **Remove relation** and confirm to remove only the link.

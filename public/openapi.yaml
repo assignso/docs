@@ -45,6 +45,8 @@ tags:
     description: Manual Task time entries, Workspace rounding policy, and personal timesheets.
   - name: Billing
     description: Provider-neutral Workspace subscription status and invoice references.
+  - name: Activity
+    description: Upcoming versioned grouped Activity companion reads.
   - name: Agents
     description: Curated Agent definitions and Workspace-owned desired Agent configuration. Execution remains in the private Knowledge service.
 paths:
@@ -1325,6 +1327,283 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/workspaces/{workspace_id}/activity/groups:
+    get:
+      tags:
+        - Activity
+      operationId: listActivityGroups
+      summary: Read authorized daily Activity groups
+      description: Upcoming; not released. Additive grouped Activity companion. Existing event-shaped routes remain supported. Scope is required; resource_id is required for person/project/task and forbidden for workspace/account. Account scope requires a human account. Select one civil day or a paired inclusive from_day/exclusive before_day interval of at most 90 days. Omitted timezone uses the effective account/workspace setting; Local is invalid. Cursors bind every selector, current authority, policy and retained history. Supply originating selectors on expansion. Reads never grant access or replay effects. Current references and previews are observations, not historical event facts. Coverage before retained history is unknown.
+      security:
+        - browserSession: []
+        - bearerToken: []
+        - developerAccessToken: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/WorkspaceRealtimeDerivedBaseline"
+        - name: scope
+          in: query
+          required: true
+          schema: &a2
+            type: string
+            enum:
+              - workspace
+              - account
+              - person
+              - project
+              - task
+        - name: resource_id
+          in: query
+          required: false
+          schema: &a3
+            type: string
+            format: uuid
+        - name: day
+          in: query
+          required: false
+          schema: &a4
+            type: string
+            format: date
+            maxLength: 10
+        - name: from_day
+          in: query
+          required: false
+          schema: &a5
+            type: string
+            format: date
+            maxLength: 10
+        - name: before_day
+          in: query
+          required: false
+          schema: &a6
+            type: string
+            format: date
+            maxLength: 10
+        - name: time_zone
+          in: query
+          required: false
+          schema: &a7
+            type: string
+            maxLength: 128
+        - name: actor_ids
+          in: query
+          required: false
+          schema: &a8
+            type: array
+            maxItems: 50
+            items:
+              type: string
+              format: uuid
+          style: form
+          explode: false
+        - name: project_ids
+          in: query
+          required: false
+          schema: &a9
+            type: array
+            maxItems: 50
+            items:
+              type: string
+              format: uuid
+          style: form
+          explode: false
+        - name: activity_types
+          in: query
+          required: false
+          schema: &a10
+            type: array
+            maxItems: 50
+            items:
+              type: string
+              enum:
+                - tasks
+                - comments
+                - documents
+                - projects
+                - milestones
+                - development
+                - files
+                - members
+          style: form
+          explode: false
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+        - name: cursor
+          in: query
+          required: false
+          schema: &a11
+            type: string
+            maxLength: 4096
+        - name: include_previews
+          in: query
+          required: false
+          schema: &a12
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Authorized Activity page; at most 64 KiB. All counts include explicit accuracy and retained-history coverage.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityGroupPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: "activity_cursor_stale: restart with the same selectors; activity_group_stale: refresh the parent before expansion."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          description: "activity_read_budget_exceeded: the bounded read exceeded its budget. Retry manually. Maintenance may also make the route unavailable."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/workspaces/{workspace_id}/activity/groups/{group_id}/children:
+    get:
+      tags:
+        - Activity
+      operationId: listActivityGroupChildren
+      summary: Expand an authorized Activity group
+      description: Upcoming; not released. Additive grouped Activity companion. Existing event-shaped routes remain supported. Scope is required; resource_id is required for person/project/task and forbidden for workspace/account. Account scope requires a human account. Select one civil day or a paired inclusive from_day/exclusive before_day interval of at most 90 days. Omitted timezone uses the effective account/workspace setting; Local is invalid. Cursors bind every selector, current authority, policy and retained history. Supply originating selectors on expansion. Reads never grant access or replay effects. Current references and previews are observations, not historical event facts. Coverage before retained history is unknown.
+      security:
+        - browserSession: []
+        - bearerToken: []
+        - developerAccessToken: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/WorkspaceRealtimeDerivedBaseline"
+        - name: scope
+          in: query
+          required: true
+          schema: *a2
+        - name: resource_id
+          in: query
+          required: false
+          schema: *a3
+        - name: day
+          in: query
+          required: false
+          schema: *a4
+        - name: from_day
+          in: query
+          required: false
+          schema: *a5
+        - name: before_day
+          in: query
+          required: false
+          schema: *a6
+        - name: time_zone
+          in: query
+          required: false
+          schema: *a7
+        - name: actor_ids
+          in: query
+          required: false
+          schema: *a8
+          style: form
+          explode: false
+        - name: project_ids
+          in: query
+          required: false
+          schema: *a9
+          style: form
+          explode: false
+        - name: activity_types
+          in: query
+          required: false
+          schema: *a10
+          style: form
+          explode: false
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 25
+            default: 25
+        - name: cursor
+          in: query
+          required: false
+          schema: *a11
+        - name: include_previews
+          in: query
+          required: false
+          schema: *a12
+        - name: group_id
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 192
+        - name: group_revision
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 128
+        - name: snapshot
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 4096
+      responses:
+        "200":
+          description: Authorized Activity page; at most 64 KiB. All counts include explicit accuracy and retained-history coverage.
+          headers:
+            X-Assign-Realtime-Cursor:
+              $ref: "#/components/headers/RealtimeReadCursor"
+            X-Assign-Realtime-Position:
+              $ref: "#/components/headers/RealtimeReadPosition"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityGroupChildPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: "activity_cursor_stale: restart with the same selectors; activity_group_stale: refresh the parent before expansion."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          description: "activity_read_budget_exceeded: the bounded read exceeded its budget. Retry manually. Maintenance may also make the route unavailable."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/workspaces/{workspace_id}/activity:
     get:
       tags:
@@ -5559,8 +5838,13 @@ paths:
         browser session. No Workspace is created during registration. The
         caller must create their first Workspace through
         `POST /api/v1/workspaces/bootstrap` before using Workspace-scoped
-        operations. The address starts unverified and a verification message
-        is sent.
+        operations, or accept a Workspace invitation. Without `invitation_token`,
+        the address starts unverified and a verification message is sent.
+        A valid pending invitation for the supplied email verifies that address
+        without a second email. Registration does not consume the invitation
+        or grant membership; accepting it remains a separate explicit action.
+        Invalid, expired, revoked, used or mismatched invitation credentials
+        return `400 invalid_invitation` without creating an account.
 
         Verification gates account **recovery**, not access: a password reset
         is never issued for an unverified address, because whoever controls
@@ -6526,7 +6810,7 @@ paths:
         - name: return_to
           in: query
           required: false
-          description: Same-origin MCP authorization path to resume after provider sign-in. Only `/oauth/authorize` with a query string is accepted; every other value is ignored.
+          description: Local browser path to resume after provider sign-in. Accepts `/oauth/authorize` with a query string, token-free `/invitations/accept`, or `/app/` Workspace paths including query and fragment. External URLs and unapproved paths are ignored.
           schema:
             type: string
             maxLength: 4096
@@ -9665,9 +9949,9 @@ paths:
         signed-in session: the invitation's address must equal the caller's
         stored address exactly after normalization, so a forwarded message
         cannot transfer the grant. A mismatch answers
-        `403 invitation_recipient_mismatch`. A matching password account must
-        also have verified that address; otherwise acceptance answers
-        `403 email_verification_required` without consuming the invitation.
+        `403 invitation_recipient_mismatch`. A live invitation proves control
+        of the matching mailbox: acceptance verifies that address atomically
+        with membership creation, without another verification email.
 
         Idempotency is account-scoped because the caller may have an
         authenticated account-only session and no target-Workspace membership
@@ -30584,6 +30868,15 @@ components:
             Optional. When omitted, a starting name is derived from the local
             part of the address; it is a default the user can change, not an
             identity claim.
+        invitation_token:
+          type: string
+          minLength: 1
+          maxLength: 512
+          writeOnly: true
+          description: |
+            Optional pending Workspace invitation credential delivered to this
+            email address. Proves mailbox control without a separate verification
+            email. Does not consume the invitation or grant membership.
     LoginRequest:
       type: object
       additionalProperties: false
@@ -31195,6 +31488,692 @@ components:
           $ref: "#/components/schemas/Error"
         quota:
           $ref: "#/components/schemas/StorageQuota"
+    ActivityGroupCount:
+      type: object
+      additionalProperties: false
+      required:
+        - value
+        - accuracy
+        - resource_kind
+      properties:
+        value:
+          type: integer
+          format: int64
+          minimum: 0
+          nullable: true
+        accuracy:
+          type: string
+          maxLength: 128
+          enum:
+            - exact
+            - lower_bound
+            - unknown
+        resource_kind:
+          type: string
+          maxLength: 128
+    ActivityGroupCounts:
+      type: object
+      additionalProperties: false
+      required:
+        - projects
+        - distinct_resources
+        - occurrences
+        - children
+      properties:
+        projects:
+          $ref: "#/components/schemas/ActivityGroupCount"
+        distinct_resources:
+          $ref: "#/components/schemas/ActivityGroupCount"
+        occurrences:
+          $ref: "#/components/schemas/ActivityGroupCount"
+        children:
+          $ref: "#/components/schemas/ActivityGroupCount"
+    ActivityGroupCollectionCounts:
+      type: object
+      additionalProperties: false
+      required:
+        - projects
+        - groups
+        - distinct_resources
+        - occurrences
+      properties:
+        projects:
+          $ref: "#/components/schemas/ActivityGroupCount"
+        groups:
+          $ref: "#/components/schemas/ActivityGroupCount"
+        distinct_resources:
+          $ref: "#/components/schemas/ActivityGroupCount"
+        occurrences:
+          $ref: "#/components/schemas/ActivityGroupCount"
+    ActivityGroupCoverage:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - reasons
+        - retained_days
+        - retained_from
+        - history_before_retention
+      properties:
+        status:
+          type: string
+          maxLength: 128
+          enum:
+            - complete
+            - partial
+            - stale
+        reasons:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            maxLength: 4096
+        retained_days:
+          type: integer
+          enum:
+            - 90
+        retained_from:
+          type: string
+          format: date-time
+        history_before_retention:
+          type: string
+          maxLength: 128
+          enum:
+            - unknown
+    ActivityGroupActor:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - display_name
+        - automation
+        - profile_link
+        - identity_state
+      properties:
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        display_name:
+          type: string
+          maxLength: 400
+        automation:
+          type: boolean
+        profile_link:
+          type: string
+          maxLength: 1024
+          nullable: true
+        identity_state:
+          type: string
+          maxLength: 128
+    ActivityGroupProvenance:
+      type: object
+      additionalProperties: false
+      required:
+        - kind
+        - name
+        - source_key
+      properties:
+        kind:
+          type: string
+          maxLength: 128
+        name:
+          type: string
+          maxLength: 256
+        source_key:
+          type: string
+          maxLength: 128
+    ActivityGroupReference:
+      type: object
+      additionalProperties: false
+      required:
+        - role
+        - kind
+        - state
+        - id
+        - label
+        - link
+      properties:
+        role:
+          type: string
+          maxLength: 128
+        kind:
+          type: string
+          maxLength: 128
+        state:
+          type: string
+          maxLength: 128
+          enum:
+            - available
+            - deleted
+            - unavailable
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        label:
+          type: string
+          maxLength: 256
+          nullable: true
+        link:
+          type: string
+          maxLength: 1024
+          nullable: true
+    ActivityGroupValue:
+      type: object
+      additionalProperties: false
+      required:
+        - state
+      properties:
+        state:
+          type: string
+          maxLength: 128
+          enum:
+            - known
+            - empty
+            - unknown
+            - unavailable
+        value:
+          oneOf:
+            - type: string
+              maxLength: 256
+            - type: boolean
+            - type: number
+            - $ref: "#/components/schemas/ActivityGroupReference"
+    ActivityGroupFact:
+      type: object
+      additionalProperties: false
+      required:
+        - field
+        - value_type
+        - before
+        - after
+      properties:
+        field:
+          type: string
+          maxLength: 128
+        value_type:
+          type: string
+          maxLength: 128
+        before:
+          $ref: "#/components/schemas/ActivityGroupValue"
+        after:
+          $ref: "#/components/schemas/ActivityGroupValue"
+    ActivityGroupExpansion:
+      type: object
+      additionalProperties: false
+      required:
+        - available
+        - coverage
+        - first_cursor
+      properties:
+        available:
+          type: boolean
+        coverage:
+          $ref: "#/components/schemas/ActivityGroupCoverage"
+        first_cursor:
+          type: string
+          maxLength: 4096
+          nullable: true
+    ActivityGroupView:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - revision
+        - kind
+        - outcome
+        - icon
+        - importance
+        - day
+        - first_occurred_at
+        - last_occurred_at
+        - actor
+        - provenance
+        - counts
+        - facts
+        - references
+        - preview_keys
+        - expansion
+      properties:
+        id:
+          type: string
+          maxLength: 128
+        revision:
+          type: string
+          maxLength: 128
+        kind:
+          type: string
+          maxLength: 128
+        outcome:
+          type: string
+          maxLength: 128
+        icon:
+          type: string
+          maxLength: 128
+        importance:
+          type: string
+          maxLength: 128
+        day:
+          type: string
+          format: date
+          maxLength: 10
+        first_occurred_at:
+          type: string
+          format: date-time
+        last_occurred_at:
+          type: string
+          format: date-time
+        actor:
+          $ref: "#/components/schemas/ActivityGroupActor"
+        provenance:
+          allOf:
+            - $ref: "#/components/schemas/ActivityGroupProvenance"
+          nullable: true
+        counts:
+          $ref: "#/components/schemas/ActivityGroupCounts"
+        facts:
+          type: array
+          maxItems: 16
+          items:
+            $ref: "#/components/schemas/ActivityGroupFact"
+        references:
+          type: array
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/ActivityGroupReference"
+        preview_keys:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+            maxLength: 4096
+        expansion:
+          $ref: "#/components/schemas/ActivityGroupExpansion"
+    ActivityGroupPreview:
+      type: object
+      additionalProperties: false
+      required:
+        - key
+        - kind
+        - reference
+        - state
+        - observed_at
+        - resource_revision
+        - title
+        - metadata
+        - excerpt
+      properties:
+        key:
+          type: string
+          maxLength: 128
+        kind:
+          type: string
+          maxLength: 128
+        reference:
+          $ref: "#/components/schemas/ActivityGroupReference"
+        state:
+          type: string
+          maxLength: 128
+        observed_at:
+          type: string
+          format: date-time
+        resource_revision:
+          type: string
+          maxLength: 128
+          nullable: true
+        title:
+          type: string
+          maxLength: 256
+          nullable: true
+        metadata:
+          type: array
+          maxItems: 16
+          items:
+            $ref: "#/components/schemas/ActivityGroupFact"
+        excerpt:
+          type: string
+          maxLength: 256
+          nullable: true
+    ActivityGroupPage:
+      type: object
+      additionalProperties: false
+      required:
+        - snapshot_id
+        - schema
+        - policy_version
+        - scope
+        - resource_id
+        - time_zone
+        - from
+        - before
+        - observed_at
+        - snapshot
+        - items
+        - counts
+        - coverage
+        - has_more
+        - next_cursor
+        - previews
+      properties:
+        snapshot_id:
+          type: string
+          maxLength: 128
+        schema:
+          type: string
+          maxLength: 128
+          enum:
+            - assign.activity.groups.v1
+        policy_version:
+          type: string
+          maxLength: 128
+        scope:
+          type: string
+          maxLength: 128
+          enum: &a13
+            - workspace
+            - account
+            - person
+            - project
+            - task
+        resource_id:
+          type: string
+          format: uuid
+          nullable: true
+        time_zone:
+          type: string
+          maxLength: 128
+        from:
+          type: string
+          format: date-time
+        before:
+          type: string
+          format: date-time
+        observed_at:
+          type: string
+          format: date-time
+        snapshot:
+          type: string
+          maxLength: 4096
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/ActivityGroupView"
+        counts:
+          $ref: "#/components/schemas/ActivityGroupCollectionCounts"
+        coverage:
+          $ref: "#/components/schemas/ActivityGroupCoverage"
+        has_more:
+          type: boolean
+        next_cursor:
+          type: string
+          maxLength: 4096
+          nullable: true
+        previews:
+          type: array
+          maxItems: 150
+          items:
+            $ref: "#/components/schemas/ActivityGroupPreview"
+    ActivityGroupChildSection:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - first_occurred_at
+        - last_occurred_at
+        - continues_before
+        - continues_after
+        - project_reference
+      properties:
+        id:
+          type: string
+          maxLength: 128
+        first_occurred_at:
+          type: string
+          format: date-time
+        last_occurred_at:
+          type: string
+          format: date-time
+        continues_before:
+          type: boolean
+        continues_after:
+          type: boolean
+        project_reference:
+          allOf:
+            - $ref: "#/components/schemas/ActivityGroupReference"
+          nullable: true
+    ActivityGroupChildView:
+      type: object
+      additionalProperties: false
+      required:
+        - parent_id
+        - id
+        - revision
+        - occurred_at
+        - first_occurred_at
+        - last_occurred_at
+        - outcome
+        - operation_id
+        - actor
+        - provenance
+        - facts
+        - references
+        - counts
+        - preview_keys
+        - section
+      properties:
+        parent_id:
+          type: string
+          maxLength: 128
+          nullable: true
+        id:
+          type: string
+          maxLength: 128
+        revision:
+          type: string
+          maxLength: 128
+        occurred_at:
+          type: string
+          format: date-time
+        first_occurred_at:
+          type: string
+          format: date-time
+        last_occurred_at:
+          type: string
+          format: date-time
+        outcome:
+          type: string
+          maxLength: 128
+        operation_id:
+          type: string
+          format: uuid
+          nullable: true
+        actor:
+          $ref: "#/components/schemas/ActivityGroupActor"
+        provenance:
+          allOf:
+            - $ref: "#/components/schemas/ActivityGroupProvenance"
+          nullable: true
+        facts:
+          type: array
+          maxItems: 16
+          items:
+            $ref: "#/components/schemas/ActivityGroupFact"
+        references:
+          type: array
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/ActivityGroupReference"
+        counts:
+          $ref: "#/components/schemas/ActivityGroupCounts"
+        preview_keys:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+            maxLength: 4096
+        section:
+          $ref: "#/components/schemas/ActivityGroupChildSection"
+    ActivityGroupChildPage:
+      type: object
+      additionalProperties: false
+      required:
+        - snapshot_id
+        - schema
+        - policy_version
+        - group_id
+        - group_revision
+        - snapshot
+        - observed_at
+        - items
+        - counts
+        - coverage
+        - has_more
+        - next_cursor
+        - previews
+      properties:
+        snapshot_id:
+          type: string
+          maxLength: 128
+        schema:
+          type: string
+          maxLength: 128
+          enum:
+            - assign.activity.children.v1
+        policy_version:
+          type: string
+          maxLength: 128
+        group_id:
+          type: string
+          maxLength: 128
+        group_revision:
+          type: string
+          maxLength: 128
+        snapshot:
+          type: string
+          maxLength: 4096
+        observed_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          maxItems: 25
+          items:
+            $ref: "#/components/schemas/ActivityGroupChildView"
+        counts:
+          $ref: "#/components/schemas/ActivityGroupCounts"
+        coverage:
+          $ref: "#/components/schemas/ActivityGroupCoverage"
+        has_more:
+          type: boolean
+        next_cursor:
+          type: string
+          maxLength: 4096
+          nullable: true
+        previews:
+          type: array
+          maxItems: 150
+          items:
+            $ref: "#/components/schemas/ActivityGroupPreview"
+    ActivityGroupReadOptions:
+      type: object
+      additionalProperties: false
+      required:
+        - scope
+      properties:
+        scope: &a14
+          type: string
+          enum: *a13
+        resource_id: &a15
+          type: string
+          format: uuid
+        day: &a16
+          type: string
+          format: date
+          maxLength: 10
+        from_day: &a17
+          type: string
+          format: date
+          maxLength: 10
+        before_day: &a18
+          type: string
+          format: date
+          maxLength: 10
+        time_zone: &a19
+          type: string
+          maxLength: 128
+        actor_ids: &a20
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            format: uuid
+        project_ids: &a21
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            format: uuid
+        activity_types: &a22
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            enum:
+              - tasks
+              - comments
+              - documents
+              - projects
+              - milestones
+              - development
+              - files
+              - members
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+        cursor: &a23
+          type: string
+          maxLength: 4096
+        include_previews: &a24
+          type: boolean
+          default: true
+    ActivityGroupChildrenOptions:
+      type: object
+      additionalProperties: false
+      required:
+        - scope
+        - group_id
+        - group_revision
+        - snapshot
+      properties:
+        scope: *a14
+        resource_id: *a15
+        day: *a16
+        from_day: *a17
+        before_day: *a18
+        time_zone: *a19
+        actor_ids: *a20
+        project_ids: *a21
+        activity_types: *a22
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 25
+          default: 25
+        cursor: *a23
+        include_previews: *a24
+        group_id:
+          type: string
+          maxLength: 192
+        group_revision:
+          type: string
+          maxLength: 128
+        snapshot:
+          type: string
+          maxLength: 4096
   responses:
     DocumentSchemaUnsupported:
       description: "document_schema_version_unsupported: the client cannot write the current resource schema, or the mutation attempts to downgrade a schema 2 resource. Update to a client supporting schema 2 and obtain a new admission."

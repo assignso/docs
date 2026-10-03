@@ -96,3 +96,31 @@ or timezone interval is invalid. The existing 90-day retention limit still appli
 
 The Day page retrieves the selected day's activity automatically. Its date follows your Account
 timezone, and an empty result appears only after retrieval completes.
+
+## Grouped reads — Upcoming
+
+The next grouped Activity contract adds two companion reads:
+
+- `GET /api/v1/workspaces/{workspace_id}/activity/groups`
+- `GET /api/v1/workspaces/{workspace_id}/activity/groups/{group_id}/children`
+
+The existing event-shaped reads above keep their response formats. Grouped reads use
+`assign.activity.groups.v1` and `assign.activity.children.v1` envelopes and are not yet released.
+
+Supply `scope=workspace`, `account`, `person`, `project` or `task`. Person, Project and Task
+scopes require `resource_id`; Workspace and Account scopes omit it. Account scope selects the
+current human account. Browser sessions and API read credentials use their existing authorization.
+
+Choose `day=YYYY-MM-DD`, or a paired inclusive `from_day` and exclusive `before_day` range of at most
+90 days. `time_zone` accepts an IANA timezone; omitting it uses the effective account/Workspace
+setting. Optional `actor_ids`, `project_ids` and `activity_types` are comma-separated sets of at
+most 50 values each. Group pages default to 10 and allow 1–50 groups; child pages default to 25
+and allow 1–25 children. `include_previews` defaults to true.
+
+Counts report their accuracy explicitly. Previews describe currently readable resources;
+unknown historical facts and history before the retained 90 days remain unknown. A snapshot does
+not grant access. Continue with `next_cursor` and the same selectors. Expansion also requires the
+parent's `group_revision` and `snapshot`. Refresh the root after `activity_cursor_stale`; refresh
+the parent after `activity_group_stale`. Retry `activity_read_budget_exceeded` manually.
+
+See the [endpoint reference](./endpoints) for the upcoming request and response schemas.

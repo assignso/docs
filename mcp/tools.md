@@ -406,3 +406,19 @@ Check for an existing Document before creating another. Updating its Markdown re
 ## Granular tool access <Badge type="warning" text="Awaiting deployment" />
 
 Tool discovery shows only operations allowed by the connection's scopes and current permissions. Each tool includes an `assign/resource_scope` metadata value, such as `assign:tasks:read` for `task_get` or `assign:comments:write` for `task_comment_create`. Task-prefixed comment, relation and attachment tools use their own families; label assignment tools use labels. `task_context_get` uses context read; reviewed change sets and receipt undo use operations; Agent actions use agents. See [Scopes and credentials](security#resource-scopes) for aggregate-operation boundaries and legacy broad access. Invocation rechecks authority even for cached tools.
+
+## Grouped Activity — Upcoming
+
+These read-only companions are not yet released. `activity_list` retains its event-shaped contract.
+
+| Tool | Purpose |
+| --- | --- |
+| `activity_group_list` | Read one authorized page of daily groups, with explicit count accuracy and retained-history coverage |
+| `activity_group_children_list` | Expand a current parent using its ID, revision, snapshot and originating selectors |
+
+Both accept `workspace_id` and a `request` object. `request.scope` is required; use `resource_id`
+for Person, Project or Task scope. Account scope selects the current human account. Filters use
+arrays of at most 50 values. Group pages allow 1–50 items; child pages allow 1–25. Preserve every
+selector when continuing a cursor. A stale cursor requires a fresh root; a stale group requires a
+fresh parent. Current previews are observations, and missing historical facts remain unknown.
+These tools use the existing Activity read scope and current access checks.

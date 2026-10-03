@@ -190,6 +190,14 @@ All need an owner or admin. You can't change or remove your own membership
 
 ## Invitations
 
+### Verify with the invitation <Badge type="warning" text="Awaiting deployment" />
+
+The invitation itself verifies the invited email address. New users can
+[register with the invitation](./authentication#register-from-an-invitation)
+without a second verification email. Existing unverified users verify their
+address when they accept. You must sign in with the invited address and explicitly
+accept; opening the email link does not join the Workspace.
+
 ```http
 POST /api/v1/workspaces/{workspace_id}/invitations HTTP/1.1
 X-CSRF-Token: <csrf-token>

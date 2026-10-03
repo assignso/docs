@@ -51,6 +51,15 @@ but nothing Workspace-scoped. Passwords are 12–128 characters and can't appear
 list. A taken address returns `409`. The address starts unverified: the account works immediately,
 but password reset isn't available until it's verified.
 
+### Register from an invitation <Badge type="warning" text="Awaiting deployment" />
+
+Include the invitation credential in optional `invitation_token` when registering
+with the invited email address. A valid invitation verifies that address without
+sending a second verification email. Registration creates no Workspace membership;
+[accept the invitation](./workspaces#invitations) after signing in. Invalid, expired,
+revoked, used or mismatched credentials return `400 invalid_invitation` and create
+no account. Signup without an invitation keeps the verification email.
+
 ```http
 POST /api/v1/auth/login HTTP/1.1
 Host: api.assign.so
@@ -141,6 +150,15 @@ any other failure redirects to the login page with `?error=authentication_failed
 A first sign-in from a provider identity whose **verified** email matches an existing account attaches
 to that account. After that, the identity is matched by the provider's subject, so an email change
 at the provider doesn't move it.
+
+### Continue to a Task after sign-in <Badge type="warning" text="Awaiting deployment" />
+
+The optional `return_to` parameter accepts local `/app/` Workspace paths,
+including their query string and fragment, as well as MCP authorization and
+token-free invitation acceptance paths. External URLs are ignored. A Task link
+that requires login returns you to that Task with either remember-device choice.
+If login succeeds but the Workspace cannot open, use **Retry** to continue
+without entering your credentials again.
 
 ## Switch Workspace
 
