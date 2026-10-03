@@ -399,7 +399,7 @@ Guide: [Search](./search)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/workspaces/{workspace_id}/search` | Search Workspace content | Session, Token, CLI, Mobile |
+| `GET /api/v1/workspaces/{workspace_id}/search` | Search Workspace content | Session, Mobile, Token, CLI |
 
 ## Knowledge
 

@@ -10017,11 +10017,15 @@ paths:
         explicitly included; trashed, purged, and deleted resources remain excluded.
         Work is rate-limited and query-time bounded; overload returns a
         retryable `503 search_unavailable` with `Retry-After`.
+        Native bearer access is limited to title and identifier matches for an
+        explicit resource_type of project or task, excludes archived resources,
+        and returns empty snippets. Other types and omitted/duplicate type filters
+        return 400 for native callers. Browser search retains its full corpus.
       security:
         - browserSession: []
+        - nativeAccessToken: []
         - bearerToken: []
         - developerAccessToken: []
-        - nativeAccessToken: []
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - name: q
@@ -11814,6 +11818,8 @@ paths:
         Task collections, this route returns archived and trashed Tasks during
         recovery and the safe Task tombstone after purge so canonical browser
         URLs remain durable without exposing content removed by retention.
+        Native bearer reads use live Workspace membership and the same resource
+        visibility. Invalid native credentials never fall back to browser cookies.
       security:
         - browserSession: []
         - nativeAccessToken: []
@@ -31497,10 +31503,11 @@ components:
         - resource_kind
       properties:
         value:
-          type: integer
+          type:
+            - integer
+            - "null"
           format: int64
           minimum: 0
-          nullable: true
         accuracy:
           type: string
           maxLength: 128
@@ -31591,18 +31598,20 @@ components:
         - identity_state
       properties:
         id:
-          type: string
+          type:
+            - string
+            - "null"
           format: uuid
-          nullable: true
         display_name:
           type: string
           maxLength: 400
         automation:
           type: boolean
         profile_link:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 1024
-          nullable: true
         identity_state:
           type: string
           maxLength: 128
@@ -31648,17 +31657,20 @@ components:
             - deleted
             - unavailable
         id:
-          type: string
+          type:
+            - string
+            - "null"
           format: uuid
-          nullable: true
         label:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 256
-          nullable: true
         link:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 1024
-          nullable: true
     ActivityGroupValue:
       type: object
       additionalProperties: false
@@ -31712,9 +31724,10 @@ components:
         coverage:
           $ref: "#/components/schemas/ActivityGroupCoverage"
         first_cursor:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 4096
-          nullable: true
     ActivityGroupView:
       type: object
       additionalProperties: false
@@ -31767,9 +31780,9 @@ components:
         actor:
           $ref: "#/components/schemas/ActivityGroupActor"
         provenance:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/ActivityGroupProvenance"
-          nullable: true
+            - type: "null"
         counts:
           $ref: "#/components/schemas/ActivityGroupCounts"
         facts:
@@ -31819,22 +31832,25 @@ components:
           type: string
           format: date-time
         resource_revision:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 128
-          nullable: true
         title:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 256
-          nullable: true
         metadata:
           type: array
           maxItems: 16
           items:
             $ref: "#/components/schemas/ActivityGroupFact"
         excerpt:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 256
-          nullable: true
     ActivityGroupPage:
       type: object
       additionalProperties: false
@@ -31877,9 +31893,10 @@ components:
             - project
             - task
         resource_id:
-          type: string
+          type:
+            - string
+            - "null"
           format: uuid
-          nullable: true
         time_zone:
           type: string
           maxLength: 128
@@ -31907,9 +31924,10 @@ components:
         has_more:
           type: boolean
         next_cursor:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 4096
-          nullable: true
         previews:
           type: array
           maxItems: 150
@@ -31940,9 +31958,9 @@ components:
         continues_after:
           type: boolean
         project_reference:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/ActivityGroupReference"
-          nullable: true
+            - type: "null"
     ActivityGroupChildView:
       type: object
       additionalProperties: false
@@ -31964,9 +31982,10 @@ components:
         - section
       properties:
         parent_id:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 128
-          nullable: true
         id:
           type: string
           maxLength: 128
@@ -31986,15 +32005,16 @@ components:
           type: string
           maxLength: 128
         operation_id:
-          type: string
+          type:
+            - string
+            - "null"
           format: uuid
-          nullable: true
         actor:
           $ref: "#/components/schemas/ActivityGroupActor"
         provenance:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/ActivityGroupProvenance"
-          nullable: true
+            - type: "null"
         facts:
           type: array
           maxItems: 16
@@ -32068,9 +32088,10 @@ components:
         has_more:
           type: boolean
         next_cursor:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 4096
-          nullable: true
         previews:
           type: array
           maxItems: 150
