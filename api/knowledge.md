@@ -8,6 +8,14 @@ Workspace Knowledge is an optional evidence layer across the work, Documents, in
 facts and code you can access. It doesn't replace your resources or [Search](./search). The web app
 uses it for related Task evidence, Search questions and private [Discuss](./discuss) answers.
 
+## Paid-plan defaults <Badge type="warning" text="Awaiting deployment" />
+
+Workspace Knowledge is enabled by default on paid plans. Select included Projects to
+start indexing; an empty selection indexes nothing. Turning Knowledge off preserves
+your choice when your plan renews or changes.
+
+## Background updates
+
 Knowledge updates in the background after changes to included Projects, Tasks, Documents and, if
 enabled, Comments. A rebuild or outage can delay new evidence. Access is checked on every read, so
 moved, deleted or excluded content can disappear before replacement evidence is ready. Turning off a

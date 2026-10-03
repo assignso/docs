@@ -20933,6 +20933,7 @@ components:
           $ref: "#/components/schemas/Identifier"
         enabled:
           type: boolean
+          description: Desired enablement defaults to the active paid-plan Knowledge entitlement unless explicitly changed. Empty included_projects keeps indexing and retrieval inactive.
         available:
           type: boolean
           description: True only when the Workspace has the active workspace_knowledge entitlement.
@@ -21019,6 +21020,7 @@ components:
       properties:
         enabled:
           type: boolean
+          description: Saves an explicit enablement choice that survives billing changes. Enabling requires the active Knowledge entitlement and may precede Project selection.
         index_task_descriptions:
           type: boolean
         index_comments:
@@ -24490,6 +24492,16 @@ components:
         show_cancelled_column:
           type: boolean
           description: Project-owned Board preference. False omits cancelled-type columns from the ordinary Board.
+        task_count:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Present on Workspace Project list reads. Exact count of all Tasks excluding archived, trashed and purged Tasks; independent of Task pagination. Includes completed and cancelled Tasks. Mutation and detail responses may omit this aggregate.
+        last_task_updated_at:
+          allOf:
+            - $ref: "#/components/schemas/Timestamp"
+          readOnly: true
+          description: Latest updated_at among the Tasks included in task_count. Omitted when no active Tasks exist or the aggregate was not read.
         label_ids:
           type: array
           maxItems: 20
@@ -25469,6 +25481,11 @@ components:
         - statuses
         - updated_at
       properties:
+        task_count:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Exact count of all non-archived, non-trashed, non-purged Tasks, including completed and cancelled Tasks. Independent of the bounded Status distribution.
         public_id:
           $ref: "#/components/schemas/Identifier"
         name:

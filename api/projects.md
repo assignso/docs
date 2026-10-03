@@ -12,6 +12,10 @@ updates. Send `X-CSRF-Token` on writes. The public status read is the only anony
 
 ### List and read
 
+#### Project task totals <Badge type="warning" text="Awaiting deployment" />
+
+Workspace Project lists include optional read-only `task_count` and `last_task_updated_at` fields. `task_count` counts every Task except archived, trashed and purged Tasks, including completed and cancelled Tasks, independently of Task pagination. A Project with no such Tasks reports zero and omits `last_task_updated_at`. Other private Project responses may omit both fields; a missing count does not mean zero. The public Project response also includes optional `task_count` for its full total, independently of the returned Status rows.
+
 `GET /api/v1/workspaces/{workspace_id}/projects?limit=50` returns Projects in the Workspace's shared
 manual order. `workspace_id` must be the session's Workspace, otherwise `404`.
 

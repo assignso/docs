@@ -4,6 +4,10 @@ description: Plan work with Projects, including List and Board views, filters, M
 
 # Projects
 
+## Project task totals <Badge type="warning" text="Awaiting deployment" />
+
+Home Project cards and the Projects grid and list show the Project's full Task count, including completed and cancelled Tasks. Archived, trashed and purged Tasks are excluded. The count stays independent of how many Tasks you have loaded; **Task count unavailable** means the total could not be read.
+
 The Project header shows its icon and name, **Settings**, and the **Project actions** menu.
 The shell breadcrumb provides the Projects context. Task views offer **Create task** in their
 view toolbar; **Copy Project link** and **Project overview** remain in Project actions.
@@ -170,6 +174,7 @@ As you scroll a grouped Task List, the next group heading pushes the current hea
 ## Show Task labels <Badge type="warning" text="Awaiting deployment" />
 
 Project List and Backlog keep Status and assignee controls at the right of each row.
+When a row is too narrow, open the Task to edit these properties.
 Labels sit beside short Task titles. Long titles keep room to read when space is tight, while label badges give way to a count.
 
 Open **Display → Show labels** to show or hide assigned labels in List, Backlog
