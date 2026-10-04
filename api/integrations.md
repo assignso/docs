@@ -4,9 +4,10 @@ The integration API exposes Assign's provider catalog, secure provider
 authorization, display-safe Workspace installations and personal identities,
 resource discovery, explicit Project bindings, revisioned ongoing behavior,
 verified provider deliveries, typed remote actions, and Task-linked Rich
-Entities. Installation, binding, and ongoing behavior are independent: none
-implies the next, and writeback remains off until an administrator explicitly
-configures it.
+Entities. Installation, binding, and ongoing behavior remain separate records.
+The explicit Git repository/Project binding action creates the safe incoming
+development-activity behavior as its documented default. Other behavior and all
+writeback remain off until an administrator configures them.
 
 These operations require an authenticated browser session and follow the shared
 [API conventions](conventions.md).
@@ -95,8 +96,10 @@ Project.
 The operation never contacts a provider. It excludes provider-stable resource
 and tenant identifiers, credential references, scopes, raw subscription
 configuration, provider payloads, personal identities, and disconnected
-history. A connected resource with zero behaviors is valid: binding does not
-enable synchronization, notifications, or automation implicitly.
+history. A connected resource with zero behaviors is valid for providers whose
+binding has no default. GitHub, GitLab, and Bitbucket repository/Project bindings
+start one incoming development-activity behavior automatically. That behavior
+links development context only; status mappings and remote writes remain off.
 
 ## Browse the catalog in Assign
 
@@ -449,15 +452,25 @@ The preview Git providers use these provider-specific behaviors:
   full-name branches, commits, pull requests, build statuses, pipelines, and
   deployments.
 
-An explicitly enabled incoming Git-provider development behavior can link its
+An incoming Git-provider development behavior can link its
 activity context to Tasks referenced by canonical Task code in accepted
 provider text. Codes are matched case-insensitively at identifier boundaries
 and resolve only inside the Assign Project bound to that resource. A connection
-or Project/repository binding alone starts no webhook behavior. Duplicate or
+alone starts no webhook behavior. Binding a repository/Project enables this safe
+incoming behavior and schedules reconciliation. Duplicate or
 older deliveries cannot replace a newer snapshot or its links; deleted branches
 remain visible as stale context and reopened pull requests can return to Open.
 Assign never completes a Task merely because a pull or merge request merged
 unless a separate administrator-owned automation is explicitly configured.
+
+For GitHub pull requests, Assign keeps only the metadata needed for the linked
+card: PR number and URL, title, a bounded body summary, author, source and target
+branches, head commit, and draft or merged state. A merged PR appears as
+**Merged**. A PR closed without merging appears as **Closed**. Assign does not
+copy labels, reviews, comments, diffs, changed files, commit lists, or the raw
+GitHub payload into the Task context. Webhooks update the card quickly, while
+bounded repository reconciliation repairs missed deliveries using the same
+state and metadata rules.
 
 Reconciliation checks only the resource attached to the subscription and uses
 the same Task-link and ordering rules as webhooks. It runs in bounded pages; it
