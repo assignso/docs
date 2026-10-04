@@ -5,7 +5,12 @@ description: Connect Codex or another remote MCP client to Assign with OAuth, or
 # Connect a client
 
 Add `https://mcp.assign.so/` as a remote MCP server in a client that supports OAuth. The client opens
-Assign in a browser where you choose a Workspace and approve read and, if needed, write access.
+Assign in a browser where you approve Workspace access and read and, if needed, write access.
+
+## Select Workspaces <Badge type="warning" text="Awaiting deployment" />
+
+Consent lets you select the Workspaces this connection can access. Only your active memberships
+with AI integrations enabled are offered; you can narrow the selection before approving.
 
 ## Codex
 
