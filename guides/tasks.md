@@ -164,6 +164,20 @@ They stay visible when you switch between Comments, Activity and Suggestions.
 Select the **Linked development** heading to collapse or expand its items, just like
 Attachments and Related tasks. Activity shows the history of development changes.
 
+## Suggestions <Badge type="warning" text="Awaiting deployment" />
+
+The **Suggestions** tab shows a count when findings are waiting, even while Comments is open.
+Open it to review related Tasks, Documents and verified GitHub commits mentioned in Comments.
+Confirming a commit adds it to **Linked development**. Discarding hides that finding for this Task.
+
+Commit findings use active repositories connected to the Task's Project. Short hashes and older
+commits can match; findings appear after lookup completes. Commit matching is available with the
+Workspace Knowledge entitlement even when Knowledge indexing is off.
+
 ## When Task creation fails <Badge type="warning" text="Awaiting deployment" />
 
 The creation form keeps your title, description, properties and queued attachments when the write is rejected. Read the message beside **Create task**, check your connection and retry from the same form. If the Task was created but its Project view is temporarily unavailable, open **Work** to find it rather than submitting a duplicate.
+
+When repository indexing is enabled for the Task's Project, Suggestions can also show indexed code
+references. Each shows the repository, revision, file or symbol, and a reason for the match.
+**Open code** opens that exact GitHub revision. Code references are read-only in this first version.

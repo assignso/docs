@@ -393,6 +393,18 @@ Request `include_markdown: true` on `task_get` or `task_comment_list` to receive
 
 The example is a `task_comment_create` argument object; JSON encodes the real newline characters. Use the fields your server advertises. Older servers continue accepting schema-versioned editor JSON, with separate paragraph nodes and `hardBreak` nodes for explicit breaks. Resource permissions, revision checks, idempotency and content limits apply to both representations.
 
+## Callouts and alerts <Badge type="warning" text="Awaiting deployment" />
+
+Callouts use the existing Document, Task and Comment Markdown body fields when
+supported by the connected server's editor profile. A Markdown field alone does
+not establish callout support. Use `> [!CALLOUT]` for a generic callout, or GitHub's
+`NOTE`, `TIP`, `IMPORTANT`, `WARNING` and `CAUTION` markers; quote each body line.
+
+The kind supplies a default Lucide icon. Add a Unicode emoji or an allowlisted
+`lucide:name` token to override it; `none` hides the icon. Notion `<aside>` exports
+import as generic callouts. See [Callout syntax and examples](../guides/editor#callouts).
+Read back the structured body to confirm the kind, icon and paragraphs survived.
+
 ## Save Markdown knowledge as a Document
 
 Use `document_create` with `markdown` and the intended `project_id` to save a reusable note or specification as a Project Document. Keep related Task Comments short and link the returned Document URL. Choose a file attachment when you need the original bytes or a downloadable file. Creating a Document does not remove an existing attachment.

@@ -156,6 +156,15 @@ Discuss-bound ChangeSet, the request can also include a `proposal` object with t
 current `version` and `digest`. Approval refers to exactly that version, and an edited proposal needs a
 new review. Retry with the identical request and key.
 
+### Saved response failures <Badge type="warning" text="Awaiting deployment" />
+
+A failed message can include a `response_failure` part with schema
+`assign.discuss.response_failure.v1` and a safe `code`. Check the current message and its
+receipts when an outcome is unknown or a decision could not be confirmed. Check status
+reads saved state; reconnect restores delivery. Restoring a retry draft sends nothing.
+Review its context and any committed work before an explicit Send. Treat unknown failure
+codes or schema versions as requiring a status check.
+
 ### Receipts
 
 Messages can carry an `operation_receipts` part listing `operation_id`, `tool`, `state` and any

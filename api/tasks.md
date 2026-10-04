@@ -327,7 +327,7 @@ so queue the files and link them after creating it.
   `smile`, `confused` and `eyes`, on live Comments of active Tasks. Responses include each key's count and
   whether you reacted.
 
-## Related context and suggestions
+## Related context and suggestions <Badge type="warning" text="Awaiting deployment" />
 
 `GET /api/v1/tasks/{task_id}/rich-entities` returns provider objects linked to the Task, without
 calling the provider. See [Integrations](./integrations).
@@ -336,7 +336,12 @@ When [Workspace Knowledge](./knowledge) is enabled and ready,
 `GET /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` returns up to five
 permission-filtered related items for the **Suggestions** tab, each with a title, type,
 explanation, source time and a `confidence` of `high`, `medium` or `low`. If Knowledge isn't
-available, the tab is empty. A retrieval failure shows as unavailable without blocking the Task.
+available, those findings are empty. A retrieval failure shows as unavailable without blocking the Task.
+
+Set `include_commit_mentions=true` to also receive verified GitHub commits mentioned in Task
+Comments. The default remains `false` for existing clients. Commit findings use active repositories
+connected to the Task's Project and require the Workspace Knowledge entitlement; they can appear
+when Knowledge indexing is off. Lookup completes in the background.
 
 `POST /api/v1/workspaces/{workspace_id}/tasks/{task_id}/suggestion-feedback` records a decision:
 
@@ -344,10 +349,22 @@ available, the tab is empty. A retrieval failure shows as unavailable without bl
 {"entity_kind": "task", "entity_id": "<id>", "outcome": "confirmed"}
 ```
 
-`entity_kind` is `task` or `document` and `outcome` is `confirmed` or `discarded`. It needs CSRF and
+`entity_kind` is `task`, `document` or `commit` and `outcome` is `confirmed` or `discarded`. It needs CSRF and
 an idempotency key and returns `{"accepted": true}`. Confirming a Task creates a `relates` relation,
 confirming a Document links it, and discarding removes that item from this Task's suggestions
 permanently.
+
+For a commit, send the finding's `entity_id`. Confirming adds the verified commit to Linked
+development after checking current Task write access, the Comment reference and repository
+connection. Commit confirmations and dismissals persist in Core.
+
+### Indexed code references <Badge type="warning" text="Awaiting deployment" />
+
+Set `include_code=true` on the Task related-context read to receive read-only code findings from
+indexed repositories bound to its Project. The default is false. These results have `kind: code`,
+`entity_id: null`, and `code_reference` metadata with repository, path, revision, symbol and line.
+Their `identifier` opens a revision-pinned GitHub blob. Code references use deterministic indexed
+identifier matching and have no Confirm/Discard feedback operation.
 
 ## Live description editing
 

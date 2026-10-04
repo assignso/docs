@@ -7,6 +7,34 @@ description: Format, link, mention and collaborate in Assign's single editor for
 Documents, Task descriptions and Comments all use the same editor, so shortcuts, formatting, mentions
 and Markdown work the same everywhere.
 
+## Callouts <Badge type="warning" text="Awaiting deployment" />
+
+Choose **Callout** from the `/` menu to highlight one or more paragraphs.
+Click its icon to choose a Lucide icon or emoji, restore the default Lucide icon, or remove it.
+Press Enter to add another paragraph; press Enter on the empty last paragraph to
+continue below the callout. Ctrl/Cmd+Enter also moves below it.
+
+Callouts support GitHub's `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION`
+alert markers. Use `CALLOUT` for a generic block. An optional emoji or
+`lucide:name` overrides the default icon; `none` hides it. The selector shares
+the searchable icon and emoji tabs used for Project icons.
+
+```markdown
+> [!CALLOUT]
+> This callout uses the default icon.
+>
+> A second paragraph stays in the same block.
+
+> [!TIP] 💡
+> This callout uses an emoji.
+
+> [!CALLOUT] lucide:rocket
+> This callout uses the Rocket icon.
+```
+
+Notion `<aside>` exports import as callouts. A leading emoji becomes the icon,
+and the paragraphs stay together. Markdown exports use the quoted alert syntax.
+
 ## Formatting
 
 Type Markdown and it becomes formatting as you go.

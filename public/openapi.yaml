@@ -4505,6 +4505,18 @@ paths:
       security:
         - browserSession: []
       parameters:
+        - name: include_code
+          in: query
+          description: Opt in to read-only indexed code references from repositories bound to this Task Project. Uses deterministic Cognee identifier matching, not semantic model ranking. Code references have no feedback entity ID; open their revision-pinned GitHub URL to review them. Defaults to false for compatibility.
+          schema:
+            type: boolean
+            default: false
+        - name: include_commit_mentions
+          in: query
+          description: Opt in to verified GitHub commit findings from Task comments. Defaults to false so older clients continue receiving only Task and Document findings. Commit lookup runs in the background and does not require Workspace Knowledge indexing to be enabled.
+          schema:
+            type: boolean
+            default: false
         - $ref: "#/components/parameters/WorkspaceId"
         - $ref: "#/components/parameters/WorkspaceRealtimeDerivedBaseline"
         - name: task_id
@@ -4540,7 +4552,7 @@ paths:
         - Tasks
       operationId: submitTaskSuggestionFeedback
       summary: Confirm or discard one Suggestions-tab finding
-      description: Confirming a Task-kind finding creates a canonical `relates` Task relation; confirming a Document-kind finding creates a durable linked-Document reference. Every outcome also relays to Workspace Knowledge so a discarded finding is never suggested again for this Task. Confirming is idempotent; repeating an already-confirmed outcome succeeds without creating a duplicate.
+      description: Confirming a Task finding creates a canonical `relates` relation; confirming a Document links it. Confirming a commit finding adds the verified commit to Linked development after rechecking the current Task, comment and repository binding. Commit outcomes persist in Core; Task and Document outcomes also relay to Workspace Knowledge. Confirming is idempotent and discarding suppresses the finding for this Task.
       security:
         - browserSession: []
       parameters:
@@ -22885,10 +22897,40 @@ components:
             - type: "null"
         has_more:
           type: boolean
+    CodeSuggestionReference:
+      type: object
+      additionalProperties: false
+      required:
+        - repository_id
+        - repository_name
+        - path
+        - revision
+      properties:
+        repository_id:
+          $ref: "#/components/schemas/Identifier"
+        repository_name:
+          type: string
+          maxLength: 512
+        path:
+          type: string
+          maxLength: 2000
+        revision:
+          type: string
+          pattern: ^[0-9a-f]{40}$
+        symbol:
+          oneOf:
+            - type: string
+              maxLength: 1000
+            - type: "null"
+        line:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: "null"
     RelatedContextItem:
       type: object
       additionalProperties: false
-      description: A discovered Task or Document the Task is not linked to yet, or one the person already confirmed as a Suggestion for the Task. Manually linked Tasks and Documents are never suggested.
+      description: A discovered Task, Document, verified GitHub commit or read-only indexed code reference the Task is not linked to yet, or one the person already confirmed as a Suggestion. Commit entity IDs identify Core-owned comment findings. Manually linked resources are never suggested.
       required:
         - kind
         - entity_id
@@ -22902,11 +22944,15 @@ components:
         - confidence
         - confirmed
       properties:
+        code_reference:
+          $ref: "#/components/schemas/CodeSuggestionReference"
         kind:
           type: string
           enum:
             - task
             - document
+            - commit
+            - code
         entity_id:
           oneOf:
             - $ref: "#/components/schemas/Identifier"
@@ -22920,7 +22966,7 @@ components:
             - type: string
               maxLength: 500
             - type: "null"
-          description: Current Core-owned canonical resource identifier (a Task key) when resolvable.
+          description: Current Core-owned Task key or Document path; a verified HTTPS GitHub commit URL for commit findings.
         project_path:
           oneOf:
             - type: string
@@ -22962,6 +23008,7 @@ components:
           enum:
             - task
             - document
+            - commit
         entity_id:
           $ref: "#/components/schemas/Identifier"
         outcome:
@@ -29974,7 +30021,7 @@ components:
         50,000 nodes in addition to the per-field byte limits.
 
         Accepted nodes: `doc`, `paragraph`, `text`, `heading`, `bulletList`,
-        `orderedList`, `listItem`, `taskList`, `taskItem`, `blockquote`,
+        `orderedList`, `listItem`, `taskList`, `taskItem`, `blockquote`, `callout`,
         `codeBlock`, `blockMath`, `horizontalRule`, `hardBreak`, `image`, `file`, plus the
         reference nodes `userMention`, `projectReference`, `documentReference`,
         and `taskReference`. Accepted marks: `bold`, `italic`, `underline`,
@@ -29990,6 +30037,13 @@ components:
         signed URL is minted per request after a fresh authorization check
         rather than stored in content. A request whose `image` or `file` node
         omits `attachmentId`, or carries a URL-bearing attribute, is rejected.
+
+        `callout` has block children and exactly `attrs.kind` and `attrs.icon`.
+        Kind is `callout`, `note`, `tip`, `important`, `warning`, or `caution`.
+        Icon is null for the default Lucide icon, an emoji of at most 64 UTF-8
+        bytes, an allowlisted `lucide:name` token to override it, or an empty string
+        to hide it. Unknown Lucide names are rejected. HTML, URLs and image
+        data are not accepted as icons. Callouts are additive in schemas 1 and 2.
 
         `blockMath` stores a required string `attrs.latex`; rendered math HTML
         and renderer settings are not persisted. Schema 1 retains the existing node contract; schema 2 additionally admits tables.
@@ -32473,6 +32527,12 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
 x-discuss-context-parts:
+  response_failure:
+    description: Safe failure guidance on a terminal failed response. Core excludes raw provider diagnostics. Unknown parts and schema versions remain compatible with older clients.
+    schema: assign.discuss.response_failure.v1
+    code: "Reviewed category: response_unavailable, response_outcome_unknown, provider_outcome_unknown, tool_outcome_unknown, model_unavailable, tool_contract_changed, decision_target_changed, decision_status_changed, decision_read_unavailable, decision_not_committed, operation_budget_exceeded, insufficient_credits or context_limit_exceeded."
+    recovery: Unknown outcomes and unchecked decisions require a canonical message/status and receipt read before another change. Draft restoration requires explicit Send and never replays an approval. Reads create no work or provider call.
+    omitted_tool_activity: Optional value 1 when the 20-part envelope replaces one earlier tool activity; immutable receipts and exact decisions remain. A full semantic envelope retains its records and uses conservative generic status recovery.
   web_search:
     description: OpenAI hosted public-web actions recorded from saved provider items; separate from Workspace retrieval.
     provider: openai
