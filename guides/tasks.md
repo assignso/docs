@@ -126,7 +126,7 @@ in place while the next page loads.
 
 ### Create a subtask inline <Badge type="warning" text="Awaiting deployment" />
 
-From the parent Task, choose Link task and Add as subtask. Type a title in the Task search and press Enter or choose Create subtask. If the Task is created but its parent link fails, Assign shows the new Task and lets you retry linking without creating another Task.
+From a Task, choose Link task and type a title in the Task search. If no Task matches, press Enter or choose Create task to make a new Task in the same Project and link it with the selected relation. Choose Add as subtask first to make it a subtask. You stay on the current Task; select the new linked Task to fill in the rest. If the Task is created but the link fails, Assign shows the new Task and lets you retry linking without creating another Task.
 
 ## Creation draft protection
 
