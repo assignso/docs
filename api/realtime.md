@@ -73,6 +73,52 @@ custody and reconcile canonical reads before acknowledging events. A transport
 connection alone does not establish current data. IDE owners and host
 qualification remain pending; this contract is not deployed.
 
+## Handshake and error contract
+
+Every client uses the same socket, subprotocol and frames. Only the way you
+authenticate differs.
+
+| Client | Credential | Headers | Scopes |
+| --- | --- | --- | --- |
+| Browser | Current session cookie | Exactly one configured `Origin`; no `Authorization` or `X-Assign-Workspace-ID` | All scopes listed below |
+| Native app | `Authorization: Bearer mob_at_…` | No `Origin` or cookies; `X-Assign-Workspace-ID` for Workspace scopes | All scopes listed below |
+| IDE extension | `Authorization: Bearer cli_at_…` | No `Origin` or cookies; optional `X-Assign-Workspace-ID` matching the grant | `workspace`, `projects`, `task_comments` |
+
+Request exactly one `Authorization` header and the subprotocol
+`assign.realtime.v1`. The handshake URL takes no query parameters. A future
+incompatible protocol will get a new subprotocol name, and `assign.realtime.v1`
+keeps its meaning. The server's first frame is `hello`. It lists the limits and
+`supported_scopes` for your credential. Subscribe within 10 seconds of `hello`.
+Send the same headers to `/api/v1/realtime/baseline`.
+
+If the handshake is refused, the server answers with an HTTP error and the
+usual JSON error body:
+
+| Status | `code` | Meaning | What to do |
+| --- | --- | --- | --- |
+| 400 | `realtime_scope_invalid` | The Workspace header is repeated, malformed, or sent with a browser session | Fix the request; do not retry unchanged |
+| 401 | `authentication_required` | The token is missing, unknown, expired or revoked | Refresh or sign in again, then reconnect |
+| 403 | `realtime_handshake_rejected` | Socket only: wrong subprotocol, a query string, a browser `Origin` that is not allowed, or browser and bearer credentials together | Fix the request; do not retry unchanged |
+| 403 | `access_denied` | You are not a current member of the requested Workspace | Choose another Workspace |
+| 429 | `realtime_capacity` or a rate-limit code | Too many open sockets for your account, or too many requests | Close unused sockets, or wait for `Retry-After`, then retry |
+| 503 | `realtime_capacity` | No connection slot is available right now | Retry with jittered, bounded backoff |
+
+After the socket opens, these frames and close codes apply:
+
+| Signal | Meaning | What to do |
+| --- | --- | --- |
+| `error` with `authentication_required`, then close 1008 | Sign-in ended, the token expired or was revoked, or Workspace access was removed | Get a valid token, reconnect and capture new baselines |
+| `error` with `scope_unavailable` | The scope is not available to this credential, the subscription ID is already in use, or the subscription limit is reached | Drop that subscription; other subscriptions continue |
+| `resync` with `baseline_required` or `ack_timeout` | The cursor can no longer resume | Discard the scope's custody and capture a new baseline |
+| Close 1002 | Unsupported protocol version | Upgrade the client; do not retry unchanged |
+| Close 1008 | Invalid frame or acknowledgement, or no subscription in time | Fix the client before reconnecting |
+
+Tokens are checked again while subscriptions are active. The server never
+extends a token. Before your access token expires, refresh it through your
+existing sign-in client and open a new connection. After any reconnect, capture
+a new baseline for each scope before you acknowledge events. Old cursors are
+not proof that your data is current.
+
 ## Subscribe to a scope
 
 After the server's `hello`, choose a supported scope and a unique subscription ID.
