@@ -194,6 +194,7 @@ The versioned-work tools are appearing in the catalog as the server update rolls
 | `change_set_create` | Write | Propose 1–100 sequential Task or Document changes for review |
 | `change_set_get` | Read | Get a proposal |
 | `change_set_apply` | Write | Apply an exact reviewed ChangeSet |
+| `task_status_transition` | Write | Change one Task's Status by exact label or ID: applies when no review is needed, otherwise returns the ChangeSet for review or the exact choices |
 | `operation_receipt_get` | Read | Resolve a committed operation by ID or original idempotency key |
 | `operation_receipt_undo` | Write | Conditionally reverse a supported receipt |
 | `evidence_collection_create` | Write | Capture 1–32 exact quoted passages privately |
