@@ -32,7 +32,13 @@ const internalTools = new Set([
 const mcpDir = join(workspace, "assign-core/internal/mcp")
 if (existsSync(mcpDir)) {
   const source = goSources(mcpDir)
-  const registered = new Set()
+  // Read the actual typed registrations, including conditional capabilities.
+  // The exporter is offline: it does not open a database or invoke any tool.
+  const exported = JSON.parse(execFileSync("go", ["run", "./cmd/agent-tool-catalog"], {
+    cwd: join(workspace, "assign-core"), encoding: "utf8", maxBuffer: 4 * 1024 * 1024,
+  }))
+  const registered = new Set(exported.tools.map((tool) => tool.name))
+  // Discuss/hosted adapters are conditionally registered outside this exporter.
   for (const match of source.matchAll(/Name:\s*"([a-z][a-z_]+)"/g)) registered.add(match[1])
   for (const match of source.matchAll(/add(?:Capability|DiscussRule)Tool\(tools, server, "([a-z_]+)"/g)) registered.add(match[1])
   const documented = new Set([...readFileSync(join(root, "mcp/tools.md"), "utf8").matchAll(/^\| `([a-z_]+)` \|/gm)].map((m) => m[1]))

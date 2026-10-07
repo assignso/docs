@@ -23974,6 +23974,35 @@ components:
             - type: string
               format: date-time
             - type: "null"
+        intent_id:
+          readOnly: true
+          description: Read-only Core-owned durable intent this wait belongs to. Absent or null for interactions created before the intent contract; clients never write it.
+          oneOf:
+            - $ref: "#/components/schemas/Identifier"
+            - type: "null"
+        intent_revision:
+          readOnly: true
+          description: Intent revision the decision was applied under. Read-only.
+          oneOf:
+            - type: integer
+              format: int64
+              minimum: 1
+            - type: "null"
+        intent_state:
+          readOnly: true
+          description: Read-only public intent lifecycle after this decision; null when not read.
+          oneOf:
+            - type: string
+              enum:
+                - ready
+                - waiting
+                - executing
+                - suspended
+                - superseded
+                - cancelled
+                - completed
+                - failed
+            - type: "null"
     DiscussInteractionDecisionRequest:
       type: object
       additionalProperties: false
@@ -25595,130 +25624,1124 @@ components:
         value:
           type: string
           enum:
+            - accessibility
             - activity
+            - ad
+            - air-vent
             - alarm-clock
+            - alarm-clock-check
+            - alarm-clock-minus
+            - alarm-clock-plus
+            - alarm-smoke
+            - album
+            - ambulance
+            - amphora
             - anchor
+            - angle
+            - antenna
+            - anvil
+            - aperture
+            - apple
             - archive
+            - archive-restore
+            - archive-x
+            - armchair
+            - arrows-up-from-line
+            - astroid
             - atom
+            - audio-lines-x
+            - audio-waveform
             - award
+            - axe
+            - axis-3d
+            - baby
+            - backpack
+            - badge
+            - badge-alert
+            - badge-cent
             - badge-check
+            - badge-dollar-sign
+            - badge-euro
+            - badge-indian-rupee
+            - badge-info
+            - badge-japanese-yen
+            - badge-minus
+            - badge-percent
+            - badge-plus
+            - badge-pound-sterling
+            - badge-question-mark
+            - badge-russian-ruble
+            - badge-swiss-franc
+            - badge-turkish-lira
+            - badge-x
+            - baggage-claim
+            - balloon
+            - banana
+            - bandage
+            - banknote
+            - banknote-arrow-down
+            - banknote-arrow-up
+            - banknote-check
+            - banknote-x
+            - barcode
+            - barrel
+            - bath
+            - battery
+            - battery-charging
+            - battery-full
+            - battery-low
+            - battery-medium
+            - battery-plus
+            - battery-warning
             - beaker
+            - bean
+            - bed
+            - bed-double
+            - bed-single
+            - beef
+            - beer
             - bell
+            - bell-check
+            - bell-dot
+            - bell-electric
+            - bell-minus
+            - bell-plus
+            - bell-ring
+            - biceps-flexed
             - bike
             - binary
             - binoculars
+            - biohazard
+            - bird
+            - birdhouse
+            - bitcoin
+            - blender
+            - blinds
             - blocks
+            - bluetooth
+            - bluetooth-connected
+            - bluetooth-searching
+            - bolt
+            - bomb
+            - bone
+            - bone-fracture
+            - book
+            - book-a
+            - book-alert
+            - book-audio
+            - book-check
+            - book-copy
+            - book-dashed
+            - book-down
+            - book-headphones
+            - book-heart
+            - book-image
+            - book-key
+            - book-lock
+            - book-marked
+            - book-minus
             - book-open
+            - book-open-check
+            - book-open-text
+            - book-plus
+            - book-search
+            - book-text
+            - book-type
+            - book-up
+            - book-up-2
+            - book-user
+            - book-x
             - bookmark
+            - bookmark-check
+            - bookmark-minus
+            - bookmark-plus
+            - bookmark-x
+            - boom-box
+            - bot-message-square
+            - bottle-wine
+            - bow-arrow
             - box
             - boxes
+            - braces
+            - brackets
+            - brain-cog
             - brick-wall
+            - brick-wall-fire
+            - brick-wall-shield
             - briefcase
+            - briefcase-business
+            - briefcase-conveyor-belt
+            - briefcase-medical
+            - broccoli
+            - broom
+            - broom-sparkles
             - brush
+            - brush-cleaning
+            - bubbles
             - bug
+            - bug-play
             - building-2
+            - bus
+            - bus-front
             - cable
+            - cable-car
+            - cake
+            - cake-slice
+            - calculator
             - calendar
+            - calendar-1
+            - calendar-arrow-down
+            - calendar-arrow-up
+            - calendar-check-2
+            - calendar-cog
+            - calendar-days
+            - calendar-fold
+            - calendar-heart
+            - calendar-minus
+            - calendar-minus-2
+            - calendar-plus-2
+            - calendar-range
+            - calendar-search
+            - calendar-sync
+            - calendar-x
+            - calendar-x-2
+            - calendars
             - camera
+            - candy
+            - candy-cane
+            - cannabis
+            - captions
+            - car
+            - car-front
+            - car-taxi-front
+            - caravan
+            - card-sim
+            - carrot
+            - cassette-tape
             - castle
+            - cat
+            - cctv
+            - chart-area
+            - chart-bar
+            - chart-bar-big
+            - chart-bar-decreasing
+            - chart-bar-increasing
+            - chart-bar-stacked
+            - chart-candlestick
             - chart-column
+            - chart-column-big
+            - chart-column-decreasing
+            - chart-column-increasing
+            - chart-column-stacked
+            - chart-gantt
+            - chart-line
+            - chart-network
+            - chart-no-axes-column
+            - chart-no-axes-column-decreasing
+            - chart-no-axes-column-increasing
+            - chart-no-axes-gantt
+            - chart-pie
+            - chart-scatter
+            - chart-spline
+            - check-line
+            - chef-hat
+            - cherry
+            - chess-bishop
+            - chess-king
+            - chess-knight
+            - chess-pawn
+            - chess-queen
+            - chess-rook
+            - chevrons-down
+            - chevrons-down-up
+            - chevrons-left
+            - chevrons-left-right
+            - chevrons-left-right-ellipsis
+            - chevrons-right
+            - chevrons-right-left
+            - church
+            - cigarette
             - circle-check-big
             - circuit-board
+            - citrus
             - clapperboard
+            - clock
+            - clock-1
+            - clock-10
+            - clock-11
+            - clock-12
+            - clock-2
+            - clock-4
+            - clock-5
+            - clock-6
+            - clock-7
+            - clock-8
+            - clock-9
+            - clock-alert
+            - clock-arrow-down
+            - clock-arrow-left
+            - clock-arrow-right
+            - clock-arrow-up
+            - clock-fading
+            - clock-plus
+            - closed-caption
             - cloud
+            - cloud-alert
+            - cloud-backup
+            - cloud-check
+            - cloud-cog
+            - cloud-drizzle
+            - cloud-fog
+            - cloud-hail
+            - cloud-lightning
+            - cloud-moon
+            - cloud-moon-rain
+            - cloud-rain
+            - cloud-rain-wind
+            - cloud-snow
+            - cloud-sun
+            - cloud-sun-rain
+            - cloud-sync
+            - cloudy
+            - clover
+            - club
+            - code
             - code-2
             - coffee
+            - coins
+            - combine
             - compass
+            - component
+            - computer
+            - concierge-bell
+            - cone
             - construction
+            - contact
+            - contact-round
+            - container
+            - cookie
+            - cooking-pot
+            - copyleft
+            - copyright
             - cpu
+            - creative-commons
             - credit-card
+            - croissant
+            - cross
+            - crosshair
             - crown
+            - cuboid
+            - cup-soda
+            - currency
+            - cylinder
+            - dam
             - database
+            - database-arrow-down
+            - database-arrow-up
+            - database-backup
+            - database-check
+            - database-minus
+            - database-plus
+            - database-search
+            - database-x
+            - database-zap
+            - decimals-arrow-left
+            - decimals-arrow-right
+            - dessert
+            - diameter
             - diamond
+            - diamond-minus
+            - diamond-percent
+            - diamond-plus
+            - dice-1
+            - dice-2
+            - dice-3
+            - dice-4
+            - dice-5
+            - dice-6
+            - dices
+            - disc
+            - disc-2
+            - disc-3
+            - disc-album
+            - divide
             - dna
+            - dock
+            - dog
+            - dollar-sign
+            - donut
+            - door-closed
+            - door-closed-locked
+            - door-open
+            - dot
+            - drafting-compass
+            - drama
+            - drill
+            - drone
+            - droplet
+            - droplets
+            - drum
+            - drumstick
             - dumbbell
+            - ear
             - earth
+            - earth-lock
+            - eclipse
+            - egg
+            - egg-fried
+            - eject
+            - ellipse
+            - equal-approximately
+            - ethernet-port
+            - euro
+            - ev-charger
             - eye
+            - eye-closed
+            - eye-dashed
+            - face-angry
+            - face-expressionless
+            - face-grinning
+            - face-neutral
+            - face-slightly-frowning
+            - face-slightly-smiling
             - factory
+            - fan
             - feather
+            - fence
+            - ferris-wheel
             - file-text
+            - files
+            - film
+            - fingerprint-pattern
+            - fire-extinguisher
             - fish
+            - fish-symbol
+            - fishing-hook
+            - fishing-rod
             - flag
+            - flag-triangle-left
+            - flag-triangle-right
             - flame
+            - flame-kindling
+            - flashlight
             - flask-conical
+            - flask-round
+            - flower
             - flower-2
             - folder
             - folder-kanban
+            - folders
+            - footprints
+            - forklift
+            - form
+            - frame
+            - fuel
+            - funnel-plus
+            - funnel-x
+            - gallery-horizontal
+            - gallery-horizontal-end
+            - gallery-thumbnails
+            - gallery-vertical
+            - gallery-vertical-end
+            - gamepad
             - gamepad-2
+            - gamepad-directional
             - gauge
+            - gavel
             - gem
+            - georgian-lari
+            - ghost
             - gift
             - git-branch
+            - git-branch-minus
+            - git-branch-plus
+            - git-commit-vertical
+            - git-compare
+            - git-compare-arrows
+            - git-fork
+            - git-graph
+            - git-merge-conflict
+            - git-pull-request-arrow
+            - git-pull-request-closed
+            - git-pull-request-create
+            - git-pull-request-create-arrow
+            - git-pull-request-draft
+            - glass-water
+            - glasses
             - globe-2
+            - globe-check
+            - globe-lock
+            - globe-x
+            - goal
+            - gpu
             - graduation-cap
+            - grape
+            - grid-2x2
+            - grid-2x2-check
+            - grid-2x2-plus
+            - grid-2x2-x
+            - grid-3x2
+            - grid-3x3
+            - group
             - guitar
+            - ham
+            - hamburger
             - hammer
+            - hand
+            - hand-coins
+            - hand-fist
+            - hand-grab
+            - hand-heart
+            - hand-helping
+            - hand-metal
+            - hand-platter
+            - handbag
             - handshake
             - hard-drive
+            - hard-drive-download
+            - hard-drive-upload
+            - hard-hat
+            - hat-glasses
+            - haze
+            - hd
+            - hdmi-port
+            - heading
+            - heading-1
+            - heading-2
+            - heading-3
+            - heading-4
+            - heading-5
+            - heading-6
             - headphones
+            - headset
             - heart
+            - heart-crack
+            - heart-handshake
+            - heart-minus
+            - heart-plus
+            - heart-pulse
+            - heart-x
+            - heater
+            - helicopter
+            - hexagon
             - home
+            - hop
+            - hospital
+            - hotel
+            - hourglass
+            - house-heart
+            - house-plug
+            - house-plus
+            - house-wifi
+            - ice-cream-bowl
+            - ice-cream-cone
+            - id-card
+            - id-card-lanyard
             - image
+            - image-down
+            - image-minus
+            - image-play
+            - image-plus
+            - image-up
+            - image-upscale
+            - images
+            - import
+            - indian-rupee
+            - infinity
+            - inspection-panel
+            - japanese-yen
+            - joystick
+            - kanban
+            - kayak
+            - key
             - key-round
+            - keyboard
+            - keyboard-music
+            - lamp
+            - lamp-ceiling
+            - lamp-desk
+            - lamp-floor
+            - lamp-wall-down
+            - lamp-wall-up
+            - land-plot
             - landmark
+            - languages
             - laptop
+            - laptop-minimal
+            - laptop-minimal-check
+            - lasso
+            - lasso-select
+            - layer-arrow-down
+            - layer-arrow-up
+            - layers-2
             - layers-3
+            - layers-arrow-down
+            - layers-arrow-up
+            - layers-minus
+            - layers-plus
             - leaf
+            - leafy-green
+            - lectern
+            - lens-concave
+            - lens-convex
             - library
+            - library-big
+            - life-buoy
             - lightbulb
+            - line-dot-right-horizontal
+            - line-squiggle
+            - line-style
             - link-2
             - list-todo
+            - locate
+            - locate-fixed
+            - lock
+            - lock-keyhole-open
+            - lock-open
+            - logs
+            - lollipop
             - luggage
+            - magnet
             - mail
+            - mail-badge
+            - mail-check
+            - mail-minus
+            - mail-open
+            - mail-question-mark
+            - mail-search
+            - mail-warning
+            - mail-x
+            - mailbox
+            - mails
             - map
+            - map-minus
             - map-pin
+            - map-pin-check
+            - map-pin-check-inside
+            - map-pin-house
+            - map-pin-minus
+            - map-pin-minus-inside
+            - map-pin-pen
+            - map-pin-plus
+            - map-pin-plus-inside
+            - map-pin-search
+            - map-pin-x
+            - map-pin-x-inside
+            - map-pinned
+            - map-plus
+            - mars
+            - mars-stroke
+            - martini
             - medal
             - megaphone
+            - memory-stick
+            - merge
+            - message-circle
+            - message-circle-check
+            - message-circle-code
+            - message-circle-dashed
+            - message-circle-heart
+            - message-circle-more
+            - message-circle-plus
+            - message-circle-question-mark
+            - message-circle-reply
+            - message-circle-warning
+            - message-circle-x
             - message-square
+            - message-square-check
+            - message-square-code
+            - message-square-dashed
+            - message-square-diff
+            - message-square-dot
+            - message-square-heart
+            - message-square-lock
+            - message-square-more
+            - message-square-plus
+            - message-square-quote
+            - message-square-reply
+            - message-square-share
+            - message-square-text
+            - message-square-warning
+            - message-square-x
+            - metronome
+            - mic-audio-lines
+            - mic-signal
+            - microchip
             - microscope
+            - microwave
+            - milestone
+            - milk
+            - mirror-rectangular
+            - mirror-round
             - monitor
+            - monitor-check
+            - monitor-cloud
+            - monitor-cog
+            - monitor-dot
+            - monitor-down
+            - monitor-pause
+            - monitor-play
+            - monitor-speaker
+            - monitor-stop
+            - monitor-up
+            - monitor-x
+            - moon
+            - moon-star
+            - mosque
+            - motorbike
             - mountain
+            - mountain-snow
+            - mouse
+            - mouse-left
+            - mouse-right
+            - music
             - music-2
+            - music-3
+            - music-4
+            - network
+            - newspaper
+            - nfc
+            - non-binary
+            - notebook
+            - notebook-pen
+            - notebook-tabs
+            - notebook-text
+            - notepad-text
+            - notepad-text-dashed
+            - nut
+            - octagon
+            - octagon-alert
+            - octagon-minus
+            - octagon-pause
+            - omega
             - orbit
+            - origami
             - package
+            - package-2
+            - package-check
+            - package-minus
+            - package-open
+            - package-plus
+            - package-search
+            - package-x
+            - paint-bucket
+            - paint-roller
             - paintbrush
+            - paintbrush-vertical
             - palette
+            - panda
+            - panels-left-bottom
+            - panels-right-bottom
+            - panels-top-left
+            - paper-bag
+            - parasol
+            - parking-meter
+            - party-popper
             - paw-print
+            - pc-case
+            - pen
+            - pen-line
             - pen-tool
+            - pencil-line
             - pencil-ruler
+            - pencil-sparkles
+            - pentagon
+            - person-standing
+            - phi
+            - philippine-peso
+            - phone
+            - phone-call
+            - phone-forwarded
+            - phone-incoming
+            - phone-missed
+            - phone-outgoing
+            - pi
+            - piano
+            - pickaxe
+            - picture-in-picture
+            - picture-in-picture-2
             - pie-chart
+            - piggy-bank
+            - pill
+            - pill-bottle
+            - pin
+            - pipette
+            - pizza
+            - plane
+            - plane-landing
+            - plane-takeoff
+            - plug
+            - plug-2
+            - plug-zap
+            - pocket-knife
+            - podium
+            - popcorn
+            - popsicle
+            - pound-sterling
+            - presentation
+            - printer
+            - printer-check
+            - printer-x
+            - projector
             - puzzle
+            - pyramid
+            - rabbit
+            - radar
+            - radiation
+            - radical
+            - radio
+            - radio-receiver
+            - radio-tower
+            - radius
+            - rainbow
+            - rat
+            - receipt
+            - receipt-cent
+            - receipt-euro
+            - receipt-indian-rupee
+            - receipt-japanese-yen
+            - receipt-pound-sterling
+            - receipt-russian-ruble
+            - receipt-swiss-franc
+            - receipt-text
+            - receipt-turkish-lira
+            - rectangle-circle
+            - rectangle-ellipsis
+            - rectangle-goggles
+            - rectangle-horizontal
+            - rectangle-vertical
+            - recycle
+            - refrigerator
+            - regex
+            - remove-formatting
+            - repeat
+            - repeat-1
+            - repeat-2
+            - reply
+            - reply-all
+            - ribbon
+            - road
             - rocket
+            - rocking-chair
+            - roller-coaster
+            - rose
+            - route
+            - router
+            - rss
+            - ruler
+            - ruler-dimension-line
+            - russian-ruble
+            - sailboat
+            - salad
+            - sandwich
             - satellite
+            - satellite-dish
+            - saudi-riyal
+            - save-check
+            - save-pen
+            - save-plus
             - scale
+            - scale-3d
+            - school
+            - scissors
+            - scissors-line-dashed
+            - scooter
+            - screen-share
+            - scroll
+            - scroll-text
             - search
+            - section
+            - send-horizontal
+            - server
+            - server-cog
+            - server-crash
+            - server-plus
             - settings
+            - shapes
+            - share
+            - share-2
+            - sheet
+            - shell
+            - shelving-unit
             - shield
+            - shield-ban
+            - shield-cog
+            - shield-cog-corner
+            - shield-ellipsis
+            - shield-half
+            - shield-keyhole
+            - shield-lock
+            - shield-minus
+            - shield-plus
+            - shield-question-mark
+            - shield-user
+            - shield-x
             - ship
+            - ship-wheel
+            - shirt
             - shopping-bag
+            - shopping-basket
+            - shopping-cart
+            - shovel
+            - shower-head
+            - shredder
+            - shrimp
+            - shrink
+            - shrub
+            - shuffle
+            - sigma
+            - signal
+            - signal-zero
+            - signature
+            - signpost
+            - signpost-big
+            - siren
+            - skull
+            - slice
+            - smartphone
+            - smartphone-charging
+            - smartphone-nfc
             - smile
+            - snail
+            - snowflake
+            - soap-dispenser-droplet
+            - sofa
+            - solar-panel
+            - soup
+            - space
+            - spade
+            - sparkle
             - sparkles
+            - speaker
+            - speech
+            - spline
+            - spline-pointer
+            - split
+            - spool
+            - sport-shoe
+            - spotlight
+            - spray-can
             - sprout
+            - squares-exclude
+            - squares-intersect
+            - squares-subtract
+            - squares-unite
+            - squircle
+            - squircle-dashed
+            - squirrel
+            - stamp
             - star
+            - star-check
+            - star-half
+            - star-minus
+            - star-plus
+            - star-x
+            - stethoscope
+            - sticker
+            - sticky-note
+            - sticky-note-check
+            - sticky-note-minus
+            - sticky-note-plus
+            - sticky-note-x
+            - sticky-notes
+            - stone
+            - store
+            - summary
+            - sun
+            - sun-dim
+            - sun-medium
+            - sun-moon
+            - sun-snow
+            - sunrise
+            - sunset
+            - swatch-book
+            - swiss-franc
+            - switch-camera
+            - sword
+            - swords
+            - syringe
+            - table
+            - table-2
+            - table-cells-merge
+            - table-cells-split
+            - table-columns-split
+            - table-of-contents
+            - table-properties
+            - table-rows-split
+            - tablet
+            - tablet-smartphone
+            - tablets
+            - tag-plus
+            - tag-x
             - tags
+            - tally-1
+            - tally-2
+            - tally-3
+            - tally-4
+            - tally-5
+            - tangent
             - target
             - telescope
             - tent
+            - tent-tree
             - terminal
+            - test-tube
+            - test-tube-diagonal
+            - test-tubes
+            - theater
+            - thermometer
+            - thermometer-snowflake
+            - thermometer-sun
+            - thumbs-down
+            - thumbs-up
+            - ticket
+            - ticket-check
+            - ticket-minus
+            - ticket-percent
+            - ticket-plus
+            - ticket-slash
+            - ticket-x
+            - tickets
+            - tickets-plane
+            - timeline
             - timer
+            - timer-reset
+            - toilet
+            - tool-case
+            - toolbox
+            - tornado
+            - torus
+            - touchpad
+            - towel-rack
+            - tower-control
+            - toy-brick
+            - tractor
+            - traffic-cone
+            - train-front
+            - train-front-tunnel
+            - train-track
+            - tram-front
+            - transgender
+            - tree-deciduous
+            - tree-palm
+            - tree-pine
+            - trees
+            - trending-down
+            - trending-up
+            - trending-up-down
+            - triangle
+            - triangle-dashed
+            - triangle-right
             - trophy
+            - truck
+            - truck-electric
+            - turkish-lira
+            - turntable
+            - turtle
+            - tv
+            - tv-minimal
+            - tv-minimal-play
+            - type-outline
             - umbrella
+            - ungroup
+            - university
+            - unlink
+            - unlink-2
+            - usb
+            - user
+            - user-check
+            - user-cog
+            - user-key
+            - user-lock
+            - user-minus
+            - user-pen
+            - user-round-arrow-left
+            - user-round-check
+            - user-round-cog
+            - user-round-key
+            - user-round-minus
+            - user-round-pen
+            - user-round-plus
+            - user-round-search
+            - user-round-x
+            - user-search
+            - user-shield
+            - user-star
+            - user-x
             - users
+            - users-round
+            - utensils
+            - utensils-crossed
+            - utility-pole
+            - van
+            - variable
+            - vault
+            - vector-square
+            - vegan
+            - venetian-mask
+            - venus
+            - venus-and-mars
+            - vibrate
             - video
+            - videotape
+            - view
+            - voicemail
+            - volleyball
+            - volume
+            - volume-1
+            - volume-2
+            - volume-x
+            - vote
             - wallet
+            - wallet-cards
+            - wallet-minimal
+            - wallpaper
+            - wand
             - wand-sparkles
+            - warehouse
+            - washing-machine
+            - watch
             - waves
+            - waves-arrow-down
+            - waves-arrow-up
+            - waves-horizontal
+            - waves-ladder
+            - waves-vertical
+            - waypoints
+            - webcam
+            - webhook
+            - weight
+            - weight-tilde
+            - wheat
+            - whole-word
+            - wifi
+            - wifi-cog
+            - wifi-high
+            - wifi-low
+            - wifi-pen
+            - wifi-sync
+            - wifi-zero
+            - wind
+            - wind-arrow-down
+            - wine
+            - workflow
+            - worm
+            - wrench
+            - x-line-top
             - zap
+            - zodiac-aquarius
+            - zodiac-aries
+            - zodiac-cancer
+            - zodiac-capricorn
+            - zodiac-gemini
+            - zodiac-leo
+            - zodiac-libra
+            - zodiac-ophiuchus
+            - zodiac-pisces
+            - zodiac-sagittarius
+            - zodiac-scorpio
+            - zodiac-taurus
+            - zodiac-virgo
     ProjectEmojiVisualIdentity:
       type: object
       additionalProperties: false
@@ -31805,7 +32828,7 @@ components:
       properties:
         id:
           type: string
-          maxLength: 128
+          maxLength: 192
         revision:
           type: string
           maxLength: 128
@@ -32120,7 +33143,7 @@ components:
           maxLength: 128
         group_id:
           type: string
-          maxLength: 128
+          maxLength: 192
         group_revision:
           type: string
           maxLength: 128
@@ -32527,6 +33550,13 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
 x-discuss-context-parts:
+  response_outcome:
+    description: Core-owned partial outcome on a saved response. It preserves recorded results when later work is unfinished. Unknown parts and schema versions remain compatible with older clients.
+    schema: assign.discuss.response_outcome.v1
+    execution_state: partial; the response did not complete all requested work.
+    usage_state: not_started, settled or reconciling; reconciling is not settled usage.
+    completed_action_ids: Up to 50 distinct operation UUIDs, each verified against a canonical receipt already projected on this response. An omitted or null group reports no action identities; it is not evidence that every requested action completed.
+    recovery: Review recorded receipts before requesting remaining work. Committed changes remain in effect. Existing unknown-outcome guidance and reconciling usage retain canonical status checks; restoration never submits or replays work.
   response_failure:
     description: Safe failure guidance on a terminal failed response. Core excludes raw provider diagnostics. Unknown parts and schema versions remain compatible with older clients.
     schema: assign.discuss.response_failure.v1

@@ -57,6 +57,7 @@ const mcp: DefaultTheme.SidebarItem[] = [
     items: [
       { text: "Discuss and evidence tools", link: "/mcp/discuss" },
       { text: "Task queries and result sets", link: "/mcp/task-queries" },
+      { text: "Task events and execution", link: "/mcp/events" },
     ],
   },
 ]

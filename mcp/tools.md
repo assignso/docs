@@ -5,9 +5,9 @@ outline: [2, 3]
 
 # Tool catalog
 
-The Assign MCP server exposes 105 tools in 14 groups. `tools/list` returns only the tools your connection can use right now, based on its scopes, Workspace entitlements, Project restrictions and credential type. A read-only connection never sees write tools.
+The Assign MCP server exposes a permission-filtered tool catalog. `tools/list` returns only the tools your connection can use right now, based on its scopes, Workspace entitlements, Project restrictions and credential type. A read-only connection never sees write tools.
 
-**Read** tools need `assign:read`. **Write** tools need `assign:write`, and every write tool takes an `idempotency_key`. Each tool also carries MCP annotations: read-only, destructive and idempotent hints.
+**Read** tools need `assign:read`. **Write** tools need `assign:write`, and ordinary writes take an `idempotency_key`. Execution claim operations use `operation_id` for receipt recovery. Each tool also carries MCP annotations: read-only, destructive and idempotent hints.
 
 ## Catalog
 
@@ -435,3 +435,15 @@ arrays of at most 50 values. Group pages allow 1–50 items; child pages allow 1
 selector when continuing a cursor. A stale cursor requires a fresh root; a stale group requires a
 fresh parent. Current previews are observations, and missing historical facts remain unknown.
 These tools use the existing Activity read scope and current access checks.
+
+### Exclusive Task execution <Badge type="warning" text="Awaiting deployment" />
+
+| Tool | Access | Purpose |
+| --- | --- | --- |
+| `task_execution_claim` | Write | Atomically claim eligible exclusive Task work |
+| `task_execution_renew` | Write | Renew the current claim within its authority |
+| `task_execution_release` | Write | Release a matching current claim |
+| `task_execution_handoff` | Write | Transfer ownership to an explicitly authorized grant |
+
+Read [Task events and execution](./events) before using these tools. Event
+subscription methods are protocol methods and do not appear in `tools/list`.
