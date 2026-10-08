@@ -27739,6 +27739,14 @@ components:
         - supports_multiple_installations
         - supports_user_connections
       properties:
+        required_features:
+          type: array
+          maxItems: 8
+          uniqueItems: true
+          description: Workspace features required by this provider's dependent behaviors. Connecting never enables them; disabled behaviors pause with credentials, bindings and history retained.
+          items:
+            type: string
+            pattern: ^[a-z][a-z0-9_]{0,63}$
         key:
           type: string
           pattern: ^[a-z][a-z0-9_]*$
