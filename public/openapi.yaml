@@ -5244,6 +5244,90 @@ paths:
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/workspaces/{workspace_id}/features:
+    parameters:
+      - $ref: "#/components/parameters/WorkspaceId"
+    get:
+      tags:
+        - Workspaces
+      operationId: listWorkspaceFeatures
+      summary: Read Workspace feature descriptors and state
+      description: Requires active Workspace membership. Returns at most 64 descriptors through one bounded state read. Feature enablement grants no operation authority.
+      security:
+        - browserSession: []
+      responses:
+        "200":
+          description: The registered features and acknowledged state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceFeatureCollection"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/workspaces/{workspace_id}/features/{feature}:
+    parameters:
+      - $ref: "#/components/parameters/WorkspaceId"
+      - name: feature
+        in: path
+        required: true
+        description: Registered Workspace feature key.
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+    patch:
+      tags:
+        - Workspaces
+      operationId: updateWorkspaceFeature
+      summary: Enable or disable a Workspace feature
+      description: |
+        Requires the descriptor's manage capability (workspace:manage by default;
+        time:manage for time_tracking). Planned features are read-only. A stale
+        revision returns revision_conflict. Dependencies return
+        feature_prerequisite_missing or feature_has_dependents, with the sorted
+        comma-separated keys in error.details.features. Disabling retains data.
+        Replays recheck current authority and return the original result.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/PolicyIfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceFeatureUpdateRequest"
+      responses:
+        "200":
+          description: The acknowledged feature state. Emits a committed workspace.feature.updated invalidation.
+          headers:
+            ETag:
+              description: Quoted feature revision for the next If-Match.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceFeature"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/workspace/time-tracking:
     get:
       tags:
@@ -18739,6 +18823,8 @@ components:
       properties:
         enabled:
           type: boolean
+          deprecated: true
+          description: Use updateWorkspaceFeature for enablement. Compatibility writes delegate to the Features service.
         rounding_mode:
           type: string
           enum:
@@ -25441,6 +25527,92 @@ components:
       properties:
         role:
           $ref: "#/components/schemas/ProjectMemberRole"
+    WorkspaceFeature:
+      type: object
+      additionalProperties: false
+      required:
+        - key
+        - label
+        - description
+        - maturity
+        - enabled
+        - revision
+        - updated_at
+        - updated_by_actor_id
+        - requires
+        - required_by
+        - settings_route
+        - can_manage
+      properties:
+        key:
+          type: string
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+          maxLength: 64
+        label:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+        maturity:
+          type: string
+          enum:
+            - available
+            - preview
+            - planned
+        enabled:
+          type: boolean
+        revision:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Generic and Time tracking defaults start at zero; Project lifecycle retains its legacy bootstrap revision one.
+        updated_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        updated_by_actor_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        requires:
+          type: array
+          maxItems: 64
+          items:
+            type: string
+        required_by:
+          type: array
+          maxItems: 64
+          items:
+            type: string
+        settings_route:
+          type:
+            - string
+            - "null"
+          description: Workspace-relative configuration route, or null when there is none.
+        can_manage:
+          type: boolean
+    WorkspaceFeatureCollection:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 64
+          items:
+            $ref: "#/components/schemas/WorkspaceFeature"
+    WorkspaceFeatureUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
     ProjectLifecyclePolicy:
       type: object
       additionalProperties: false
@@ -25467,6 +25639,8 @@ components:
       properties:
         enabled:
           type: boolean
+          deprecated: true
+          description: Use updateWorkspaceFeature for enablement. Compatibility writes delegate to the Features service.
     ProjectState:
       type: object
       additionalProperties: false

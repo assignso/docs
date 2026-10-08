@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-409 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+411 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -137,6 +137,8 @@ Guide: [Workspaces](./workspaces)
 | `GET /api/v1/workspaces/{workspace_id}/activity` | List access-filtered Workspace activity | Session |
 | `GET /api/v1/workspaces/{workspace_id}/ai-access-policy` | Get the Workspace AI access policy | Session |
 | `PUT /api/v1/workspaces/{workspace_id}/ai-access-policy` | Update the Workspace AI access policy | Session |
+| `GET /api/v1/workspaces/{workspace_id}/features` | Read Workspace feature descriptors and state | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/features/{feature}` | Enable or disable a Workspace feature | Session |
 | `POST /api/v1/workspaces/{workspace_id}/icon` | Associate a cropped S3-hosted Workspace icon | Session |
 | `DELETE /api/v1/workspaces/{workspace_id}/icon` | Remove the Workspace icon and retire its stored object | Session |
 | `GET /api/v1/workspaces/{workspace_id}/icon/content` | Redirect to a short-lived inline S3 URL for the Workspace icon | Session |
