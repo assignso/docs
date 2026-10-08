@@ -55,6 +55,14 @@ fi
 - The token is sent only to `https://api.assign.so` unless you pass an explicit HTTPS `--host`.
 - `assign doctor` reports which credential source is in use, never its value.
 
+## Host configuration <Badge type="warning" text="Upcoming" />
+
+Upcoming [host configuration](./commands#initialization-and-configuration) also
+lets you save an HTTPS API origin. Commands use an explicit `--host` first, then
+that saved origin, then `https://api.assign.so`. Authentication and Project
+selection remain scoped to the effective host. `ASSIGN_CONFIG_FILE` selects the
+settings-file location; it does not supply credentials.
+
 ## Retries <Badge type="warning" text="Upcoming" /> {#retries}
 
 Task create/comment/start/done/reopen accept `--idempotency-key`. Save one key before the

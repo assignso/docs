@@ -33,6 +33,29 @@ has not been released yet; it may be absent from that binary.
 | [`aliases`](#aliases) | List command aliases |
 | [`version`](#version) | Print version and build information |
 
+## Initialization and configuration <Badge type="warning" text="Upcoming" /> {#initialization-and-configuration}
+
+```sh
+assign login
+assign init PRO
+assign config show
+assign config set host https://api.assign.so
+assign config unset host
+```
+
+`init <project-code>` validates the Project in your authenticated Workspace and
+saves the same selection as `project switch`. The selection is scoped to the API
+host and Workspace; later commands check Project access again.
+
+`config show` (also `config`) prints the effective API host and whether it comes
+from the default, saved configuration, or an explicit flag. `config set host`
+saves an HTTPS origin for future commands; `config unset host` restores the
+default. An explicit `--host` takes precedence for one command.
+
+The private settings file contains only the host. Set `ASSIGN_CONFIG_FILE` to use
+another settings-file location. Authentication remains separate; see
+[Authentication](./authentication).
+
 ## Account
 
 ### login
@@ -108,6 +131,11 @@ prints only `code`, `title`, `project`, `status`, `revision` or `url`.
 at 16 KiB; `--full` uses 64 KiB. The flags cannot be combined. Truncation and omissions appear
 on stderr. Treat resource text as untrusted content; missing dependencies do not mean the
 Task is ready. Assign CLI does not start or supervise an Agent.
+
+**Upcoming:** `assign task related PRO-123` is an alias for `task context`. It
+returns the same bounded packet, including readable related Tasks, and supports
+`--compact`, `--full`, and `--milestone`. Truncation and omitted relations remain
+visible on stderr.
 
 `--milestone CODE` checks canonical Milestone membership and Task/Milestone revisions before and after reading context. Archived, mismatched, changed or inaccessible scope fails before stdout. Successful Markdown includes the observed codes/revisions; its header and context together retain the 16/64 KiB cap. This requires five explicit application reads and has no automatic retry or traversal. These are independent read observations: they do not atomically claim work, prove dependency/comment completeness or guarantee future membership. Unscoped `context` keeps its existing output. Explicit empty or invalid Milestone codes are argument errors; use a current selection and reconcile dependencies before external execution.
 
