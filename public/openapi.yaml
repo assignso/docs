@@ -20246,6 +20246,12 @@ components:
         timezone_inherited:
           type: boolean
           description: When true, timezone is the effective value from the current Workspace default.
+        interface_language:
+          type: string
+          minLength: 1
+          maxLength: 35
+          default: automatic
+          description: Desired Account interface language, independent of regional locale and Workspace defaults. Older servers may omit this field; clients use automatic. Withdrawn languages may remain stored.
         locale:
           type: string
           maxLength: 35
@@ -20480,6 +20486,12 @@ components:
         timezone_inherited:
           type: boolean
           description: Set true to use the current Workspace default; set false to keep a concrete Account value.
+        interface_language:
+          type: string
+          enum:
+            - automatic
+            - en
+          description: Account interface language. Automatic follows qualified device preferences with English fallback. Only qualified public languages are writable; sample catalogs are not admitted. Values are trimmed and case-normalized.
         locale:
           type: string
           maxLength: 35

@@ -80,6 +80,23 @@ Send any of `display_name`, `username`, `title`, `phone`, `bio`, `profile_status
 Setting `timezone_inherited`, `locale_inherited` or `first_day_of_week_inherited` to `true` follows
 the Workspace default. `GET /me` always returns the effective value.
 
+### Save your interface language <Badge type="warning" text="Awaiting deployment" />
+
+`GET /api/v1/me` includes `interface_language`. Save it through the existing profile update:
+
+```http
+PATCH /api/v1/me HTTP/1.1
+If-Match: "3"
+Content-Type: application/json
+X-CSRF-Token: <csrf-token>
+
+{"interface_language": "en"}
+```
+
+Use `automatic` to follow qualified device languages with English fallback, or `en` to prefer English. Other values return `400 invalid_request`. The default is `automatic`; older servers may omit the field. A stale revision returns `409 revision_conflict`.
+
+The preference follows your Account across Workspaces and devices. It is independent of `locale`, timezone and Voice language. This API stores your choice; interface switching and recipient-language delivery are upcoming.
+
 ### Change your email
 
 ```http
