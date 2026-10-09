@@ -97,6 +97,35 @@ Use `automatic` to follow qualified device languages with English fallback, or `
 
 The preference follows your Account across Workspaces and devices. It is independent of `locale`, timezone and Voice language. This API stores your choice; interface switching and recipient-language delivery are upcoming.
 
+### Resolve your interface language <Badge type="warning" text="Awaiting deployment" />
+
+`GET /api/v1/me` adds optional `interface_language_state`: the effective language, its source,
+text direction, availability revision, supported languages and your current hint revision.
+Your explicit preference wins; Automatic uses supported device languages, then English.
+An unavailable saved preference remains saved and safely displays in English.
+
+On foreground entry or a device-language change, send the ordered BCP 47 tags:
+
+```http
+PUT /api/v1/me/interface-language/session HTTP/1.1
+Host: api.assign.so
+Content-Type: application/json
+If-Match: "1"
+X-CSRF-Token: <csrf-token>
+Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
+
+{"languages":["hu-HU","en-GB"]}
+```
+
+Use `interface_language_state.hint_revision` for this request, independently of the profile ETag.
+The response returns the current hint revision as its ETag. On 409, read your account again before
+retrying. Send at most ten tags; an empty list uses English. Repeating the same effective hint
+leaves its revision unchanged. Native bearer requests use the same operation without CSRF.
+This hint does not change your saved interface language, regional formats or Voice language.
+
+Profile and Task validation errors may include machine-readable `details.field` and `details.reason`.
+Use these for localized validation, tolerate unknown values, and retain `message` as the fallback.
+
 ### Change your email
 
 ```http

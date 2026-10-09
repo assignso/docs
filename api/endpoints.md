@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-416 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+417 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -90,6 +90,7 @@ Guide: [Account](./account)
 | `GET /api/v1/me/identities` | List linked external identities | Session |
 | `POST /api/v1/me/identities` | Start linking an external identity | Session |
 | `DELETE /api/v1/me/identities/{identity_id}` | Unlink an external identity | Session |
+| `PUT /api/v1/me/interface-language/session` | Report current device language preferences | Session, Mobile |
 | `GET /api/v1/me/mcp/grants` | List connected MCP clients | Session |
 | `DELETE /api/v1/me/mcp/grants/{grant_id}` | Disconnect an MCP client | Session |
 | `GET /api/v1/me/mobile-credentials` | List active native mobile credentials | Session |

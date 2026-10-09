@@ -7600,7 +7600,9 @@ paths:
         current Workspace, the caller's Actor within it, and their role. A
         newly registered account-only session omits the Workspace fields.
         Native bearer requests return the account-only projection and never
-        inherit a browser session's selected Workspace.
+        inherit a browser session's selected Workspace. Upcoming interface_language_state
+        uses bounded Accept-Language for this read, then the current credential hint when absent.
+        Reading never persists a background-delivery hint.
       security:
         - browserSession: []
         - nativeAccessToken: []
@@ -7689,6 +7691,60 @@ paths:
           $ref: "#/components/responses/PayloadTooLarge"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/me/interface-language/session:
+    put:
+      tags:
+        - Account
+      operationId: reportInterfaceLanguage
+      summary: Report current device language preferences
+      description: |
+        Upcoming. Report the ordered device languages on authenticated foreground entry or change.
+        Core stores only the supported language hint for this browser session or native installation.
+        This does not change the desired Account interface_language or regional/Voice settings.
+        Use interface_language_state.hint_revision from GET /api/v1/me as If-Match, not the profile ETag.
+        Repeating an unchanged effective hint does not advance its revision. A stale hint returns 409.
+        Browser requests require CSRF. Native bearer requests use the authenticated installation.
+      security:
+        - browserSession: []
+        - nativeAccessToken: []
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+        - name: X-CSRF-Token
+          in: header
+          required: false
+          description: Required for browser sessions; native bearer requests do not use CSRF.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceLanguageReport"
+      responses:
+        "200":
+          description: Effective language and current session hint revision.
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterfaceLanguageState"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -20132,6 +20188,7 @@ components:
           maxLength: 200
         details:
           type: object
+          description: Optional bounded machine metadata. Profile and Task validation may include field and reason; clients must tolerate unknown reasons and use message as the fallback.
           additionalProperties:
             type: string
     Role:
@@ -20160,6 +20217,69 @@ components:
           type: string
         slug:
           type: string
+    InterfaceLanguageState:
+      type: object
+      additionalProperties: false
+      required:
+        - language
+        - source
+        - direction
+        - availability_revision
+        - hint_revision
+        - supported_languages
+      description: |
+        Upcoming. Core-qualified presentation language. Desired Account preference wins;
+        Automatic matches ordered device languages through finite aliases, then falls back to English.
+        Unavailable stored preferences are retained and resolve safely to English.
+      properties:
+        language:
+          type: string
+          minLength: 2
+          maxLength: 35
+        source:
+          type: string
+          enum:
+            - account
+            - device
+            - fallback
+        direction:
+          type: string
+          enum:
+            - ltr
+            - rtl
+        reason:
+          type: string
+          enum:
+            - language_unavailable
+            - no_supported_device_language
+        availability_revision:
+          type: string
+          maxLength: 100
+        hint_revision:
+          type: integer
+          format: int64
+          minimum: 1
+        supported_languages:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            minLength: 2
+            maxLength: 35
+    DeviceLanguageReport:
+      type: object
+      additionalProperties: false
+      required:
+        - languages
+      properties:
+        languages:
+          type: array
+          maxItems: 10
+          description: Ordered BCP 47 tags, or an empty list for English fallback. Raw tags are not persisted.
+          items:
+            type: string
+            minLength: 1
+            maxLength: 35
     Me:
       type: object
       additionalProperties: false
@@ -20192,6 +20312,8 @@ components:
         - avatar_initials
         - avatar_color
       properties:
+        interface_language_state:
+          $ref: "#/components/schemas/InterfaceLanguageState"
         id:
           $ref: "#/components/schemas/Identifier"
         email:
