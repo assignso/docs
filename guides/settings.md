@@ -49,6 +49,12 @@ If you switch Workspaces or lose access while Billing is opening checkout, the b
 
 If the Members page cannot refresh its member and invitation lists, it hides both lists and asks you to refresh the page. This prevents an old list from appearing current.
 
+### Status behaviors <Badge type="warning" text="Awaiting deployment" />
+
+In **Work management**, each Task status, Milestone stage and Project stage shows what it does: whether it counts as closed or completed, resolves blockers, sends notifications or accepts new items. Renaming or reordering a status never changes these behaviors.
+
+To change behavior, an administrator moves items to another status with **Move items…**. Assign shows how many items are affected and what changes, and asks you to acknowledge material changes before it applies them. Larger moves run in the background and can be retried if they stop. Cancelled Tasks count as closed but are left out of progress totals.
+
 ### AI access
 
 **Developer tools → AI integrations** controls whether MCP clients and AI features can reach the

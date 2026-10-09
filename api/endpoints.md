@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-409 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+416 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -126,6 +126,7 @@ Guide: [Workspaces](./workspaces)
 | Operation | Summary | Auth |
 | --- | --- | --- |
 | `POST /api/v1/invitations/accept` | Accept an invitation | Session |
+| `GET /api/v1/lifecycle-behaviors` | List the typed lifecycle behavior registry | Session |
 | `GET /api/v1/mobile/workspace-creation-options` | Get native account Workspace-creation options | Mobile |
 | `POST /api/v1/mobile/workspaces` | Create a Free Workspace with a native account | Mobile |
 | `POST /api/v1/mobile/workspaces/bootstrap` | Create the native caller's first Workspace | Mobile |
@@ -146,6 +147,12 @@ Guide: [Workspaces](./workspaces)
 | `POST /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}/resend` | Resend an invitation | Session |
 | `GET /api/v1/workspaces/{workspace_id}/knowledge-settings` | Read Workspace Knowledge indexing settings and lifecycle state | Session |
 | `PATCH /api/v1/workspaces/{workspace_id}/knowledge-settings` | Update desired Workspace Knowledge indexing settings | Session |
+| `GET /api/v1/workspaces/{workspace_id}/lifecycle-completion-targets` | Resolve the status that completes an entity of a kind | Session |
+| `GET /api/v1/workspaces/{workspace_id}/lifecycle-definitions` | List lifecycle definitions with stages, policies and statuses | Session |
+| `POST /api/v1/workspaces/{workspace_id}/lifecycle-definitions/{definition_id}/mapping-applications` | Apply a previewed status mapping as a durable migration job | Session |
+| `POST /api/v1/workspaces/{workspace_id}/lifecycle-definitions/{definition_id}/mapping-previews` | Preview moving statuses of a lifecycle definition | Session |
+| `GET /api/v1/workspaces/{workspace_id}/lifecycle-migrations/{job_id}` | Read a lifecycle migration job | Session |
+| `POST /api/v1/workspaces/{workspace_id}/lifecycle-migrations/{job_id}/retry` | Resume a failed lifecycle migration job | Session |
 | `GET /api/v1/workspaces/{workspace_id}/mcp-service-credentials` | List Workspace MCP service credentials | Session |
 | `POST /api/v1/workspaces/{workspace_id}/mcp-service-credentials` | Create a Workspace MCP service credential | Session |
 | `DELETE /api/v1/workspaces/{workspace_id}/mcp-service-credentials/{credential_id}` | Revoke a Workspace MCP service credential | Session |

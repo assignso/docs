@@ -29,6 +29,10 @@ The Assign MCP server exposes a permission-filtered tool catalog. `tools/list` r
 | `project_create` | Write | Create a Project |
 | `project_update` | Write | Update exactly one Project setting with the current revision |
 | `status_list` | Read | List the Task Statuses that apply to a Project |
+| `lifecycle_definition_list` | Read | List lifecycle definitions for a kind with stages, behaviors and Statuses |
+| `lifecycle_mapping_preview` | Read | Preview moving Statuses out of a lifecycle definition (needs Workspace management) |
+| `lifecycle_mapping_apply` | Write | Apply a previewed Status mapping idempotently (needs Workspace management) |
+| `lifecycle_migration_get` | Read | Read a lifecycle migration job (needs Workspace management) |
 | `status_get` | Read | Get one applicable Task Status |
 | `milestone_list` | Read | List a Project's Milestones |
 | `milestone_get` | Read | Get one Milestone |
@@ -51,7 +55,7 @@ Before you implement or change a Task, read every Comment and relation page that
 | `task_context_get` | Read | Get bounded Task context: the Task, up to 20 Comment excerpts and 10 direct relations |
 | `task_create` | Write | Create a Task |
 | `task_update` | Write | Partially update Task fields |
-| `task_complete` | Write | Complete a Task through the Project's done workflow |
+| `task_complete` | Write | Complete a Task through a Status whose stage counts as completed |
 | `task_assign` | Write | Assign or unassign a Task |
 | `task_lifecycle_set` | Write | Archive, trash or restore a Task |
 | `task_relation_list` | Read | List direct relations from the Task's perspective |
@@ -238,8 +242,10 @@ Other Task rules:
 - `task_update` changes only the fields you send. Send an empty string for `due_on` or `milestone_id`
   to clear it. `due_on` is a `YYYY-MM-DD` date.
 - To finish a Task, use `task_complete` with the current revision, not `task_update` with a Status
-  ID. It picks the done Status through the normal workflow and returns `completion_confirmed: true`,
-  or an error if it couldn't confirm.
+  ID. It uses the Project's one completing Status and returns `completion_confirmed: true`, or an error
+  if it couldn't confirm. If several Statuses count as completed, it returns `completion_target_required`
+  with the choices; call again with `target_status_id`. `lifecycle_definition_list` shows which
+  Statuses count as completed.
 - `task_lifecycle_set` accepts `archive`, `trash` or `restore` with the current revision. It never
   purges.
 - Subscription states are `following`, `muted` and `unfollowed`. Subscribing doesn't grant access.

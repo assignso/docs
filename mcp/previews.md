@@ -1,14 +1,24 @@
 ---
-description: Use text, links and structured MCP results while interactive previews are paused.
+description: View Task previews and use text, links and structured MCP results.
 ---
 
 # Interactive previews
 
-## Previews paused <Badge type="warning" text="Awaiting deployment" />
+## Task previews <Badge type="warning" text="Awaiting deployment" />
 
-Interactive Task, Project and Document previews will be disabled in the next deployment.
-Use the text, links and structured results returned by the same MCP tools. You can ask for
-Task details in chat or open a returned link in Assign. Permissions and tool operations stay the same.
+The next deployment enables Task previews for `task_list` and `task_get` in clients
+that support MCP Apps. Each Task item shows its code, title and available properties,
+with the same content as Home and My Work. Open an item for details or choose
+Open in Assign to visit its Task page. Use Refresh to fetch current details.
 
-If your client still shows an old preview after deployment, reconnect to refresh its tool catalog.
-Old preview resources will no longer load.
+Project and Document previews remain paused. Legacy Task previews are unavailable.
+Reconnect after deployment to refresh your client's tool catalog. Clients without
+interactive previews can use the text, links and structured results from the same tools.
+Permissions and tool operations stay the same.
+
+## Task context <Badge type="warning" text="Awaiting deployment" />
+
+`task_list` and `task_get` will return readable Project, Status and assignee names,
+plus a Milestone name and label names/colors when available. The added fields are
+`project_name`, `milestone_name` and `labels`; each label has `id`, `name` and `color`.
+Task codes, titles, priorities and due dates remain available in structured results.

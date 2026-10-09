@@ -9067,6 +9067,292 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/lifecycle-behaviors:
+    get:
+      tags:
+        - Workspaces
+      operationId: listLifecycleBehaviors
+      summary: List the typed lifecycle behavior registry
+      description: Returns every behavior key a stage can enable, the entity kinds it applies to and the domain consumer that owns its effect. The list is static for a server version and safe to cache briefly.
+      security:
+        - browserSession: []
+      responses:
+        "200":
+          description: The behavior registry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifecycleBehaviorList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /api/v1/workspaces/{workspace_id}/lifecycle-completion-targets:
+    get:
+      tags:
+        - Workspaces
+      operationId: resolveLifecycleCompletionTarget
+      summary: Resolve the status that completes an entity of a kind
+      description: |
+        Requires Workspace read access. Completion is never inferred from
+        labels. With one completing status the response names it. With several
+        and no `target_status_id` the response is `409 completion_target_required`
+        listing the choices, so the caller must name one. An explicit target
+        that does not count as completed is `422 completion_target_invalid`;
+        a kind without any completing status is `422 completion_target_unavailable`.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: kind
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/LifecycleKind"
+        - name: definition_id
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Identifier"
+        - name: target_status_id
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Identifier"
+      responses:
+        "200":
+          description: The completing status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifecycleCompletionTarget"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Several statuses can complete the entity; name one.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifecycleCompletionChoices"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /api/v1/workspaces/{workspace_id}/lifecycle-definitions:
+    get:
+      tags:
+        - Workspaces
+      operationId: listLifecycleDefinitions
+      summary: List lifecycle definitions with stages, policies and statuses
+      description: |
+        Requires work:read. Returns the Workspace's definitions (optionally one
+        kind) with every stage's complete typed behaviors and bound statuses in
+        presentation order, so selectors and settings render from one read.
+        The catalog is bounded by the lifecycle limits (20 definitions per kind,
+        100 stages per definition, 500 statuses per definition), so it is not
+        paged. Behaviors that do not apply to the kind are absent.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: kind
+          in: query
+          schema:
+            $ref: "#/components/schemas/LifecycleKind"
+        - name: include_archived
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: The Workspace lifecycle catalog.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifecycleDefinitionList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /api/v1/workspaces/{workspace_id}/lifecycle-definitions/{definition_id}/mapping-previews:
+    post:
+      tags:
+        - Workspaces
+      operationId: previewLifecycleMapping
+      summary: Preview moving statuses of a lifecycle definition
+      description: |
+        Requires Workspace management authority. Validates that every source
+        status has exactly one same-kind, same-Workspace, active destination
+        that is not itself retired, and returns bounded per-status impact counts
+        (capped at 10,000, `truncated` when reached) and the behavior keys whose
+        value would change. `If-Match` binds the definition revision; a mismatch
+        is `409 revision_conflict`. Nothing is written. Pass the returned
+        `destination_revisions` and `source_revision` back to apply.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/LifecycleDefinitionId"
+        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LifecycleMappingRequest"
+      responses:
+        "200":
+          description: The impact preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifecycleMappingPreview"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /api/v1/workspaces/{workspace_id}/lifecycle-definitions/{definition_id}/mapping-applications:
+    post:
+      tags:
+        - Workspaces
+      operationId: applyLifecycleMapping
+      summary: Apply a previewed status mapping as a durable migration job
+      description: |
+        Requires Workspace management authority and an `Idempotency-Key`; a
+        repeat with the same key and mapping returns the original job and a
+        different mapping is `409 idempotency_key_conflict`. The request is
+        re-validated against `If-Match` and `destination_revisions`
+        (`409 lifecycle_preview_stale` or `revision_conflict`), and material
+        behavior changes or a default replacement need `acknowledged: true`
+        (`409 lifecycle_acknowledgement_required`). Scopes within the
+        1,000-entity synchronous limit are moved before the response
+        (`200`, status `completed`, or `202` when a retry is pending); larger
+        scopes return `202` and a background worker moves bounded pages. A
+        Workspace has one applying job (`409 lifecycle_migration_pending`).
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/LifecycleDefinitionId"
+        - $ref: "#/components/parameters/CSRFToken"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LifecycleMappingRequest"
+      responses:
+        "200":
+          description: The migration completed inline.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifecycleMigrationJob"
+        "202":
+          description: The migration is accepted and pending or retrying.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifecycleMigrationJob"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/workspaces/{workspace_id}/lifecycle-migrations/{job_id}:
+    get:
+      tags:
+        - Workspaces
+      operationId: getLifecycleMigration
+      summary: Read a lifecycle migration job
+      description: Requires Workspace management authority. Returns pending, processing, retry, completed or failed state with progress and a safe error code.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/LifecycleMigrationJobId"
+      responses:
+        "200":
+          description: The job.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifecycleMigrationJob"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /api/v1/workspaces/{workspace_id}/lifecycle-migrations/{job_id}/retry:
+    post:
+      tags:
+        - Workspaces
+      operationId: retryLifecycleMigration
+      summary: Resume a failed lifecycle migration job
+      description: Requires Workspace management authority. Makes a `failed` job runnable again, keeping pages already moved; any other state is `404 not_found`.
+      security:
+        - browserSession: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/LifecycleMigrationJobId"
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "202":
+          description: The job is pending again.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifecycleMigrationJob"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
   /api/v1/workspaces/{workspace_id}/milestone-lifecycle:
     get:
       tags:
@@ -10705,6 +10991,11 @@ paths:
         active Task enters the default review Status and only an authorized
         reviewer can invoke this operation again to enter the default done
         Status. Definition-of-Done and transition guards remain server-owned.
+        The completing Status comes from the lifecycle completion rule: one
+        applicable Status that counts as completed is used directly; several
+        answer 409 `completion_target_required` with the choices
+        (`LifecycleCompletionChoices`) until the caller sends `target_status_id`. A Status that does not count as
+        completed answers 422 `completion_target_invalid`.
       security:
         - bearerToken: []
         - developerAccessToken: []
@@ -10712,6 +11003,13 @@ paths:
         - $ref: "#/components/parameters/TaskCode"
         - $ref: "#/components/parameters/IdempotencyKey"
         - $ref: "#/components/parameters/IfMatch"
+        - name: target_status_id
+          in: query
+          required: false
+          description: Explicit completing Status; required when several Statuses count as completed.
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Updated Task
@@ -10732,6 +11030,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/cli/tasks/{task_code}/reopen:
@@ -11755,6 +12055,20 @@ paths:
             maxItems: 5
             items:
               $ref: "#/components/schemas/StatusCategory"
+          style: form
+          explode: true
+        - name: behavior
+          in: query
+          description: |
+            Keep Tasks whose current stage has every named lifecycle behavior
+            enabled (AND semantics, at most 8 distinct keys). Keys are the
+            Task-applicable entries of `listLifecycleBehaviors`; an unknown or
+            non-Task key is a 400. Totals and cursors honor the filter.
+          schema:
+            type: array
+            maxItems: 8
+            items:
+              $ref: "#/components/schemas/LifecycleBehaviorKey"
           style: form
           explode: true
         - name: assignee_actor_id
@@ -17340,6 +17654,18 @@ components:
           - apple
     WorkspaceId:
       name: workspace_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Identifier"
+    LifecycleDefinitionId:
+      name: definition_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Identifier"
+    LifecycleMigrationJobId:
+      name: job_id
       in: path
       required: true
       schema:
@@ -24711,6 +25037,12 @@ components:
         - state
         - revision
       properties:
+        profile_picture_url:
+          oneOf:
+            - type: string
+              maxLength: 2048
+            - type: "null"
+          description: Workspace-authorized uploaded image route or external HTTPS Account Profile image; null when unset. Optional for compatibility with older servers.
         membership_id:
           $ref: "#/components/schemas/Identifier"
         user_id:
@@ -24793,6 +25125,8 @@ components:
         - created_at
         - updated_at
       properties:
+        status_lifecycle:
+          $ref: "#/components/schemas/ResolvedLifecycle"
         id:
           $ref: "#/components/schemas/Identifier"
         workspace_id:
@@ -26906,6 +27240,8 @@ components:
         - updated_at
         - archived_at
       properties:
+        status_lifecycle:
+          $ref: "#/components/schemas/ResolvedLifecycle"
         id:
           $ref: "#/components/schemas/Identifier"
         workspace_id:
@@ -27068,6 +27404,369 @@ components:
         expected_revision:
           type: integer
           minimum: 1
+    LifecycleKind:
+      type: string
+      enum:
+        - task
+        - milestone
+        - project
+    ResolvedLifecycle:
+      type: object
+      additionalProperties: false
+      description: |
+        Materialized lifecycle policy of the entity's current status. Compare
+        `stage_revision` and `definition_revision` for staleness; `behaviors`
+        is the complete set for the entity kind, so clients never infer policy
+        from names or categories. Absent when the selection has no lifecycle
+        status. Resolved for a whole page with one batch lookup. Project list
+        rows carry identities and revisions only: `stage_name` and `behaviors`
+        are omitted there and returned by Project detail and the lifecycle
+        definition list.
+      required:
+        - stage_id
+        - stage_revision
+        - definition_id
+        - definition_revision
+      properties:
+        stage_id:
+          $ref: "#/components/schemas/Identifier"
+        stage_name:
+          type: string
+        stage_revision:
+          type: integer
+          minimum: 1
+        definition_id:
+          $ref: "#/components/schemas/Identifier"
+        definition_revision:
+          type: integer
+          minimum: 1
+        behaviors:
+          type: object
+          additionalProperties:
+            type: boolean
+    LifecycleCompletionTarget:
+      type: object
+      additionalProperties: false
+      required:
+        - status_id
+      properties:
+        status_id:
+          $ref: "#/components/schemas/Identifier"
+    LifecycleCompletionChoices:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+        - choices
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - completion_target_required
+            message:
+              type: string
+            request_id:
+              type: string
+        choices:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - status_id
+              - name
+              - stage_name
+              - definition_id
+            properties:
+              status_id:
+                $ref: "#/components/schemas/Identifier"
+              name:
+                type: string
+              stage_name:
+                type: string
+              definition_id:
+                $ref: "#/components/schemas/Identifier"
+    LifecycleBehaviorKey:
+      type: string
+      enum:
+        - notify
+        - show_active
+        - treat_as_closed
+        - counts_as_completed
+        - allow_changes
+        - track_changes
+        - resolves_dependencies
+        - treat_as_new
+        - include_in_progress
+      description: Task-applicable lifecycle behavior keys usable as a Task list filter.
+    LifecycleBehaviorList:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - key
+              - kinds
+              - consumer
+            properties:
+              key:
+                type: string
+              kinds:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LifecycleKind"
+              consumer:
+                type: string
+    LifecycleDefinitionList:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - id
+              - kind
+              - name
+              - revision
+              - default_status_id
+              - archived_at
+              - stages
+            properties:
+              id:
+                $ref: "#/components/schemas/Identifier"
+              kind:
+                $ref: "#/components/schemas/LifecycleKind"
+              name:
+                type: string
+              revision:
+                type: integer
+                minimum: 1
+              default_status_id:
+                oneOf:
+                  - $ref: "#/components/schemas/Identifier"
+                  - type: "null"
+              archived_at:
+                type:
+                  - string
+                  - "null"
+                format: date-time
+              stages:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - id
+                    - name
+                    - position
+                    - revision
+                    - archived_at
+                    - behaviors
+                    - statuses
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/Identifier"
+                    name:
+                      type: string
+                    position:
+                      type: integer
+                      minimum: 1
+                    revision:
+                      type: integer
+                      minimum: 1
+                    archived_at:
+                      type:
+                        - string
+                        - "null"
+                      format: date-time
+                    behaviors:
+                      type: object
+                      description: Complete boolean policy for the definition's kind, keyed by behavior key.
+                      additionalProperties:
+                        type: boolean
+                    statuses:
+                      type: array
+                      items:
+                        type: object
+                        additionalProperties: false
+                        required:
+                          - id
+                          - name
+                          - position
+                          - archived_at
+                        properties:
+                          id:
+                            $ref: "#/components/schemas/Identifier"
+                          name:
+                            type: string
+                          position:
+                            type: integer
+                            minimum: 1
+                          archived_at:
+                            type:
+                              - string
+                              - "null"
+                            format: date-time
+    LifecycleMappingRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - mappings
+      properties:
+        mappings:
+          type: object
+          description: Source status ID to destination status ID. A source mapped to itself keeps its ID and entities. Sources are exactly the keys.
+          minProperties: 1
+          maxProperties: 500
+          additionalProperties:
+            $ref: "#/components/schemas/Identifier"
+        destination_revisions:
+          type: object
+          description: Apply only. The `destination_revisions` returned by the preview.
+          additionalProperties:
+            type: integer
+            minimum: 1
+        acknowledged:
+          type: boolean
+          description: Apply only. Required when the preview reports `requires_acknowledgement`.
+    LifecycleMappingPreview:
+      type: object
+      additionalProperties: false
+      required:
+        - definition_id
+        - kind
+        - source_revision
+        - destination_revisions
+        - replaces_default
+        - requires_acknowledgement
+        - entries
+      properties:
+        definition_id:
+          $ref: "#/components/schemas/Identifier"
+        kind:
+          $ref: "#/components/schemas/LifecycleKind"
+        source_revision:
+          type: integer
+          minimum: 1
+        destination_revisions:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 1
+        replaces_default:
+          type: boolean
+        requires_acknowledgement:
+          type: boolean
+        entries:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - source_status_id
+              - destination_status_id
+              - preserved
+              - entity_count
+              - truncated
+              - behavior_changes
+            properties:
+              source_status_id:
+                $ref: "#/components/schemas/Identifier"
+              destination_status_id:
+                $ref: "#/components/schemas/Identifier"
+              preserved:
+                type: boolean
+              entity_count:
+                type: integer
+                minimum: 0
+                maximum: 10000
+              truncated:
+                type: boolean
+              behavior_changes:
+                type: array
+                items:
+                  type: string
+    LifecycleMigrationJob:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - definition_id
+        - kind
+        - status
+        - mapping
+        - source_revision
+        - replaces_default
+        - impact_count
+        - processed
+        - attempt_count
+        - error_code
+        - applied_revision
+        - applied_at
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        definition_id:
+          $ref: "#/components/schemas/Identifier"
+        kind:
+          $ref: "#/components/schemas/LifecycleKind"
+        status:
+          type: string
+          enum:
+            - pending
+            - processing
+            - retry
+            - completed
+            - failed
+        mapping:
+          type: object
+          description: Moved sources only.
+          additionalProperties:
+            $ref: "#/components/schemas/Identifier"
+        source_revision:
+          type: integer
+          minimum: 1
+        replaces_default:
+          type: boolean
+        impact_count:
+          type: integer
+          minimum: 0
+        processed:
+          type: integer
+          minimum: 0
+        attempt_count:
+          type: integer
+          minimum: 0
+        error_code:
+          type:
+            - string
+            - "null"
+        applied_revision:
+          type:
+            - integer
+            - "null"
+        applied_at:
+          type:
+            - string
+            - "null"
+          format: date-time
     StatusLifecyclePreview:
       type: object
       additionalProperties: false
@@ -27191,6 +27890,8 @@ components:
         - updated_at
         - archived_at
       properties:
+        status_lifecycle:
+          $ref: "#/components/schemas/ResolvedLifecycle"
         stage_id:
           description: Optional stable Workspace Milestone stage ID. Must select an active stage whose category agrees with status; null clears the selection. An explicit legacy status update without stage_id clears a custom selection.
           type:
@@ -30489,6 +31190,8 @@ components:
         - resolution
         - summary
       properties:
+        status_lifecycle:
+          $ref: "#/components/schemas/ResolvedLifecycle"
         id:
           $ref: "#/components/schemas/Identifier"
         workspace_id:
