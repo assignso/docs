@@ -11,6 +11,9 @@ servers:
   - url: https://api.assign.so
     description: Production
 tags:
+  - name: HomeWork
+    x-assign-status: upcoming
+    description: Opt-in composed Home and My Work baselines. Upcoming; not deployed.
   - name: Realtime
     description: Browser application WebSocket admission and authorized replay custody. Upcoming; not deployed.
   - name: Authentication
@@ -50,6 +53,108 @@ tags:
   - name: Agents
     description: Curated Agent definitions and Workspace-owned desired Agent configuration. Execution remains in the private Knowledge service.
 paths:
+  /api/v1/workspaces/{workspace_id}/home-work-baseline:
+    get:
+      tags:
+        - HomeWork
+      operationId: getHomeWorkWorkspaceBaseline
+      summary: Read an opt-in Home/Work composed baseline
+      description: Upcoming; not yet deployed. Captures all required reads and enrichment in one short repeatable-read transaction per scope, with independent authorization and cursor custody. Account and Workspace responses are not one global atomic snapshot. No actor selector is accepted. The entire encoded response is bounded to 1,048,576 bytes; required catalogs must be complete (at most 100 items), Task lists at most 100 items and 1,000 label references per list. Errors contain neither partial data nor a realtime cursor. Ordinary reads remain unchanged.
+      security: &a1
+        - browserSession: []
+        - nativeAccessToken: []
+        - bearerToken: []
+        - developerAccessToken: []
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: view
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/MyWorkView"
+        - $ref: "#/components/parameters/Cursor"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: following
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Demand the first bounded Following page; false returns null.
+      responses:
+        "200":
+          description: Complete independently authorized scope snapshot. No partial response or cursor is returned on failure.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                enum:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeWorkWorkspaceBaseline"
+        "400": &a2
+          $ref: "#/components/responses/BadRequest"
+        "401": &a3
+          $ref: "#/components/responses/Unauthorized"
+        "404": &a4
+          $ref: "#/components/responses/NotFound"
+        "409": &a5
+          description: Incomplete catalog, enrichment/reference bound or encoded response exceeding 1,048,576 bytes. Error code baseline_bounds; no partial composition or cursor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500": &a6
+          $ref: "#/components/responses/InternalServerError"
+        "503": &a7
+          description: Snapshot deadline (two seconds), source/authority capture unavailable (baseline_unavailable), or existing maintenance unavailability. No partial composition or cursor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/v1/me/home-work-baseline:
+    get:
+      tags:
+        - HomeWork
+      operationId: getHomeWorkAccountBaseline
+      summary: Read an opt-in Home/Work composed baseline
+      description: Upcoming; not yet deployed. Captures all required reads and enrichment in one short repeatable-read transaction per scope, with independent authorization and cursor custody. Account and Workspace responses are not one global atomic snapshot. No actor selector is accepted. The entire encoded response is bounded to 1,048,576 bytes; required catalogs must be complete (at most 100 items), Task lists at most 100 items and 1,000 label references per list. Errors contain neither partial data nor a realtime cursor. Ordinary reads remain unchanged.
+      security: *a1
+      parameters:
+        - name: workspace_id
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Identifier"
+          description: Admitted selected Workspace; mismatch fails the whole composition.
+      responses:
+        "200":
+          description: Complete independently authorized scope snapshot. No partial response or cursor is returned on failure.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                enum:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeWorkAccountBaseline"
+        "400": *a2
+        "401": *a3
+        "404": *a4
+        "409": *a5
+        "500": *a6
+        "503": *a7
   /api/v1/realtime:
     get:
       tags:
@@ -347,7 +452,7 @@ paths:
           description: Invalid client metadata.
           content:
             application/json:
-              schema: &a1
+              schema: &a8
                 type: object
                 required:
                   - error
@@ -363,7 +468,7 @@ paths:
           description: Registration could not be persisted.
           content:
             application/json:
-              schema: *a1
+              schema: *a8
         "503":
           description: Registration capacity or deadline reached; respect Retry-After.
           headers:
@@ -375,7 +480,7 @@ paths:
                 example: 60
           content:
             application/json:
-              schema: *a1
+              schema: *a8
   /api/v1/workspaces/{workspace_id}/evidence-collections:
     post:
       tags:
@@ -1344,7 +1449,7 @@ paths:
         - name: scope
           in: query
           required: true
-          schema: &a2
+          schema: &a9
             type: string
             enum:
               - workspace
@@ -1355,40 +1460,40 @@ paths:
         - name: resource_id
           in: query
           required: false
-          schema: &a3
+          schema: &a10
             type: string
             format: uuid
         - name: day
           in: query
           required: false
-          schema: &a4
+          schema: &a11
             type: string
             format: date
             maxLength: 10
         - name: from_day
           in: query
           required: false
-          schema: &a5
+          schema: &a12
             type: string
             format: date
             maxLength: 10
         - name: before_day
           in: query
           required: false
-          schema: &a6
+          schema: &a13
             type: string
             format: date
             maxLength: 10
         - name: time_zone
           in: query
           required: false
-          schema: &a7
+          schema: &a14
             type: string
             maxLength: 128
         - name: actor_ids
           in: query
           required: false
-          schema: &a8
+          schema: &a15
             type: array
             maxItems: 50
             items:
@@ -1399,7 +1504,7 @@ paths:
         - name: project_ids
           in: query
           required: false
-          schema: &a9
+          schema: &a16
             type: array
             maxItems: 50
             items:
@@ -1410,7 +1515,7 @@ paths:
         - name: activity_types
           in: query
           required: false
-          schema: &a10
+          schema: &a17
             type: array
             maxItems: 50
             items:
@@ -1437,13 +1542,13 @@ paths:
         - name: cursor
           in: query
           required: false
-          schema: &a11
+          schema: &a18
             type: string
             maxLength: 4096
         - name: include_previews
           in: query
           required: false
-          schema: &a12
+          schema: &a19
             type: boolean
             default: true
       responses:
@@ -1497,43 +1602,43 @@ paths:
         - name: scope
           in: query
           required: true
-          schema: *a2
+          schema: *a9
         - name: resource_id
           in: query
           required: false
-          schema: *a3
+          schema: *a10
         - name: day
           in: query
           required: false
-          schema: *a4
+          schema: *a11
         - name: from_day
           in: query
           required: false
-          schema: *a5
+          schema: *a12
         - name: before_day
           in: query
           required: false
-          schema: *a6
+          schema: *a13
         - name: time_zone
           in: query
           required: false
-          schema: *a7
+          schema: *a14
         - name: actor_ids
           in: query
           required: false
-          schema: *a8
+          schema: *a15
           style: form
           explode: false
         - name: project_ids
           in: query
           required: false
-          schema: *a9
+          schema: *a16
           style: form
           explode: false
         - name: activity_types
           in: query
           required: false
-          schema: *a10
+          schema: *a17
           style: form
           explode: false
         - name: limit
@@ -1547,11 +1652,11 @@ paths:
         - name: cursor
           in: query
           required: false
-          schema: *a11
+          schema: *a18
         - name: include_previews
           in: query
           required: false
-          schema: *a12
+          schema: *a19
         - name: group_id
           in: path
           required: true
@@ -17869,6 +17974,344 @@ components:
         type: string
         pattern: ^"[1-9][0-9]*"$
   schemas:
+    HomeWorkDisplayLabel:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - color
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        name:
+          type: string
+        color:
+          $ref: "#/components/schemas/PaletteColor"
+    HomeWorkTask:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - workspace_id
+        - project_id
+        - task_number
+        - code
+        - status_id
+        - rank
+        - title
+        - priority
+        - revision
+        - created_at
+        - updated_at
+        - archived_at
+        - trashed_at
+        - purge_after
+        - purged_at
+        - lifecycle
+        - resolved_at
+        - resolved_by
+        - resolution
+        - summary
+        - display_labels
+      properties:
+        status_lifecycle:
+          $ref: "#/components/schemas/ResolvedLifecycle"
+        id:
+          $ref: "#/components/schemas/Identifier"
+        workspace_id:
+          $ref: "#/components/schemas/Identifier"
+        project_id:
+          $ref: "#/components/schemas/Identifier"
+        task_number:
+          type: integer
+          minimum: 1
+        code:
+          $ref: "#/components/schemas/TaskCode"
+        status_id:
+          $ref: "#/components/schemas/Identifier"
+        rank:
+          type: string
+          minLength: 1
+          description: Server-owned sortable order key within the Task's Project and Status. Clients render it but submit neighbour anchors when moving a Task.
+        assignee_actor_id:
+          oneOf:
+            - $ref: "#/components/schemas/Identifier"
+            - type: "null"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        priority:
+          $ref: "#/components/schemas/TaskPriority"
+        description:
+          oneOf:
+            - $ref: "#/components/schemas/RichTextDocument"
+            - type: "null"
+        summary:
+          description: Revision-bound derived convenience text. It is null when the body is shorter than 300 normalized characters, generation is pending, or the stored projection is stale. It is never evidence or a replacement for description content.
+          oneOf:
+            - $ref: "#/components/schemas/GeneratedResourceSummary"
+            - type: "null"
+        due_on:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+        milestone_id:
+          oneOf:
+            - $ref: "#/components/schemas/Identifier"
+            - type: "null"
+        completed_at:
+          description: Server-written instant when the Task last entered a done-category Status; null while open or unavailable for a pre-migration record.
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        resolved_at:
+          description: Instant the current terminal episode began; cleared when the Task becomes active again.
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        resolved_by:
+          description: Actor that started the current terminal episode; null only for migrated or trusted automated provenance gaps.
+          oneOf:
+            - $ref: "#/components/schemas/Identifier"
+            - type: "null"
+        resolution:
+          description: Terminal outcome for the current resolved episode; null for active Tasks.
+          oneOf:
+            - $ref: "#/components/schemas/TaskResolution"
+            - type: "null"
+        label_ids:
+          description: Task collections include the complete assignment identifier set; an empty array means no labels. Non-collection responses may omit this field; use the target-label read when absent.
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/Identifier"
+        reversible_command:
+          description: Present only on a mutation response when the server created an undoable command. Read responses omit it.
+          $ref: "#/components/schemas/ReversibleCommand"
+        revision:
+          type: integer
+          minimum: 1
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+        updated_at:
+          $ref: "#/components/schemas/Timestamp"
+        archived_at:
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        trashed_at:
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        purge_after:
+          description: Fixed retention deadline after which the asynchronous purge sweeper may redact Task content; null outside trash and after purge.
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        purged_at:
+          description: Tombstone creation instant. A purged Task retains only stable reference metadata and cannot be restored.
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        lifecycle:
+          type: string
+          enum:
+            - active
+            - archived
+            - trashed
+            - purged
+        display_labels:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/HomeWorkDisplayLabel"
+      description: Task in an opt-in Home/Work baseline. Ordinary Task responses are unchanged.
+    HomeWorkPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - has_more
+        - as_of_date
+        - timezone
+      properties:
+        total_count:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Authorized collection size before cursor bounds; refreshed at read time. Activity counts admitted events before display grouping and Comments include retained ordinals.
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/HomeWorkTask"
+        next_cursor:
+          oneOf:
+            - $ref: "#/components/schemas/Cursor"
+            - type: "null"
+        has_more:
+          type: boolean
+        as_of_date:
+          type: string
+          format: date
+        timezone:
+          type: string
+          description: Persisted IANA timezone used to classify date-only due dates.
+    HomeWorkFollowingPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - has_more
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/HomeWorkTask"
+        next_cursor:
+          oneOf:
+            - $ref: "#/components/schemas/Cursor"
+            - type: "null"
+        has_more:
+          type: boolean
+    HomeWorkProjects:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - has_more
+        - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+          maxItems: 100
+        next_cursor:
+          oneOf:
+            - $ref: "#/components/schemas/Cursor"
+            - type: "null"
+          const: null
+        has_more:
+          type: boolean
+          const: false
+    HomeWorkStatuses:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - has_more
+        - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Status"
+          maxItems: 100
+        next_cursor:
+          oneOf:
+            - $ref: "#/components/schemas/Cursor"
+            - type: "null"
+          const: null
+        has_more:
+          type: boolean
+          const: false
+    HomeWorkWorkspaceChoices:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - has_more
+        - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSummary"
+          maxItems: 100
+        next_cursor:
+          oneOf:
+            - $ref: "#/components/schemas/Cursor"
+            - type: "null"
+          const: null
+        has_more:
+          type: boolean
+          const: false
+    HomeWorkWorkspaceBaseline:
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - workspace_id
+        - cursor
+        - scope
+        - view
+        - work
+        - following
+        - projects
+        - statuses
+      properties:
+        version: &a20
+          type: integer
+          enum:
+            - 1
+        workspace_id: &a21
+          $ref: "#/components/schemas/Identifier"
+        cursor: &a22
+          type: string
+          minLength: 1
+          maxLength: 4096
+          description: Opaque signed realtime cursor for this scope; distinct from Work pagination.
+        scope:
+          type: string
+          enum:
+            - workspace
+        view:
+          $ref: "#/components/schemas/MyWorkView"
+        work:
+          $ref: "#/components/schemas/HomeWorkPage"
+        following:
+          oneOf:
+            - $ref: "#/components/schemas/HomeWorkFollowingPage"
+            - type: "null"
+        projects:
+          $ref: "#/components/schemas/HomeWorkProjects"
+        statuses:
+          $ref: "#/components/schemas/HomeWorkStatuses"
+    HomeWorkAccountBaseline:
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - workspace_id
+        - cursor
+        - scope
+        - me
+        - workspaces
+        - current_work
+        - current_task
+      properties:
+        version: *a20
+        workspace_id: *a21
+        cursor: *a22
+        scope:
+          type: string
+          enum:
+            - account
+        me:
+          $ref: "#/components/schemas/Me"
+        workspaces:
+          $ref: "#/components/schemas/HomeWorkWorkspaceChoices"
+        current_work:
+          $ref: "#/components/schemas/CurrentWorkState"
+        current_task:
+          oneOf:
+            - $ref: "#/components/schemas/HomeWorkTask"
+            - type: "null"
     RealtimeBaseline:
       type: object
       required:
@@ -33800,7 +34243,7 @@ components:
         scope:
           type: string
           maxLength: 128
-          enum: &a13
+          enum: &a23
             - workspace
             - account
             - person
@@ -34017,40 +34460,40 @@ components:
       required:
         - scope
       properties:
-        scope: &a14
+        scope: &a24
           type: string
-          enum: *a13
-        resource_id: &a15
+          enum: *a23
+        resource_id: &a25
           type: string
           format: uuid
-        day: &a16
+        day: &a26
           type: string
           format: date
           maxLength: 10
-        from_day: &a17
+        from_day: &a27
           type: string
           format: date
           maxLength: 10
-        before_day: &a18
+        before_day: &a28
           type: string
           format: date
           maxLength: 10
-        time_zone: &a19
+        time_zone: &a29
           type: string
           maxLength: 128
-        actor_ids: &a20
+        actor_ids: &a30
           type: array
           maxItems: 50
           items:
             type: string
             format: uuid
-        project_ids: &a21
+        project_ids: &a31
           type: array
           maxItems: 50
           items:
             type: string
             format: uuid
-        activity_types: &a22
+        activity_types: &a32
           type: array
           maxItems: 50
           items:
@@ -34069,10 +34512,10 @@ components:
           minimum: 1
           maximum: 50
           default: 10
-        cursor: &a23
+        cursor: &a33
           type: string
           maxLength: 4096
-        include_previews: &a24
+        include_previews: &a34
           type: boolean
           default: true
     ActivityGroupChildrenOptions:
@@ -34084,22 +34527,22 @@ components:
         - group_revision
         - snapshot
       properties:
-        scope: *a14
-        resource_id: *a15
-        day: *a16
-        from_day: *a17
-        before_day: *a18
-        time_zone: *a19
-        actor_ids: *a20
-        project_ids: *a21
-        activity_types: *a22
+        scope: *a24
+        resource_id: *a25
+        day: *a26
+        from_day: *a27
+        before_day: *a28
+        time_zone: *a29
+        actor_ids: *a30
+        project_ids: *a31
+        activity_types: *a32
         limit:
           type: integer
           minimum: 1
           maximum: 25
           default: 25
-        cursor: *a23
-        include_previews: *a24
+        cursor: *a33
+        include_previews: *a34
         group_id:
           type: string
           maxLength: 192

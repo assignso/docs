@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-417 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+419 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -15,6 +15,15 @@ relative to `https://api.assign.so`.
   authoritative source for request and response schemas.
 - **Auth:** `Session` browser session, `Token` personal API token, `CLI` developer-client token,
   `Mobile` native token, `Public` no credential. See [Authentication](./authentication).
+
+## HomeWork <Badge type="warning" text="Upcoming" />
+
+Opt-in composed Home and My Work baselines. Upcoming; not deployed.
+
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/me/home-work-baseline` | Read an opt-in Home/Work composed baseline | Session, Mobile, Token, CLI |
+| `GET /api/v1/workspaces/{workspace_id}/home-work-baseline` | Read an opt-in Home/Work composed baseline | Session, Mobile, Token, CLI |
 
 ## Realtime
 

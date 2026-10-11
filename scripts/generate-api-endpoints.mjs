@@ -80,7 +80,8 @@ const lines = [
 ]
 for (const tag of byTag.values()) {
   if (!tag.operations.length) continue
-  lines.push(`## ${tag.name}`, "")
+  const status = tag["x-assign-status"] === "upcoming" ? ' <Badge type="warning" text="Upcoming" />' : ""
+  lines.push(`## ${tag.name}${status}`, "")
   if (tag.description) lines.push(escape(tag.description), "")
   if (guides[tag.name]) lines.push(`Guide: [${tag.name}](${guides[tag.name]})`, "")
   lines.push("| Operation | Summary | Auth |", "| --- | --- | --- |")
