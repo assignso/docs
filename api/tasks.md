@@ -115,6 +115,19 @@ and `resolution` (`completed` or `cancelled`) can't combine with `active`. Conti
 A partial or stale result doesn't prove that no matching work exists. A changed filter or an expired
 cursor returns `invalid_cursor`.
 
+### Due Task filters <Badge type="warning" text="Awaiting deployment" />
+
+Use `due_on=2026-10-11` for an exact civil due date. Add repeated `assignee_actor_ids`
+for People and `project_id` for Projects: values within each filter combine with OR,
+and the filters combine with AND. Each accepts at most 100 identifiers. Keep the
+singular `assignee_actor_id` for existing reads; don't combine it with the plural filter.
+
+For active due work, send `state=active&consistency=checked&order=priority_updated_at`.
+Core orders urgent, high, medium, low and no priority, then newest update and Task ID.
+Continue with `next_cursor` and the same filters. Checked coverage and scan limits
+above still apply; a partial result cannot establish that all due work was returned.
+Omitting `order` preserves newest-update ordering.
+
 ## Create
 
 ```http

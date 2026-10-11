@@ -12183,6 +12183,12 @@ paths:
         Workspace. It is an activity collection, not a text-search endpoint.
         Repeated `project_id` and `status_category` filters use OR semantics;
         a Project outside the Workspace simply contributes no rows.
+        Optional `due_on` is an exact civil date (not a timestamp). Repeated
+        `assignee_actor_ids` selects at most 100 actors with OR semantics, AND
+        with the Project/date/state filters; do not combine it with the legacy
+        singular `assignee_actor_id`. `order=priority_updated_at` requires checked
+        consistency and sorts urgent, high, medium, low, none, then newest update
+        and descending Task ID. Omitted order preserves newest-updated-first reads.
         With `consistency=checked`, Core binds continuation to the normalized filters,
         caller, collection version and visibility revision. Complete coverage requires
         an unchanged scan ending without a cursor. Changed data or permissions returns
@@ -12276,6 +12282,31 @@ paths:
             enum:
               - completed
               - cancelled
+        - name: due_on
+          in: query
+          description: Exact YYYY-MM-DD civil due date, independent of timezone.
+          schema:
+            type: string
+            format: date
+        - name: assignee_actor_ids
+          in: query
+          description: OR selection of actors; cannot combine with assignee_actor_id.
+          schema:
+            type: array
+            maxItems: 100
+            items:
+              $ref: "#/components/schemas/Identifier"
+          style: form
+          explode: true
+        - name: order
+          in: query
+          description: Priority order requires consistency=checked; all cursors bind the selected order.
+          schema:
+            type: string
+            enum:
+              - updated_at
+              - priority_updated_at
+            default: updated_at
       responses:
         "200":
           description: A bounded Workspace Task page.
