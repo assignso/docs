@@ -320,3 +320,16 @@ Current-Account, session, identity and passkey reads can opt into private replay
 custody using the matching `X-Assign-Realtime-Baseline` scope. This interface is
 under development and not deployed. See [Application realtime](./realtime) for
 canonical reads, session-bound cursors and applied acknowledgements.
+
+## Composed profile precondition <Badge type="warning" text="Upcoming" />
+
+`GET /api/v1/me/home-work-baseline?workspace_id=<workspace-id>` returns the selected
+Workspace's Account snapshot. Read `Assign-Account-Profile-ETag` from the response
+and send that exact value as `If-Match` when updating your profile through
+`PATCH /api/v1/me`. The header belongs to the profile returned in `me`; it does
+not validate the whole composed response or replace its realtime cursor.
+
+If the header is absent or invalid, keep the read-only profile and refresh before
+saving. A stale precondition returns `409`; review the latest profile before
+submitting another update. Ordinary `GET /api/v1/me` continues to return its profile
+precondition in `ETag`. Both reads use `Cache-Control: no-store`.

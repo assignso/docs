@@ -139,6 +139,12 @@ paths:
         "200":
           description: Complete independently authorized scope snapshot. No partial response or cursor is returned on failure.
           headers:
+            Assign-Account-Profile-ETag:
+              required: true
+              description: Opaque strong profile-save precondition from the same Account snapshot as me. Use only with the existing profile update If-Match contract. This is not an ETag validator for the composed response, stream cursor or authorization revision.
+              schema:
+                type: string
+                pattern: ^"[1-9][0-9]*"$
             Cache-Control:
               required: true
               schema:
