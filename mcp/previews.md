@@ -6,10 +6,12 @@ description: View Task previews and use text, links and structured MCP results.
 
 ## Task previews <Badge type="warning" text="Awaiting deployment" />
 
-The next deployment enables Task previews for `task_list` and `task_get` in clients
-that support MCP Apps. Each Task item shows its code, title and available properties,
-with the same content as Home and My Work. Open an item for details or choose
-Open in Assign to visit its Task page. Use Refresh to fetch current details.
+The next deployment enables a compact single-Task preview for `task_get` in clients
+that support MCP Apps. It shows the Task's code, title and available properties,
+including labels. Choose **Open in Assign** to visit its Task page.
+Descriptions, Comments and related Tasks remain available through tool results.
+
+Task lists use text, links and structured results without an interactive preview.
 
 Project and Document previews remain paused. Legacy Task previews are unavailable.
 Reconnect after deployment to refresh your client's tool catalog. Clients without

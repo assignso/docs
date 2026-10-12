@@ -92,5 +92,5 @@ and CIMD.
 Codex is the client with a documented, verified setup path. Instructions for other clients will
 be added here once each one has been tested against Assign.
 
-[Interactive previews](./previews) will be paused in the next deployment. All clients will use
-the existing structured results, text and links.
+The next deployment enables a compact [single-Task preview](./previews) for `task_get`.
+Task lists and clients without interactive previews use structured results, text and links.
