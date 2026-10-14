@@ -9,6 +9,21 @@ if (version !== "2.10.3") throw new Error(`Review Vocs compatibility fixes befor
 
 const patches = [
   {
+    file: "dist/react/useTopGutterOffset.js",
+    before: "function notify() {\n    for (const listener of state.listeners)",
+    after: "function notify() {\n    document.documentElement.style.setProperty('--assign-header-offset', `${state.currentOffset}px`);\n    for (const listener of state.listeners)",
+  },
+  {
+    file: "dist/react/useTopGutterOffset.js",
+    before: "function init() {",
+    after: "function onResize() {\n    state.lastScrollY = window.scrollY;\n    if (window.innerWidth > maxWidth || hasBanner()) {\n        state.currentOffset = 0;\n        state.targetOffset = 0;\n        notify();\n    }\n}\nfunction init() {",
+  },
+  {
+    file: "dist/react/useTopGutterOffset.js",
+    before: "    window.addEventListener('scroll', onScroll, { passive: true });",
+    after: "    window.addEventListener('scroll', onScroll, { passive: true });\n    window.addEventListener('resize', onResize, { passive: true });",
+  },
+  {
     file: "dist/internal/config-serializer.js",
     before: "        ogImageUrl: config.ogImageUrl,",
     after: "        openapi: config.openapi?.map(({ path }) => ({ path })),\n        ogImageUrl: config.ogImageUrl,",
@@ -31,4 +46,4 @@ for (const { file, before, after } of patches) {
   if (source.split(before).length !== 2) throw new Error(`Vocs compatibility patch no longer matches ${file}`)
   writeFileSync(target, source.replace(before, after))
 }
-console.log("Applied Vocs 2.10.3 static route and OpenAPI mount fixes")
+console.log("Applied Vocs 2.10.3 static route, OpenAPI mount and header synchronization fixes")

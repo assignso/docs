@@ -72,7 +72,7 @@ from the spec; do not hand-maintain copies of their schemas or examples.
 
 ## Pinned compatibility fixes
 
-`postinstall` applies two version-checked fixes to Vocs 2.10.3: retain mount paths in the config
+`postinstall` applies version-checked fixes to Vocs 2.10.3: retain mount paths in the config
 used by the OpenAPI router, and omit unused runtime endpoints/declaration files from the static
 router. The latter preserves the existing `/api/search` guide. Review these patches against
 upstream when upgrading; unknown versions or changed patch sites fail rather than silently drift.
@@ -81,12 +81,16 @@ plugin. The complete build validates that integration.
 
 ## Agent and hosting boundaries
 
-The header CSS keeps navigation pinned, including when a scrolled mobile viewport widens,
-and attaches the responsive outline below it while reserving clearance for heading links.
-Its `!important` declarations override Vocs' inline scroll styles; 748px is the framework's
-scroll-hide threshold and 1376px its outline breakpoint. Recheck downward/upward scroll,
+The header compatibility patch publishes Vocs' animated offset as `--assign-header-offset`
+in the same frame as navigation updates and resets it when widening beyond 748px. The outline
+CSS applies that offset as a transform without an extra transition, preserving the original disappearing
+header and fade while keeping the lower bar attached. Heading links retain clearance.
+The outline stays sticky at the unshifted header edge, then transforms with the navigation;
+changing sticky `top` alone would leave a gap near the page's natural top during reversal.
+The outline `!important` overrides its React inline top; 748px is the framework's scroll-hide
+threshold and 1376px its outline breakpoint. Recheck downward/upward scroll,
 resize, top return, search/menu/outline controls and desktop behavior when updating Vocs;
-remove the override if upstream supplies equivalent behavior.
+remove the patch and override if upstream supplies equivalent behavior.
 
 `scripts/api-presentation.mjs` derives grouped resource navigation and one URL per public operation.
 Keep the section labeled “API reference” and organize resources under Account and access,

@@ -13,18 +13,12 @@
   --assign-focus-blue: light-dark(oklch(0.47 0.18 259.815), oklch(0.75 0.12 259.815));
 }
 
-/* Keep navigation pinned, including after widening a scrolled mobile viewport.
-   Desktop is already pinned by default; these override Vocs' mobile inline styles. */
-[data-v-gutter-top] {
-  transform: none !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
 /* The responsive page outline is visible below 1376px. Keep it attached to the
-   primary bar instead of following a separate scroll-offset transition. */
+   disappearing primary bar using the same frame offset, without a second easing. */
 @media (width < 1376px) {
   [data-v-outline-mobile] {
     top: calc(var(--vocs-spacing-topNav) + var(--vocs-spacing-banner)) !important;
+    transform: translate3d(0, calc(-1 * var(--assign-header-offset, 0px)), 0);
     transition: none;
   }
   /* Outline is at most 3rem tall; retain 1rem of clearance for heading links. */
