@@ -81,6 +81,13 @@ plugin. The complete build validates that integration.
 
 ## Agent and hosting boundaries
 
+The header CSS keeps navigation pinned, including when a scrolled mobile viewport widens,
+and attaches the responsive outline below it while reserving clearance for heading links.
+Its `!important` declarations override Vocs' inline scroll styles; 748px is the framework's
+scroll-hide threshold and 1376px its outline breakpoint. Recheck downward/upward scroll,
+resize, top return, search/menu/outline controls and desktop behavior when updating Vocs;
+remove the override if upstream supplies equivalent behavior.
+
 `scripts/api-presentation.mjs` derives grouped resource navigation and one URL per public operation.
 Keep the section labeled “API reference” and organize resources under Account and access,
 Work management, Content and knowledge, Automation and integrations, and Upcoming. Put new
