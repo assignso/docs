@@ -145,6 +145,19 @@ These tools appear only when the Workspace has Workspace Knowledge enabled and e
 | `code_search` | Read | Search a connected repository's indexed code |
 | `code_impact` | Read | Inspect bounded dependency impact in connected code |
 
+#### Activity summaries <Badge type="warning" text="Awaiting deployment" />
+
+| Tool | Access | Purpose |
+| --- | --- | --- |
+| `knowledge_activity_summary` | Read | Get indexed change evidence for today, the last three hours, or a daily/weekly report |
+| `knowledge_entity_changes` | Read | Get indexed changes to one Task or Document |
+
+Supply `workspace_id`, an inclusive `from` and an exclusive `before` as RFC3339 timestamps with timezone offsets. Resolve calendar days in your Account timezone. The interval must increase and span at most 90 days. For entity changes, also supply `entity_type` (`task` or `document`) and its `entity_id`. Both tools accept an optional `project_id`, `limit` (1–50) and continuation `cursor`; keep the same scope and interval when paging and follow `has_more`.
+
+These tools return evidence for your agent to summarize. Indexed activity is a partial view of recorded history, even when the page is exhausted. Use `activity_list` for broader history and `task_context_get` or `document_get` to verify current state before describing an unblock or recommending a next action. Active workspace members can also appear in Knowledge results, with canonical user attribution and profile information; contact details are excluded.
+
+For a compact daily or Project display, set `preview_only: true`. The tools return a saved preview of at most 140 characters, its generation time, counts and partial coverage, without historical passages or evidence links. This mode defaults to 50 indexed events and cannot use a continuation cursor. Use a separate full read for details. The time-based tool also accepts `user_id` to filter human-authored activity; provider updates linked to a person's Tasks require entity-history reads and do not establish that person's authorship. These additions await deployment; a feed card is not included in this backend change.
+
 ### Session memory
 
 Session memory is private to you, the Workspace and the OAuth client. It never becomes shared Workspace Knowledge.
@@ -338,6 +351,8 @@ downgrade.
 - Evidence handles are short-lived, Workspace-bound locators, not access grants. Resolve 1–20 from the
   same result with `knowledge_get_evidence`. Access is rechecked, and revoked sources aren't returned.
   Evidence links look like `assign://knowledge/evidence/{workspace_id}/{evidence_id}`.
+
+For a compact daily or Project display, set `preview_only: true`. The tools return a saved preview of at most 140 characters, its generation time, counts and partial coverage, without historical passages or evidence links. This mode defaults to 50 indexed events and cannot use a continuation cursor. Use a separate full read for details. The time-based tool also accepts `user_id` to filter human-authored activity; provider updates linked to a person's Tasks require entity-history reads and do not establish that person's authorship. These additions await deployment; a feed card is not included in this backend change.
 
 ### Session memory
 

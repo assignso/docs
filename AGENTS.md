@@ -24,6 +24,19 @@ Apply the [workspace rules](../architecture/operations/workspace-agent-rules.md)
 | `cli/*.md` | `assign-cli` README and release notes | Update with each CLI release |
 | `guides/*.md` | `assign-web` behavior and `architecture/frontend/` | Update with user-visible UI changes |
 
+## Vocs maintenance
+
+For Vocs config, sidebar layout, endpoint content or agent resources, read
+[.agents/resources/vocs.md](.agents/resources/vocs.md).
+
+- Author existing content paths; `.vocs-src/`, `.vocs/` and `dist/` are generated.
+- Reuse `public/openapi.yaml` for references/embeds. Change semantics in `openapi-spec`, then
+  regenerate. Exclude private operations/components; preserve deployment labels.
+- Keep `full-static` for Pages. Hosting changes need an accepted decision. Builds skip
+  embeddings; validation uses offline data without keys.
+- Audit Markdown as well as HTML. Keep maintenance instructions outside published pages;
+  preserve URLs and anchors.
+
 ## Status badges
 
 Mark behavior that is accepted but not yet deployed on its heading:
@@ -38,17 +51,18 @@ release-candidate numbers or deployment dates into pages; they go stale.
 
 ## Style
 
-- Task-first headings, short paragraphs, second person and present tense. Be compact: say what a reader
-  needs to act, and link to the OpenAPI document for full schemas instead of restating them.
+- Task-first headings, short paragraphs, second person and present tense. Say what readers need
+  to act; link to OpenAPI schemas instead of restating them.
 - Keep tables narrow (three columns or fewer where you can) so they fit the content column.
 - Use Assign's canonical terms: Workspace (never Organization), Project, Task, Status, Document.
 - Code blocks are copy-ready: no prompts (`$`) and no inline output.
-- Every page has a `description` in its frontmatter for search and link previews.
+- Add frontmatter `description` fields for search and link previews.
 - Link between pages with relative paths. `npm run build` fails on dead internal links.
 
 ## Before you push
 
 ```sh
 npm run check:sources   # local only; needs the sibling Assign checkouts
-npm run check           # markdownlint + production build
+npm test                # offline contract publication checks
+npm run check           # markdownlint + Markdown audit + production build
 ```

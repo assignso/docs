@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-419 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+421 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -42,6 +42,8 @@ Guide: [Authentication](./authentication)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
+| `GET /api/v1/auth/continuations/{kind}` | Capture an authentication link in API-host HttpOnly custody | Public |
+| `GET /api/v1/auth/csrf` | Read the current session-bound CSRF token | Session |
 | `POST /api/v1/auth/email/resend-verification` | Send a new verification message | Public |
 | `POST /api/v1/auth/email/verify` | Verify an email address | Public |
 | `POST /api/v1/auth/login` | Sign in with an email address and password | Public |

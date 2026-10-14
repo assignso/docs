@@ -5,9 +5,11 @@ import { readFileSync, writeFileSync } from "node:fs"
 import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parse, stringify } from "yaml"
+import { isInternal, publicContract } from "./public-contract.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
-const source = resolve(process.argv[2] ?? process.env.ASSIGN_OPENAPI ?? resolve(root, "../openapi-spec/openapi.yaml"))
+const args = process.argv.slice(2).filter((arg) => arg !== "--check")
+const source = resolve(args[0] ?? process.env.ASSIGN_OPENAPI ?? resolve(root, "../openapi-spec/openapi.yaml"))
 const spec = parse(readFileSync(source, "utf8"))
 const methods = ["get", "post", "put", "patch", "delete"]
 
@@ -33,10 +35,6 @@ const authLabels = {
   developerAccessToken: "CLI",
   nativeAccessToken: "Mobile",
 }
-// Provider callbacks and private connector operations are not part of the public surface.
-const internal = (operation, auth) =>
-  /^Internal\b/.test(operation.description ?? "") || auth.includes("integrationPrivateConnector")
-
 const byTag = new Map((spec.tags ?? []).map((tag) => [tag.name, { ...tag, operations: [] }]))
 for (const [path, item] of Object.entries(spec.paths ?? {})) {
   for (const method of methods) {
@@ -45,7 +43,7 @@ for (const [path, item] of Object.entries(spec.paths ?? {})) {
     const tag = operation.tags?.[0] ?? "Other"
     if (!byTag.has(tag)) byTag.set(tag, { name: tag, operations: [] })
     const auth = [...new Set((operation.security ?? spec.security ?? []).flatMap((entry) => Object.keys(entry)))]
-    if (internal(operation, auth)) continue
+    if (isInternal(operation, operation.security ?? spec.security ?? [])) continue
     byTag.get(tag).operations.push({
       method: method.toUpperCase(),
       path,
@@ -91,10 +89,13 @@ for (const tag of byTag.values()) {
   }
   lines.push("")
 }
-writeFileSync(resolve(root, "api/endpoints.md"), lines.join("\n"))
-
-// Publish the contract itself, without the local development server.
-const published = structuredClone(spec)
-published.servers = (published.servers ?? []).filter((server) => !/localhost|127\.0\.0\.1/.test(server.url))
-writeFileSync(resolve(root, "public/openapi.yaml"), stringify(published, { lineWidth: 0 }))
-console.log(`api/endpoints.md: ${total} operations from ${spec.info.title} ${spec.info.version}; public/openapi.yaml written`)
+const outputs = {
+  "api/endpoints.md": lines.join("\n"),
+  "public/openapi.yaml": stringify(publicContract(spec), { lineWidth: 0 }),
+}
+for (const [file, output] of Object.entries(outputs)) {
+  if (process.argv.includes("--check")) {
+    if (readFileSync(resolve(root, file), "utf8") !== output) throw new Error(`${file} is stale; run npm run generate:api`)
+  } else writeFileSync(resolve(root, file), output)
+}
+console.log(`${process.argv.includes("--check") ? "Checked" : "Generated"} ${total} public operations`)

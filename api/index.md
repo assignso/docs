@@ -75,6 +75,12 @@ Read [Conventions](./conventions) before you build an integration.
 
 </div>
 
+## API reference
+
+Browse the [API reference](/api/reference) for parameters, request examples and response schemas
+from the public contract. Reference pages marked upcoming describe accepted behavior that has
+not yet deployed.
+
 ## OpenAPI and SDKs
 
 The public contract is an [OpenAPI 3.1 document](/openapi.yaml). It is the authoritative source for

@@ -73,12 +73,11 @@ if (existsSync(cliDir)) {
 
 const openapi = join(workspace, "openapi-spec/openapi.yaml")
 if (existsSync(openapi)) {
-  const generated = ["api/endpoints.md", "public/openapi.yaml"]
-  const before = generated.map((file) => readFileSync(join(root, file), "utf8"))
-  execFileSync(process.execPath, [join(root, "scripts/generate-api-endpoints.mjs"), openapi], { stdio: "ignore" })
-  generated.forEach((file, index) => {
-    if (before[index] !== readFileSync(join(root, file), "utf8")) problems.push(`${file} was stale and has been regenerated; review and commit it`)
-  })
+  try {
+    execFileSync(process.execPath, [join(root, "scripts/generate-api-endpoints.mjs"), openapi, "--check"], { stdio: "pipe" })
+  } catch (error) {
+    problems.push(`OpenAPI artifacts are stale: ${error.stderr?.toString().split("\n").find((line) => line.includes("is stale")) ?? "run npm run generate:api"}`)
+  }
 } else {
   console.warn(`skip API: ${openapi} not found`)
 }

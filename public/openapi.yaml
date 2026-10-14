@@ -4848,40 +4848,6 @@ paths:
           $ref: "#/components/responses/Conflict"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
-  /api/v1/billing/webhooks/stripe:
-    post:
-      tags:
-        - Billing
-      operationId: receiveStripeBillingWebhook
-      summary: Receive a signed Stripe Billing event
-      description: Internal provider callback. The raw body and Stripe-Signature header are verified before the event is durably claimed and reconciled.
-      security: []
-      parameters:
-        - name: Stripe-Signature
-          in: header
-          required: true
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 1000
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        "200":
-          description: Event accepted or already processed.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BillingWebhookReceipt"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
   /api/v1/workspaces/{workspace_id}/icon:
     post:
       tags:
@@ -6876,6 +6842,121 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/auth/csrf:
+    get:
+      tags:
+        - Authentication
+      operationId: getBrowserCSRFToken
+      summary: Read the current session-bound CSRF token
+      description: |
+        Opt-in direct browser ingress. Requires an exact configured Origin,
+        the API-host session cookie and its valid session-bound CSRF cookie.
+        Returns no-store JSON for an application on a separate same-site origin.
+        Does not rotate or refresh the session. Browser-managed Origin is never
+        replaced with an arbitrary return URL. Existing same-origin clients
+        continue reading their own CSRF cookie. Unconfigured deployments omit
+        this operation.
+      security:
+        - browserSession: []
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          description: Browser-managed exact application origin admitted by Core.
+          schema:
+            type: string
+            format: uri
+      responses:
+        "200":
+          description: The authenticated session's CSRF token.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - csrf_token
+                additionalProperties: false
+                properties:
+                  csrf_token:
+                    type: string
+                    minLength: 1
+                    maxLength: 1024
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+  /api/v1/auth/continuations/{kind}:
+    get:
+      tags:
+        - Authentication
+      operationId: captureBrowserContinuation
+      summary: Capture an authentication link in API-host HttpOnly custody
+      description: |
+        Opt-in browser navigation for the configured Astro application. Captures
+        a link token in a purpose-bound encrypted HttpOnly host-only cookie for
+        ten minutes, then redirects to the fixed application route with an opaque
+        continuation marker. Email-change capture additionally requires the
+        current browser session and binds redemption to that account. Existing
+        raw-token and canonical Web/native flows remain valid. A marker submitted
+        to its original POST operation requires the matching cookie and kind;
+        body size is bounded to 65,536 bytes. Successful domain redemption clears
+        the cookie and the original domain token enforces single use. Invitation
+        registration retains custody for the separate acceptance operation.
+        Tokens and continuation cookies must never enter logs or public caches.
+      security: []
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - password
+              - email
+              - email_change
+              - invitation
+        - name: token
+          in: query
+          required: true
+          description: Original link credential; at most 2,000 UTF-8 bytes.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 2000
+      responses:
+        "303":
+          description: Token-free marker navigation to the exact configured application origin.
+          headers:
+            Location:
+              description: Fixed kind-specific application route with an opaque continuation marker.
+              schema:
+                type: string
+                format: uri
+            Set-Cookie:
+              description: Secure HttpOnly SameSite=Lax host-only continuation cookie; Max-Age=600.
+              schema:
+                type: string
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/auth/logout:
     post:
       tags:
@@ -6911,6 +6992,18 @@ paths:
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/auth/providers/{provider}/authorize:
+    x-assign-ingress-aliases:
+      - path: /api/v1/auth/preview/providers/{provider}/authorize
+        providers:
+          - google
+        configurationKey: ASSIGN_ASTRO_PREVIEW_ORIGIN
+        purpose: Internal static-preview ingress mapping; retains this browser contract with a separately bound callback origin.
+      - path: /api/v1/auth/astro/providers/{provider}/authorize
+        providers:
+          - google
+          - github
+        configurationKey: ASSIGN_ASTRO_APP_ORIGIN
+        purpose: Opt-in direct API-host profile reusing registered Google/GitHub callbacks through a bounded Core handoff. An encrypted return cookie binds state/provider/application before code exchange; canonical and native flows remain unchanged.
     get:
       tags:
         - Authentication
@@ -6956,6 +7049,18 @@ paths:
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
   /api/v1/auth/providers/{provider}/callback:
+    x-assign-ingress-aliases:
+      - path: /api/v1/auth/preview/providers/{provider}/callback
+        providers:
+          - google
+        configurationKey: ASSIGN_ASTRO_PREVIEW_ORIGIN
+        purpose: Internal static-preview ingress mapping; retains this browser contract and host-only session cookies.
+      - path: /api/v1/auth/astro/providers/{provider}/callback
+        providers:
+          - google
+          - github
+        configurationKey: ASSIGN_ASTRO_APP_ORIGIN
+        purpose: Opt-in API-host GET callback after Core routes a marked ceremony from its existing registered provider callback. Requires an unexpired encrypted cookie matching state, provider and the exact application origin before completion. Canonical, preview and native/link callbacks retain their owners.
     get:
       tags:
         - Authentication
@@ -13132,71 +13237,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
-  /api/v1/integration-private-connectors/{connector_id}/requests/next:
-    get:
-      tags:
-        - Integrations
-      operationId: pollIntegrationPrivateConnector
-      summary: Long-poll for the next bounded connector request
-      security:
-        - integrationPrivateConnector: []
-      parameters:
-        - $ref: "#/components/parameters/ConnectorId"
-        - name: X-Assign-Connector-Version
-          in: header
-          required: true
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 64
-      responses:
-        "200":
-          description: Claimed connector request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/IntegrationPrivateConnectorRequest"
-        "204":
-          description: No work became available during the bounded poll.
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /api/v1/integration-private-connectors/{connector_id}/requests/{request_id}/response:
-    post:
-      tags:
-        - Integrations
-      operationId: completeIntegrationPrivateConnectorRequest
-      summary: Return a bounded connector response
-      security:
-        - integrationPrivateConnector: []
-      parameters:
-        - $ref: "#/components/parameters/ConnectorId"
-        - name: request_id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Identifier"
-        - name: X-Assign-Connector-Version
-          in: header
-          required: true
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 64
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/IntegrationPrivateConnectorResponse"
-      responses:
-        "204":
-          description: Response accepted.
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
   /api/v1/workspaces/{workspace_id}/integration-authorizations/credential:
     post:
       tags:
@@ -17642,11 +17682,6 @@ components:
         CLI token, or MCP OAuth token. The server rechecks current membership,
         capability, resource visibility, lifecycle, and entitlement on every
         request.
-    integrationPrivateConnector:
-      type: http
-      scheme: bearer
-      bearerFormat: Assign private connector token
-      description: Workspace-scoped token returned exactly once during connector enrollment and accepted only by the bounded connector polling protocol.
   parameters:
     AttachmentTargetIds:
       name: attachment_id
@@ -17691,12 +17726,6 @@ components:
           - 1
           - 2
         default: 1
-    ConnectorId:
-      name: connector_id
-      in: path
-      required: true
-      schema:
-        $ref: "#/components/schemas/Identifier"
     MobileCredentialId:
       name: credential_id
       in: path
@@ -17827,12 +17856,6 @@ components:
         $ref: "#/components/schemas/Identifier"
     LifecycleMigrationJobId:
       name: job_id
-      in: path
-      required: true
-      schema:
-        $ref: "#/components/schemas/Identifier"
-    UserId:
-      name: user_id
       in: path
       required: true
       schema:
@@ -19850,15 +19873,15 @@ components:
       type: string
       minLength: 3
       maxLength: 30
-      pattern: ^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$
-      description: Globally unique mutable public account handle. Previously claimed values remain reserved to the same User.
+      pattern: ^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$
+      description: Globally unique mutable public account handle. New handles use lowercase letters, numbers, and interior dots and are initially derived from the email local part. Existing hyphen/underscore handles remain readable. Previously claimed values remain reserved to the same User.
       examples:
-        - jane-doe
+        - jane.doe
     PersonReference:
       type: string
       minLength: 3
       maxLength: 36
-      pattern: ^(?:[a-z0-9](?:[a-z0-9_-]{1,28})[a-z0-9]|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$
+      pattern: ^(?:[a-z0-9](?:[a-z0-9._-]{1,28})[a-z0-9]|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$
       description: Current or historical public username, or a temporary legacy UUIDv7 profile reference.
     Timestamp:
       type: string
@@ -21003,8 +21026,8 @@ components:
           type: string
           minLength: 3
           maxLength: 30
-          pattern: ^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$
-          description: Lowercased after trimming and unique across accounts.
+          pattern: ^[a-z0-9](?:[a-z0-9.]*[a-z0-9])?$
+          description: Lowercased after trimming and unique across accounts. Only letters, numbers, and interior dots are accepted.
         profile_picture_url:
           type: string
           maxLength: 2048
@@ -25517,14 +25540,6 @@ components:
         url:
           type: string
           format: uri
-    BillingWebhookReceipt:
-      type: object
-      additionalProperties: false
-      required:
-        - received
-      properties:
-        received:
-          type: boolean
     ProfilePictureMutation:
       type: object
       additionalProperties: false
@@ -25734,7 +25749,7 @@ components:
             - type: string
               format: uri
               maxLength: 2048
-              pattern: ^https?://[^\\s]+$
+              pattern: ^https?://[^\s]+$
             - type: "null"
           description: Optional absolute HTTP or HTTPS Project link. It is returned only to authenticated Project readers.
         start_on:
@@ -26212,7 +26227,7 @@ components:
             - type: string
               format: uri
               maxLength: 2048
-              pattern: ^https?://[^\\s]+$
+              pattern: ^https?://[^\s]+$
             - type: "null"
           description: Send null or an empty string to clear the Project URL.
         start_on:
@@ -29124,99 +29139,6 @@ components:
           maxLength: 512
           writeOnly: true
           description: Returned exactly once.
-    IntegrationPrivateConnectorRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - workspace_id
-        - installation_id
-        - origin
-        - method
-        - path
-        - headers
-        - expires_at
-        - body_sha256
-        - signature
-      properties:
-        id:
-          $ref: "#/components/schemas/Identifier"
-        workspace_id:
-          $ref: "#/components/schemas/Identifier"
-        installation_id:
-          $ref: "#/components/schemas/Identifier"
-        origin:
-          type: string
-          format: uri
-          pattern: ^https://
-          maxLength: 2048
-        method:
-          type: string
-          enum:
-            - GET
-            - POST
-            - PUT
-            - PATCH
-            - DELETE
-        path:
-          type: string
-          pattern: ^/(?!/)
-          maxLength: 8192
-        headers:
-          type: object
-          additionalProperties:
-            type: array
-            maxItems: 32
-            items:
-              type: string
-              maxLength: 8192
-        body_base64:
-          type: string
-          maxLength: 2796204
-        expires_at:
-          type: integer
-          format: int64
-          description: Unix deadline for this single-use operation envelope.
-        body_sha256:
-          type: string
-          pattern: ^[0-9a-f]{64}$
-        signature:
-          type: string
-          minLength: 43
-          maxLength: 128
-          description: Connector-token HMAC over the bounded operation envelope.
-    IntegrationPrivateConnectorResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - status
-        - headers
-        - signature
-      properties:
-        status:
-          type: integer
-          minimum: 100
-          maximum: 599
-        headers:
-          type: object
-          additionalProperties:
-            type: array
-            maxItems: 32
-            items:
-              type: string
-              maxLength: 8192
-        body_base64:
-          type: string
-          maxLength: 2796204
-        error_code:
-          type: string
-          pattern: ^[a-z][a-z0-9_.-]*$
-          maxLength: 120
-        signature:
-          type: string
-          minLength: 43
-          maxLength: 128
-          description: Connector-token HMAC binding this response to the claimed request.
     IntegrationAuthorization:
       type: object
       additionalProperties: false
@@ -29636,11 +29558,6 @@ components:
               - sentry.resolution_sync
         provider_online:
           type: boolean
-    GitHubPullRequestStatusMapping:
-      deprecated: true
-      description: Deprecated source-compatible SDK alias for GitPullRequestStatusMapping. New clients should use the provider-neutral model.
-      allOf:
-        - $ref: "#/components/schemas/GitPullRequestStatusMapping"
     IntegrationSubscriptionInput:
       type: object
       additionalProperties: false
@@ -34207,7 +34124,7 @@ components:
           type:
             - string
             - "null"
-          maxLength: 256
+          maxLength: 140
     ActivityGroupPage:
       type: object
       additionalProperties: false
@@ -34243,7 +34160,7 @@ components:
         scope:
           type: string
           maxLength: 128
-          enum: &a23
+          enum:
             - workspace
             - account
             - person
@@ -34454,104 +34371,6 @@ components:
           maxItems: 150
           items:
             $ref: "#/components/schemas/ActivityGroupPreview"
-    ActivityGroupReadOptions:
-      type: object
-      additionalProperties: false
-      required:
-        - scope
-      properties:
-        scope: &a24
-          type: string
-          enum: *a23
-        resource_id: &a25
-          type: string
-          format: uuid
-        day: &a26
-          type: string
-          format: date
-          maxLength: 10
-        from_day: &a27
-          type: string
-          format: date
-          maxLength: 10
-        before_day: &a28
-          type: string
-          format: date
-          maxLength: 10
-        time_zone: &a29
-          type: string
-          maxLength: 128
-        actor_ids: &a30
-          type: array
-          maxItems: 50
-          items:
-            type: string
-            format: uuid
-        project_ids: &a31
-          type: array
-          maxItems: 50
-          items:
-            type: string
-            format: uuid
-        activity_types: &a32
-          type: array
-          maxItems: 50
-          items:
-            type: string
-            enum:
-              - tasks
-              - comments
-              - documents
-              - projects
-              - milestones
-              - development
-              - files
-              - members
-        limit:
-          type: integer
-          minimum: 1
-          maximum: 50
-          default: 10
-        cursor: &a33
-          type: string
-          maxLength: 4096
-        include_previews: &a34
-          type: boolean
-          default: true
-    ActivityGroupChildrenOptions:
-      type: object
-      additionalProperties: false
-      required:
-        - scope
-        - group_id
-        - group_revision
-        - snapshot
-      properties:
-        scope: *a24
-        resource_id: *a25
-        day: *a26
-        from_day: *a27
-        before_day: *a28
-        time_zone: *a29
-        actor_ids: *a30
-        project_ids: *a31
-        activity_types: *a32
-        limit:
-          type: integer
-          minimum: 1
-          maximum: 25
-          default: 25
-        cursor: *a33
-        include_previews: *a34
-        group_id:
-          type: string
-          maxLength: 192
-        group_revision:
-          type: string
-          maxLength: 128
-        snapshot:
-          type: string
-          maxLength: 4096
   responses:
     DocumentSchemaUnsupported:
       description: "document_schema_version_unsupported: the client cannot write the current resource schema, or the mutation attempts to downgrade a schema 2 resource. Update to a client supporting schema 2 and obtain a new admission."

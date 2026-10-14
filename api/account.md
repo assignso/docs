@@ -57,7 +57,7 @@ PATCH /api/v1/me HTTP/1.1
 If-Match: "3"
 Content-Type: application/json
 
-{"username": "jane_q", "title": "Staff engineer", "first_day_of_week": "sunday"}
+{"username": "jane.q", "title": "Staff engineer", "first_day_of_week": "sunday"}
 ```
 
 Send any of `display_name`, `username`, `title`, `phone`, `bio`, `profile_status`, `name_display`,
@@ -68,7 +68,7 @@ Send any of `display_name`, `username`, `title`, `phone`, `bio`, `profile_status
 | Field | Rules |
 | --- | --- |
 | `display_name` | 1–100 characters. |
-| `username` | Unique, lowercase, 3–30 characters: letters, numbers, underscores and interior hyphens. It can change but can't be cleared. |
+| `username` | <Badge type="warning" text="Awaiting deployment" /> Unique, lowercase, 3–30 characters. New usernames allow letters, numbers and interior dots, with a letter or number at each end. Initially derived from your email address. It can change but can't be cleared. Existing usernames and previous profile links keep working. |
 | `name_display` | `username` or `full_name`. Username needs a username set. |
 | `first_day_of_week` | `sunday` or `monday`. |
 | `editor_controls` | `contextual` or `persistent`. |

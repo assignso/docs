@@ -1,4 +1,9 @@
 node_modules/
+.vocs-src/
+.vocs/
+dist/
+.DS_Store
+
+# Legacy local outputs may predate the Vocs migration.
 .vitepress/dist/
 .vitepress/cache/
-.DS_Store

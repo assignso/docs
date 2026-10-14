@@ -3,15 +3,22 @@
 Source for [docs.assign.so](https://docs.assign.so), the public documentation for Assign. It
 covers the web app, the Assign CLI, the MCP server and the public HTTP API.
 
-The site is built with [VitePress](https://vitepress.dev) and deployed to GitHub Pages from `main`.
+The site is built with [Vocs](https://vocs.dev) and deployed to GitHub Pages from `main`.
+The API reference at `/api/reference` is generated from the published OpenAPI contract.
 
 ## Develop
 
 ```sh
 npm ci
 npm run dev        # http://localhost:5173
-npm run check      # markdownlint and a production build; the build fails on dead links
+npm test           # offline checks for the public OpenAPI projection
+npm run check      # lint, Markdown audit and a static build with dead-link checks
 ```
+
+The API sidebar groups resources and links to dedicated endpoint pages, for example
+`/api/reference/operations/listprojecttasks`. Vocs renders the parameters, nested schemas,
+request examples and responses from `public/openapi.yaml`. Existing resource pages remain
+available. Restart `npm run dev` after regenerating the contract to refresh endpoint navigation.
 
 ## Structure
 
@@ -24,7 +31,9 @@ npm run check      # markdownlint and a production build; the build fails on dea
 | `mcp/` | MCP overview, client setup, tool catalog, previews, security and troubleshooting |
 | `api/` | API overview, conventions, versioning, authentication and resource guides |
 | `api/endpoints.md`, `public/openapi.yaml` | Generated endpoint index and the published OpenAPI document; don't edit by hand |
-| `.vitepress/` | Site config and the Assign theme |
+| `vocs.config.ts`, `styles/` | Vocs navigation, OpenAPI mounting and the Assign theme |
+| `.agents/resources/vocs.md` | Vocs maintenance guidance and official references |
+| `.vocs-src/` | Prepared Vocs pages; generated from the authored Markdown |
 | `public/` | Static files: favicons, `CNAME` and `robots.txt` |
 
 ## Keeping the docs current
@@ -40,12 +49,16 @@ npm run check
 ```
 
 `check:sources` needs the sibling Assign workspace checkouts, so it runs locally rather than in
-public CI.
+public CI. It checks generated files without rewriting them. The OpenAPI download excludes
+private operations, their unused components and local development servers.
+
+Vocs builds Markdown downloads plus `/llms.txt` and `/llms-full.txt` for agent readers.
+The site uses keyword search. Builds skip embeddings and require no AI credentials.
 
 ## Deployment
 
 `.github/workflows/ci.yml` lints and builds every pull request. Pushes to `main` also deploy the
-build to GitHub Pages. The custom domain comes from `public/CNAME` (`docs.assign.so`).
+static `dist/public` output to GitHub Pages. The custom domain comes from `public/CNAME` (`docs.assign.so`).
 
 Content here must be safe for public readers. Internal architecture, security analysis,
 unreleased strategy and credentials don't belong in this repository.

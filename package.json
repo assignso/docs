@@ -3,25 +3,40 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vitepress dev",
-    "build": "vitepress build",
-    "preview": "vitepress preview",
-    "lint": "markdownlint-cli2",
+    "dev": "node scripts/dev.mjs",
+    "build": "vocs build --no-embeddings",
+    "preview": "vocs preview",
+    "lint": "node scripts/lint.mjs",
     "generate:api": "node scripts/generate-api-endpoints.mjs",
-    "check": "npm run lint && npm run build",
-    "check:sources": "node scripts/check-sources.mjs"
+    "check": "npm run lint && npm run check:markdown && npm run build",
+    "check:sources": "node scripts/check-sources.mjs",
+    "prebuild": "node scripts/prepare-pages.mjs",
+    "precheck:markdown": "node scripts/prepare-pages.mjs",
+    "check:markdown": "vocs markdown-audit",
+    "test": "node --test scripts/*.test.mjs",
+    "postinstall": "node scripts/patch-vocs.mjs",
+    "postbuild": "node scripts/publish-static.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
-    "markdownlint-cli2": "0.23.3",
-    "vitepress": "2.0.0-alpha.20",
-    "vue": "3.5.43",
-    "yaml": "2.9.1"
+    "yaml": "2.9.1",
+    "markdownlint": "0.41.1"
   },
   "description": "Public documentation for Assign, published at https://docs.assign.so",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "vite": "8.3.4",
+    "vocs": "2.10.3",
+    "waku": "1.0.0-rc.3"
+  },
+  "overrides": {
+    "remark-mdx-frontmatter": "6.0.0",
+    "smol-toml": "1.9.1"
   }
 }
