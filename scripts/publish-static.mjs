@@ -6,8 +6,11 @@ import { parse } from "yaml"
 import { root } from "./prepare-pages.mjs"
 import { methods, isInternal } from "./public-contract.mjs"
 import { loadApiPresentation } from "./api-presentation.mjs"
+import { docsOrigin } from "./api-og.mjs"
+import { verifyApiImages } from "./render-api-og.mjs"
 
 const output = join(root, "dist/public")
+verifyApiImages(output, loadApiPresentation(root).operations, docsOrigin)
 const markdown = join(output, "assets/md")
 // Native embeds render the browser page. Publish their complete Markdown twin
 // from Vocs' resource output so schema/example formatting has one owner.

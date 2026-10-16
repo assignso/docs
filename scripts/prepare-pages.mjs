@@ -3,6 +3,8 @@ import { existsSync, readdirSync, readFileSync, mkdirSync, rmSync, writeFileSync
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { loadApiPresentation, referencePath } from "./api-presentation.mjs"
+import { generateApiImages } from "./render-api-og.mjs"
+import { imageMetadata, plainText } from "./api-og.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const pages = join(root, ".vocs-src/pages")
@@ -50,9 +52,11 @@ export function preparePages() {
   expected = new Set()
   copyPage("index.md")
   for (const section of sections) copySection(section)
-  for (const operation of loadApiPresentation(root).operations) {
+  const { operations } = loadApiPresentation(root)
+  generateApiImages(join(root, "public"), operations)
+  for (const operation of operations) {
     const reference = `${referencePath}/${operation.group}#${operation.id}`
-    const source = `---\ntitle: ${JSON.stringify(operation.title)}\n---\n\nimport { OpenApi } from "vocs"\n\n<div className="assign-endpoint-page">\n\n# ${operation.title}\n\n${operation.upcoming ? '**Upcoming:** This contract is not yet deployed.\n\n' : ''}<OpenApi.Operation spec="${referencePath}" method="${operation.method}" path=${JSON.stringify(operation.path)} data-reference="${reference}" />\n\n<div className="assign-endpoint-guides">\n\n[Authentication](/api/authentication) · [Conventions and errors](/api/conventions) · [API guides](/api) · [Resource reference](${reference})\n\n</div>\n\n</div>\n`
+    const source = `---\ntitle: ${JSON.stringify(operation.title)}\ndescription: ${JSON.stringify(plainText(operation.description))}\nassignOpenGraph: ${JSON.stringify(imageMetadata(operation))}\n---\n\nimport { OpenApi } from "vocs"\n\n<div className="assign-endpoint-page">\n\n# ${operation.title}\n\n${operation.upcoming ? '**Upcoming:** This contract is not yet deployed.\n\n' : ''}<OpenApi.Operation spec="${referencePath}" method="${operation.method}" path=${JSON.stringify(operation.path)} data-reference="${reference}" />\n\n<div className="assign-endpoint-guides">\n\n[Authentication](/api/authentication) · [Conventions and errors](/api/conventions) · [API guides](/api) · [Resource reference](${reference})\n\n</div>\n\n</div>\n`
     writeGenerated(join(pages, "api/reference/operations", `${operation.id}.mdx`), source)
   }
   writeGenerated(join(pages, "_root.css"), readFileSync(join(root, "styles/root.css")))

@@ -3,6 +3,7 @@ node_modules/
 .vocs/
 dist/
 .DS_Store
+public/og/api/
 
 # Legacy local outputs may predate the Vocs migration.
 .vitepress/dist/

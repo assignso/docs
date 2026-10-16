@@ -1,7 +1,7 @@
 // Presentation only: the published OpenAPI document remains the source of API facts.
 import { readFileSync } from "node:fs"
 import { parse } from "yaml"
-import { methods } from "./public-contract.mjs"
+import { methods, publicContract } from "./public-contract.mjs"
 
 export const referencePath = "/api/reference"
 const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
@@ -15,6 +15,7 @@ const resourceGroups = [
 ]
 
 export function apiPresentation(spec) {
+  spec = publicContract(spec)
   const operations = []
   const seen = new Set()
   for (const [path, item] of Object.entries(spec.paths)) for (const method of methods) {
@@ -27,6 +28,8 @@ export function apiPresentation(spec) {
     const tagInfo = spec.tags?.find((entry) => entry.name === tag)
     operations.push({ id, path, method: method.toUpperCase(), tag, group: slug(tag),
       title: operation.summary ?? `${method.toUpperCase()} ${path}`,
+      description: operation.description ?? operation.summary ?? `${method.toUpperCase()} ${path}`,
+      deprecated: operation.deprecated === true,
       upcoming: tagInfo?.["x-assign-status"] === "upcoming" || /\bupcoming\b/i.test(tagInfo?.description ?? ""),
       link: `${referencePath}/operations/${id}`,
       badge: { text: method.toUpperCase(), variant: variants[method] ?? "note" },

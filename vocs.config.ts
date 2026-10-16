@@ -1,5 +1,6 @@
 import { defineConfig } from "vocs/config"
 import { loadApiPresentation, endpointMarkdown } from "./scripts/api-presentation.mjs"
+import { docsOrigin, imageEntry, operationImageHead } from "./scripts/api-og.mjs"
 
 const apiReference = loadApiPresentation(import.meta.dirname)
 
@@ -110,7 +111,7 @@ const api = [
 export default defineConfig({
   title: "Assign Docs",
   description: "Guides and CLI, MCP and HTTP API references for Assign.",
-  baseUrl: "https://docs.assign.so",
+  baseUrl: docsOrigin,
   srcDir: ".vocs-src",
   renderStrategy: "full-static",
   checkDeadlinks: true,
@@ -119,7 +120,8 @@ export default defineConfig({
   accentColor: "light-dark(oklch(0.47 0.18 259.815), oklch(0.75 0.12 259.815))",
   // GitHub Pages serves static files; runtime-only features stay disabled.
   mcp: { enabled: false },
-  head: { meta: { ogImage: false, twitterImage: false } },
+  ogImageUrl: `${docsOrigin}${imageEntry().src}`,
+  head: operationImageHead,
   topNav: [
     { text: "Get started", link: "/get-started", match: (path) => /^\/(get-started|guides)/.test(path ?? "") },
     { text: "CLI", link: "/cli" },

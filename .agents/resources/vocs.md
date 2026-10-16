@@ -43,6 +43,16 @@ examples at their owner, then regenerate consumers. Use Assign's own credentials
 limits, status codes and lifecycle semantics; reference products' email behavior is not an
 Assign contract. Maintain deployment labels and stable operation anchors.
 
+## Operation share images
+
+The requester supplied the [API endpoint Open Graph image reference](https://www.shadcn-ui-blocks.com/open-graph-images/api-endpoint) on 2026-10-16, then requested implementation against the current public contract. It illustrates a 1200×630 card with an HTTP method badge, endpoint path and description. The implementation uses independent Assign artwork; the reference's license-gated Next.js source is not used.
+
+`prepare-pages.mjs` generates cards and the public route-to-image manifest under ignored `public/og/api/`. `api-og.mjs` supplies the matching [per-route head metadata](https://vocs.dev/reference/site-config#head) in `vocs.config.ts`, including a generic fallback. `render-api-og.mjs` outlines bundled Geist/Geist Mono fonts with fontkit and rasterizes them with resvg-js; no system fonts, runtime server or network image service is involved. Image filenames include source/font/content fingerprints, unchanged PNGs are reused and stale files are removed within the generator-owned directory. Keep these inputs and metadata coupled when changing the renderer.
+
+Vocs serializes configuration callbacks by source, without their closures. Keep `operationImageHead` self-contained and pass each operation's generated metadata through `assignOpenGraph` frontmatter. The callback serialization round-trip fixture protects this boundary; a direct function invocation alone misses the static-render failure.
+
+`publish-static.mjs` checks every operation's built image and initial HTML metadata plus the generic API-page fallback. Run `npm test` for filtering, layout, metadata and asset lifecycle fixtures, then `npm run check` for lint, Markdown and the static build. Inspect generated PNGs for long paths, descriptions and availability labels. Keep the complete textual reference in HTML and Markdown and preserve canonical operation URLs. Local checks do not establish hosted publication or third-party social-cache refresh.
+
 ## Source and generation
 
 `vocs.config.ts` mounts the published contract at `/api/reference`. The download and generated
