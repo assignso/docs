@@ -8,3 +8,4 @@ public/og/api/
 # Legacy local outputs may predate the Vocs migration.
 .vitepress/dist/
 .vitepress/cache/
+/node_modules

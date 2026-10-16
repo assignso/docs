@@ -7,7 +7,7 @@ outline: 2
 
 # Endpoint index
 
-421 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
+423 operations from the public contract, **Assign API 1.0.0-rc.9**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
