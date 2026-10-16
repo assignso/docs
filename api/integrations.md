@@ -11,6 +11,16 @@ Writing back to a provider stays off until an administrator configures it.
 
 These operations use a browser session and the [API conventions](./conventions).
 
+## Required Workspace features <Badge type="warning" text="Awaiting deployment" />
+
+The provider catalog includes an optional `required_features` list. Clockify and Toggl Track
+require `time_tracking` for their time behavior. Enable it in **Workspace settings → Features**;
+connecting a provider leaves the feature setting unchanged.
+
+While the feature is off, new dependent actions return `409 time_tracking_disabled`. Queued
+work pauses and resumes after you enable the feature again. Installation, credentials,
+bindings and history are retained. See [Workspace Features](./workspaces#features).
+
 ## Read
 
 All reads return display-safe data from Assign's own records and never call the provider. They don't

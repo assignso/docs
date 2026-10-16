@@ -114,6 +114,22 @@ Tasks use these defaults unless the request says otherwise.
 needs the `workspace_knowledge` entitlement and at least one Project. The response reports setup
 progress and readiness.
 
+### Features <Badge type="warning" text="Awaiting deployment" />
+
+Read `GET /api/v1/workspaces/{workspace_id}/features` to see registered features, their state and
+whether you can manage them. Update a feature with
+`PATCH /api/v1/workspaces/{workspace_id}/features/{feature}` and an `enabled` boolean. Send the
+returned revision in `If-Match`, plus an idempotency key and your session's CSRF token.
+
+Time tracking uses `time:manage`; other features use `workspace:manage`. Planned features are
+read-only. A disabled feature retains its data. Prerequisites must be enabled first, and enabled
+dependents must be disabled before their prerequisite. After `workspace.feature.updated`, reread
+the feature list. Enabling a feature preserves the permission checks for each operation.
+
+The legacy Time tracking and Project lifecycle policy endpoints still accept `enabled`, but that
+field is deprecated. Use the Features endpoint for enablement and the policy endpoints for
+configuration. See the [endpoint reference](./endpoints) for request and response schemas.
+
 ### Billing
 
 Billing managers (`workspace.billing.manage`) use these operations. Changes need the CSRF header and

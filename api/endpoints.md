@@ -150,6 +150,8 @@ Guide: [Workspaces](./workspaces)
 | `GET /api/v1/workspaces/{workspace_id}/activity` | List access-filtered Workspace activity | Session |
 | `GET /api/v1/workspaces/{workspace_id}/ai-access-policy` | Get the Workspace AI access policy | Session |
 | `PUT /api/v1/workspaces/{workspace_id}/ai-access-policy` | Update the Workspace AI access policy | Session |
+| `GET /api/v1/workspaces/{workspace_id}/features` | Read Workspace feature descriptors and state | Session |
+| `PATCH /api/v1/workspaces/{workspace_id}/features/{feature}` | Enable or disable a Workspace feature | Session |
 | `POST /api/v1/workspaces/{workspace_id}/icon` | Associate a cropped S3-hosted Workspace icon | Session |
 | `DELETE /api/v1/workspaces/{workspace_id}/icon` | Remove the Workspace icon and retire its stored object | Session |
 | `GET /api/v1/workspaces/{workspace_id}/icon/content` | Redirect to a short-lived inline S3 URL for the Workspace icon | Session |
