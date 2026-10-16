@@ -13,6 +13,11 @@
   --assign-focus-blue: light-dark(oklch(0.47 0.18 259.815), oklch(0.75 0.12 259.815));
 }
 
+/* The static Docs site does not expose the floating Ask AI launcher. */
+[data-v-ask-ai-container] {
+  display: none;
+}
+
 /* The responsive page outline is visible below 1376px. Keep it attached to the
    disappearing primary bar using the same frame offset, without a second easing. */
 @media (width < 1376px) {

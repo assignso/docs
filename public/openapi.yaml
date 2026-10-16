@@ -9999,6 +9999,11 @@ paths:
         `workspace_id` must match the
         caller's current session Workspace; any other value reports the same
         not-found response as an absent Workspace.
+        To hydrate visible human authors beyond the first picker page, provide
+        up to 100 distinct `actor_ids`. This returns only current active Members
+        in that selection, without continuation. Unknown, inactive, Agent and
+        foreign-Workspace Actors are omitted. Selection cannot be combined with
+        a cursor, `include_suspended=true` or a limit other than 100.
       security:
         - browserSession: []
         - nativeAccessToken: []
@@ -10013,6 +10018,19 @@ paths:
             type: boolean
             default: false
           description: Include suspended memberships. Requires `members:manage` when true.
+        - name: actor_ids
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            minItems: 1
+            maxItems: 100
+            uniqueItems: true
+            items:
+              $ref: "#/components/schemas/Identifier"
+          description: Comma-separated Actor IDs for one bounded current active Member selection.
       responses:
         "200":
           description: A page of Workspace members.
@@ -23350,6 +23368,7 @@ components:
       additionalProperties: false
       required:
         - id
+        - actor_id
         - workspace_id
         - definition
         - status
@@ -23372,6 +23391,10 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Identifier"
+        actor_id:
+          allOf:
+            - $ref: "#/components/schemas/Identifier"
+          description: Canonical Workspace Actor for this Agent instance. Distinct from the instance ID and event provenance; use only while the instance is currently admitted.
         workspace_id:
           $ref: "#/components/schemas/Identifier"
         definition:
@@ -32697,6 +32720,11 @@ components:
             $ref: "#/components/schemas/Identifier"
         created_by_actor_id:
           $ref: "#/components/schemas/Identifier"
+        updated_by_actor_id:
+          description: Actor of the immutable snapshot at the current canonical revision, supplied on collection rows when known. Historical baselines, missing snapshots and removed actors remain unknown; never inferred from the creator.
+          oneOf:
+            - $ref: "#/components/schemas/Identifier"
+            - type: "null"
         archived_at:
           oneOf:
             - $ref: "#/components/schemas/Timestamp"
