@@ -268,6 +268,13 @@ Other Task rules:
 - `status_list` and `status_get` give the Status IDs Task tools accept. `workspace_member_list` gives
   assignees. Milestone updates use explicit clear flags, and omitted values are kept.
 
+### Task update receipts <Badge type="warning" text="Awaiting deployment" />
+
+A successful `task_update` that changes reversible fields returns `reversible_command` with the
+committed command ID and state. Retrying a completed update with the same idempotency key returns
+the same command receipt without applying the change again. The receipt contains metadata; it does
+not include the Task's previous values. Updates that change no reversible fields omit this receipt.
+
 ### Content and Markdown
 
 Task descriptions and Comments use structured editor JSON, for example beginning with
