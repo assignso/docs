@@ -1,0 +1,139 @@
+{
+  "document": {
+    "openapi": "3.1.1",
+    "info": {
+      "title": "Example API",
+      "version": "1.0.0"
+    },
+    "servers": [
+      {
+        "url": "https://api.example.test"
+      }
+    ],
+    "tags": [
+      {
+        "name": "Examples"
+      }
+    ],
+    "paths": {
+      "/api/v1/examples": {
+        "get": {
+          "operationId": "listExamples",
+          "summary": "List examples",
+          "description": "Return one bounded page.",
+          "tags": [
+            "Examples"
+          ],
+          "security": [
+            {
+              "bearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "schema": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 50
+              }
+            },
+            {
+              "name": "view",
+              "in": "query",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "summary",
+                  "items"
+                ]
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ExamplePage"
+                  }
+                }
+              }
+            }
+          },
+          "x-assign-publication": "product-reference",
+          "x-assign-availability": "available",
+          "x-assign-anonymous": false
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Example": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "child": {
+              "$ref": "#/components/schemas/Example"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "ExamplePage": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "$ref": "#/components/schemas/Example"
+              }
+            },
+            "next_cursor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "data",
+            "next_cursor"
+          ]
+        }
+      },
+      "securitySchemes": {
+        "bearer": {
+          "type": "http",
+          "scheme": "bearer"
+        }
+      }
+    }
+  },
+  "manifest": {
+    "schema": "assign.public-release.v1",
+    "state": "released",
+    "view": "product",
+    "release": "example-release-fixture",
+    "contract_epoch": 1,
+    "schema_epoch": 1,
+    "operations": [
+      {
+        "operationId": "listExamples",
+        "path": "/api/v1/examples",
+        "method": "get",
+        "availability": "available"
+      }
+    ],
+    "component_roots": [],
+    "document_sha256": "ca0c22014519ecf7c0158ffb5cdfe8b95e9a07eb88baee9bda46f360f6e3e1f7"
+  }
+}

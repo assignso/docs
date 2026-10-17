@@ -9,16 +9,10 @@ import { docsOrigin, fontPaths, imageEntry, imageMetadata, imageManifest, operat
 import { serializeFunctions, deserializeFunctions } from "../node_modules/vocs/dist/internal/config-serializer.js"
 import { cardSvg, generateApiImages, layoutText, verifyApiImages } from "./render-api-og.mjs"
 
-const spec = { tags: [{ name: "Future", "x-assign-status": "upcoming" }], paths: {
-  "/api/v1/tasks": { get: { operationId: "listTasks", summary: "List Tasks", description: "Lists **Tasks** in a Workspace." },
-    post: { operationId: "createTask", summary: "Create a Task", deprecated: true } },
-  "/api/v1/future": { get: { operationId: "future", tags: ["Future"], summary: "Upcoming operation" } },
-  "/private": { get: { operationId: "privateSecret", description: "Internal callback" } },
-  "/connector": { get: { operationId: "privateConnector", security: [{ integrationPrivateConnector: [] }] } },
-} }
+const { source: spec, manifest: release } = JSON.parse(readFileSync(new URL('./fixtures/api-og-publication.json', import.meta.url), 'utf8'))
 
 test("only public operations receive cards; metadata retains method, path and availability", () => {
-  const { operations } = apiPresentation(spec)
+  const { operations } = apiPresentation(spec, release, { prepared: true })
   assert.equal(operations.length, 3)
   const manifest = imageManifest(operations)
   assert.equal(Object.keys(manifest).length, 4)
@@ -49,14 +43,14 @@ test("long and unbroken text fits the card, with explicit truncation and no exte
       assert.ok(advance * 34 / font.unitsPerEm <= 1072, "text crosses the card's content boundary")
     }
   }
-  const svg = cardSvg({ ...apiPresentation(spec).operations[0], description: '<script>alert(1)</script> [remote](https://example.test/font)' })
+  const svg = cardSvg({ ...apiPresentation(spec, release, { prepared: true }).operations[0], description: '<script>alert(1)</script> [remote](https://example.test/font)' })
   assert.doesNotMatch(svg, /<script|<foreignObject|<image|href=/)
 })
 
 test("static generation emits valid PNGs, reuses unchanged images and removes withdrawn operations", () => {
   const root = mkdtempSync(join(tmpdir(), "assign-docs-og-"))
   try {
-    const { operations } = apiPresentation(spec)
+    const { operations } = apiPresentation(spec, release, { prepared: true })
     assert.deepEqual(generateApiImages(root, operations), { images: 4, rendered: 4 })
     const first = join(root, imageEntry(operations[0]).src)
     const bytes = readFileSync(first)

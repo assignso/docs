@@ -4,7 +4,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFi
 import { dirname, join } from "node:path"
 import { parse } from "yaml"
 import { root } from "./prepare-pages.mjs"
-import { methods, isInternal } from "./public-contract.mjs"
+import { methods, isInternal, publicContract } from "./public-contract.mjs"
 import { loadApiPresentation } from "./api-presentation.mjs"
 import { docsOrigin } from "./api-og.mjs"
 import { verifyApiImages } from "./render-api-og.mjs"
@@ -69,6 +69,7 @@ writeFileSync(join(output, "llms.txt"), index)
 assert.match(index, /\/api\/reference\/tasks/)
 assert.doesNotMatch(index, /AGENTS\.md|README\.md|\.agents\/|\.vocs-src/)
 const spec = parse(readFileSync(join(output, "openapi.yaml"), "utf8"))
+publicContract(spec)
 let operations = 0
 for (const item of Object.values(spec.paths)) for (const method of methods) {
   const operation = item[method]

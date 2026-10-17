@@ -14,8 +14,8 @@ const resourceGroups = [
   ["Upcoming", ["Activity", "HomeWork", "Realtime"]],
 ]
 
-export function apiPresentation(spec) {
-  spec = publicContract(spec)
+export function apiPresentation(spec, manifest, options) {
+  spec = publicContract(spec, manifest, options)
   const operations = []
   const seen = new Set()
   for (const [path, item] of Object.entries(spec.paths)) for (const method of methods) {

@@ -1,7 +1,7 @@
 // Regenerates api/endpoints.md and public/openapi.yaml from the accepted public OpenAPI contract.
 // Usage: npm run generate:api [-- path/to/openapi.yaml]
 // Defaults to the sibling openapi-spec checkout used in the Assign workspace.
-import { readFileSync, writeFileSync } from "node:fs"
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parse, stringify } from "yaml"
@@ -9,8 +9,13 @@ import { isInternal, publicContract } from "./public-contract.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const args = process.argv.slice(2).filter((arg) => arg !== "--check")
+const outputIndex = args.indexOf("--output-root")
+const outputRoot = outputIndex === -1 ? root : resolve(args.splice(outputIndex, 2)[1])
 const source = resolve(args[0] ?? process.env.ASSIGN_OPENAPI ?? resolve(root, "../openapi-spec/openapi.yaml"))
-const spec = parse(readFileSync(source, "utf8"))
+const input = parse(readFileSync(source, "utf8"))
+const manifest = process.env.ASSIGN_PUBLIC_RELEASE_MANIFEST
+  ? JSON.parse(readFileSync(process.env.ASSIGN_PUBLIC_RELEASE_MANIFEST, "utf8")) : undefined
+const spec = publicContract(input, manifest)
 const methods = ["get", "post", "put", "patch", "delete"]
 
 const guides = {
@@ -95,7 +100,10 @@ const outputs = {
 }
 for (const [file, output] of Object.entries(outputs)) {
   if (process.argv.includes("--check")) {
-    if (readFileSync(resolve(root, file), "utf8") !== output) throw new Error(`${file} is stale; run npm run generate:api`)
-  } else writeFileSync(resolve(root, file), output)
+    if (readFileSync(resolve(outputRoot, file), "utf8") !== output) throw new Error(`${file} is stale; run npm run generate:api`)
+  } else {
+    mkdirSync(dirname(resolve(outputRoot, file)), { recursive: true })
+    writeFileSync(resolve(outputRoot, file), output)
+  }
 }
 console.log(`${process.argv.includes("--check") ? "Checked" : "Generated"} ${total} public operations`)

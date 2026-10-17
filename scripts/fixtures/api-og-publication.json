@@ -1,0 +1,173 @@
+{
+  "source": {
+    "openapi": "3.1.1",
+    "info": {
+      "title": "Example cards",
+      "version": "1.0.0"
+    },
+    "tags": [
+      {
+        "name": "Future",
+        "x-assign-status": "upcoming"
+      }
+    ],
+    "paths": {
+      "/api/v1/tasks": {
+        "get": {
+          "operationId": "listTasks",
+          "summary": "List Tasks",
+          "security": [],
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          },
+          "x-assign-publication": "product-reference",
+          "x-assign-availability": "available",
+          "x-assign-anonymous": true,
+          "description": "Lists **Tasks** in a Workspace."
+        },
+        "post": {
+          "operationId": "createTask",
+          "summary": "Create a Task",
+          "security": [],
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          },
+          "x-assign-publication": "product-reference",
+          "x-assign-availability": "deprecated",
+          "x-assign-anonymous": true,
+          "deprecated": true
+        }
+      },
+      "/api/v1/future": {
+        "get": {
+          "operationId": "future",
+          "summary": "Upcoming operation",
+          "security": [],
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          },
+          "x-assign-publication": "product-reference",
+          "x-assign-availability": "preview",
+          "x-assign-anonymous": true,
+          "tags": [
+            "Future"
+          ]
+        }
+      },
+      "/private": {
+        "get": {
+          "operationId": "privateSecret",
+          "description": "A friendly renamed callback",
+          "x-assign-publication": "first-party"
+        }
+      },
+      "/connector": {
+        "get": {
+          "operationId": "privateConnector",
+          "x-assign-publication": "internal"
+        }
+      }
+    },
+    "components": {}
+  },
+  "expected": {
+    "openapi": "3.1.1",
+    "info": {
+      "title": "Example cards",
+      "version": "1.0.0"
+    },
+    "tags": [
+      {
+        "name": "Future",
+        "x-assign-status": "upcoming"
+      }
+    ],
+    "paths": {
+      "/api/v1/tasks": {
+        "get": {
+          "operationId": "listTasks",
+          "summary": "List Tasks",
+          "security": [],
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          },
+          "x-assign-publication": "product-reference",
+          "x-assign-availability": "available",
+          "x-assign-anonymous": true,
+          "description": "Lists **Tasks** in a Workspace."
+        },
+        "post": {
+          "operationId": "createTask",
+          "summary": "Create a Task",
+          "security": [],
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          },
+          "x-assign-publication": "product-reference",
+          "x-assign-availability": "deprecated",
+          "x-assign-anonymous": true,
+          "deprecated": true
+        }
+      },
+      "/api/v1/future": {
+        "get": {
+          "operationId": "future",
+          "summary": "Upcoming operation",
+          "security": [],
+          "responses": {
+            "200": {
+              "description": "Success"
+            }
+          },
+          "x-assign-publication": "product-reference",
+          "x-assign-availability": "preview",
+          "x-assign-anonymous": true,
+          "tags": [
+            "Future"
+          ]
+        }
+      }
+    },
+    "components": {}
+  },
+  "manifest": {
+    "schema": "assign.public-release.v1",
+    "state": "prepared",
+    "view": "product",
+    "release": "example-cards-fixture",
+    "contract_epoch": 1,
+    "schema_epoch": 1,
+    "operations": [
+      {
+        "operationId": "listTasks",
+        "path": "/api/v1/tasks",
+        "method": "get",
+        "availability": "available"
+      },
+      {
+        "operationId": "createTask",
+        "path": "/api/v1/tasks",
+        "method": "post",
+        "availability": "deprecated"
+      },
+      {
+        "operationId": "future",
+        "path": "/api/v1/future",
+        "method": "get",
+        "availability": "preview"
+      }
+    ],
+    "component_roots": [],
+    "document_sha256": "89a5312215041cc00dfa307bf68a41422f363f5cedc56e73ee346b456df14667"
+  }
+}
