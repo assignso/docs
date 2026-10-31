@@ -2,6 +2,7 @@
 // Usage: npm run generate:api [-- path/to/openapi.yaml]
 // Defaults to the sibling openapi-spec checkout used in the Assign workspace.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
+import { createHash } from "node:crypto"
 import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parse, stringify } from "yaml"
@@ -11,11 +12,28 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const args = process.argv.slice(2).filter((arg) => arg !== "--check")
 const outputIndex = args.indexOf("--output-root")
 const outputRoot = outputIndex === -1 ? root : resolve(args.splice(outputIndex, 2)[1])
+// Local source preparation uses an independently approved authoring graph.
+// It never supplies release evidence to publicContract or package validation.
+const approvalIndex = args.indexOf("--authoring-approval")
+const approvalPath = approvalIndex === -1 ? undefined : resolve(args.splice(approvalIndex, 2)[1])
 const source = resolve(args[0] ?? process.env.ASSIGN_OPENAPI ?? resolve(root, "../openapi-spec/openapi.yaml"))
 const input = parse(readFileSync(source, "utf8"))
 const manifest = process.env.ASSIGN_PUBLIC_RELEASE_MANIFEST
   ? JSON.parse(readFileSync(process.env.ASSIGN_PUBLIC_RELEASE_MANIFEST, "utf8")) : undefined
-const spec = publicContract(input, manifest)
+function approvedAuthoringSource(document, path) {
+  const approval = JSON.parse(readFileSync(path, "utf8"))
+  if (approval.schema !== "assign.api-safe-projection.v1" || approval.projection !== "public-product-sdk")
+    throw new Error("Explicit public product authoring approval required")
+  const sorted = (value) => Array.isArray(value) ? value.map(sorted) : value && typeof value === "object"
+    ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, sorted(value[key])])) : value
+  const canonical = (value) => JSON.stringify(sorted(value), null, 2) + "\n"
+  const bytes = canonical(document)
+  const expected = parse(readFileSync(resolve(dirname(path), approval.independent_expectation), "utf8"))
+  if (createHash("sha256").update(bytes).digest("hex") !== approval.document_sha256 || bytes !== canonical(expected))
+    throw new Error("Public authoring source differs from independent approval")
+  return document
+}
+const spec = approvalPath ? approvedAuthoringSource(input, approvalPath) : publicContract(input, manifest)
 const methods = ["get", "post", "put", "patch", "delete"]
 
 const guides = {
@@ -48,7 +66,7 @@ for (const [path, item] of Object.entries(spec.paths ?? {})) {
     const tag = operation.tags?.[0] ?? "Other"
     if (!byTag.has(tag)) byTag.set(tag, { name: tag, operations: [] })
     const auth = [...new Set((operation.security ?? spec.security ?? []).flatMap((entry) => Object.keys(entry)))]
-    if (isInternal(operation, operation.security ?? spec.security ?? [])) continue
+    if (!approvalPath && isInternal(operation, operation.security ?? spec.security ?? [])) continue
     byTag.get(tag).operations.push({
       method: method.toUpperCase(),
       path,
@@ -71,6 +89,7 @@ const lines = [
   "",
   "# Endpoint index",
   "",
+  ...(approvalPath ? ['<Badge type="warning" text="Awaiting deployment" />', ""] : []),
   `${total} operations from the public contract, **${spec.info.title} ${spec.info.version}**. Paths are`,
   "relative to `https://api.assign.so`.",
   "",
@@ -96,7 +115,7 @@ for (const tag of byTag.values()) {
 }
 const outputs = {
   "api/endpoints.md": lines.join("\n"),
-  "public/openapi.yaml": stringify(publicContract(spec), { lineWidth: 0 }),
+  "public/openapi.yaml": stringify(approvalPath ? spec : publicContract(spec), { lineWidth: 0 }),
 }
 for (const [file, output] of Object.entries(outputs)) {
   if (process.argv.includes("--check")) {

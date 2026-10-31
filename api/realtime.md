@@ -158,6 +158,22 @@ Day can cover up to 128 Activity pages. Reaching a limit reports incomplete retr
 instead of presenting the result as complete. These limits are not performance or
 availability guarantees. This behavior remains upcoming and has not been deployed.
 
+## Capture a baseline <Badge type="warning" text="Upcoming" />
+
+Request `application/json` from `/api/v1/realtime/baseline` with an acceptable
+`identity` or `gzip` encoding. Unsupported media or encoding returns `406`
+`not_acceptable`. Responses use `Cache-Control: no-store` and vary by `Accept`
+and `Accept-Encoding`. Each complete response is limited to 1 MiB before and
+after compression. If a domain page is too large, request a smaller `limit` after
+`409 realtime_baseline_required`.
+
+Routing responses contain an opaque cursor without resource content. The
+`projects` and `task_comments` scopes return `items`, `resource_id`, `through`
+and `next_page` with the cursor. Projects use an empty `resource_id`; Task comments
+use the Task UUID. Follow each nonempty `next_page` as the next `continuation`.
+Each page has its own snapshot and checkpoint. Reconcile intervening changes
+before treating the assembled view as current.
+
 ## Read, apply and acknowledge
 
 For a private canonical read, set `X-Assign-Realtime-Baseline` to the matching
