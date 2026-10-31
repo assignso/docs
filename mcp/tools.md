@@ -55,6 +55,7 @@ Before you implement or change a Task, read every Comment and relation page that
 | `task_context_get` | Read | Get bounded Task context: the Task, up to 20 Comment excerpts and 10 direct relations |
 | `task_create` | Write | Create a Task |
 | `task_update` | Write | Partially update Task fields |
+| `task_bulk_update` | Write | Update up to 100 Tasks with per-item revision checks and receipts (awaiting deployment) |
 | `task_complete` | Write | Complete a Task through a Status whose stage counts as completed |
 | `task_assign` | Write | Assign or unassign a Task |
 | `task_lifecycle_set` | Write | Archive, trash or restore a Task |
@@ -363,6 +364,29 @@ Other Task rules:
   Project-restricted credential is checked first.
 - `status_list` and `status_get` give the Status IDs Task tools accept. `workspace_member_list` gives
   assignees. Milestone updates use explicit clear flags, and omitted values are kept.
+
+### Bulk Task updates <Badge type="warning" text="Awaiting deployment" />
+
+Use `task_bulk_update` with an MCP OAuth connection or service credential that has
+`assign:tasks:write` or broad write access. It accepts 1 to 100 distinct Tasks. Read each Task's current
+revision, then supply its canonical `task_id`, a positive decimal string
+`expected_revision`, and a stable client `item_id`.
+
+The shared `changes` object supports `status_id`, `assignee_actor_id`, `priority`,
+`due_on` and `milestone_id`. Omit a field to preserve each Task's value. An empty
+string clears the assignee, due date or Milestone. Dates use `YYYY-MM-DD`.
+
+The result has `mode: "per_item"` and ordered `items`. Successful items return their
+original `revision` and `receipt_id`; use `operation_receipt_get` with that receipt
+ID for recovery. A failed item does not undo successful siblings.
+
+Retry an interrupted request with the same `idempotency_key` and unchanged input.
+To retry failed items after correcting their revisions or fields, keep their
+original `item_id` values and use a new request key. A successful item ID cannot be
+reused for a different change. After response-cache expiry, an exact successful
+item retry returns the original receipt with `replayed: true`. Token refresh keeps
+this recovery available; a different OAuth grant does not inherit it. Execution
+and replay require current write permission. Hosted Assign Agents cannot use this tool.
 
 ### Task update receipts <Badge type="warning" text="Awaiting deployment" />
 
