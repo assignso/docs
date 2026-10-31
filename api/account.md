@@ -1,322 +1,124 @@
 ---
-description: The current user's profile, sessions, personal API tokens, linked identities and connected MCP clients.
+description: Manage your Assign profile, sign-in methods, sessions, personal API tokens and connected clients through Account settings.
 ---
 
 # Account
 
-These operations use an authenticated browser session (see [Authentication](./authentication)) and
-follow the [API conventions](./conventions). Writes need the `X-CSRF-Token` header.
+Open **Account settings** in Assign to manage your profile and access. For integration
+credentials and a first product request, use the [authentication guide](./authentication).
+The public [endpoint reference](./endpoints) lists the supported integration operations.
 
 ## Current user
 
-```http
-GET /api/v1/me HTTP/1.1
-Host: api.assign.so
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-```
-
-Returns the user's profile and display preferences plus, once a Workspace is selected, the session's
-`workspace`, your `actor_id`, your `role` and an `authorization_revision`:
-
-```json
-{
-  "id": "<user-id>",
-  "email": "jane@example.com",
-  "display_name": "Jane Doe",
-  "username": "jane",
-  "profile_picture_url": null,
-  "avatar_initials": null,
-  "avatar_color": "indigo",
-  "title": "Engineering manager",
-  "totp_enabled": true,
-  "name_display": "full_name",
-  "first_day_of_week": "monday",
-  "timezone": "Europe/Budapest",
-  "locale": "en-GB",
-  "date_format": "day_month_year",
-  "time_format": "twenty_four_hour",
-  "number_format": "comma_decimal",
-  "workspace": { "id": "<workspace-id>", "name": "Acme", "slug": "acme" },
-  "actor_id": "<actor-id>",
-  "role": "member",
-  "authorization_revision": "<opaque-revision>"
-}
-```
-
-- `role` is `owner`, `admin`, `member` or `viewer`. See [Roles](./workspaces#roles).
-- `authorization_revision` is an opaque value you can compare for equality to decide whether cached
-  data is still valid. Never infer permissions from it.
-- An account without a Workspace omits `workspace`, `actor_id`, `role` and `authorization_revision`.
-- The response also includes optional fields such as `phone`, `bio` and `profile_status`, plus
-  `*_inherited` flags (below). See the [OpenAPI document](/openapi.yaml) for the full schema.
+Your Account belongs to you across Workspaces. Your role and the resources you can access
+can differ between Workspaces. Open the Workspace chooser to select where you are working;
+this does not change the Workspace bound to an integration's token.
 
 ## Update the profile
 
-```http
-PATCH /api/v1/me HTTP/1.1
-If-Match: "3"
-Content-Type: application/json
+Use **Account settings → Profile** to update your name, username, title, picture and personal
+details. Display names have 1 to 100 characters. Optional text can be cleared. Your phone
+number is private profile data.
 
-{"username": "jane.q", "title": "Staff engineer", "first_day_of_week": "sunday"}
-```
+Display preferences include full name or username, Sunday or Monday as the start of the week,
+regional date and number formats, timezone and editor controls. Follow Workspace defaults
+where the setting offers that option. See [Settings](../guides/settings) for their placement.
 
-Send any of `display_name`, `username`, `title`, `phone`, `bio`, `profile_status`, `name_display`,
-`first_day_of_week`, `editor_controls`, `avatar_initials`, `avatar_color`, `timezone`, `locale`,
-`date_format`, `time_format` and `number_format`. `If-Match` carries the revision from the last
-`ETag`; a stale one returns `409 revision_conflict`. The response is the same body as `GET /me`.
-
-| Field | Rules |
-| --- | --- |
-| `display_name` | 1–100 characters. |
-| `username` | <Badge type="warning" text="Awaiting deployment" /> Unique, lowercase, 3–30 characters. New usernames allow letters, numbers and interior dots, with a letter or number at each end. Initially derived from your email address. It can change but can't be cleared. Existing usernames and previous profile links keep working. |
-| `name_display` | `username` or `full_name`. Username needs a username set. |
-| `first_day_of_week` | `sunday` or `monday`. |
-| `editor_controls` | `contextual` or `persistent`. |
-| `timezone`, `locale` | IANA identifier, BCP 47 tag. |
-| `avatar_initials` | 1–2 characters. Empty derives them from the name. |
-| `avatar_color` | A palette name (`slate`, `red`, `indigo`, `rose` …), optionally with a shade suffix such as `amber-400`. Without a suffix, clients pick the shade. |
-| Optional text | An empty value removes it. Phone is private profile data only. |
-
-Setting `timezone_inherited`, `locale_inherited` or `first_day_of_week_inherited` to `true` follows
-the Workspace default. `GET /me` always returns the effective value.
+Username changes are awaiting deployment. New names use 3 to 30 lowercase letters, numbers
+or interior dots, with a letter or number at each end. A username cannot be cleared;
+existing usernames and earlier profile links remain usable.
 
 ### Save your interface language <Badge type="warning" text="Awaiting deployment" />
 
-`GET /api/v1/me` includes `interface_language`. Save it through the existing profile update:
-
-```http
-PATCH /api/v1/me HTTP/1.1
-If-Match: "3"
-Content-Type: application/json
-X-CSRF-Token: <csrf-token>
-
-{"interface_language": "en"}
-```
-
-Use `automatic` to follow qualified device languages with English fallback, or `en` to prefer English. Other values return `400 invalid_request`. The default is `automatic`; older servers may omit the field. A stale revision returns `409 revision_conflict`.
-
-The preference follows your Account across Workspaces and devices. It is independent of `locale`, timezone and Voice language. This API stores your choice; interface switching and recipient-language delivery are upcoming.
+The Account language preference follows you across Workspaces and devices. Automatic follows
+supported device languages with English fallback; English chooses English explicitly. This
+preference is separate from regional formats, timezone and Voice language. Interface switching
+and recipient-language delivery remain upcoming.
 
 ### Resolve your interface language <Badge type="warning" text="Awaiting deployment" />
 
-`GET /api/v1/me` adds optional `interface_language_state`: the effective language, its source,
-text direction, availability revision, supported languages and your current hint revision.
-Your explicit preference wins; Automatic uses supported device languages, then English.
-An unavailable saved preference remains saved and safely displays in English.
-
-On foreground entry or a device-language change, send the ordered BCP 47 tags:
-
-```http
-PUT /api/v1/me/interface-language/session HTTP/1.1
-Host: api.assign.so
-Content-Type: application/json
-If-Match: "1"
-X-CSRF-Token: <csrf-token>
-Cookie: __Host-assign_session=<session>; __Host-assign_csrf=<csrf-token>
-
-{"languages":["hu-HU","en-GB"]}
-```
-
-Use `interface_language_state.hint_revision` for this request, independently of the profile ETag.
-The response returns the current hint revision as its ETag. On 409, read your account again before
-retrying. Send at most ten tags; an empty list uses English. Repeating the same effective hint
-leaves its revision unchanged. Native bearer requests use the same operation without CSRF.
-This hint does not change your saved interface language, regional formats or Voice language.
-
-Profile and Task validation errors may include machine-readable `details.field` and `details.reason`.
-Use these for localized validation, tolerate unknown values, and retain `message` as the fallback.
+Your explicit preference takes priority over device languages. An unavailable saved preference
+stays saved while the interface displays in English. The application manages device-language
+updates; integrations do not need to submit them.
 
 ### Change your email
 
-```http
-POST /api/v1/me/email-change
-If-Match: "3"
-Content-Type: application/json
-
-{"email": "jane.new@example.com"}
-```
-
-This needs sign-in within the last 15 minutes and emails a single-use link, valid 30 minutes, to the
-new address. The web app completes it with `POST /api/v1/me/email-change/verify`, from the same
-browser session. On success the address changes, other sessions are revoked and the old address gets
-a security notice.
+Change your email in Account settings after a recent sign-in. Open the single-use verification
+link in the same browser session within 30 minutes. Completion signs out your other sessions
+and sends a security notice to the old address.
 
 ### Profile picture
 
-Crop to a 512 × 512 PNG or JPEG (5 MiB at most), upload it through the
-[attachment flow](./attachments), then:
-
-```http
-POST /api/v1/me/profile-picture
-If-Match: "3"
-Content-Type: application/json
-
-{"attachment_id": "<completed-attachment-id>"}
-```
-
-`DELETE /api/v1/me/profile-picture` removes it. `/api/v1/me/profile-picture/content` redirects to a
-short-lived URL, so don't store the destination.
+Use a PNG or JPEG of at most 5 MiB, cropped to 512 × 512 pixels. Use the profile controls to
+replace or remove it. If a supported file operation supplies a temporary storage URL, use
+only its supplied headers and never forward an Assign credential to storage.
 
 ## Sessions
 
-`GET /api/v1/me/sessions?limit=50` lists your live sessions across Workspaces, newest first:
+Open **Account settings → Active sessions** to review Workspace and recent activity and sign
+out a session or all others. The list does not show browser, device, IP address or location.
+Signing out the current session returns you to sign-in.
 
-```json
-{
-  "items": [
-    {
-      "id": "<session-id>",
-      "workspace_id": "<workspace-id>",
-      "current": true,
-      "created_at": "2026-08-18T09:30:00Z",
-      "authenticated_at": "2026-08-18T09:30:00Z",
-      "last_seen_at": "2026-08-18T10:05:00Z",
-      "idle_expires_at": "2026-08-25T10:05:00Z",
-      "absolute_expires_at": "2026-09-17T09:30:00Z"
-    }
-  ],
-  "next_cursor": null,
-  "has_more": false
-}
-```
-
-Sessions don't record IP address, device or location. Tell them apart by Workspace and
-`last_seen_at`.
-
-| Operation | Result |
-| --- | --- |
-| `DELETE /api/v1/me/sessions` | Revokes every session except the current one. Returns `{"revoked_count": 3}`. Needs recent authentication. |
-| `DELETE /api/v1/me/sessions/{session_id}` | `204`, also when already revoked. Revoking the current session clears the cookies. |
+A remembered session lasts at most 30 days and expires after seven days without activity.
+Without **Remember this device**, the session lasts at most 48 hours and the browser may
+end it when closed. An expired or revoked session requires sign-in again.
 
 ## Personal API tokens
 
-A personal token authorizes scripts and the CLI in the one Workspace of the session that created it.
-It stops working when it expires, is revoked, you leave the Workspace, or the Workspace is archived.
+Create and manage personal tokens in **Account settings → Security**. Copy each new secret
+once into a secret manager. Lists show safe metadata such as name, prefix, scopes, last use
+and expiry; they cannot reveal the secret again. Revocation is permanent.
 
-- `GET /api/v1/me/api-tokens` lists metadata (name, scopes, prefix, created, last used, expiry). The
-  secret is never returned again.
-- `DELETE /api/v1/me/api-tokens/{token_id}` revokes a token (`204`).
-
-```http
-POST /api/v1/me/api-tokens HTTP/1.1
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
-
-{"name": "terminal", "scopes": ["assign:read", "assign:discuss"]}
-```
-
-Creating a token needs recent authentication. The `201` response is the only time the `token` value
-is shown, so store it in a secret manager or `ASSIGN_TOKEN`, not in a URL or a file you commit. The
-default expiry is 90 days, at most one year. Scope and Workspace can't be changed later.
-
-| Scope | Allows |
-| --- | --- |
-| `assign:read` | Reading, including the CLI's My Work view. |
-| `assign:write` | The CLI's supported Task changes. |
-| `assign:discuss` | Discuss history, messages and events. Plan and permission checks still apply. |
+A personal token acts as you in its selected Workspace and stops authorizing work when you
+lose the required access. Choose the minimum available scopes. The forthcoming product
+policy, legacy-credential treatment, rotation overlap and lost-secret recovery are described
+in [Authentication](./authentication#expiry-rotation-and-revocation). Tokens cannot be
+transferred to another person. Use an owned product service account for unattended Workspace
+work when that feature is available. [MCP service credentials](../mcp/security#service-credentials)
+are separate and work only with MCP.
 
 ## Linked identities
 
-- `GET /api/v1/me/identities` lists linked providers (`provider`, `provider_email`,
-  `provider_email_verified`, `created_at`).
-- `POST /api/v1/me/identities` with `{"provider": "github"}` returns an `authorization_url` to send
-  the user to. The provider then returns to Assign, which links the identity without creating a
-  session. An identity linked to another account returns `409 identity_already_linked`.
-- `DELETE /api/v1/me/identities/{identity_id}` unlinks (`204`). It returns `409 last_sign_in_method`
-  if the account would have no way left to sign in.
+Manage Google, GitHub and Apple under **Account settings → Connected accounts**. An identity
+already linked to another Account cannot be added. Your first provider sign-in can link to
+an existing Account only when the provider supplies a matching verified email. Later provider
+email changes do not move that linked identity to another Account. Keep at least one working
+sign-in method; Assign prevents removing the last one.
 
 ## Recent authentication
 
-Signing out other sessions, linking or unlinking an identity, changing a password, changing an email
-and disabling a second factor need sign-in within the last **15 minutes**. Otherwise you get
-`403 reauthentication_required`. Ask for the password or passkey and retry; don't show it as a
-permission error.
+Sensitive changes, including signing out other sessions, linking identities and changing
+passwords or email, require sign-in within the last 15 minutes. If prompted, authenticate
+again and retry the action. A personal or service token cannot replace that interactive
+confirmation or grant itself wider privileges.
 
 ## Connected MCP clients
 
-`GET /api/v1/me/mcp/grants?limit=50` lists your active MCP connections: client, scopes, authorized
-Workspaces and last use. `DELETE /api/v1/me/mcp/grants/{grant_id}` revokes one immediately (`204`).
-See [MCP](../mcp/).
+Use **Account settings → MCP access** to review scopes, authorized Workspaces, last use and
+expiry. Lists show up to 100 connections per page. Use **Next page** to continue or
+**Back to first page** to restart. **Disconnect** revokes that connection immediately.
+See [Connect a client](../mcp/connect#review-or-disconnect).
 
 ## Workspaces and members
 
-`GET /api/v1/me/billing-plans` is a read-only overview of the plan and state of each Workspace you
-belong to (up to 100 per page), and whether you can open its billing settings. Payment and invoice
-details stay in Workspace billing settings.
-
-```http
-GET /api/v1/workspaces?limit=50 HTTP/1.1
-```
-
-```json
-{
-  "items": [
-    { "id": "<workspace-id>", "name": "Acme", "slug": "acme", "icon_url": null, "role": "owner" }
-  ],
-  "next_cursor": null,
-  "has_more": false
-}
-```
-
-This lists your Workspaces by name, regardless of the session's current one.
-`GET /api/v1/workspaces/{workspace_id}/members?limit=50` lists the current Workspace's members for
-assignee pickers and mentions (`membership_id`, `user_id`, `actor_id`, `display_name`, `role`). Any
-other Workspace ID returns `404`.
+Use the Workspace chooser to switch between memberships. Owners and admins manage invitations
+and roles in **Workspace settings → Members**. Review plans under **Account settings → Billing
+& plans**; payment and invoice details stay in Workspace billing settings.
 
 ## Project shortcuts
 
-Each user has nine shortcut slots for their Projects in a Workspace. `GET
-/api/v1/workspaces/{workspace_id}/project-shortcuts` returns them as Project IDs or `null`, with
-`customized`, `revision` and an `ETag`. Until you customize them, they default to the first nine
-active Projects you can read.
-
-`PUT` on the same path replaces all nine:
-
-```http
-PUT /api/v1/workspaces/{workspace_id}/project-shortcuts HTTP/1.1
-X-CSRF-Token: <csrf-token>
-If-Match: "4"
-Content-Type: application/json
-
-{"slots": ["<project-id>", null, null, null, null, null, null, null, null]}
-```
-
-A Project can occupy one slot. Duplicates are rejected, a stale revision returns
-`409 revision_conflict`, and an archived or unreadable Project returns `422 project_unavailable`.
-Reads drop Projects you can no longer access.
+Use **Account settings → Project shortcuts** to assign the `1` to `9` shortcuts within a
+Workspace. A Project can occupy one slot. Before customization, shortcuts use the first nine
+active Projects you can read. Projects you can no longer access are removed from the shortcuts.
 
 ## Project display preferences
 
-Your Projects-page sort and custom order belong to your Account within one Workspace. They do not
-change shared Project ranks or anyone else's order.
+Your Projects-page sort and custom order apply to your Account within one Workspace. They
+change neither shared Project ranks nor anyone else's order. If another device changes a
+preference while you edit, reload the latest value before making an intentional change.
 
-```http
-GET /api/v1/workspaces/{workspace_id}/project-display-preferences
-```
+## Private realtime reads
 
-The response includes `workspace_id`, `sort` (`default`, `recent`, `created` or `custom`),
-`project_ids`, `revision` and `updated_at`. A new preference starts at `default`, an empty sequence
-and revision 1. Projects you can no longer read are removed from the saved sequence.
-
-```http
-PUT /api/v1/workspaces/{workspace_id}/project-display-preferences
-If-Match: "1"
-Idempotency-Key: 80ce2510-8436-438a-aedc-82aa94af58b0
-X-CSRF-Token: <session-csrf-token>
-Content-Type: application/json
-
-{"sort":"custom","project_ids":["0199a020-1234-7000-8000-000000000001"]}
-```
-
-Send the complete preference, with up to 1,000 unique readable Project IDs from the named Workspace.
-The body limit is 64 KiB. Use the last `ETag` as `If-Match`; a stale revision returns `409` and a
-missing precondition returns `428`. Missing or unavailable Projects return `422` without revealing
-private Project details. Retry an identical request with the same idempotency key. Both operations
-currently require a browser session; token, native-client and MCP access are not available.
-
-## Private realtime reads <Badge type="warning" text="Upcoming" />
-
-Current-Account, session, identity and passkey reads can opt into private replay
-custody using the matching `X-Assign-Realtime-Baseline` scope. This interface is
-under development and not deployed. See [Application realtime](./realtime) for
-canonical reads, session-bound cursors and applied acknowledgements.
+Assign manages live Account updates inside the application. For supported Task notifications
+in an integration, see [MCP events](../mcp/events). Use the public reference for documented
+integration operations and their credential requirements.

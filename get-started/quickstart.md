@@ -54,13 +54,11 @@ connect with the same URL. See [Connect a client](../mcp/connect).
 
 ## 6. Call the API
 
-Personal API tokens work with the CLI-scoped API operations. Browser integrations use the session
-and CSRF flow described in [Authentication](../api/authentication).
+The forthcoming v1 integration flow uses bearer credentials. Follow
+[Make your first request](../api/authentication#make-your-first-request) to create a personal
+API token, obtain the Workspace ID and read one page of Tasks. That guide explains the
+expected response and how to recover from missing or revoked access.
 
-```sh
-curl https://api.assign.so/api/v1/cli/my-work \
-  -H "Authorization: Bearer $ASSIGN_TOKEN" \
-  -H "Accept: application/json"
-```
-
-Start with the [API overview](../api/) and [conventions](../api/conventions). The [OpenAPI document](/openapi.yaml) describes every operation.
+Check the operation's [availability](../api/conventions#availability) before using it.
+The [API overview](../api/) and [OpenAPI document](/openapi.yaml) describe the supported
+integration surface.

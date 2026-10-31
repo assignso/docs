@@ -37,3 +37,21 @@ Responses may carry `Deprecation: true`. A `Sunset` header appears only when a r
 committed.
 
 Realtime and MCP are versioned separately from the REST API.
+
+## Authentication migration <Badge type="warning" text="Awaiting deployment" />
+
+The rewritten product API remains under `/api/v1` and accepts bearer credentials. Migrate
+integration requests to the canonical resource operation in the public reference. For example,
+use `GET /api/v1/workspaces/{workspace_id}/tasks` for Task collections, with a credential bound
+to that Workspace. See [Make your first request](./authentication#make-your-first-request).
+
+Remove browser cookies and `X-CSRF-Token` from product REST requests. In a browser Fetch client,
+set `credentials: "omit"`; a cookie must not act as fallback when a bearer token is missing or
+invalid. Do not copy an Assign browser session into an integration. Assign's own application
+continues to manage its sign-in, cookies and CSRF protection separately.
+
+Existing personal tokens may carry older scopes or longer lifetimes. Follow the credential's
+migration notice and explicitly reissue or rotate it when needed; switching a Workspace in
+the app does not change a token's Workspace. Product OAuth, native/developer-client grants
+and MCP credentials keep distinct audiences. A product token cannot replace an MCP credential.
+See [Authentication](./authentication) for expiry, overlap and lost-response recovery.

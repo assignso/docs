@@ -16,24 +16,14 @@ through it follows the same permissions, validation and history as one made in t
 
 ## Authentication
 
-| Credential | Who uses it | Accepted by |
-| --- | --- | --- |
-| **Personal API token** (`apt_…`) | Scripts, CI and your own integrations | Projects, Tasks, Comments, search, Discuss, My Work, Workspace events and the CLI-scoped operations |
-| **Browser session** | The Assign web app and browser integrations on Assign's origin | Every browser operation. Writes also require CSRF protection |
-| **Developer-client token** | The Assign CLI and IDE extensions, via browser sign-in with PKCE | The same token-accessible operations plus client-specific credential operations |
-| **Native token** | Assign Mobile | Native-client operations |
+Use a personal API token for a script, an owned product service account for unattended
+Workspace work, or product OAuth for a registered application. Each operation documents its
+admitted credentials and scopes. Your current Workspace and Project permissions still apply.
+[MCP credentials](../mcp/security) have their own audience and cannot authenticate product REST.
 
-Create personal API tokens in **Account settings → Security**. A token belongs to one Workspace,
-must only be sent to `api.assign.so` in the `Authorization` header and can be revoked at any time.
-
-```sh
-curl https://api.assign.so/api/v1/cli/my-work \
-  -H "Authorization: Bearer $ASSIGN_TOKEN" \
-  -H "Accept: application/json"
-```
-
-The [endpoint index](./endpoints) lists the credentials each operation accepts. Browser sign-in and
-the session and CSRF model are covered in [Authentication](./authentication).
+The [authentication guide](./authentication) has one credential chooser, UI setup, a bounded
+Task-read example and expiry, rotation and recovery rules. The rewritten v1 flow is awaiting
+deployment; check its availability before use. Assign applications manage their own sign-in.
 
 ## Conventions at a glance
 
@@ -56,7 +46,7 @@ Read [Conventions](./conventions) before you build an integration.
 <div class="resource-grid">
 
 - [**Application realtime**](./realtime): upcoming browser subscriptions and applied acknowledgements
-- [**Account**](./account): current user, sessions, tokens and connected clients
+- [**Account**](./account): profile and credential management in Assign
 - [**Workspaces**](./workspaces): roles, settings, members and invitations
 - [**Projects**](./projects): Projects, Statuses, members and Milestones
 - [**Tasks**](./tasks): create, update, move, relate and comment
