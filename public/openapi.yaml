@@ -46,6 +46,12 @@ components:
       schema:
         pattern: ^"[1-9][0-9]*"$
         type: string
+    RequestId:
+      description: Correlation identifier for the request.
+      schema:
+        maxLength: 200
+        minLength: 1
+        type: string
     RetryAfter:
       description: Retry-After delay-seconds or HTTP-date; honor within the caller deadline.
       schema:
@@ -1499,6 +1505,9 @@ components:
           oneOf:
             - $ref: "#/components/schemas/CanonicalCommentRichTextDocument"
             - type: "null"
+        body_markdown:
+          description: Markdown form of the comment, included when format=markdown is requested. Omitted on deleted tombstones, like body.
+          type: string
         created_at:
           $ref: "#/components/schemas/Timestamp"
         deleted_at:
@@ -3135,6 +3144,12 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ProjectVisualIdentity"
             - type: "null"
+        web_url:
+          description: Absolute Project navigation URL built from the configured Web origin and the authorized Workspace slug and resource path. This link grants no access; visibility is checked when opened.
+          format: uri
+          minLength: 1
+          readOnly: true
+          type: string
         workspace_id:
           $ref: "#/components/schemas/Identifier"
       required:
@@ -3911,6 +3926,11 @@ components:
       description: Opaque, endpoint-specific pagination cursor.
       maxLength: 2048
       minLength: 1
+      type: string
+    EntityTagCondition:
+      description: HTTP strong entity-tag list or wildcard. An observed-version operation rejects an unsupported wildcard explicitly. Obtain the opaque tag from the authorized canonical item/encoding read, never from a revision or collection. Missing condition is 428; failed condition is 412. Create-only PUT uses If-None-Match star and collision 412.
+      minLength: 1
+      pattern: ^[ \t]*(\*|"[!#-~\x80-\xff]*"([ \t]*,[ \t]*"[!#-~\x80-\xff]*")*)[ \t]*$
       type: string
     ErrorResponse:
       $ref: "#/components/schemas/ProblemDetails"
@@ -6211,12 +6231,20 @@ components:
       type: string
     TaskCreateRequest:
       additionalProperties: false
+      not:
+        required:
+          - description
+          - description_markdown
       properties:
         assignee_actor_id:
           $ref: "#/components/schemas/Identifier"
           description: Omit to use the Workspace's default Task assignee policy.
         description:
           $ref: "#/components/schemas/RichTextDocument"
+        description_markdown:
+          description: Task description as Markdown. Mutually exclusive with description; the 2 MiB UTF-8 and canonical rich-text content limits also apply.
+          maxLength: 2097152
+          type: string
         due_on:
           format: date
           type: string
@@ -6381,6 +6409,10 @@ paths:
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            Vary:
+              description: Selected representation varies with Accept and Accept-Encoding.
+              schema:
+                type: string
         "400":
           $ref: "#/components/responses/ProductProblem"
         "401":
@@ -6420,12 +6452,26 @@ paths:
       description: Reads a Comment or its deletion tombstone after checking current Task access. Deleted content is not returned. Use the exact opaque ETag from this item and encoding for an update or delete; do not construct it from revision or reuse a collection or command-result tag. If-None-Match may return bodyless 304 after authorization. JSON supports identity or gzip with distinct validators.
       operationId: getComment
       parameters:
+        - description: Include the canonical body_markdown representation without changing resource identity. Preserve this selection when recovering an uncertain write.
+          in: query
+          name: format
+          required: false
+          schema:
+            enum:
+              - markdown
+            type: string
         - $ref: "#/components/parameters/CommentId"
         - in: header
           name: If-None-Match
           required: false
           schema:
             maxLength: 16384
+            type: string
+        - description: Opaque entity-tag list or wildcard. A supplied strong condition must match the currently authorized representation; otherwise 412.
+          in: header
+          name: If-Match
+          schema:
+            maxLength: 8192
             type: string
       responses:
         "200":
@@ -6439,6 +6485,17 @@ paths:
               schema:
                 const: private, no-store
                 type: string
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
             ETag:
               $ref: "#/components/headers/CanonicalETag"
             Vary:
@@ -6494,9 +6551,17 @@ paths:
       tags:
         - Comments
     patch:
-      description: Replaces the body of a live Comment when the calling Actor has edit permission. The body accepts the declared rich-text schema, up to 256 KiB. Send the opaque If-Match from getComment for the selected encoding. A missing condition returns 428 and a stale condition returns 412. Retain the original key, body and condition after uncertainty to recover the committed result. The first edit sets edited_at; earlier bodies are not exposed as version history. Read the item again for the next write validator.
+      description: Replaces the body of a live Comment when the calling Actor has edit permission. The body accepts the declared rich-text JSON or UTF-8 text/markdown, subject to the same 256 KiB canonical content limit. Send the opaque If-Match from getComment for the selected encoding. A missing condition returns 428 and a stale condition returns 412. Retain the original key, body and condition after uncertainty to recover the committed result. The first edit sets edited_at; earlier bodies are not exposed as version history. Read the item again for the next write validator.
       operationId: updateComment
       parameters:
+        - description: Include the canonical body_markdown representation without changing resource identity. Preserve this selection when recovering an uncertain write.
+          in: query
+          name: format
+          required: false
+          schema:
+            enum:
+              - markdown
+            type: string
         - $ref: "#/components/parameters/CommentId"
         - $ref: "#/components/parameters/IdempotencyKey"
         - description: Opaque validator from this exact current authorized Comment item and encoding. Retain unchanged with the original key after uncertainty.
@@ -6512,6 +6577,11 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/CanonicalCommentBodyRequest"
+          text/markdown:
+            schema:
+              description: UTF-8 Markdown converted by the existing canonical codec and validated under the same comment policy and byte limits before a single effect.
+              maxLength: 262144
+              type: string
         required: true
       responses:
         "200":
@@ -6521,8 +6591,25 @@ paths:
                 $ref: "#/components/schemas/CanonicalCommentRead"
           description: The edited comment.
           headers:
-            ETag:
-              $ref: "#/components/headers/CanonicalETag"
+            Cache-Control:
+              description: Response is not cacheable.
+              schema:
+                type: string
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
+            Vary:
+              description: Selected representation varies with Accept and Accept-Encoding.
+              schema:
+                type: string
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6575,6 +6662,21 @@ paths:
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
+            Vary:
+              description: Selected representation varies with Accept and Accept-Encoding.
+              schema:
+                type: string
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6626,6 +6728,21 @@ paths:
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControlNoStore"
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
+            Vary:
+              description: Selected representation varies with Accept and Accept-Encoding.
+              schema:
+                type: string
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6663,7 +6780,7 @@ paths:
         - Comments
   /api/v1/projects/{project_id}:
     get:
-      description: Read the current authorized canonical Project through bearer admission. The request accepts no query parameters or body. Revision, next_task_number and resolved lifecycle revisions are exact decimal strings. The response ETag is opaque and bound to the complete authorized JSON representation, source and selected identity/gzip encoding; forward it unchanged to conditional Project commands. Revoked access cannot reuse a cached observation. No cookie admission or client-constructed revision tag.
+      description: Read the current authorized canonical Project through bearer admission. The request accepts no query parameters or body. Revision, next_task_number and resolved lifecycle revisions are exact decimal strings. The response ETag is opaque and bound to the complete authorized JSON representation, source and selected identity/gzip encoding; forward it unchanged to conditional Project commands. Revoked access cannot reuse a cached observation. Do not construct a validator from the revision.
       operationId: getProject
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -6873,13 +6990,7 @@ paths:
         - Projects
   /api/v1/projects/{project_id}/tasks:
     post:
-      description: |
-        Canonical content with an unsupported schema or an attempted
-        schema 2-to-1 downgrade returns 409 document_schema_version_unsupported.
-        Restoring an older Document revision retains an existing schema 2 floor.
-        Creates a Task with an atomically allocated project-local number.
-        Accepts scoped bearer credentials with live Workspace and Project
-        authorization.
+      description: Create a complete Task with an atomically allocated Project number under current Workspace and Project authority. Defaults, assignment, content schema, dates and Milestone rules apply in the same transaction. Request JSON allows 2 MiB of canonical description plus 8 KiB scalar/envelope overhead; content node, nesting, mention and attachment limits apply independently. Keep the original key and exact complete request after an uncertain outcome. Current credential, Project and created-Task access precede original receipt delivery; changed intent or unreconciled historical custody conflicts without another effect. A fresh response ETag identifies the receipt; recovered historical outcomes withhold it. Read the current authorized canonical Task before a conditional edit. Identity/gzip preserve complete content. Current stored receipt version, stable grant family, original key and exact intent are checked before recovery; current resource authority is required. Historical recovery withholds response/item validators and cannot repeat effects. Unknown historical custody fails closed. Read current authorized state before another conditional edit.
       operationId: createTask
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -6898,8 +7009,31 @@ paths:
                 $ref: "#/components/schemas/Task"
           description: The created Task.
           headers:
+            Cache-Control:
+              description: Private response; never cache resource or receipt content.
+              schema:
+                type: string
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
             ETag:
               $ref: "#/components/headers/ETag"
+            Location:
+              description: Canonical immutable Task identifier for an authorized follow-up read.
+              schema:
+                type: string
+            Vary:
+              description: Selected representation varies with Accept and Accept-Encoding.
+              schema:
+                type: string
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6908,8 +7042,44 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "406":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
         "409":
           $ref: "#/components/responses/DocumentSchemaUnsupported"
+        "410":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: The Task was purged; its content cannot be read, restored or mutated.
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6923,7 +7093,7 @@ paths:
         - Tasks
   /api/v1/tasks/{task_id}:
     get:
-      description: Checks current credential, Workspace and resource authorization before conditional reuse. An authorized matching If-None-Match returns a bodyless 304. Validators are opaque and specific to the contract epoch, authority, representation and content encoding. Responses use private, no-store; callers may retain the admitted body in their existing memory owner.
+      description: Read a complete authorized Task. view=canonical returns revision-owned fields and the opaque item validator for mutation; detail adds independently changing display projections. Body, coding, query and conditional-header bounds are checked. Complete construction and current source/Task authority share one snapshot, including before bodyless 304. A supplied strong If-Match must match the selected representation or returns412. Identity/gzip validators are separate. Responses are private, no-store.
       operationId: getTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -6931,6 +7101,7 @@ paths:
           in: header
           name: If-None-Match
           schema:
+            maxLength: 8192
             type: string
         - description: Canonical returns revision-owned item fields and the validator for mutation. Detail includes independently changing display projections.
           in: query
@@ -6940,6 +7111,13 @@ paths:
             enum:
               - detail
               - canonical
+            type: string
+        - description: Opaque entity-tag list or wildcard; a supplied strong condition must match the currently authorized representation, otherwise 412.
+          in: header
+          name: If-Match
+          required: false
+          schema:
+            maxLength: 8192
             type: string
       responses:
         "200":
@@ -6951,8 +7129,27 @@ paths:
                   - $ref: "#/components/schemas/CanonicalTask"
           description: The Task.
           headers:
+            Cache-Control:
+              description: Private response; never cache resource or receipt content.
+              schema:
+                type: string
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
             ETag:
               $ref: "#/components/headers/ETag"
+            Vary:
+              description: Selected representation varies with Accept and Accept-Encoding.
+              schema:
+                type: string
         "304":
           description: Current authority permits reuse of the exact retained representation. No response body.
           headers:
@@ -6972,6 +7169,12 @@ paths:
           description: Malformed conditional header or unsupported view.
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
         "404":
           $ref: "#/components/responses/NotFound"
         "406":
@@ -6980,12 +7183,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
           description: No acceptable identity or gzip encoding.
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
         "412":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
           description: The If-Match read condition failed.
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -6998,7 +7231,7 @@ paths:
       tags:
         - Tasks
     patch:
-      description: Read this resource with view=canonical and retain its opaque ETag. Send that exact strong identity or gzip validator in If-Match; quoted revisions and detail/list tags cannot authorize a write. Missing or wildcard conditions return 428; stale or incompatible tags return 412. Read the current authorized canonical item before deciding whether to retry.
+      description: Read this resource with view=canonical and forward its exact opaque strong identity or gzip ETag in If-Match. Missing conditions return 428; malformed/weak 400 and stale/foreign/numeric/wildcard 412. Omitted fields preserve the current Task; explicit nullable fields clear only their declared values. Current source/Workspace/Project authority, conditional merge, revision CAS, reversible effects and receipt commit together. Keep the original key, body and condition after an uncertain outcome. Original version/family/key/intent custody recovers the safe committed result under current Task authority before old conditions, with no new effect; historical responses withhold validators. Changed intent or unsupported historical custody conflicts. Identity/gzip preserve complete content. Current stored receipt version, stable grant family, original key and exact intent are checked before recovery; current resource authority is required. Historical recovery withholds response/item validators and cannot repeat effects. Unknown historical custody fails closed. Read current authorized state before another conditional edit. Encoded PATCH request JSON retains its existing 8 KiB limit; content constraints remain independent.
       operationId: updateTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -7008,7 +7241,7 @@ paths:
           name: If-Match
           required: true
           schema:
-            type: string
+            $ref: "#/components/schemas/EntityTagCondition"
       requestBody:
         content:
           application/json:
@@ -7023,8 +7256,27 @@ paths:
                 $ref: "#/components/schemas/Task"
           description: The updated Task.
           headers:
+            Cache-Control:
+              description: Private response; never cache resource or receipt content.
+              schema:
+                type: string
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
             ETag:
               $ref: "#/components/headers/ETag"
+            Vary:
+              description: Selected representation varies with Accept and Accept-Encoding.
+              schema:
+                type: string
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7033,14 +7285,38 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "406":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
         "409":
           $ref: "#/components/responses/Conflict"
+        "410":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: The Task was purged; its content cannot be read, restored or mutated.
         "412":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
           description: The item changed or this validator does not identify its current representation. Read current authorized state before retrying.
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
         "422":
           description: The requested Project move would violate a Task relation invariant.
         "428":
@@ -7049,6 +7325,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
           description: An observed strong item validator is required.
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -7065,6 +7347,14 @@ paths:
       description: Lists complete Task comments in creation order, including deletion tombstones without body content. The default page limit is 50 and the maximum is 100; the complete response is bounded to 1 MiB. Continue with next_cursor; do not infer completion from a short page. from_number selects a numbered window and cannot be combined with cursor. Current access is checked before conditional reuse. JSON supports identity or gzip with distinct opaque validators.
       operationId: listTaskComments
       parameters:
+        - description: Include the canonical body_markdown representation without changing resource identity. Preserve this selection when recovering an uncertain write.
+          in: query
+          name: format
+          required: false
+          schema:
+            enum:
+              - markdown
+            type: string
         - $ref: "#/components/parameters/TaskId"
         - description: Opaque continuation from this authorized Task comment page. Do not alter or reuse for another Task or credential.
           in: query
@@ -7090,6 +7380,12 @@ paths:
           schema:
             maxLength: 16384
             type: string
+        - description: Opaque entity-tag list or wildcard. A supplied strong condition must match the currently authorized representation; otherwise 412.
+          in: header
+          name: If-Match
+          schema:
+            maxLength: 8192
+            type: string
       responses:
         "200":
           content:
@@ -7102,6 +7398,17 @@ paths:
               schema:
                 const: private, no-store
                 type: string
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
             ETag:
               $ref: "#/components/headers/CanonicalETag"
             Vary:
@@ -7157,9 +7464,17 @@ paths:
       tags:
         - Comments
     post:
-      description: Creates a Task comment attributed to the calling Actor. The body accepts the declared rich-text schema, up to 256 KiB of JSON. Retain the same Idempotency-Key, Task and body after an uncertain outcome to recover the original result without another comment or notification. The response validator identifies the command result; obtain an item validator through getComment before editing or deleting.
+      description: Creates a Task comment attributed to the calling Actor. Send the declared rich-text JSON or UTF-8 text/markdown; both use the same comment policy and 256 KiB canonical content limit. Retain the same Idempotency-Key, Task and body after an uncertain outcome to recover the original result without another comment or notification. Command receipts do not carry an item validator; obtain the current item validator through getComment before editing or deleting.
       operationId: createComment
       parameters:
+        - description: Include the canonical body_markdown representation without changing resource identity. Preserve this selection when recovering an uncertain write.
+          in: query
+          name: format
+          required: false
+          schema:
+            enum:
+              - markdown
+            type: string
         - $ref: "#/components/parameters/TaskId"
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -7167,6 +7482,11 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/CanonicalCommentBodyRequest"
+          text/markdown:
+            schema:
+              description: UTF-8 Markdown converted by the existing canonical codec and validated under the same comment policy and byte limits before a single effect.
+              maxLength: 262144
+              type: string
         required: true
       responses:
         "201":
@@ -7176,8 +7496,25 @@ paths:
                 $ref: "#/components/schemas/CanonicalCommentRead"
           description: The created comment.
           headers:
-            ETag:
-              $ref: "#/components/headers/CanonicalETag"
+            Cache-Control:
+              description: Response is not cacheable.
+              schema:
+                type: string
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
+            Vary:
+              description: Selected representation varies with Accept and Accept-Encoding.
+              schema:
+                type: string
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8040,7 +8377,7 @@ paths:
       description: |
         Returns grouped, permission-filtered candidates for Assign editor mentions and references. Matching uses prefixes and words from active member display names, active Workspace Agent names, unarchived Document titles, Project names and keys, and Task titles and ticket references. Each requested type has its own limit. Results have no cursor or total. A blank query returns empty groups.
 
-        Requires bearer read scope and current Workspace and resource access, including for a blank query. Send no request body, unknown query fields, conditional headers or Idempotency-Key. Product cookies do not authenticate this route. Labels are complete within each group. Responses use private, no-store and negotiate identity or gzip JSON; they carry no resource validator.
+        Requires bearer read scope and current Workspace and resource access, including for a blank query. Send no request body, unknown query fields, conditional headers or Idempotency-Key. Labels are complete within each group. Responses use private, no-store and negotiate identity or gzip JSON; they carry no resource validator.
       operationId: listWorkspaceReferenceOptions
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -8201,10 +8538,20 @@ paths:
               schema:
                 const: gzip
                 type: string
+            Content-Length:
+              description: Exact negotiated complete-body length in encoded bytes. No partial results or continuation are published after response construction failure.
+              schema:
+                maximum: 12648448
+                minimum: 1
+                type: integer
             Vary:
               description: Includes Accept and Accept-Encoding.
               schema:
                 type: string
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":

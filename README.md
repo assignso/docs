@@ -20,6 +20,21 @@ The API sidebar groups resources and links to dedicated endpoint pages, for exam
 request examples and responses from `public/openapi.yaml`. Existing resource pages remain
 available. Restart `npm run dev` after regenerating the contract to refresh endpoint navigation.
 
+### Build an approved authoring contract locally
+
+For a contract awaiting release, set `ASSIGN_DOCS_AUTHORING_APPROVAL` to its approval JSON file:
+
+```sh
+ASSIGN_DOCS_AUTHORING_APPROVAL=/path/to/approval.json npm run check
+ASSIGN_DOCS_AUTHORING_APPROVAL=/path/to/approval.json npm run check:sources
+```
+
+The approval must match both the contract digest and its independent expected document.
+The same setting works with `npm run dev` and `npm run generate:api`. Generated operation
+pages and share images carry the Upcoming label. Keep approval records outside the public
+repository. Local authoring output does not establish released availability; package validation
+and the Pages upload check still require a released contract manifest.
+
 ## Structure
 
 | Path | Content |

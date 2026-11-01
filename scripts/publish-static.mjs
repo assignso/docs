@@ -2,14 +2,21 @@
 import assert from "node:assert/strict"
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
-import { parse } from "yaml"
 import { root } from "./prepare-pages.mjs"
-import { methods, isInternal, publicContract } from "./public-contract.mjs"
+import { methods, isInternal } from "./public-contract.mjs"
+import { loadDocsContract } from "./authoring-contract.mjs"
 import { loadApiPresentation } from "./api-presentation.mjs"
 import { docsOrigin } from "./api-og.mjs"
 import { verifyApiImages } from "./render-api-og.mjs"
 
 const output = join(root, "dist/public")
+const searchIndexes = readdirSync(join(output, "assets")).filter(name => /^search-index-.*\.json$/.test(name))
+assert.equal(searchIndexes.length, 1, "Expected one current keyword search index")
+const searchJson = readFileSync(join(output, "assets", searchIndexes[0]), "utf8")
+assert.ok(!searchJson.includes(root), "Keyword search exposes the local checkout")
+for (const id of Object.values(JSON.parse(searchJson).documentIds)) {
+  assert.match(id, /^(?:page:|nav:|openapi:)/, "Keyword search has an unexpected document identity")
+}
 verifyApiImages(output, loadApiPresentation(root).operations, docsOrigin)
 const markdown = join(output, "assets/md")
 // Native embeds render the browser page. Publish their complete Markdown twin
@@ -68,13 +75,12 @@ const index = readFileSync(join(output, "llms.txt"), "utf8").replace(/\]\((\/[^)
 writeFileSync(join(output, "llms.txt"), index)
 assert.match(index, /\/api\/reference\/tasks/)
 assert.doesNotMatch(index, /AGENTS\.md|README\.md|\.agents\/|\.vocs-src/)
-const spec = parse(readFileSync(join(output, "openapi.yaml"), "utf8"))
-publicContract(spec)
+const { document: spec, authoring } = loadDocsContract(join(output, "openapi.yaml"))
 let operations = 0
 for (const item of Object.values(spec.paths)) for (const method of methods) {
   const operation = item[method]
   if (!operation) continue
-  assert.ok(!isInternal(operation, operation.security ?? spec.security ?? []), "Private operation was published")
+  if (!authoring) assert.ok(!isInternal(operation), "Private operation was published")
   operations++
 }
-console.log(`Published ${count} Markdown downloads; verified static reference, agent index and ${operations} public operations`)
+console.log(`${authoring ? "Prepared authoring output for" : "Published"} ${count} Markdown downloads; verified static reference, agent index and ${operations} public operations`)

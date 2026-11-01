@@ -1,7 +1,6 @@
 // Presentation only: the published OpenAPI document remains the source of API facts.
-import { readFileSync } from "node:fs"
-import { parse } from "yaml"
 import { methods, publicContract } from "./public-contract.mjs"
+import { loadDocsContract } from "./authoring-contract.mjs"
 
 export const referencePath = "/api/reference"
 const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
@@ -15,7 +14,10 @@ const resourceGroups = [
 ]
 
 export function apiPresentation(spec, manifest, options) {
-  spec = publicContract(spec, manifest, options)
+  return presentApi(publicContract(spec, manifest, options))
+}
+
+function presentApi(spec, authoring = false) {
   const operations = []
   const seen = new Set()
   for (const [path, item] of Object.entries(spec.paths)) for (const method of methods) {
@@ -30,7 +32,7 @@ export function apiPresentation(spec, manifest, options) {
       title: operation.summary ?? `${method.toUpperCase()} ${path}`,
       description: operation.description ?? operation.summary ?? `${method.toUpperCase()} ${path}`,
       deprecated: operation.deprecated === true,
-      upcoming: tagInfo?.["x-assign-status"] === "upcoming" || /\bupcoming\b/i.test(tagInfo?.description ?? ""),
+      upcoming: authoring || tagInfo?.["x-assign-status"] === "upcoming" || /\bupcoming\b/i.test(tagInfo?.description ?? ""),
       link: `${referencePath}/operations/${id}`,
       badge: { text: method.toUpperCase(), variant: variants[method] ?? "note" },
     })
@@ -66,8 +68,9 @@ export function apiPresentation(spec, manifest, options) {
   return { operations, sidebar }
 }
 
-export function loadApiPresentation(root) {
-  return apiPresentation(parse(readFileSync(`${root}/public/openapi.yaml`, "utf8")))
+export function loadApiPresentation(root, approvalPath) {
+  const { document, authoring } = loadDocsContract(`${root}/public/openapi.yaml`, approvalPath)
+  return presentApi(document, authoring)
 }
 
 // Native operation embeds have no Markdown hook. Keep a resolvable link to Vocs'

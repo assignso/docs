@@ -26,6 +26,7 @@ has not been released yet; it may be absent from that binary.
 | [`project`](#project) | List, select and inspect Projects, their Tasks and Documents |
 | [`document`](#document) | List, read and open Documents |
 | [`discuss`](#discuss) | Open Discuss in the terminal |
+| [`operation show`, `operation wait`, `operation cancel`](#operation-recovery) | Inspect or cancel an existing hosted Operation |
 | [`mcp setup codex`](#mcp) | Configure Assign MCP in Codex |
 | [`update`](#update) | Check for and install CLI updates |
 | [`doctor`](#doctor) | Run redacted local diagnostics |
@@ -289,6 +290,29 @@ assign discuss
 
 Opens the current Workspace's Discuss thread. Requires a TTY. See
 [Discuss in the terminal](./discuss).
+
+### Operation recovery <Badge type="warning" text="Upcoming" /> {#operation-recovery}
+
+Use the Operation ID returned by the original command:
+
+```sh
+assign operation show <operation-id>
+assign operation wait <operation-id> --timeout 60s
+assign operation cancel <operation-id> --idempotency-key <cancellation-key>
+```
+
+`show` reads the current compact status once. `wait` polls until a terminal result, its caller
+deadline or 30 status attempts. Its timeout defaults to 60 seconds and must be greater than
+zero and at most 60 seconds. Failed or cancelled Operations make `wait` exit with a nonzero
+status; the compact result remains on stdout.
+
+`cancel` requests best-effort cancellation. Retain the cancellation key and reuse it for the
+same cancellation request. A `cancel_requested` status means the source has not yet
+acknowledged cancellation.
+
+Keep the same `--host` and Operation ID when recovering status. A timeout, missing result or
+expired recovery window does not authorize submitting the original work again with a new key.
+The CLI displays result references without fetching them automatically.
 
 ### mcp
 

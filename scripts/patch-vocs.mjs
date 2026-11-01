@@ -9,6 +9,11 @@ if (version !== "2.10.3") throw new Error(`Review Vocs compatibility fixes befor
 
 const patches = [
   {
+    file: "dist/internal/vite-plugins.js",
+    before: "        const docs = await SearchDocuments.fromConfig(config);\n        const index = SearchIndex.fromSearchDocuments(docs, config);",
+    after: "        const docs = await SearchDocuments.fromConfig(config);\n        // Public production IDs must not expose the local source checkout.\n        // Development retains absolute IDs for file-based HMR bookkeeping.\n        if (mode === 'production') {\n            const prefix = pagesDirPath + path.sep;\n            for (const doc of docs) {\n                if (doc.id.startsWith(prefix))\n                    doc.id = 'page:' + doc.id.slice(prefix.length).split(path.sep).join('/');\n            }\n        }\n        const index = SearchIndex.fromSearchDocuments(docs, config);",
+  },
+  {
     file: "dist/react/useTopGutterOffset.js",
     before: "function notify() {\n    for (const listener of state.listeners)",
     after: "function notify() {\n    document.documentElement.style.setProperty('--assign-header-offset', `${state.currentOffset}px`);\n    for (const listener of state.listeners)",
@@ -46,4 +51,4 @@ for (const { file, before, after } of patches) {
   if (source.split(before).length !== 2) throw new Error(`Vocs compatibility patch no longer matches ${file}`)
   writeFileSync(target, source.replace(before, after))
 }
-console.log("Applied Vocs 2.10.3 static route, OpenAPI mount and header synchronization fixes")
+console.log("Applied Vocs 2.10.3 static route, OpenAPI mount, public search ID and header synchronization fixes")

@@ -89,6 +89,11 @@ upstream when upgrading; unknown versions or changed patch sites fail rather tha
 The frontmatter override replaces the vulnerable TOML dependency with the compatible newer
 plugin. The complete build validates that integration.
 
+The production search patch replaces absolute page-source IDs with stable `page:` identities
+before Vocs hashes the index. Development keeps absolute IDs for file-based HMR. The real
+plugin fixture checks both modes, search results and asset hashes; postbuild rejects local
+checkout paths or unexpected document identities in the public keyword index.
+
 ## Agent and hosting boundaries
 
 The header compatibility patch publishes Vocs' animated offset as `--assign-header-offset`
