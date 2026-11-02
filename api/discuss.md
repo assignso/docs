@@ -1,5 +1,5 @@
 ---
-description: Use Discuss, your private AI conversation in each Workspace, and the API for messages, turns, events, approvals, files, specialists and voice.
+description: "Use Discuss in Assign: messages, approvals, files, specialists, reminders, voice and recovery after an interruption."
 ---
 
 # Discuss
@@ -80,58 +80,28 @@ Document or Project. Permissions are rechecked and revoked access makes a refere
 Upcoming [live updates](./realtime) refresh availability and specialist results in the views
 you have open.
 
-`GET /api/v1/workspaces/{workspace_id}/discuss/availability` returns the access decision before you
-load history. Branch on `access` and `reason`, not `minimum_plan_key` or `minimum_plan_label`, which
-are display text. Operations that start work return `402` with `discuss_entitlement_required` or
-`discuss_credits_exhausted`.
+Assign shows whether Discuss is available before loading your history. If it requires a plan
+change or more credits, review the message and ask a Workspace billing manager to resolve it.
+
+Operations that start work can return `402` with `discuss_entitlement_required` or
+`discuss_credits_exhausted`. See the [public reference](./reference/) for each supported
+integration operation and its availability.
 
 ## Messages and turns
 
-These use a browser session (or a token with `assign:discuss`). Everything is `private, no-store`.
+Write a message in Discuss and choose **Send**. A saved turn can keep running after you navigate
+away. Turns queue, with one foreground response at a time; you can send another message while a
+response is active.
 
-| Operation | Purpose |
-| --- | --- |
-| `GET …/discuss/messages` | A chronological page of your stream, older with `before`. |
-| `GET …/discuss/messages/search?q=...` | Search your retained history. |
-| `GET …/discuss/messages/{message_id}` | One exact message. |
-| `POST …/discuss/turns` | Send a message. Returns `202` after saving. |
-| `POST …/discuss/messages` | Compatible send that behaves like `turns`. |
-| `POST …/discuss/messages/{message_id}/cancel` | Cancel queued work now, or request cancellation of running work (`cancel_requested`). Keep polling until terminal. |
-| `GET …/discuss/messages/{message_id}/run-events?after=N&limit=100` | The user-visible run timeline. |
-| `POST …/discuss/read-state` | Move your read position forward. |
+If sending is interrupted, check the conversation for the saved turn before sending the same
+message again. Closing the viewer or interrupting its connection does not cancel work. Use the
+run's cancellation action to request that it stop, then check its final state. Cancellation does
+not roll back changes already committed.
 
-Paths are under `/api/v1/workspaces/{workspace_id}`. Sends need an `Idempotency-Key` and the CSRF token.
-Retrying with the same key returns the existing turn, and reusing a key with different content or
-context returns `409`. Generation continues if you navigate away. You can send while a response is
-active. Turns queue and one foreground response runs at a time. Cancelling the HTTP request doesn't
-cancel the turn.
-
-```json
-{
-  "content": "Explain these three Tasks",
-  "context": {"surface": "project"},
-  "parts": [
-    {"type": "task_selection", "selection_id": "<saved-selection-id>"},
-    {"type": "turn_preferences", "locale": "en-GB", "timezone": "Europe/Budapest"}
-  ]
-}
-```
-
-- `context` carries a surface and Project, active-entity or selected-entity handles, which the web
-  app sends when you open Discuss from a Project, Task, Document or selection of up to 20 Tasks.
-  Handles are re-resolved under your permissions.
-- `parts` accepts at most one each of `task_selection`, `search_result` and `turn_preferences`, plus
-  `evidence_collection`, with up to four metadata entries in all. Other types, extra fields,
-  duplicates and invalid locales are rejected. `turn_preferences` applies to that turn only.
-  Selections keep their original `result_set_id` and `version`, and the request conflicts if
-  supplied values don't match.
-- `entity_references` and `attachment_ids` attach references and files. Empty `content` needs at least
-  one clean file.
-- A `search_result` part, `{"type":"search_result","query":"release","result_version":"<version>"}`,
-  is rechecked against the first 20 Search results, and changed results return
-  `409 revision_conflict`. An `evidence_collection` part pins one current version, and a stale pin
-  returns `409 revision_conflict`. Both are labeled **Upcoming** with their features in
-  [Search](./search) and [Proposals and receipts](./work-capabilities).
+Opening Discuss from a Project, Task, Document or a selection of up to 20 Tasks adds that context.
+Assign checks your current permissions when using references. Review a changed Search selection
+or evidence collection before sending it; an earlier selection does not establish its current
+contents. See [Search](./search) and [Proposals and receipts](./work-capabilities).
 
 ### Events and live updates
 
@@ -143,71 +113,66 @@ is interrupted, check the current conversation and run state before submitting a
 
 ### Approvals and questions
 
-`POST …/discuss/interactions/{interaction_id}/decision` takes `expected_revision`, `decision` and an
-`Idempotency-Key`. A stale revision returns `409`. Clarifications accept free text where allowed and
-approvals accept only approve or reject. A waiting interaction expires after 24 hours. For a
-Discuss-bound ChangeSet, the request can also include a `proposal` object with the ChangeSet `id` and
-current `version` and `digest`. Approval refers to exactly that version, and an edited proposal needs a
-new review. Retry with the identical request and key.
+Answer a question using its choices or text field. For an approval, choose **Approve** or **Reject**;
+writing approval in a message does not confirm it. A waiting interaction expires after 24 hours.
+If a prompt has changed or expired, review the current prompt before deciding.
+
+A Discuss-bound ChangeSet approval applies to the exact proposal version you reviewed. An edited
+proposal needs a new review. If a decision is interrupted, check the current interaction and its
+receipts before submitting it again.
 
 ### Saved response failures <Badge type="warning" text="Awaiting deployment" />
 
-A failed message can include a `response_failure` part with schema
-`assign.discuss.response_failure.v1` and a safe `code`. Check the current message and its
-receipts when an outcome is unknown or a decision could not be confirmed. Check status
-reads saved state; reconnect restores delivery. Restoring a retry draft sends nothing.
-Review its context and any committed work before an explicit Send. Treat unknown failure
-codes or schema versions as requiring a status check.
+A failed response may still have saved work. Use **Check status** to review the current message
+and its receipts when an outcome or decision is unknown. Reconnecting restores delivery; it does
+not submit another turn. Restoring a retry draft sends nothing. Review its context and any
+committed work before choosing **Send**.
 
 ### Receipts
 
-Messages can carry an `operation_receipts` part listing `operation_id`, `tool`, `state` and any
-resource identity and revision. Receipts survive recovery and regeneration, and regenerating doesn't
-repeat a committed change. Inspect receipts and ChangeSets, not answer text, to see what happened,
-including partial or refused work. A completed tool call doesn't confirm a change either.
+Receipts identify the operation, its state and any affected resource. They survive recovery and
+regeneration, and regenerating does not repeat a committed change. Inspect receipts and ChangeSets
+to see what happened, including partial or refused work. Answer text or a completed tool call
+alone does not confirm that a change was saved.
 
 ### Specialists
 
-For an explicit independent-work request, Discuss can start a hired built-in specialist and attach a
-`specialist_run` part. Specialists are Task Revisor, Backlog Curator, Daily Standup Agent, Stalled
-Work Tracker and Documentation Keeper, and they use their own Agent identity.
+For an explicit independent-work request, Discuss can start a hired built-in specialist.
+Specialists are Task Revisor, Backlog Curator, Daily Standup Agent, Stalled Work Tracker and
+Documentation Keeper, and they use their own Agent identity.
 
-- `GET …/discuss/specialist-runs?limit=20` returns your latest runs (up to 50), and `…/{specialist_run_id}`
-  one run. States: `queued`, `running`, `input_required`, `reconciliation_required`, `completed`,
-  `failed`, `cancelled` and `expired`.
-- `POST …/{specialist_run_id}/cancel` asks it to stop, idempotently, without rollback.
-- `POST …/{specialist_run_id}/resume` answers an `input_required` run with the current AG-UI
-  `interruptId`, the status `resolved` and a payload containing one `answer`. Stale, foreign or
-  already-resolved interrupts are rejected.
-- At most two specialists run in one conversation, and a specialist can't delegate to another.
+Open a specialist's run to review its status and result. It may be queued, running, waiting for
+input or reconciliation, completed, failed, cancelled or expired. Answer a waiting question in its
+current prompt. If the question has changed or is already answered, review the current run before
+trying again. Cancelling asks the run to stop without rolling back saved changes.
 
-`specialist_result` parts may carry `delivery_mode` and `author` <Badge type="warning" text="Upcoming" />.
-For `direct`, `author` has `actor_id`, `definition_id`, `version`, `revision`, `name`,
-`initiator_actor_id` and `parent_run_id`. For `supporting`, present the result as Discuss. If
-attribution is missing, use the generic Agent label, and never infer identity from message text. A
-completed run posts one result against the turn that started it, and access changes can make a result
-unavailable. An empty no-action run adds no message.
+At most two specialists run in one conversation, and a specialist cannot delegate to another.
+A completed run posts one result against the turn that started it; an empty no-action run adds no
+message. Access changes can make a result unavailable.
+
+Upcoming specialist attribution identifies results delivered directly by an Agent; supporting
+results appear as Discuss. A generic Agent label means no more specific identity is available.
+Do not infer identity from message text. <Badge type="warning" text="Upcoming" />
 
 ## Preferences and reminders
 
-- `GET` and `PATCH …/discuss/preferences` manage your IANA timezone (and whether it follows your
-  Account timezone), work hours and days, up to three ceremonies (start day, end day, end week), push
-  opt-in and wording personality. Updates use the returned revision. Plan changes never turn on
-  ceremonies or push.
-- `GET` and `POST …/discuss/reminders` list and create confirmed reminders with a due time and
-  timezone. `PATCH …/discuss/reminders/{reminder_id}` completes, cancels or snoozes a revision.
+Use Discuss preferences to choose your timezone, work hours and days, wording personality, push
+delivery and up to three ceremonies: start day, end day and end week. The timezone can follow your
+Account timezone. A plan change never turns on ceremonies or push delivery for you.
 
-Your history, settings, reminders and references are removed with the membership and never appear in
-Workspace administrator totals.
+Confirm a reminder's due time and timezone before saving it. You can complete, cancel or snooze
+an existing reminder. If its saved values have changed, review them before applying another change.
+Your history, settings, reminders and references are removed with the membership and never appear
+in Workspace administrator totals.
 
 ## Files and references
 
-`POST …/discuss/uploads` reserves a private upload, with completion and cancellation under
-`…/uploads/{upload_id}`. `…/files/{file_id}` manages a file, and `POST …/references/resolve` resolves
-`@` references. Deleting a file makes it unavailable to later reads. See the
-[OpenAPI document](/openapi.yaml) for schemas. To get `@` suggestions, call
-`GET /api/v1/workspaces/{workspace_id}/reference-options?q=grumpy&types=agent&surface=discuss`. A
-suggestion isn't permission to run an Agent.
+Attach a file through the composer and wait for its upload to complete before sending. Cancel an
+upload you no longer need. Deleting a file makes it unavailable to later reads. See the limits and
+supported formats under [The conversation](#the-conversation).
+
+Type `@` to choose a reference from the suggestions. Assign checks your access when resolving it.
+An Agent suggestion does not grant permission to run that Agent.
 
 ## Live voice <Badge type="warning" text="Upcoming" />
 

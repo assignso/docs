@@ -106,15 +106,11 @@ Use the returned revision next time. A stale one returns `409 revision_conflict`
 
 ## Browser push
 
-Push is opt-in through the browser's permission prompt.
+Open **Account settings → Notifications** to enable push delivery for the categories you want.
+Allow notifications when your browser asks. If you previously blocked them, review the browser's
+site permission before trying again. The Assign application manages the browser subscription.
 
-1. `GET /api/v1/me/push-endpoints/browser/config` returns the public VAPID key.
-2. Subscribe through the active service worker.
-3. `PUT /api/v1/me/push-endpoints/browser` registers that subscription (browser session and CSRF).
-   It replaces the session's earlier endpoint.
-4. `DELETE /api/v1/me/push-endpoints/browser` removes it, idempotently.
-
-Subscriptions are encrypted, confirmed for 45 days and removed on logout, account disablement, expiry
-or permanent rejection by the provider. A push contains the Assign title, an approved category
-phrase, an opaque notification ID and a relative link, with no Workspace, resource, person or
-customer content.
+Subscriptions are stored encrypted and remain confirmed for 45 days. Signing out or disabling the
+account removes the subscription. An expired or rejected subscription may need to be enabled again.
+Push notifications contain an Assign title, a category phrase and a link you open after signing in.
+They do not include Workspace, resource, person or customer content.

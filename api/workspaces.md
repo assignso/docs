@@ -4,9 +4,10 @@ description: Roles, Workspace settings, creation, archiving, members, invitation
 
 # Workspaces
 
-Create a Workspace, manage who belongs to it and configure it. These operations use a browser session
-(see [Authentication](./authentication)) and the [API conventions](./conventions). Reading your own
-Workspaces and members is covered in [Account](./account#workspaces-and-members).
+Use Workspace settings to manage your Workspace and its members. Create another Workspace through
+[Account settings](./account#workspaces-and-members). For integration credentials, supported
+operations and availability, see [Authentication](./authentication) and the
+[public API reference](./reference/). Resource requests follow the [API conventions](./conventions).
 
 ## Roles
 
@@ -24,54 +25,20 @@ so the last one can't be demoted, suspended or removed. A `viewer` is read-only,
 
 ## Create a Workspace
 
-**First Workspace.** A new account with no Workspace calls the bootstrap operation:
+When you sign up, Assign asks you to name your first Workspace and fills in its URL path.
+You become its owner. See the [quickstart](../get-started/quickstart).
 
-```http
-POST /api/v1/workspaces/bootstrap HTTP/1.1
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
+To create another, open **Account settings → Billing & plans** and choose an available Workspace
+option. Your account can own up to three Free Workspaces. Assign shows your remaining allowance
+and the available paid plans. After creation, select the new Workspace in the Workspace chooser.
 
-{"name": "Acme", "slug": "acme"}
-```
+### Paid Workspace <Badge type="warning" text="Awaiting deployment" />
 
-`name` is 1–100 characters. `slug` is the unique URL segment: 1–63 lowercase letters, numbers and
-interior hyphens. The caller becomes owner and the session switches to the new Workspace. An account
-that already has one gets `409 workspace_already_exists`.
-
-**Another Workspace.**
-
-```http
-POST /api/v1/workspaces HTTP/1.1
-X-CSRF-Token: <csrf-token>
-Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
-Content-Type: application/json
-
-{"name": "Acme", "slug": "acme"}
-```
-
-`slug` is optional and generated if omitted. The session doesn't switch; use
-[Switch Workspace](./authentication#switch-workspace). An account can own up to three Free Workspaces;
-past that you get `409 free_workspace_claim_unavailable`.
-
-`GET /api/v1/workspace-creation-options` tells a client what to offer: `free_available` and the
-currently purchasable paid options.
-
-**Paid Workspace** <Badge type="warning" text="Awaiting deployment" />. Send a `quote_id` from the creation options:
-
-```http
-POST /api/v1/workspace-checkouts HTTP/1.1
-X-CSRF-Token: <csrf-token>
-Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
-Content-Type: application/json
-
-{"name": "Acme Premium", "slug": "acme-premium", "quote_id": "personal_monthly"}
-```
-
-Redirect the browser to the returned `url`. Returning from checkout proves nothing. The Assign
-browser reads the checkout and waits for Account realtime updates; it offers the Workspace
-only after `state` is `activated`. API clients can read
-`GET /api/v1/workspace-checkouts/{checkout_id}` on demand. Other states are `pending`,
-`activating`, `expired`, `canceled`, and `failed`. Only `activated` includes the Workspace.
+Choose the plan in Assign and continue to the hosted checkout. Returning from checkout does not
+confirm payment or activate a Workspace.
+Wait for Assign to show the completed purchase and the new Workspace before opening it.
+If confirmation is delayed or the connection is interrupted, check the existing checkout's status
+in Assign before starting another purchase.
 
 ## Read, update and archive
 
@@ -132,19 +99,14 @@ configuration. See the [endpoint reference](./endpoints) for request and respons
 
 ### Billing
 
-Billing managers (`workspace.billing.manage`) use these operations. Changes need the CSRF header and
-recent authentication.
+Open **Workspace settings → Billing** to review the plan and invoices. Plan changes, the billing
+portal and credit purchases require billing-management permission. Assign may ask you to sign in
+again before a sensitive change. Choose the plan and billing period in Assign, then use the hosted
+checkout or portal it opens.
 
-- `GET …/billing-settings` returns the plan, billing cadence, period and a summary of recent
-  invoices. `provider_available` says whether checkout can start.
-- `POST …/checkout-sessions` with a plan and cadence, such as `{"plan":"personal","cadence":"monthly"}`,
-  returns a hosted checkout URL. Clients never send prices.
-- `POST …/billing-portal-sessions` returns a hosted portal URL once the Workspace has a billing
-  customer.
-- `POST …/billing/knowledge-credit-top-ups` starts a credit purchase.
-
-Returning from checkout or the portal changes nothing by itself; the plan updates after Assign
-verifies the payment provider's notification. While a Workspace is `billing_restricted`, you can
+Returning from checkout or the portal does not confirm a change; the plan updates after Assign
+verifies the payment. If a purchase is pending, check its status before paying again. While a
+Workspace has restricted billing, you can
 still read, repair billing, archive and reduce usage, but content writes, capacity increases, write
 integrations, Agents and automation are blocked. Active members and unexpired invitations both count
 toward member limits.
@@ -242,35 +204,31 @@ All need an owner or admin.
 
 ### Accept an invitation
 
-Recipients open the emailed link. The web app then asks them to sign in with the invited address and
-confirm **Accept invitation**. API clients can redeem the token directly:
+Open the emailed link, sign in with the invited address and confirm **Accept invitation**.
+Opening the link alone does not join the Workspace. A new account can register through the
+invitation; accepting also verifies that invited address as described above.
 
-```http
-POST /api/v1/invitations/accept HTTP/1.1
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
-
-{"token": "<one-time-token>"}
-```
-
-This returns the joined Workspace. It isn't Workspace-scoped, so a new account can use it. The
-account must have a verified email matching the invited address.
+If the invitation has expired or been revoked, ask a Workspace administrator for a new one. If you
+are signed in with another address, switch accounts before accepting. After an interrupted
+acceptance, check the Workspace chooser before trying the same invitation again.
 
 ## Realtime events
 
-Use the [application WebSocket](./realtime) <Badge type="warning" text="Upcoming" /> for Workspace changes. Its versioned scopes deliver content-free hints; apply canonical reads before acknowledging a checkpoint. The former Workspace SSE endpoint has been removed from the upcoming API contract.
+Upcoming [live updates](./realtime) refresh Workspace views when saved data changes. Let a view
+finish refreshing before relying on its current state. External integrations should use the
+supported operations in the [public reference](./reference/) and read collections with
+[bounded pagination](./pagination).
 
 ### Rank rebalance events <Badge type="warning" text="Awaiting deployment" />
 
-Reordering a Task or Project may also update neighboring ranks. A rare rebalance sends
-`task.updated` or `project.updated` for each changed neighbor, with `source: rank_rebalance` in the
-payload. Reload each named resource before showing its order.
+Reordering a Task or Project may also change the ordering values of nearby items. Refresh the
+affected collection to see its current order. A delayed update does not establish that the reorder
+failed; check the saved result before repeating it.
 
 ### Project state replacement events <Badge type="warning" text="Awaiting deployment" />
 
-When a Project lifecycle state is archived with a replacement, each reassigned Project sends
-`project.updated` with `source: project_state_replacement`. Reload each named Project to show its
-current state.
+Archiving a Project lifecycle state with a replacement moves the affected Projects to that
+replacement. Let those Project views refresh to show their current state.
 
 ## My Work
 

@@ -8,10 +8,10 @@ import { imageMetadata, plainText } from "./api-og.mjs"
 import { loadDocsContract } from "./authoring-contract.mjs"
 import { compatibilityPages, compatibilityPage } from "./api-navigation.mjs"
 import { errorCatalog, errorPage, errorTable } from "./error-catalog.mjs"
+import { publicPageSources, publicSections as sections } from "./publication-audit.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const pages = join(root, ".vocs-src/pages")
-const sections = ["get-started", "guides", "cli", "mcp", "api"]
 let expected
 let errors
 
@@ -49,19 +49,10 @@ function copyPage(relative) {
   writeGenerated(target, source)
 }
 
-function copySection(relative) {
-  for (const item of readdirSync(join(root, relative), { withFileTypes: true })) {
-    const path = join(relative, item.name)
-    if (item.isDirectory()) copySection(path)
-    else if (/\.mdx?$/.test(item.name)) copyPage(path)
-  }
-}
-
 export function preparePages() {
   expected = new Set()
   errors = errorCatalog(loadDocsContract(join(root, "public/openapi.yaml")).document)
-  copyPage("index.md")
-  for (const section of sections) copySection(section)
+  for (const source of publicPageSources(root)) copyPage(source)
   for (const entry of errors) writeGenerated(join(pages, "errors", `${entry.code}.md`), errorPage(entry))
   const { operations } = loadApiPresentation(root)
   generateApiImages(join(root, "public"), operations)

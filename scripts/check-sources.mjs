@@ -9,10 +9,23 @@ import { execFileSync } from "node:child_process"
 import { readFileSync, readdirSync, existsSync } from "node:fs"
 import { resolve, dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { publicPageSources, privateWireReferences } from "./publication-audit.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const workspace = process.env.ASSIGN_WORKSPACE ?? resolve(root, "..")
 const problems = []
+
+const publicationRegistry = join(workspace, "assign-core/contracts/api/metadata/canonical-registry.json")
+try {
+  const pages = publicPageSources(root).map((file) => ({ file, content: readFileSync(join(root, file), "utf8") }))
+  const { privateReferences, unresolved } = privateWireReferences(pages, JSON.parse(readFileSync(publicationRegistry, "utf8")))
+  for (const reference of privateReferences)
+    problems.push(`${reference.file}:${reference.line} documents a private request (${reference.operationIds.join(", ")}); use supported UI guidance`)
+  console.log(`Checked ${pages.length} authored pages against canonical publication decisions; ${privateReferences.length} private request references`)
+  if (unresolved.length) console.warn(`${unresolved.length} request references need separate canonical path review; this check does not qualify their publication`)
+} catch (error) {
+  problems.push(`Required private publication source check failed: ${error.message}`)
+}
 
 function goSources(dir) {
   return readdirSync(dir)

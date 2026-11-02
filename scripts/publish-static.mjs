@@ -10,6 +10,8 @@ import { docsOrigin, imageEntry } from "./api-og.mjs"
 import { developerNavigation, compatibilityPages } from "./api-navigation.mjs"
 import { verifyApiImages } from "./render-api-og.mjs"
 import { operationExamples } from "./operation-examples.mjs"
+import { auditStaticPublication, pageRoute, publicPageSources } from "./publication-audit.mjs"
+import { errorCatalog } from "./error-catalog.mjs"
 import { parse as parseOpenApi } from "../node_modules/vocs/dist/internal/openapi/parser.js"
 import { codeSamples, responseSamples } from "../node_modules/vocs/dist/internal/openapi/sample.js"
 
@@ -146,6 +148,14 @@ writeFileSync(join(output, "llms.txt"), index)
 assert.match(index, /\/api\/reference\/tasks/)
 assert.doesNotMatch(index, /AGENTS\.md|README\.md|\.agents\/|\.vocs-src/)
 const { document: spec, authoring } = loadDocsContract(join(output, "openapi.yaml"))
+const pageCounts = auditStaticPublication(output, [
+  ...publicPageSources(root).map(pageRoute),
+  ...new Set(referenceOperations.map(({ group }) => `/api/reference/${group}`)),
+  ...referenceOperations.map(({ id }) => `/api/reference/operations/${id}`),
+  ...compatibilityPages.map(({ id }) => `/api/reference/operations/${id}`),
+  ...errorCatalog(spec).map(({ code }) => `/errors/${code}`),
+])
+console.log(`Verified ${pageCounts.pages} canonical pages across HTML, Markdown, downloads and agent resources`)
 let operations = 0
 for (const item of Object.values(spec.paths)) for (const method of methods) {
   const operation = item[method]

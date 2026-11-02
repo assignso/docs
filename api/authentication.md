@@ -151,6 +151,8 @@ pass the compromised-password check. Resetting a password signs out every sessio
 while signed in keeps the current session and signs out the others. Verify your email so you
 can recover the Account. A password-reset link expires after four hours.
 
+<a id="register-from-an-invitation"></a>
+
 ### Register from an invitation <Badge type="warning" text="Awaiting deployment" />
 
 Open the invitation in the browser and sign up with the invited email address. A valid

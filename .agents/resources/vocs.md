@@ -68,6 +68,18 @@ Their edit links point to the authored Markdown; the build checks the original a
 the authored content. Maintenance files, agent instructions and sibling repositories are never
 staged as site content. `styles/root.css` owns the self-hosted Geist fonts and Assign theme.
 
+`publication-audit.mjs` enumerates maintained pages for staging and publication checks. Hidden
+directories and maintenance Markdown are excluded even inside a content section. Postbuild compares
+that inventory, generated errors and approved reference routes with every HTML page, Markdown twin,
+readable download and agent index entry. Extra stale pages, missing mirrors and maintenance output
+fail the build. Keep this check separate from release availability and private-source approval.
+
+The local source check uses the sibling canonical registry to reject known first-party/internal
+request examples, including abbreviated path suffixes. It requires that private source and reports
+unrecognized or ambiguous references for separate review. This lexical check does not validate the
+semantics or release status of public requests. Public CI uses only the pinned public export; never
+copy the private registry or its diagnostics into public source, output or CI artifacts.
+
 For an OpenAPI guide embed, use an MDX file in the authored `api/` directory:
 
 ```mdx
