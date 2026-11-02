@@ -32,41 +32,11 @@ credential is not a product service-account credential.
 
 ### Make your first request
 
-1. Open **Account settings → Security** in Assign and create a personal API token for the
-   Workspace you want to read. Select the available read access needed for Tasks.
-2. Copy the secret once into your secret manager. Make it available to this process as
-   `ASSIGN_TOKEN`; keep it out of shell history, source files and logs. Save the bare secret;
-   the request below adds the `Bearer` prefix.
-3. Obtain the immutable Workspace ID from the Workspace administrator and set
-   `ASSIGN_WORKSPACE_ID`. A Workspace name or URL slug is not this ID.
-
-```sh
-curl "https://api.assign.so/api/v1/workspaces/$ASSIGN_WORKSPACE_ID/tasks?limit=1" \
-  -H "Authorization: Bearer $ASSIGN_TOKEN" \
-  -H "Accept: application/json"
-```
-
-A successful request returns `200` and a bounded JSON page. This illustrative response is a
-valid empty page:
-
-```json
-{
-  "data": [],
-  "next_cursor": null,
-  "included": {
-    "assignees": [],
-    "statuses": [],
-    "milestones": [],
-    "labels": [],
-    "completeness": "complete",
-    "unavailable": []
-  }
-}
-```
-
-Follow `next_cursor` until it is `null`, including after a short or empty page. The endpoint
-reference defines the response headers and filters. Keep the same credential and selectors
-when continuing.
+Follow [Make your first API request](./quickstart) to obtain a credential and Workspace ID,
+then read one Task page with HTTP, TypeScript or PHP. Choose the
+[personal script](./quickstart#personal-script), [Workspace service](./quickstart#workspace-service)
+or [delegated application](./quickstart#application-acting-for-a-person) setup path.
+The tutorial records SDK availability and explains the response before an authorized write.
 
 ### Expiry, rotation and revocation
 
@@ -140,9 +110,13 @@ REST endpoint. A client name does not grant extra Workspace or Project access.
 
 ## Browser sessions
 
-Sign in at [assign.so](https://assign.so). Assign manages the browser session. Integrations
-use the bearer flow above; see [authentication migration](./versioning#authentication-migration)
-when updating an existing client.
+Sign in at [assign.so](https://assign.so). Assign manages the browser session and the CSRF
+protection required for its session-authenticated changes. A product bearer request uses
+`Authorization: Bearer` and does not need a browser cookie or CSRF token. Do not copy either
+from a signed-in browser or use a session credential as your integration's token.
+
+See [authentication migration](./versioning#authentication-migration) when updating an
+existing client.
 
 ## Password sign-in
 

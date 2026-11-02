@@ -10,8 +10,11 @@ and the registered sign-in flows used by Assign's own clients. Use a
 
 ## Register and discover
 
-Your application needs a reviewed registration with its client ID, allowed redirect URIs,
-scopes and client type. There is no anonymous dynamic registration for product OAuth.
+Arrange a reviewed registration with your application's administrator before starting. You
+need its client ID, exact allowed redirect URI, approved scopes and client type, plus the
+immutable Workspace ID supplied by the Workspace administrator. For the
+[first Task read](./quickstart), request `tasks:read`. There is no anonymous dynamic registration
+for product OAuth; discovering the server's metadata does not register an application.
 A confidential application also receives a client secret. Keep that secret on its server;
 a public client must not embed one in a distributed app.
 
@@ -64,7 +67,9 @@ curl --request POST "$ASSIGN_TOKEN_ENDPOINT" \
 A successful exchange returns `200`, `Cache-Control: no-store` and JSON fields `access_token`,
 `refresh_token`, `token_type=Bearer`, `expires_in` and `scope`. Use `expires_in` to schedule renewal;
 access tokens last at most 15 minutes. Send the access token as a bearer credential to the
-[product resource operation](./authentication#make-your-first-request), never to MCP.
+[first Task read](./quickstart#3-read-one-task-page), never to MCP. Supply only `access_token`
+as `ASSIGN_TOKEN`; keep the refresh token in your grant's credential store. If consent fails
+or the requested scope is unavailable, stop before attempting the resource request.
 
 ## Authenticate a confidential client
 

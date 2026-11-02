@@ -12,7 +12,7 @@ export const protocolNavigation = {
 export const developerNavigation = [
   { text: "Start", items: [
     { text: "Overview", link: "/api/" },
-    { text: "Make your first request", link: "/api/authentication#make-your-first-request" },
+    { text: "Make your first request", link: "/api/quickstart" },
     { text: "Choose a credential", link: "/api/authentication" },
     { text: "SDKs and examples", link: "/api/#openapi-and-sdks" },
   ] },

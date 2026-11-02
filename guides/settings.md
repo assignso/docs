@@ -13,7 +13,8 @@ require the owner or admin role. Both have **Back to app** at the top of their s
 | Page | What you can do |
 | --- | --- |
 | **Profile** | Name, username, avatar and other personal details |
-| **Security** | Verify your email, change your password, set up an authenticator app and recovery codes, create personal API tokens |
+| **Security** | Verify your email, change your password, set up an authenticator app and recovery codes |
+| **Access tokens** | Create and manage personal API tokens for your integrations |
 | **Passkeys** | Add, rename or remove passkeys. Assign flags credentials it has disabled for safety |
 | **Active sessions** | See your sessions by Workspace and recent activity, then sign out one or all others |
 | **Connected accounts** | Link or unlink Google, GitHub or Apple |

@@ -65,7 +65,7 @@ end it when closed. An expired or revoked session requires sign-in again.
 
 ## Personal API tokens
 
-Create and manage personal tokens in **Account settings → Security**. Copy each new secret
+Create and manage personal tokens in **Account settings → Access tokens**. Copy each new secret
 once into a secret manager. Lists show safe metadata such as name, prefix, scopes, last use
 and expiry; they cannot reveal the secret again. Revocation is permanent.
 
@@ -76,6 +76,10 @@ in [Authentication](./authentication#expiry-rotation-and-revocation). Tokens can
 transferred to another person. Use an owned product service account for unattended Workspace
 work when that feature is available. [MCP service credentials](../mcp/security#service-credentials)
 are separate and work only with MCP.
+
+Follow [Make your first API request](./quickstart) for the separate personal, service and
+delegated setup paths and a bounded Task read. Account security management happens in Assign;
+an integration does not need browser cookies or a CSRF token to send a product bearer request.
 
 ## Linked identities
 

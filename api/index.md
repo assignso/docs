@@ -22,8 +22,9 @@ Workspace work, or product OAuth for a registered application. Each operation do
 admitted credentials and scopes. Your current Workspace and Project permissions still apply.
 [MCP credentials](../mcp/security) have their own audience and cannot authenticate product REST.
 
-The [authentication guide](./authentication) has one credential chooser, UI setup, a bounded
-Task-read example and expiry, rotation and recovery rules. The rewritten v1 flow is awaiting
+Start with [Make your first API request](./quickstart) for credential setup, the Workspace ID
+and the same bounded Task read with HTTP, TypeScript or PHP. The [authentication guide](./authentication)
+covers credential selection, expiry, rotation and recovery. The rewritten v1 flow is awaiting
 deployment; check its availability before use. Assign applications manage their own sign-in.
 
 ## Conventions at a glance
