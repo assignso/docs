@@ -4,15 +4,17 @@ description: Manage Workspace and Project label definitions, assign labels to wo
 
 # Labels
 
-Labels are defined per Workspace or per Project and assigned to Tasks, Projects and Documents. These
-operations use a browser session and the [API conventions](./conventions), with live visibility and
-Workspace authorization checks on every call.
+Labels are defined per Workspace or per Project and assigned to Tasks, Projects and Documents.
+The rewritten v1 operations below are awaiting deployment. Public integrations use
+[bearer credentials](./authentication), with current visibility and Workspace authorization
+checks on every call. Follow the [API conventions](./conventions).
 
 | Operation | Route |
 | --- | --- |
 | List, create Workspace labels | `GET`, `POST /api/v1/workspaces/{workspace_id}/label-definitions` |
 | List, create Project labels | `GET`, `POST /api/v1/projects/{project_id}/label-definitions` |
-| Update, archive | `PATCH`, `DELETE /api/v1/label-definitions/{label_id}` |
+| Update | `PATCH /api/v1/label-definitions/{label_id}` |
+| Archive | `POST /api/v1/label-definitions/{label_id}/archive` |
 | Read, replace a target's labels | `GET`, `PUT /api/v1/{target_kind}/{target_id}/labels` |
 | List, set, clear Project overrides | `GET /api/v1/projects/{project_id}/label-overrides`, `PUT`, `DELETE …/label-overrides/{label_id}` |
 
@@ -24,8 +26,10 @@ Workspace authorization checks on every call.
   view is needed. A changed catalog returns `409 catalog_changed`; discard the
   partial traversal and start again at page one. This also applies to definition
   lists. <Badge type="warning" text="Awaiting deployment" />
-- Archiving stops future assignment but leaves history intact. Restore with a revision-checked
-  `PATCH` of `{"archived": false}`, which keeps the same label.
+- Archiving stops future assignment but leaves history intact. Send the exact opaque canonical
+  item `ETag` in `If-Match` and retain the `Idempotency-Key` for recovery. Restore with a
+  conditional `PATCH` of `{"archived": false}`, which keeps the same label. See
+  [writes and retries](./writes).
 - Replacing a target's labels sets the complete active set and follows the revision rules in the
   [OpenAPI document](/openapi.yaml). `target_kind` is `task`, `project` or `document`.
 - A Project can show a Workspace Task label under a different name or color, only in that Project.
@@ -39,9 +43,8 @@ Workspace authorization checks on every call.
 ## Read one label <Badge type="warning" text="Awaiting deployment" />
 
 `GET /api/v1/label-definitions/{label_id}` returns one current or archived label
-using your browser session. You must be able to read its Workspace and, for a
-Project label, its Project. Unknown and unavailable labels return `404`. This
-operation does not currently admit native credentials.
+using your bearer credential. You must be able to read its Workspace and, for a
+Project label, its Project. Unknown and unavailable labels return `404`.
 
 ## Change events <Badge type="warning" text="Awaiting deployment" />
 

@@ -8,6 +8,7 @@ Use Workspace settings to manage your Workspace and its members. Create another 
 [Account settings](./account#workspaces-and-members). For integration credentials, supported
 operations and availability, see [Authentication](./authentication) and the
 [public API reference](./reference/). Resource requests follow the [API conventions](./conventions).
+The rewritten v1 resource routes below are awaiting deployment.
 
 ## Roles
 
@@ -42,13 +43,15 @@ in Assign before starting another purchase.
 
 ## Read, update and archive
 
-`GET /api/v1/workspaces/{workspace_id}` returns a Workspace for any active member, with its revision
-in `ETag`. An archived Workspace returns `404` to everyone but its owners.
+`GET /api/v1/workspaces/{workspace_id}` returns a Workspace for any active member. Keep the
+canonical response's opaque item `ETag` for an edit, using the same credential and content
+encoding. A revision number is not a valid condition. An archived Workspace returns `404` to
+everyone but its owners.
 
 ```http
 PATCH /api/v1/workspaces/{workspace_id} HTTP/1.1
-X-CSRF-Token: <csrf-token>
-If-Match: "3"
+Authorization: Bearer <token>
+If-Match: <exact-etag-from-canonical-read>
 Content-Type: application/json
 
 {"name": "Acme Corporation"}
@@ -63,7 +66,11 @@ Workspace icons can also be uploaded through the [attachment flow](./attachments
 JPEG, 5 MiB at most) and set with `POST /api/v1/workspaces/{workspace_id}/icon`. `DELETE` removes
 it.
 
-`DELETE /api/v1/workspaces/{workspace_id}` with `If-Match` archives the Workspace (`204`). Only an
+## Archive <Badge type="warning" text="Awaiting deployment" />
+
+`POST /api/v1/workspaces/{workspace_id}/archive` archives the Workspace (`204`). Send the exact
+opaque canonical item `ETag` in `If-Match` and an `Idempotency-Key`; retain both for an uncertain
+outcome. Do not construct the condition from a revision. Only an
 owner can archive, after signing in within the last 15 minutes
 ([recent authentication](./account#recent-authentication)). Nothing is deleted, but every session in
 the Workspace ends, it returns `404` to non-owners and all writes stop. Your last Workspace can't be
@@ -113,12 +120,12 @@ toward member limits.
 
 ## AI and MCP access
 
-Any member can read `GET …/ai-access-policy`. It's enabled by default.
+Any member can read `GET /api/v1/workspaces/{workspace_id}/ai-access-policy`. It's enabled by default.
 
 ```http
 PUT /api/v1/workspaces/{workspace_id}/ai-access-policy HTTP/1.1
-X-CSRF-Token: <csrf-token>
-If-Match: "2"
+Authorization: Bearer <token>
+If-Match: <exact-etag-from-canonical-read>
 Content-Type: application/json
 
 {"enabled": false}
@@ -141,7 +148,7 @@ or admin:
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/statuses HTTP/1.1
-X-CSRF-Token: <csrf-token>
+Authorization: Bearer <token>
 Idempotency-Key: 6f1b0d5e-1a3c-4f2b-9a4d-2c8e5b7f0a11
 Content-Type: application/json
 
@@ -158,7 +165,7 @@ Update, archive and reorder them as described in
 
 | Operation | Notes |
 | --- | --- |
-| `POST …/members` with `{"user_id"}` | Reactivates someone who was previously a member. It can't add a stranger; use an invitation. |
+| `POST /api/v1/workspaces/{workspace_id}/members` with `{"user_id"}` | Reactivates someone who was previously a member. It can't add a stranger; use an invitation. |
 | `PATCH …/members/{member_id}` with `If-Match` | Send `role` and/or `state` (`active` or `suspended`). Suspending ends their sessions in this Workspace. |
 | `DELETE …/members/{member_id}` | `204`, also if repeated. Ends their sessions. Their past Tasks and Comments stay attributed to them. |
 
@@ -178,7 +185,7 @@ accept; opening the email link does not join the Workspace.
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/invitations HTTP/1.1
-X-CSRF-Token: <csrf-token>
+Authorization: Bearer <token>
 Idempotency-Key: 0f2c9a71-6f4e-4d8b-8f1a-7b3e6d2c5a04
 Content-Type: application/json
 
@@ -194,7 +201,7 @@ nothing.
   invitation lasts 7 days.
 - An unexpired invitation for the same address returns `409 invitation_pending`, and an existing
   member returns `409 already_member`.
-- `GET …/invitations?limit=50` lists them, newest first, without tokens. `state` is `pending`,
+- `GET /api/v1/workspaces/{workspace_id}/invitations?limit=50` lists them, newest first, without tokens. `state` is `pending`,
   `accepted`, `revoked` or `expired`.
 - `POST …/invitations/{invitation_id}/resend` revokes the old link and sends a fresh 7-day one. If
   delivery fails, the original stays valid.

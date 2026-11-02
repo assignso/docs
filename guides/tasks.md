@@ -36,7 +36,7 @@ Comments are listed under the description. The **Post** button appears once you 
 You can edit, delete and react to Comments. Reactions from other people appear live. Deleting a
 Comment clears its text and leaves a deleted entry. Links to later Comments keep their numbers.
 
-A Comment link looks like `…/tasks/WEB-42?comment=3`. Opening it scrolls to that Comment and
+A Comment link ends in `/tasks/WEB-42?comment=3`. Opening it scrolls to that Comment and
 highlights it. Comments posted through an AI assistant show who posted them and through which
 client, for example **Codex · via MCP**.
 

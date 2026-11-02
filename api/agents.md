@@ -7,7 +7,9 @@ description: Hire, configure, run and review Workspace Agents, approve their pro
 Agents are Workspace-owned workers, each with one project-management responsibility. Hiring or
 configuring an Agent records the desired setup; it doesn't mean a run has started or finished.
 
-These operations use a browser session and the [API conventions](./conventions).
+The rewritten v1 operations below are awaiting deployment. Public integrations use
+[bearer credentials](./authentication) and still need current Workspace and resource access.
+See [writes and retries](./writes) for conditional changes and uncertain outcomes.
 
 | Role | Can |
 | --- | --- |
@@ -24,7 +26,8 @@ cancellation rules.
 - `GET /api/v1/workspaces/{workspace_id}/agents/definitions` is the library: definition IDs, names,
   responsibilities, supported and default triggers, capability summaries and action boundaries. It
   never returns prompts, models or runtime configuration.
-- `GET /api/v1/workspaces/{workspace_id}/agents` and `…/agents/{agent_id}` list and read hired Agents.
+- `GET /api/v1/workspaces/{workspace_id}/agents` lists hired Agents;
+  `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}` reads one.
   Each pins its definition and version, and has a status (`active` or `paused`), scope (Workspace or
   selected Projects), enabled triggers, additional instructions, revision and timestamps.
 
@@ -34,7 +37,7 @@ Use the library rather than assuming a fixed set of definitions.
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/agents HTTP/1.1
-X-CSRF-Token: <csrf-token>
+Authorization: Bearer <token>
 Idempotency-Key: <unique-key>
 Content-Type: application/json
 
@@ -67,8 +70,8 @@ Content-Type: application/json
 
 ```http
 PATCH /api/v1/workspaces/{workspace_id}/agents/{agent_id} HTTP/1.1
-X-CSRF-Token: <csrf-token>
-If-Match: "3"
+Authorization: Bearer <token>
+If-Match: <exact-etag-from-canonical-read>
 Content-Type: application/json
 
 {"status": "paused", "scope_kind": "workspace", "project_ids": [], "enabled_trigger_types": ["manual"], "additional_instructions": "Prefer concise review comments."}
@@ -78,10 +81,10 @@ An update replaces the whole editable configuration, and a stale revision return
 Pausing stops new manual, event and scheduled runs, but doesn't undo committed actions. Pausing or
 narrowing the scope also cancels pending work and pending approvals.
 
-- `POST …/{agent_id}/quarantine` with `If-Match` and a 1–200 character reason pauses the Agent,
+- `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/quarantine` with `If-Match` and a 1–200 character reason pauses the Agent,
   clears its schedule, cancels unfinished runs and voids pending approvals.
-- `POST …/{agent_id}/rollback` restores the previous qualified version, paused, when one exists.
-- `DELETE …/{agent_id}` removes the Agent and stops unfinished work, keeping retained history.
+- `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/rollback` restores the previous qualified version, paused, when one exists.
+- `DELETE /api/v1/workspaces/{workspace_id}/agents/{agent_id}` removes the Agent and stops unfinished work, keeping retained history.
 
 ## Run and inspect
 
@@ -89,16 +92,21 @@ An active Agent with `manual` enabled starts with an empty body:
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs HTTP/1.1
-X-CSRF-Token: <csrf-token>
+Authorization: Bearer <token>
 Idempotency-Key: <unique-key>
 Content-Type: application/json
 
 {}
 ```
 
-The `202` response is the queued run. That doesn't mean the model ran or an action was applied. The
-run moves to `running` and then a terminal state; work interrupted while running resumes without a
-new run. Read one run with `…/runs/{run_id}` or page history with `…/runs?limit=50&cursor=<cursor>`.
+The `202` response is a compact Operation receipt, not the completed run or its result. Retain its
+identity and the original key and body. Follow the returned status location; reading status does
+not start work. After an uncertain outcome, recover the original request rather than submit a new
+run. Work requiring reconciliation must not be redispatched automatically.
+
+Use an authorized run ID to read `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}`.
+Page history with `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs?limit=50&cursor=<cursor>`.
+Result and history reads still require current access.
 
 History shows the trigger, state, pinned version, a safe summary, credit totals, a safe error code
 and timestamps, never prompts, retrieved context, model output or traces. It is kept for 90 days, and
@@ -175,7 +183,7 @@ A test run runs without committing changes:
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests HTTP/1.1
-X-CSRF-Token: <csrf-token>
+Authorization: Bearer <token>
 Idempotency-Key: <unique-key>
 Content-Type: application/json
 
@@ -194,8 +202,10 @@ If Studio cannot refresh a definition or catalog, use **Retry**. The editor hide
 the previous definition details until the current read succeeds and keeps
 unsaved fields in the open tab.
 
-- `…/{definition_id}/requests` pages request history and `…/{definition_id}/usage` gives the usage
-  summary, separating pending runs, reserved credits and settled credits.
+- `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests`
+  pages request history.
+- `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/usage`
+  gives the usage summary, separating pending runs, reserved credits and settled credits.
 - `POST …/{definition_id}/delegations/{task_id}` gives an Agent a responsibility on a Task without
   replacing the human assignee or changing its state.
 - Production use of custom Agents depends on rollout and billing, so a saved or active definition

@@ -21,8 +21,9 @@ enabled, Comments. A rebuild or outage can delay new evidence. Access is checked
 moved, deleted or excluded content can disappear before replacement evidence is ready. Turning off a
 source option removes its derived content but not the original resources.
 
-These operations need a browser session and an active Knowledge entitlement and policy for the
-Workspace. Responses are private and never include scores, prompts, model details or traces.
+These operations need current Workspace and Project access and an active Knowledge entitlement
+and policy. Use [Authentication](./authentication) for public integration credentials. Responses
+are private and never include scores, prompts, model details or traces.
 Upcoming [live updates](./realtime) refresh the Knowledge views you have open.
 Results can still be stale while background indexing catches up.
 
@@ -52,12 +53,29 @@ Passage excerpts quote source content. When a result includes separate retrieval
 source, Project and section labels to locate the work; those labels do not add requirements or facts
 to the quoted passage. Search can remain available while background evidence is being rebuilt.
 
-## Answers
+<a id="answers"></a>
 
-`GET /api/v1/workspaces/{workspace_id}/knowledge/answer?q=...` runs only on an explicit submission,
-never per keystroke. It returns a one-sentence extractive answer and up to five current, authorized
-sources. Its `supported`, `partial`, `conflicting` and `none` states make uncertainty explicit, and
-Search still works when Knowledge is down.
+## Answers <Badge type="warning" text="Awaiting deployment" />
+
+Submit an answer only after an explicit request, never per keystroke. The upcoming route is
+`POST /api/v1/workspaces/{workspace_id}/knowledge/answers`, with a typed question and context and
+an `Idempotency-Key`. A `202` response accepts the work; it contains a compact Operation receipt,
+not the answer. Follow its `Location` for status and honor `Retry-After`. Status reads do not
+start or repeat answer generation.
+
+Keep the original key and exact body after a timeout or lost response. Recover that request;
+do not create another key to retry an unknown outcome. Cancellation is best effort and cannot
+undo usage or committed work. An outcome requiring reconciliation must not be resubmitted
+automatically. See [writes and retries](./writes).
+
+After completion, use the Operation's answer result reference to read
+`GET /api/v1/workspaces/{workspace_id}/knowledge/answers/{answer_id}`.
+Result reads separately check the original caller's current access and every original evidence
+source. If a source is no longer authorized, removing its citation does not make the stored
+wording available. Pending or unknown work returns `409`; terminal result recovery lasts seven
+days. Answers contain at most five sources and 4,000 characters. Their `supported`, `partial`,
+`conflicting` and `none` states make uncertainty explicit. Search still works when Knowledge is
+down.
 
 ## Related Task context
 

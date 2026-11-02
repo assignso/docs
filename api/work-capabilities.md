@@ -17,7 +17,7 @@ fields and errors.
 - **Saved view.** Keeps the query, not frozen results. It's private to you and needs an unrestricted
   Workspace credential.
 - **ChangeSet.** Up to 100 Task updates, completions or creations, or Document draft applications.
-  `atomic` applies all or nothing, and `per_item` reports each outcome. Core assigns operation IDs, so
+  `atomic` applies all or nothing, and `per_item` reports each outcome. The response supplies operation IDs, so
   omit them. Include each Task's current revision, and a Status's current revision when setting one.
 - **Document draft.** Keeps the base and draft content and changes nothing until its reviewed
   application succeeds.
@@ -30,22 +30,29 @@ after 30 days. Applying rechecks current permissions and revisions.
 
 ## Endpoints
 
-All are under `/api/v1/workspaces/{workspace_id}`:
+The following routes describe the upcoming resource contract. Use the
+[published reference](./reference/) for each available operation's credential bindings and schemas.
 
 | Resource | Operations |
 | --- | --- |
-| `/task-result-sets` | `POST` capture or refresh. `GET` by ID and version, or hydrate by ID, version and offset. |
-| `/task-selections` | `POST` a selection. `GET /{id}` or `/{id}/hydrate?offset=N`. |
-| `/task-saved-views` | `POST` save. `GET` list. `POST /delete` with ID and revision. |
-| `/document-patches` | `POST` create or edit. `GET /{id}?version=N`. |
-| `/change-sets` | `POST` propose. `GET /{id}?version=N`. `POST /{id}/review`. `POST /apply`. |
-| `/operation-receipts` | `GET /{id}`. `POST /undo` for supported conditional compensation. |
-| `/members/resolve` | `GET ?query=...`. Ambiguous names return candidates. |
-| `/tasks/{id}/context` | `GET` bounded canonical Comments and direct related Tasks. |
-| `/evidence-collections` | See below. |
+| Task result sets | `POST /api/v1/workspaces/{workspace_id}/task-result-sets`; `GET /api/v1/workspaces/{workspace_id}/task-result-sets/{id}?version=<version>` |
+| Task selections | `POST /api/v1/workspaces/{workspace_id}/task-selections`; `GET /api/v1/workspaces/{workspace_id}/task-selections/{id}` |
+| Saved views | `POST` or `GET /api/v1/workspaces/{workspace_id}/task-saved-views`; `PATCH` or `DELETE /api/v1/workspaces/{workspace_id}/task-saved-views/{view_id}` |
+| Document drafts | `POST /api/v1/workspaces/{workspace_id}/document-patches`; `GET /api/v1/workspaces/{workspace_id}/document-patches/{id}?version=<version>` |
+| ChangeSets | `POST /api/v1/workspaces/{workspace_id}/change-sets`; `GET /api/v1/workspaces/{workspace_id}/change-sets/{id}?version=<version>`; `POST /api/v1/workspaces/{workspace_id}/change-sets/{change_set_id}/apply` |
+| Operation receipts | `GET /api/v1/workspaces/{workspace_id}/operation-receipts/{id}`; `POST /api/v1/workspaces/{workspace_id}/operation-receipts/undo` |
+| Member lookup | `GET /api/v1/workspaces/{workspace_id}/members/resolve?query=<query>` returns permitted candidates for an ambiguous name. |
+| Task context | `GET /api/v1/tasks/{task_id}/context` returns bounded canonical Comments and direct related Tasks. |
+| Evidence collections | See [Evidence collections](#evidence-collections). |
 
-They use a browser session. Writes need CSRF and an `Idempotency-Key`, except review, which is bound to
-the exact version and digest.
+Task result sets and selections return a summary and an `items_url`. Read that same resource's
+`view=items` for one bounded page, using its opaque cursor rather than a hydration alias or offset.
+The default page has 50 entries and the maximum is 100. Keep exact decimal versions as strings.
+Saved view edits and deletion require the returned `item_validator` in `If-Match`.
+
+Keep an `Idempotency-Key` for writes and follow the operation's conditions. Review a ChangeSet in
+Assign against its exact version and digest before applying it. Review is the initiating person's
+action; an integration cannot supply its own approval.
 
 ## Receipts and recovery
 
@@ -69,17 +76,20 @@ description and Comment body. Quotes are plain text of up to 1,800 characters, a
 up to 32 passages. Missing, ambiguous or stale passages are rejected.
 
 - The response has a private collection ID and version, source references and a 30-day expiry.
-- `GET …/evidence-collections/{id}?version=1` reads metadata.
-- `GET …/evidence-collections/{id}/hydrate?version=2&offset=0&limit=1` returns up to 20 current
-  passages (`limit` 1–20, default 20). Follow `next_offset`. Changed, unavailable and excluded
-  references have no text, so hydrate before reusing one. A quotation doesn't make its claims true.
+- `GET /api/v1/workspaces/{workspace_id}/evidence-collections/{id}?version=<version>` reads
+  the summary. Keep its exact immutable version and `items_url`; the summary omits source references.
+- Read `items_url`, or the same resource with `view=items&version=<version>`, for one page of
+  passages (`limit` 1–20, default 20). Follow the opaque `next_cursor` until it is `null`; do not
+  use an offset or infer completion from page length. Pages contain at most 20 original references
+  and 240 KiB of JSON, with complete passages. Changed, unavailable and excluded references have no
+  text, so read the current items before reusing one. A quotation doesn't make its claims true.
 - Post to the collection's exclusions endpoint with `id`, `expected_version` and the complete
   `excluded_ids` array to create a new version with those references left out. An empty array
   includes everything again. Older versions stay unchanged and hydrate as `superseded`, so open the
   current one. Exclusions apply only to this investigation.
 
-Writes need a browser session, CSRF and an `Idempotency-Key`. Resolve an uncertain result through the
-receipt. A collection doesn't grant permission to publish its content.
+Writes need the operation's admitted credential and an `Idempotency-Key`. Resolve an uncertain
+result through the receipt. A collection doesn't grant permission to publish its content.
 
 ## MCP
 

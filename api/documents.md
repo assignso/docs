@@ -209,6 +209,8 @@ Git-managed Documents return `409 document_git_managed`. Preserve them and resol
 rather than deleting children as an automatic cleanup step. Attachment objects follow their own
 retention and link rules; deleting a Document is not permission to delete shared files.
 
+<a id="link-documents-to-tasks-and-milestones"></a>
+
 ## Link Documents to Tasks and Milestones <Badge type="warning" text="Awaiting deployment" />
 
 Use **Link work** in a Document, or **Link document** on a Task or Milestone. A Project Document
