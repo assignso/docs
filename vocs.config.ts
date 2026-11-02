@@ -25,6 +25,7 @@ const getStarted = [
       { text: "Settings", link: "/guides/settings" },
       { text: "Keyboard shortcuts", link: "/guides/keyboard-shortcuts" },
       { text: "Privacy and cookies", link: "/guides/privacy-and-cookies" },
+      { text: "Delete your account", link: "/guides/account-deletion" },
     ],
   },
 ]

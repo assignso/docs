@@ -27,6 +27,10 @@ Assign won't remove your last usable sign-in method. Keep a password or connecte
 you lose a passkey or authenticator. Active sessions never show device, browser, IP address or
 location, because Assign doesn't collect them.
 
+### Account deletion <Badge type="warning" text="Upcoming" />
+
+Security includes a deletion request with a seven-day cancellation window. The [account deletion guide](account-deletion.md) explains confirmation, ownership and checkout blockers, status recovery, cancellation and retained records.
+
 ### Billing & plans refresh <Badge type="warning" text="Awaiting deployment" />
 
 The page refreshes your Free Workspace allowance and the Workspace plans you have loaded when

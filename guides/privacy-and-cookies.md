@@ -6,7 +6,7 @@ cookies.
 
 Analytics and the cookie-consent interface are not loaded in the authenticated
 product, Workspace creation, settings, administration, or lab areas. These
-private areas are excluded by path prefix; other current and future public pages
+private areas, including the Account deletion page, are excluded by path prefix; other current and future public pages
 are included by default.
 
 The consent banner offers two choices:
