@@ -2,14 +2,18 @@
 import { existsSync, readdirSync, readFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { loadApiPresentation, referencePath } from "./api-presentation.mjs"
+import { loadApiPresentation, operationExampleSetup, operationGuideLinks, referencePath } from "./api-presentation.mjs"
 import { generateApiImages } from "./render-api-og.mjs"
 import { imageMetadata, plainText } from "./api-og.mjs"
+import { loadDocsContract } from "./authoring-contract.mjs"
+import { compatibilityPages, compatibilityPage } from "./api-navigation.mjs"
+import { errorCatalog, errorPage, errorTable } from "./error-catalog.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const pages = join(root, ".vocs-src/pages")
 const sections = ["get-started", "guides", "cli", "mcp", "api"]
 let expected
+let errors
 
 function writeGenerated(target, content) {
   expected.add(target)
@@ -21,6 +25,11 @@ function writeGenerated(target, content) {
 
 function copyPage(relative) {
   let source = readFileSync(join(root, relative), "utf8")
+  if (relative === "api/errors.md") {
+    if (source.split("<!-- assign:error-catalog -->").length !== 2)
+      throw new Error("Expected one public error catalog marker")
+    source = source.replace("<!-- assign:error-catalog -->", errorTable(errors))
+  }
   source = source.replace(/<!--([\s\S]*?)-->/g, "{/*$1*/}")
   source = source.replace(/^(#{1,6} .*?) \{#([^}]+)\}$/gm,
     '<a id="$2" />\n\n$1')
@@ -35,7 +44,7 @@ function copyPage(relative) {
         (_, open, url, close) => `${open}{${JSON.stringify(url)}}${close}`)
   }
   // Plain Markdown drops raw HTML blocks and explicit anchor elements.
-  const asMdx = relative.endsWith("index.md") || ["cli/commands.md", "cli/scripting.md"].includes(relative)
+  const asMdx = relative.endsWith("index.md") || /^<a id="/m.test(source)
   const target = join(pages, asMdx ? relative.replace(/\.md$/, ".mdx") : relative)
   writeGenerated(target, source)
 }
@@ -50,15 +59,19 @@ function copySection(relative) {
 
 export function preparePages() {
   expected = new Set()
+  errors = errorCatalog(loadDocsContract(join(root, "public/openapi.yaml")).document)
   copyPage("index.md")
   for (const section of sections) copySection(section)
+  for (const entry of errors) writeGenerated(join(pages, "errors", `${entry.code}.md`), errorPage(entry))
   const { operations } = loadApiPresentation(root)
   generateApiImages(join(root, "public"), operations)
   for (const operation of operations) {
     const reference = `${referencePath}/${operation.group}#${operation.id}`
-    const source = `---\ntitle: ${JSON.stringify(operation.title)}\ndescription: ${JSON.stringify(plainText(operation.description))}\nassignOpenGraph: ${JSON.stringify(imageMetadata(operation))}\n---\n\nimport { OpenApi } from "vocs"\n\n<div className="assign-endpoint-page">\n\n# ${operation.title}\n\n${operation.upcoming ? '**Upcoming:** This contract is not yet deployed.\n\n' : ''}<OpenApi.Operation spec="${referencePath}" method="${operation.method}" path=${JSON.stringify(operation.path)} data-reference="${reference}" />\n\n<div className="assign-endpoint-guides">\n\n[Authentication](/api/authentication) · [Conventions and errors](/api/conventions) · [API guides](/api) · [Resource reference](${reference})\n\n</div>\n\n</div>\n`
+    const source = `---\ntitle: ${JSON.stringify(operation.title)}\ndescription: ${JSON.stringify(plainText(operation.description))}\nassignOpenGraph: ${JSON.stringify(imageMetadata(operation))}\n---\n\nimport { OpenApi } from "vocs"\n\n<div className="assign-endpoint-page">\n\n# ${operation.title}\n\n${operation.upcoming ? '**Upcoming:** This contract is not yet deployed.\n\n' : ''}${operationExampleSetup(operation)}<OpenApi.Operation spec="${referencePath}" method="${operation.method}" path=${JSON.stringify(operation.path)} data-reference="${reference}" />\n\n<div className="assign-endpoint-guides">\n\n${operationGuideLinks(operation)}\n\n</div>\n\n</div>\n`
     writeGenerated(join(pages, "api/reference/operations", `${operation.id}.mdx`), source)
   }
+  for (const page of compatibilityPages)
+    writeGenerated(join(pages, "api/reference/operations", `${page.id}.md`), compatibilityPage(page, operations))
   writeGenerated(join(pages, "_root.css"), readFileSync(join(root, "styles/root.css")))
   // Vocs 2.10's dead-link checker resolves downloads against pages, not public/.
   // YAML is not a page route; the served download remains public/openapi.yaml.

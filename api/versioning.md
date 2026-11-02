@@ -38,6 +38,8 @@ committed.
 
 Realtime and MCP are versioned separately from the REST API.
 
+<a id="authentication-migration"></a>
+
 ## Authentication migration <Badge type="warning" text="Awaiting deployment" />
 
 The rewritten product API remains under `/api/v1` and accepts bearer credentials. Migrate

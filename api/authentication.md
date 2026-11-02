@@ -7,6 +7,8 @@ description: Choose an API credential, make a bearer-authenticated request, and 
 Use a personal API token for a script you run as yourself. For an AI assistant, follow
 [Connect an MCP client](../mcp/connect). Sign in to Assign to manage your Account and credentials.
 
+<a id="product-api-credentials"></a>
+
 ## Product API credentials <Badge type="warning" text="Awaiting deployment" />
 
 The rewritten v1 integration flow below is awaiting deployment. Check the operation's

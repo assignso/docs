@@ -117,7 +117,9 @@ Your Projects-page sort and custom order apply to your Account within one Worksp
 change neither shared Project ranks nor anyone else's order. If another device changes a
 preference while you edit, reload the latest value before making an intentional change.
 
-## Private realtime reads
+<a id="private-realtime-reads"></a>
+
+## Live Account updates
 
 Assign manages live Account updates inside the application. For supported Task notifications
 in an integration, see [MCP events](../mcp/events). Use the public reference for documented

@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url"
 import { parse, stringify } from "yaml"
 import { isInternal, publicContract } from "./public-contract.mjs"
 import { approvedAuthoringSource } from "./authoring-contract.mjs"
+import { operationTitle } from "./api-presentation.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const args = process.argv.slice(2).filter((arg) => arg !== "--check")
@@ -41,7 +42,7 @@ const guides = {
 
 const authLabels = {
   browserSession: "Session",
-  bearerToken: "Token",
+  bearerToken: "Bearer",
   developerAccessToken: "CLI",
   nativeAccessToken: "Mobile",
 }
@@ -57,7 +58,7 @@ for (const [path, item] of Object.entries(spec.paths ?? {})) {
     byTag.get(tag).operations.push({
       method: method.toUpperCase(),
       path,
-      summary: operation.summary ?? operation.operationId ?? "",
+      summary: operationTitle(operation, operation.operationId ?? ""),
       deprecated: Boolean(operation.deprecated),
       auth: auth.length ? auth.map((name) => authLabels[name] ?? name).join(", ") : "Public",
     })
@@ -83,8 +84,9 @@ const lines = [
   "- **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,",
   "  import into Postman or Insomnia, or browse it in any OpenAPI viewer. It is the",
   "  authoritative source for request and response schemas.",
-  "- **Auth:** `Session` browser session, `Token` personal API token, `CLI` developer-client token,",
-  "  `Mobile` native token, `Public` no credential. See [Authentication](./authentication).",
+  "- **Auth:** Each row lists the credential schemes admitted by that operation. `Bearer` means",
+  "  a supported scoped bearer credential; current resource access is still required.",
+  "  See [Authentication](./authentication) for acquisition and supported credential types.",
   "",
 ]
 for (const tag of byTag.values()) {

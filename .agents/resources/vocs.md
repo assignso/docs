@@ -62,7 +62,8 @@ sibling checkout is unavailable. `npm run check:sources` checks drift without re
 
 Page preparation copies only the public content sections into `.vocs-src/pages`; it converts
 Vue status badges, HTML comments and explicit heading anchors for MDX. Index pages are staged
-as MDX to preserve HTML wrappers. The two CLI pages with explicit anchors also use MDX.
+as MDX to preserve HTML wrappers. Pages with explicit anchors also use MDX so their links survive
+rendering, including the CLI pages and the realtime guide's compatibility anchors.
 Their edit links point to the authored Markdown; the build checks the original anchors. The dev command watches
 the authored content. Maintenance files, agent instructions and sibling repositories are never
 staged as site content. `styles/root.css` owns the self-hosted Geist fonts and Assign theme.
@@ -107,6 +108,13 @@ threshold and 1376px its outline breakpoint. Recheck downward/upward scroll,
 resize, top return, search/menu/outline controls and desktop behavior when updating Vocs;
 remove the patch and override if upstream supplies equivalent behavior.
 
+`scripts/api-navigation.mjs` supplies the developer guide taxonomy, separate OAuth/MCP links and
+minimal Task URL compatibility pages. Existing authored URLs stay in place. The retired public
+Task lookup URLs point to the approved Workspace Task collection with `code` or `project_id`;
+they expose no old endpoint schema and receive the generic share image. A version-checked
+parser presentation hook retains their resource fragments in native HTML and Markdown.
+Do not add excluded first-party/internal operations to this compatibility list.
+
 `scripts/api-presentation.mjs` derives grouped resource navigation and one URL per public operation.
 Keep the section labeled “API reference” and organize resources under Account and access,
 Work management, Content and knowledge, Automation and integrations, and Upcoming. Put new
@@ -121,6 +129,29 @@ Native operation embeds have no Markdown hook. The output plugin provides a refe
 `postbuild` replaces each endpoint Markdown download and its `llms-full.txt` entry with the
 complete operation section from Vocs' generated resource Markdown. Development Markdown links
 to the full resource reference; published endpoint Markdown contains the schema and examples.
+
+`api-presentation.mjs` also supplies concise action labels and related-guide links for operation
+pages, navigation and the endpoint index. Labels do not change operation IDs, URLs or the contract.
+Pagination, conditional-read/edit and interrupted-write links follow the operation's declared
+parameters. `prepare-pages.mjs` and `publish-static.mjs` use the same links for HTML, Markdown and
+the agent bundle; keep fragments when converting links to `.md` downloads.
+
+`operation-examples.mjs` maintains minimal requests for the current public operation set.
+The version-checked Vocs sampler hook uses those requests in HTML, Markdown and copied snippets.
+Bearer examples use `ASSIGN_TOKEN`; keyed writes retain `IDEMPOTENCY_KEY`, and conditional writes
+use `ITEM_ETAG` from the current item read. These are literal variable references during generation.
+Never read credential values while preparing examples or execute the snippets as a build check.
+Validate bodies, media types, parameters and required headers against the approved contract.
+The parser hook supplies explicit success bodies for their declared status, retaining existing
+authored Activity examples. Preserve the command-result versus canonical-read numeric types;
+examples must not silently coerce either shape. These bodies are illustrative, never observed API results.
+Vocs 2.10.3 omits response examples from its native Markdown. Postbuild uses the same pinned parser
+and response sampler to add successful JSON bodies and explicit bodyless statuses to resource and
+operation downloads, then updates the agent bundle. Validate those bodies against their response
+schemas and compare them with the native HTML client payload; that comparison is not browser QA.
+Do not synthesize every optional field or query value: mutually exclusive content modes, opaque
+continuations and Activity selectors need a deliberately chosen request. Postbuild rejects missing
+or stale example entries and adds stable operation anchors to resource Markdown and the agent bundle.
 
 Vocs generates `/llms.txt`, `/llms-full.txt` and Markdown page downloads. `npm run check:markdown`
 checks custom components for readable agent output. Inspect built API-reference Markdown too;

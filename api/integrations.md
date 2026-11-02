@@ -1,15 +1,15 @@
 ---
-description: Provider catalog, installations, Project bindings, ongoing behavior, remote actions and Rich Entities linked to Tasks.
+description: Connect provider accounts, configure Project behavior and recover remote actions without repeating their effects.
 ---
 
 # Integrations and Rich Entities
 
-The integration API covers the provider catalog, Workspace installations, personal identities, Project
-bindings, ongoing behavior, remote actions and the Rich Entities linked to Tasks. Installing a
-provider, binding a resource and enabling behavior are separate steps, and none implies the next.
+Use Integrations in the web app to connect providers, bind remote resources to Projects and
+work with the Rich Entities linked to Tasks. Installing a provider, binding a resource and
+enabling behavior are separate steps, and none implies the next.
 Writing back to a provider stays off until an administrator configures it.
 
-These operations use a browser session and the [API conventions](./conventions).
+For external automation, use operations and credentials listed in the [public API reference](./reference/).
 
 ## Required Workspace features <Badge type="warning" text="Awaiting deployment" />
 
@@ -19,27 +19,19 @@ connecting a provider leaves the feature setting unchanged.
 
 While the feature is off, new dependent actions return `409 time_tracking_disabled`. Queued
 work pauses and resumes after you enable the feature again. Installation, credentials,
-bindings and history are retained. See [Workspace Features](./workspaces#features).
+bindings and history are retained. See [Workspace Features](./workspaces#features-awaiting-deployment).
 
 ## Read
 
-All reads return display-safe data from Assign's own records and never call the provider. They don't
-include credentials, granted scopes, provider tenant IDs or raw provider payloads. A Workspace you
-don't belong to returns `404`.
+The installation page and **Project settings → Connected tools** show the data Assign has
+already synchronized. Reading these views does not make a live request to the provider.
 
-| Operation | Returns |
-| --- | --- |
-| `GET /api/v1/integration-catalog` | The provider catalog: key, display copy, categories, capabilities, availability (`preview` or `planned` is product readiness, not your Workspace's state) and whether it supports several installations or personal connections. |
-| `GET /api/v1/workspaces/{workspace_id}/integration-installations?limit=20` | Current installations: ID, provider, name, lifecycle, derived health, revision and timestamps. |
-| `GET /api/v1/integration-installations/{installation_id}` | One installation. Disconnected ones return `404`. |
-| `GET /api/v1/me/integration-identities?limit=20` | Your provider identities in this Workspace, with the passive identity state and your delegated-authorization state kept separate, so `not_authorized` can be a valid state. |
-| `GET /api/v1/projects/{project_id}/integration-bindings?limit=20` | The remote resources bound to a Project, with lifecycle, capability group, optional HTTPS link and counts of total, enabled and attention-needed behaviors. A binding with no behaviors is valid. |
+You can inspect installation health, your personal connection and the resources bound to a
+Project. A binding with no enabled behaviors is valid. A personal connection that has not yet
+authorized a behavior can also be valid; it is separate from the shared installation.
 
-Lists default to 20 items and cap at 100. Pass `next_cursor` back unchanged.
-An active GitLab installation linked to a private connector reports <Badge type="warning" text="Upcoming" />
-`needs_attention` while the connector's stored status is offline or revoked.
-An authenticated connector poll restores online status. Health is read from
-Assign's stored state; it is not a live network probe.
+Keep provider credentials private. Displayed health reports the last stored state, so it may lag
+behind a provider outage or recovery.
 
 ## Who can do what
 
@@ -50,41 +42,35 @@ identity.
 
 ## Manage installations, bindings and behavior
 
-| Operation | Purpose |
-| --- | --- |
-| `POST /api/v1/workspaces/{workspace_id}/integration-authorizations`, then `GET /api/v1/integration-authorizations/callback` | Start and complete a one-use provider authorization. |
-| `POST …/integration-authorizations/credential` | Complete setup for providers with no scoped OAuth grant, such as Toggl Track. The CSRF-protected body carries the state and credential, which are never returned or logged. |
-| `POST /api/v1/workspaces/{workspace_id}/integration-private-connectors` | Enroll a private connector and return a one-time token (GitLab Self-Managed). |
-| `DELETE /api/v1/integration-installations/{installation_id}` | Remove Workspace authority. |
-| `DELETE /api/v1/me/integration-identities/{identity_id}` | Remove your own authority. |
-| `POST /api/v1/integration-installations/{installation_id}/management-link` | Owner and admin hand-off to the provider's own settings, with a safe permission summary. |
-| `GET /api/v1/integration-installations/{installation_id}/resources`, `POST …/resources/refresh` | Read or refresh discovered resources. |
-| `POST /api/v1/projects/{project_id}/integration-bindings`, `DELETE /api/v1/integration-bindings/{binding_id}` | Bind or unbind a resource to a Project. |
-| `GET` and `POST /api/v1/integration-bindings/{binding_id}/subscriptions`, `PATCH /api/v1/integration-subscriptions/{subscription_id}` | List, create and revise behavior. Updates need `If-Match`. |
-| `GET /api/v1/integration-installations/{installation_id}/actions`, `POST /api/v1/integration-actions`, `GET /api/v1/integration-actions/{action_id}` | List typed remote actions, request one and read its durable status. Requests need an `Idempotency-Key`. |
+1. Open **Integrations** and choose the provider. An owner or administrator connects the
+   Workspace installation.
+2. Connect your own account when the behavior needs your delegated provider authority.
+3. Open **Project settings → Connected tools** and bind the remote resource to the Project.
+4. Review the behaviors and their direction before saving.
 
-Connecting a GitHub repository, GitLab project or Bitbucket repository to a Project enables incoming development activity automatically. Branches and pull or merge requests that reference a Task code appear in its Activity tab after ingestion or backfill. Existing paused or customized behavior is preserved when reconnecting. Task status changes and provider writeback require separate configuration.
+Connecting a GitHub repository, GitLab project or Bitbucket repository to a Project enables
+incoming development activity automatically. Branches and pull or merge requests that reference
+a Task code appear in its Activity tab after ingestion or backfill. Reconnecting preserves paused
+or customized behavior. Task status changes and provider writeback require separate configuration.
 
-New behavior defaults to `incoming`. Outgoing and bidirectional behavior can change provider data, so
-choose it explicitly. Removing an installation stops new work, revokes authority where the provider
-supports it, disconnects bindings, disables behavior and fails pending actions. Tasks, Documents and
-history stay.
+Other new behavior defaults to incoming. Outgoing and bidirectional behavior can change provider
+data, so choose it explicitly. Removing an installation stops new work, revokes authority where
+the provider supports it, disconnects bindings, disables behavior and fails pending actions.
+Tasks, Documents and history stay.
 
-Provider webhooks are delivered by the provider to `/api/v1/webhooks/integrations/{provider_key}`
-(with `/{installation_id}` for providers that use one per installation). Assign verifies each
-signature, deduplicates deliveries, retries transient failures and reconciles missed state. Clients
-don't call these endpoints.
+Provider connections receive incoming activity from the provider. Configuring one does not
+register your application to receive events sent by Assign. Provider callback addresses and the
+Assign application's live connection are not integration endpoints for your own receiver.
 
 ## GitHub development event lists <Badge type="warning" text="Awaiting deployment" />
 
-When you create or update incoming or bidirectional GitHub development behavior with a nonempty
-`event_types` list, Assign includes `github.pull.request.review` and `github.workflow.run` in the
-saved, sorted list. An empty list continues to receive all event types. The saved list can contain
-at most 32 unique entries, including those two; a larger list returns `400 invalid_request`.
+When you create or update incoming or bidirectional GitHub development behavior with an explicit
+event selection, Assign includes pull request review and workflow run events in the saved list.
+An empty selection receives all event types. The list can contain at most 32 distinct entries,
+including those two.
 
-Update existing explicit lists using the current subscription revision to include the new events.
-This applies to `github.development_activity` and legacy `development.activity` on GitHub bindings.
-Other providers and behavior types keep their current event selection.
+Edit and save existing explicit selections to include the new events. This applies to GitHub
+development activity; other providers and behavior types keep their current event selection.
 
 ## In the web app
 
@@ -144,17 +130,19 @@ browser storage or source control.
 
 ### GitHub Gist actions
 
-These need your personal GitHub connection with the Gist permission. Send each with
-`POST /api/v1/integration-actions` and a unique `Idempotency-Key`, then poll the action.
+These actions need your personal GitHub connection with the Gist permission. Run an offered
+action from the connected tool and review its effects before confirming.
 
-- `github.gist.import` creates a Document from one named `.md` or `.markdown` file.
-- `github.gist.export` creates a new Gist from a Document. `visibility` is `public` or `secret`, and
-  secret also needs `secret_visibility_ack: secret_gists_are_not_private`, because secret Gists are
-  unlisted but reachable by link. It never updates an existing Gist.
-- `github.gist.link` links a Gist to a Task as a Rich Entity, without storing its content.
+- Import creates a Document from one named `.md` or `.markdown` file.
+- Export creates a new public or secret Gist from a Document. A secret Gist is unlisted but
+  reachable by link, so export requires an explicit acknowledgment. Export never updates an
+  existing Gist.
+- Link adds a Gist to a Task as a Rich Entity without storing its content.
 
-If Assign can't tell whether a remote create succeeded, the action reports
-`integration.action_outcome_unknown` and isn't retried, so you don't get a hidden duplicate.
+An accepted action may still be pending. Check its status before submitting another request.
+If Assign cannot tell whether a remote create succeeded, the action reports
+`integration.action_outcome_unknown` and is not automatically retried. Check the provider before
+deciding what to do next; an unknown result is not proof that nothing was created.
 
 ### Time entry providers
 
@@ -163,87 +151,39 @@ person's Toggl permissions and is stored encrypted. Rotate it in Toggl if their 
 Clockify, the Marketplace connection needs `PROJECT_READ`, `TIME_ENTRY_WRITE`, `USER_READ` and
 `WORKSPACE_READ`. The time entry action takes `description`, RFC 3339 `start` and `end`, and, for
 Clockify, an optional `billable` of `"true"` or `"false"`. The provider remains authoritative for the
-entry. Setup and actions are available only through the API and web app.
+entry. Use the web app to set up the connection and request actions.
 
 ## Request an integration
 
-```http
-POST /api/v1/workspaces/{workspace_id}/integration-requests HTTP/1.1
-X-CSRF-Token: <csrf-token>
-Content-Type: application/json
+Use **Request an integration** on the Integrations page. Any Workspace member can submit a
+provider name and an optional use case. Names are 2–80 characters; the use case is limited to
+500 characters. Do not include credentials or private content.
 
-{"provider_name": "Jira", "use_case": "Link customer tickets to Assign Tasks."}
-```
-
-Any member can submit one. `provider_name` is 2–80 characters and `use_case` is optional, up to 500.
-Repeating the same name from the same member returns `200` with the same request ID and updates the
-use case. A provider already in the catalog returns `409 integration_already_available`.
+Submitting the same provider name again updates your existing request. A provider already in the
+catalog does not need another request. This records feedback in Assign; it does not contact the
+provider.
 
 ## Task Rich Entities
 
-A Rich Entity is Assign's stable reference to one object owned by a provider, such as an error, pull
-request, deployment or support conversation. Assign owns the Task workflow and the provider owns the
-external facts.
+A Rich Entity is Assign's stable reference to an object owned by a provider, such as an error,
+pull request, deployment or support conversation. Assign owns the Task workflow and the provider
+owns the external facts.
 
-```http
-GET /api/v1/tasks/{task_id}/rich-entities?limit=20
-```
+A Task displays the synchronized title, summary, status, metrics, properties and external actions
+available for that object. Reading it does not call the provider. Check its freshness indication
+and last synchronization time before relying on it: context can be stale, degraded or unavailable.
+Malformed or unsupported snapshots are omitted.
 
-This returns stored snapshots and never calls a provider. Pages default to 20 and cap at 100. A
-snapshot can hold a title, summary, semantic status, up to eight metrics, twelve typed properties
-(each optionally with an HTTPS `url`) and eight `open_external` actions. `sync_status`, `sync_message`
-and `last_synced_at` tell you whether the context is current, stale, degraded or unavailable. Stored
-snapshots that are malformed or unsupported are omitted.
-
-```json
-{
-  "items": [
-    {
-      "id": "<rich-entity-id>",
-      "installation_id": "<installation-id>",
-      "provider_key": "sentry",
-      "entity_type": "sentry.error",
-      "external_id": "ISSUE-94821",
-      "human_identifier": "CHECKOUT-42",
-      "canonical_url": "https://sentry.io/organizations/example/issues/94821/",
-      "display_name": "Checkout request timed out",
-      "snapshot_schema_version": 1,
-      "snapshot": {
-        "title": "Checkout request timed out",
-        "summary": "TimeoutError in POST /api/checkout.",
-        "status": {"label": "Unresolved", "tone": "danger"},
-        "metrics": [{"id": "events", "label": "Events", "value": "1284"}],
-        "properties": [
-          {"id": "environment", "label": "Environment", "type": "text", "value": "production"}
-        ],
-        "actions": [{"id": "open", "label": "Open in Sentry", "kind": "open_external", "url": "https://sentry.io/organizations/example/issues/94821/"}]
-      },
-      "sync_status": "current",
-      "sync_message": null,
-      "last_synced_at": "2026-08-25T09:18:00Z",
-      "last_changed_at": "2026-08-25T09:16:00Z"
-    }
-  ],
-  "next_cursor": null,
-  "has_more": false
-}
-```
-
-The generated TypeScript and PHP SDKs expose these operations in `IntegrationsApi`.
+An external action can open the object at its provider. A link is not a copy of the provider's
+permissions; you still need access there.
 
 ## Realtime reads <Badge type="warning" text="Upcoming" />
 
-The [application realtime interface](./realtime) adds an `integrations` hint for
-changes to the integration views you display. Installation lists/details,
-resources, personal identities, Project bindings, subscriptions, action definitions
-and action status accept `X-Assign-Realtime-Baseline: 1`. Successful responses
-include a cursor and decimal position for the Workspace subscription. Reread and
-apply all retained pages and details before acknowledging the update. Reading an
-action's status does not submit it again. An unchanged resource refresh preserves
-its revision and update timestamp.
+The upcoming [live updates](./realtime) refresh open installation details, personal connections,
+Project bindings and action status. Reading an action's status does not submit the action again.
+An unchanged resource refresh preserves its saved revision and update time.
 
-This interface is under development and is not deployed or qualified for
-supported client use.
+This behavior is under development.
 
 ### Live connection views <Badge type="warning" text="Upcoming" />
 

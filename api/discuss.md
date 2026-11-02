@@ -77,12 +77,8 @@ Document or Project. Permissions are rechecked and revoked access makes a refere
 
 ## Availability
 
-The upcoming browser realtime contract lets `GET …/discuss/availability`,
-`GET …/discuss/specialist-runs`, and
-`GET …/discuss/specialist-runs/{specialist_run_id}` accept
-`X-Assign-Realtime-Baseline: 1`. Successful reads then return the signed
-Workspace cursor and position alongside the authorized body. Availability returns
-the access decision from that same snapshot. This is not yet deployed; see [application realtime](/api/realtime).
+Upcoming [live updates](./realtime) refresh availability and specialist results in the views
+you have open.
 
 `GET /api/v1/workspaces/{workspace_id}/discuss/availability` returns the access decision before you
 load history. Branch on `access` and `reason`, not `minimum_plan_key` or `minimum_plan_label`, which
@@ -139,13 +135,11 @@ cancel the turn.
 
 ### Events and live updates
 
-Follow saved changes with `GET …/discuss/events?after=N`. Start from the history page's
-`event_cursor`, apply newer message revisions, advance to the returned `cursor` and follow `has_more`.
-Events carry current message state, not provider tokens. Assistant messages can include `run_state`:
-`queued`, `running`, `cancel_requested`, `completed`, `failed` or `cancelled`. Ignore parts you don't
-recognize.
+Discuss shows saved messages and the current run state, including queued, running,
+cancellation requested, completed, failed or cancelled. Closing a viewer does not stop the run.
 
-Private Discuss updates use the [application WebSocket](/api/realtime) <Badge type="warning" text="Upcoming" />. Read the HTTP events page for canonical recovery after a gap. Closing a viewer does not stop the run.
+Upcoming [live updates](./realtime) refresh open conversations after saved changes. If an update
+is interrupted, check the current conversation and run state before submitting another turn.
 
 ### Approvals and questions
 
@@ -218,16 +212,11 @@ suggestion isn't permission to run an Agent.
 ## Live voice <Badge type="warning" text="Upcoming" />
 
 With **Browser dictation + Live voice** on in Preferences → Voice, **Start voice conversation** stays
-in the current thread. The browser streams audio over WebRTC to the Live provider, and Assign's API key
-never reaches it. A voice action isn't treated as done until the Discuss backend returns its result.
+in the current thread. An action completes only when Assign confirms its result.
 Interrupting voice doesn't cancel running work, and text Discuss works if voice can't connect.
 
-`POST …/discuss/voice/sessions` takes the SDP offer and an optional locale and returns the SDP answer,
-a Live session ID and the session duration limit. Wait for `session.started` before showing voice as
-ready. `context_cursor` marks where startup history ended. Catch up from it through the events API and
-dedupe by message revision, and don't submit canonical updates as new requests. Voice sessions are tied
-to the session that made them. Expiry, sign-out or access changes can end one, and a session still
-closing can briefly block starting another.
+Wait for the connection to be ready before speaking. Session expiry, sign-out or access changes
+can end a voice conversation, and a session still closing can briefly delay starting another.
 
 ## Connected assistants
 

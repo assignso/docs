@@ -15,8 +15,9 @@ relative to `https://api.assign.so`.
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
   import into Postman or Insomnia, or browse it in any OpenAPI viewer. It is the
   authoritative source for request and response schemas.
-- **Auth:** `Session` browser session, `Token` personal API token, `CLI` developer-client token,
-  `Mobile` native token, `Public` no credential. See [Authentication](./authentication).
+- **Auth:** Each row lists the credential schemes admitted by that operation. `Bearer` means
+  a supported scoped bearer credential; current resource access is still required.
+  See [Authentication](./authentication) for acquisition and supported credential types.
 
 ## Comments
 
@@ -24,13 +25,13 @@ Task discussion.
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/comments/{comment_id}` | Read a comment | Token |
-| `PATCH /api/v1/comments/{comment_id}` | Edit a comment | Token |
-| `DELETE /api/v1/comments/{comment_id}` | Delete a comment | Token |
-| `PUT /api/v1/comments/{comment_id}/reactions/{reaction}` | Add the caller's reaction to a comment | Token |
-| `DELETE /api/v1/comments/{comment_id}/reactions/{reaction}` | Remove the caller's reaction from a comment | Token |
-| `GET /api/v1/tasks/{task_id}/comments` | List Task comments | Token |
-| `POST /api/v1/tasks/{task_id}/comments` | Add a comment to a Task | Token |
+| `GET /api/v1/comments/{comment_id}` | Read a comment | Bearer |
+| `PATCH /api/v1/comments/{comment_id}` | Edit a comment | Bearer |
+| `DELETE /api/v1/comments/{comment_id}` | Delete a comment | Bearer |
+| `PUT /api/v1/comments/{comment_id}/reactions/{reaction}` | Add the caller's reaction to a comment | Bearer |
+| `DELETE /api/v1/comments/{comment_id}/reactions/{reaction}` | Remove the caller's reaction from a comment | Bearer |
+| `GET /api/v1/tasks/{task_id}/comments` | List Task comments | Bearer |
+| `POST /api/v1/tasks/{task_id}/comments` | Add a comment to a Task | Bearer |
 
 ## Projects
 
@@ -40,9 +41,9 @@ Guide: [Projects](./projects)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/projects/{project_id}` | Read the canonical Project observation | Token |
-| `GET /api/v1/projects/{project_id}/statuses` | List Project Statuses | Token |
-| `GET /api/v1/workspaces/{workspace_id}/projects` | Read a bounded canonical Project page; optionally resolve an exact Workspace Project key. | Token |
+| `GET /api/v1/projects/{project_id}` | Read a Project | Bearer |
+| `GET /api/v1/projects/{project_id}/statuses` | List Project Statuses | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/projects` | List Workspace Projects | Bearer |
 
 ## Tasks
 
@@ -52,11 +53,11 @@ Guide: [Tasks](./tasks)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `POST /api/v1/projects/{project_id}/tasks` | Create a Task | Token |
-| `GET /api/v1/tasks/{task_id}` | Read a Task | Token |
-| `PATCH /api/v1/tasks/{task_id}` | Update a Task | Token |
-| `GET /api/v1/workspaces/{workspace_id}/tasks` | A bounded canonical Workspace Task row page; Project/subscribed/exact-code filters share one operation. | Token |
-| `GET /api/v1/workspaces/{workspace_id}/work` | Read the caller's bounded My Work view | Token |
+| `POST /api/v1/projects/{project_id}/tasks` | Create a Task | Bearer |
+| `GET /api/v1/tasks/{task_id}` | Read a Task | Bearer |
+| `PATCH /api/v1/tasks/{task_id}` | Update a Task | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/tasks` | List Workspace Tasks | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/work` | Read My Work | Bearer |
 
 ## Search
 
@@ -66,7 +67,7 @@ Guide: [Search](./search)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/workspaces/{workspace_id}/search` | Search Workspace content | Token |
+| `GET /api/v1/workspaces/{workspace_id}/search` | Search Workspace content | Bearer |
 
 ## Activity
 
@@ -74,8 +75,8 @@ Authorized Activity groups and their contributing events.
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/workspaces/{workspace_id}/activity/groups` | Read authorized daily Activity groups | Token |
-| `GET /api/v1/workspaces/{workspace_id}/activity/groups/{group_id}/children` | Expand an authorized Activity group | Token |
+| `GET /api/v1/workspaces/{workspace_id}/activity/groups` | Read authorized daily Activity groups | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/activity/groups/{group_id}/children` | Expand an authorized Activity group | Bearer |
 
 ## Documents
 
@@ -85,4 +86,4 @@ Guide: [Documents](./documents)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/workspaces/{workspace_id}/reference-options` | Query bounded editor reference and mention candidates | Token |
+| `GET /api/v1/workspaces/{workspace_id}/reference-options` | Find reference and mention candidates | Bearer |

@@ -11,8 +11,9 @@ path:
 https://api.assign.so/api/v1
 ```
 
-The web app, CLI, IDE extensions, mobile apps and MCP server all use this API, so a change made
-through it follows the same permissions, validation and history as one made in the product.
+Supported integrations use the operations in the [public reference](./reference/). Each
+operation states its availability and access requirements. [Product OAuth](./oauth) and
+[MCP](../mcp/) have separate protocol guides and credential audiences.
 
 ## Authentication
 
@@ -29,24 +30,23 @@ deployment; check its availability before use. Assign applications manage their 
 
 - **Identifiers** are opaque UUIDv7 strings. Don't infer time, tenant or type from them.
 - **Timestamps** are RFC 3339 in UTC. Calendar dates such as due dates are `YYYY-MM-DD`.
-- **Pagination** uses opaque cursors with bounded page sizes: `next_cursor` and `has_more`.
-- **Idempotency.** Retryable writes take an `Idempotency-Key`. Reuse it only for the identical
-  request.
-- **Concurrency.** Updates take the resource revision in `If-Match`, and a stale revision returns
-  `409`.
-- **Errors** carry a stable machine-readable `code`, a safe message and, when available, a request
-  ID.
+- **Pagination** follows every non-null `next_cursor`, including after short or empty pages.
+- **Idempotency.** Where required, retain the original `Idempotency-Key` and exact request after
+  an uncertain outcome.
+- **Concurrency.** Conditional updates use the opaque item `ETag` in `If-Match`. A failed
+  condition returns `412`; a missing required condition returns `428`.
+- **Errors** use Problem Details with a stable `code`, `type` and `request_id`.
 - **Isolation.** A resource outside your Workspace returns `404`, the same as a resource that
   doesn't exist.
 
-Read [Conventions](./conventions) before you build an integration.
+Read [Conventions](./conventions) before you build an integration. The rewritten v1 rules are
+awaiting deployment. [Pagination](./pagination), [writes and retries](./writes), and
+[errors and recovery](./errors) cover continuation and failure handling.
 
 ## Resources
 
 <div class="resource-grid">
 
-- [**Application realtime**](./realtime): upcoming browser subscriptions and applied acknowledgements
-- [**Account**](./account): profile and credential management in Assign
 - [**Workspaces**](./workspaces): roles, settings, members and invitations
 - [**Projects**](./projects): Projects, Statuses, members and Milestones
 - [**Tasks**](./tasks): create, update, move, relate and comment
@@ -64,6 +64,12 @@ Read [Conventions](./conventions) before you build an integration.
 - [**Git-backed Documents**](./git-backed-documents): sync Documents with a repository
 
 </div>
+
+## Using Assign
+
+Use [Account settings](./account) to manage your profile and credentials in the application.
+[Application realtime](./realtime) describes upcoming live updates and interruption recovery.
+The application manages its sign-in and live connection.
 
 ## API reference
 

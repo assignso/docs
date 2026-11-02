@@ -1,5 +1,6 @@
 import { defineConfig } from "vocs/config"
 import { loadApiPresentation, endpointMarkdown } from "./scripts/api-presentation.mjs"
+import { developerNavigation } from "./scripts/api-navigation.mjs"
 import { docsOrigin, imageEntry, operationImageHead } from "./scripts/api-og.mjs"
 
 const apiReference = loadApiPresentation(import.meta.dirname)
@@ -64,49 +65,6 @@ const mcp = [
   },
 ]
 
-const api = [
-  {
-    text: "Foundations",
-    items: [
-      { text: "Overview", link: "/api/" },
-      { text: "Conventions", link: "/api/conventions" },
-      { text: "Versioning", link: "/api/versioning" },
-      { text: "Authentication", link: "/api/authentication" },
-      { text: "API reference", link: "/api/reference" },
-      { text: "Endpoint index", link: "/api/endpoints" },
-      { text: "OpenAPI document", link: "/openapi.yaml", external: true },
-    ],
-  },
-  {
-    text: "Work",
-    items: [
-      { text: "Account", link: "/api/account" },
-      { text: "Application realtime (upcoming)", link: "/api/realtime" },
-      { text: "Workspaces", link: "/api/workspaces" },
-      { text: "Projects and Statuses", link: "/api/projects" },
-      { text: "Tasks", link: "/api/tasks" },
-      { text: "Documents", link: "/api/documents" },
-      { text: "Git-backed Documents", link: "/api/git-backed-documents" },
-      { text: "Attachments", link: "/api/attachments" },
-      { text: "Labels", link: "/api/labels" },
-      { text: "Current work", link: "/api/current-work" },
-      { text: "Search", link: "/api/search" },
-      { text: "Inbox", link: "/api/inbox" },
-      { text: "Activity", link: "/api/activity" },
-      { text: "People", link: "/api/people" },
-    ],
-  },
-  {
-    text: "AI and integrations",
-    items: [
-      { text: "Integrations", link: "/api/integrations" },
-      { text: "Workspace Knowledge", link: "/api/knowledge" },
-      { text: "Discuss", link: "/api/discuss" },
-      { text: "Agents", link: "/api/agents" },
-      { text: "Proposals and receipts", link: "/api/work-capabilities" },
-    ],
-  },
-]
 
 export default defineConfig({
   title: "Assign Docs",
@@ -135,7 +93,7 @@ export default defineConfig({
     "/guides": getStarted,
     "/cli": cli,
     "/mcp": mcp,
-    "/api": api,
+    "/api": developerNavigation,
     // Vocs 2.10 normalizes this key for matching, then prefers its longer length
     // over the auto-generated mount key. Preserve native routes with our resource nav.
     "/api/reference/": apiReference.sidebar,
@@ -154,6 +112,13 @@ export default defineConfig({
       bottom: [{ text: "Download OpenAPI", link: "/openapi.yaml", external: true }],
     },
   }],
-  editLink: { link: (path) => `https://github.com/assignso/docs/edit/main/${path.includes("api/reference/operations/") ? "public/openapi.yaml" : path.replace(/^\.vocs-src\/pages\//, "").replace(/(^|\/)index\.mdx$/, "$1index.md").replace(/^(cli\/(?:commands|scripting))\.mdx$/, "$1.md")}` },
+  editLink: { link: (path) => {
+    let source = path.replace(/^\.vocs-src\/pages\//, "").replace(/\.mdx$/, ".md")
+    if (/api\/reference\/operations\/(?:gettaskbycode|listprojecttasks)\.md$/.test(source))
+      source = "scripts/api-navigation.mjs"
+    else if (source.includes("api/reference/operations/")) source = "public/openapi.yaml"
+    else if (/(?:^|\/)errors\//.test(source)) source = "scripts/error-catalog.mjs"
+    return `https://github.com/assignso/docs/edit/main/${source}`
+  } },
   socials: [{ icon: "github", link: "https://github.com/assignso/docs" }],
 })

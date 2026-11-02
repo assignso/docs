@@ -23,10 +23,8 @@ source option removes its derived content but not the original resources.
 
 These operations need a browser session and an active Knowledge entitlement and policy for the
 Workspace. Responses are private and never include scores, prompts, model details or traces.
-For an upcoming application WebSocket subscription, the three GETs below accept
-`X-Assign-Realtime-Baseline: 1` and return a replay cursor and position on a
-successful canonical read. See [Application realtime](./realtime); this is not
-deployed yet.
+Upcoming [live updates](./realtime) refresh the Knowledge views you have open.
+Results can still be stale while background indexing catches up.
 
 ## Search
 
@@ -69,7 +67,7 @@ blocks the Task. When Knowledge is off or not ready, it's empty, and `unavailabl
 retrieval failure. Results are direct, permission-filtered neighbors such as the Project, parent,
 dependencies, relations, Comments and explicit references. A shared title, assignee, status or
 Project, or similarity, isn't treated as proof of a relationship. Users confirm or discard results
-with the feedback operation in [Tasks](./tasks#related-context-and-suggestions).
+with the feedback operation in [Tasks](./tasks#related-context-and-suggestions-awaiting-deployment).
 
 ## MCP
 

@@ -1,6 +1,8 @@
 // Presentation only: the published OpenAPI document remains the source of API facts.
 import { methods, publicContract } from "./public-contract.mjs"
 import { loadDocsContract } from "./authoring-contract.mjs"
+import { protocolNavigation } from "./api-navigation.mjs"
+import { operationTitle } from "./operation-examples.mjs"
 
 export const referencePath = "/api/reference"
 const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
@@ -12,6 +14,48 @@ const resourceGroups = [
   ["Automation and integrations", ["Agents", "Discuss", "Integrations", "Developer clients", "CLI", "Commands"]],
   ["Upcoming", ["Activity", "HomeWork", "Realtime"]],
 ]
+
+export { operationTitle } from "./operation-examples.mjs"
+
+function operationGuides(spec, item, operation, method) {
+  const parameter = (value) => value.$ref
+    ? spec.components?.parameters?.[value.$ref.split("/").at(-1)] : value
+  const parameters = [...(item.parameters ?? []), ...(operation.parameters ?? [])].map(parameter)
+  const has = (location, name) => parameters.some((entry) => entry?.in === location && entry.name.toLowerCase() === name.toLowerCase())
+  const links = [
+    ["Authentication", "/api/authentication"],
+    ["Conventions", "/api/conventions"],
+  ]
+  if (has("query", "cursor")) links.push(["Pagination", "/api/pagination"])
+  if (method === "get" && (has("header", "If-None-Match") || has("header", "If-Match")))
+    links.push(["Conditional reads", "/api/conventions#cache-and-conditional-reads"])
+  if (method !== "get" && has("header", "If-Match"))
+    links.push(["Conditional edits", "/api/writes#make-an-edit"])
+  if (has("header", "Idempotency-Key"))
+    links.push(["Recover an unknown outcome", "/api/writes#recover-an-unknown-outcome"])
+  links.push(["Errors and recovery", "/api/errors"])
+  return links
+}
+
+export function operationGuideLinks(operation, markdown = false) {
+  const resource = `${referencePath}/${operation.group}#${operation.id}`
+  return [...operation.guides, ["Resource reference", resource]].map(([label, link]) => {
+    const [path, fragment] = link.split("#")
+    return `[${label}](${path}${markdown ? ".md" : ""}${fragment ? `#${fragment}` : ""})`
+  }).join(" · ")
+}
+
+export function operationExampleSetup(operation, markdown = false) {
+  if (!operation.bearerExample) return ""
+  const notes = [`Set \`ASSIGN_TOKEN\` to a [supported bearer credential](/api/authentication${markdown ? ".md" : ""}). The TypeScript examples read environment variables through Node.js. Replace the fictitious resource IDs with IDs you can access.`]
+  if (operation.guides.some(([label]) => label === "Recover an unknown outcome"))
+    notes.push("Set `IDEMPOTENCY_KEY` to a new unique key for this intended write. Keep that key and the exact request after an unknown outcome.")
+  if (operation.guides.some(([label]) => label === "Conditional edits"))
+    notes.push("Set `ITEM_ETAG` to the exact opaque ETag from the current item read required by this operation, including its quotes.")
+  if (operation.id === "listactivitygroupchildren")
+    notes.push("Replace the example group ID, `group_revision` and `snapshot` with locators from the parent Activity response, and keep its original scope and day selectors.")
+  return `${notes.join("\n\n")}\n\n`
+}
 
 export function apiPresentation(spec, manifest, options) {
   return presentApi(publicContract(spec, manifest, options))
@@ -29,12 +73,14 @@ function presentApi(spec, authoring = false) {
     const tag = operation.tags?.[0] ?? "Other"
     const tagInfo = spec.tags?.find((entry) => entry.name === tag)
     operations.push({ id, path, method: method.toUpperCase(), tag, group: slug(tag),
-      title: operation.summary ?? `${method.toUpperCase()} ${path}`,
+      title: operationTitle(operation, `${method.toUpperCase()} ${path}`),
       description: operation.description ?? operation.summary ?? `${method.toUpperCase()} ${path}`,
       deprecated: operation.deprecated === true,
       upcoming: authoring || tagInfo?.["x-assign-status"] === "upcoming" || /\bupcoming\b/i.test(tagInfo?.description ?? ""),
       link: `${referencePath}/operations/${id}`,
       badge: { text: method.toUpperCase(), variant: variants[method] ?? "note" },
+      guides: operationGuides(spec, item, operation, method),
+      bearerExample: operation.security?.length === 1 && Object.keys(operation.security[0]).length === 1 && Object.hasOwn(operation.security[0], "bearerToken"),
     })
   }
   const resourceItem = (tag) => {
@@ -50,7 +96,8 @@ function presentApi(spec, authoring = false) {
   const sidebar = [
     { text: "API reference", items: [
       { text: "Overview", link: referencePath },
-      { text: "Quickstart", link: "/get-started/quickstart" },
+      { text: "Developer guides", link: "/api/" },
+      { text: "First API request", link: "/api/authentication#make-your-first-request" },
       { text: "Authentication", link: "/api/authentication" },
       { text: "Conventions & errors", link: "/api/conventions" },
     ] },
@@ -59,7 +106,8 @@ function presentApi(spec, authoring = false) {
       if (!items.length) return []
       return [{ text, items }]
     }),
-    { text: "Resources", items: [
+    protocolNavigation,
+    { text: "Reference downloads", items: [
       { text: "Integration guides", link: "/api" },
       { text: "Endpoint index", link: "/api/endpoints" },
       { text: "OpenAPI document", link: "/openapi.yaml", external: true },

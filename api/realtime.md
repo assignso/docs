@@ -1,261 +1,51 @@
 ---
-description: Upcoming application subscriptions, canonical reads and applied acknowledgements.
+description: Live updates in Assign, interrupted connections and recovery without repeating actions.
 ---
 
 # Application realtime <Badge type="warning" text="Upcoming" />
 
-This interface is under development and is not deployed or qualified for supported
-client use. Existing integrations should keep their deployed transport until the
-migration is announced. The upcoming contract removes the Workspace and private
-Discuss SSE endpoints; clients using those endpoints must migrate to authorized
-WebSocket subscriptions and canonical reads when the cutover is released. Native
-client adoption and lifecycle handling have a separately owned migration.
-
-The browser application connects to `/api/v1/realtime` using the WebSocket
-subprotocol `assign.realtime.v1` and its existing session cookie. The handshake
-requires the configured browser origin. Tokens in URLs and bearer authentication
-are not accepted by this browser adapter. Generated HTTP SDK methods describe the
-upgrade but do not implement a WebSocket connection.
-
-## Migration from SSE
-
-The upcoming contract removes these two event-stream operations:
-
-| Removed operation | Replacement subscription | Recovery read |
-| --- | --- | --- |
-| `GET /api/v1/workspaces/{workspace_id}/events` | `workspace` and any required named private scopes on `/api/v1/realtime` | Authorized Workspace resource reads |
-| `GET /api/v1/workspaces/{workspace_id}/discuss/events/stream` | `discuss` on `/api/v1/realtime` | `GET /api/v1/workspaces/{workspace_id}/discuss/events` and retained message/run reads |
-
-At the announced cutover, replace SSE connection and retry code with one
-authenticated application WebSocket owner. Capture a new baseline for each scope,
-read and apply the currently retained resources, then subscribe and acknowledge
-each checkpoint only after its required reads publish. SSE cursor and
-`Last-Event-ID` values cannot be used as WebSocket cursors. On a gap, lost access
-or reconnect, obtain new authorized baseline custody; do not infer currentness
-from a connected socket. The bounded Discuss HTTP events page remains an ordinary
-recovery read, not an SSE subscription. Generated HTTP SDKs expose the canonical
-reads but do not manage socket lifecycle or applied acknowledgements.
-
-The CLI terminal's Discuss view uses the removed private Discuss stream through
-its local broker. It needs a separately owned WebSocket transport update before
-the upcoming contract can support that view; this page does not indicate that
-the CLI migration has shipped.
-
-A native client may instead send its mobile OAuth access token in
-`Authorization: Bearer mob_at_…`. It must omit `Origin` and cookies. For a
-Workspace scope, send the selected Workspace UUID in `X-Assign-Workspace-ID`
-on the socket handshake and baseline request. Account scopes omit that header.
-The server checks current Workspace membership and token validity at admission
-and while the subscription remains active. A revoked or expired access token
-ends its subscriptions; reconnect with a valid token and obtain a new baseline.
-Do not put a token in the URL. Native app migration and qualification remain
-separate from this upcoming Core contract.
-
-## IDE authentication
-
-The upcoming socket also accepts a developer OAuth access token issued to
-`assign-jetbrains` or `assign-vscode` with `assign:read`. Use
-`Authorization: Bearer cli_at_…`, omit `Origin` and cookies, and request
-`assign.realtime.v1`. The OAuth grant fixes the Workspace; if supplied,
-`X-Assign-Workspace-ID` must match that Workspace on both the handshake and
-baseline request. CLI, MCP and personal API tokens are not admitted.
-
-IDE credentials support only `workspace`, `projects`, and `task_comments`.
-Account and Discuss scopes are unavailable. Sign in through the system browser
-using the host's registered client and loopback PKCE flow; store refresh tokens
-in the host credential store and keep access tokens in memory. Never copy browser
-cookies or put credentials in a URL. The extension host must support handshake
-headers; browser WebSocket APIs cannot authenticate this way.
-
-Expiry, grant revocation, Workspace switching and membership loss invalidate
-socket authority. Refresh through the same IDE client, capture fresh baseline
-custody and reconcile canonical reads before acknowledging events. A transport
-connection alone does not establish current data. IDE owners and host
-qualification remain pending; this contract is not deployed.
-
-## Handshake and error contract
-
-Every client uses the same socket, subprotocol and frames. Only the way you
-authenticate differs.
-
-| Client | Credential | Headers | Scopes |
-| --- | --- | --- | --- |
-| Browser | Current session cookie | Exactly one configured `Origin`; no `Authorization` or `X-Assign-Workspace-ID` | All scopes listed below |
-| Native app | `Authorization: Bearer mob_at_…` | No `Origin` or cookies; `X-Assign-Workspace-ID` for Workspace scopes | All scopes listed below |
-| IDE extension | `Authorization: Bearer cli_at_…` | No `Origin` or cookies; optional `X-Assign-Workspace-ID` matching the grant | `workspace`, `projects`, `task_comments` |
-
-Request exactly one `Authorization` header and the subprotocol
-`assign.realtime.v1`. The handshake URL takes no query parameters. A future
-incompatible protocol will get a new subprotocol name, and `assign.realtime.v1`
-keeps its meaning. The server's first frame is `hello`. It lists the limits and
-`supported_scopes` for your credential. Subscribe within 10 seconds of `hello`.
-Send the same headers to `/api/v1/realtime/baseline`.
-
-If the handshake is refused, the server answers with an HTTP error and the
-usual JSON error body:
-
-| Status | `code` | Meaning | What to do |
-| --- | --- | --- | --- |
-| 400 | `realtime_scope_invalid` | The Workspace header is repeated, malformed, or sent with a browser session | Fix the request; do not retry unchanged |
-| 401 | `authentication_required` | The token is missing, unknown, expired or revoked | Refresh or sign in again, then reconnect |
-| 403 | `realtime_handshake_rejected` | Socket only: wrong subprotocol, a query string, a browser `Origin` that is not allowed, or browser and bearer credentials together | Fix the request; do not retry unchanged |
-| 403 | `access_denied` | You are not a current member of the requested Workspace | Choose another Workspace |
-| 429 | `realtime_capacity` or a rate-limit code | Too many open sockets for your account, or too many requests | Close unused sockets, or wait for `Retry-After`, then retry |
-| 503 | `realtime_capacity` | No connection slot is available right now | Retry with jittered, bounded backoff |
-
-After the socket opens, these frames and close codes apply:
-
-| Signal | Meaning | What to do |
-| --- | --- | --- |
-| `error` with `authentication_required`, then close 1008 | Sign-in ended, the token expired or was revoked, or Workspace access was removed | Get a valid token, reconnect and capture new baselines |
-| `error` with `scope_unavailable` | The scope is not available to this credential, the subscription ID is already in use, or the subscription limit is reached | Drop that subscription; other subscriptions continue |
-| `resync` with `baseline_required` or `ack_timeout` | The cursor can no longer resume | Discard the scope's custody and capture a new baseline |
-| Close 1002 | Unsupported protocol version | Upgrade the client; do not retry unchanged |
-| Close 1008 | Invalid frame or acknowledgement, or no subscription in time | Fix the client before reconnecting |
-
-Tokens are checked again while subscriptions are active. The server never
-extends a token. Before your access token expires, refresh it through your
-existing sign-in client and open a new connection. After any reconnect, capture
-a new baseline for each scope before you acknowledge events. Old cursors are
-not proof that your data is current.
-
-## Subscribe to a scope
-
-After the server's `hello`, choose a supported scope and a unique subscription ID.
-Each subscription has its own opaque cursor and applied acknowledgement.
-
-| Scope | Context | Canonical reads |
-| --- | --- | --- |
-| `account` | Current User; no Workspace required | Current Account |
-| `account_security` | Current User; no Workspace required | Account, sessions, linked identities, passkeys |
-| `inbox` | Current User and selected Workspace | Inbox and notification preferences |
-| `personal_projects` | Current User and selected Workspace | Project shortcuts and display preferences |
-| `workspace` | Selected Workspace | Required authorized Workspace resources |
-| `projects` | Selected Workspace | Project catalog |
-| `task_comments` | Selected Workspace and Task | Task Comments |
-| `discuss` | Current User and selected Workspace | Private Discuss transcript and run state |
-
-Account subscriptions omit `workspace_id`. Other scopes require the selected
-Workspace. Private collection updates are delivered through their named scopes;
-ordinary Workspace subscriptions do not include them.
-
-The `discuss` scope has its own session-bound private sequence. Its `discuss_hints`
-contain message IDs and sequence numbers, without text or tool payloads. Obtain
-its cursor from `/api/v1/realtime/baseline?scope=discuss`, then read and apply
-the authorized bounded transcript and retained run state before acknowledging a
-checkpoint. This cursor cannot be used as a Workspace journal position.
+Live updates refresh the Assign views you have open when their saved data changes. This behavior
+is under development.
 
 ## Upcoming Web behavior
 
-The upcoming Web application refreshes its displayed Tasks, Project Overview,
-settings and current Task cards through the shared connection. A card follows the
-Task's current identity and link after a move. Background settings updates preserve
-an unsaved name or URL draft. Loading or failed required reads keep synchronization
-pending; a connected socket alone does not mean displayed data is current.
+Open Tasks, Project Overview, settings and current Task cards refresh as changes arrive. A Task
+card follows the Task's current identity and link after a move. Background settings updates preserve
+an unsaved name or URL draft.
 
-Collection limits remain explicit. A retained Task view can load up to 20 pages;
-Day can cover up to 128 Activity pages. Reaching a limit reports incomplete retrieval
-instead of presenting the result as complete. These limits are not performance or
-availability guarantees. This behavior remains upcoming and has not been deployed.
+Loading or failed reads keep synchronization pending. A working network connection does not by
+itself mean the displayed data is current. If a view reports that more items remain, its loaded
+rows are only part of the collection.
 
-## Capture a baseline <Badge type="warning" text="Upcoming" />
+<a id="migration-from-sse"></a>
+<a id="ide-authentication"></a>
+<a id="handshake-and-error-contract"></a>
+<a id="subscribe-to-a-scope"></a>
+<a id="capture-a-baseline"></a>
+<a id="capture-a-baseline-upcoming"></a>
+<a id="read-apply-and-acknowledge"></a>
 
-Request `application/json` from `/api/v1/realtime/baseline` with an acceptable
-`identity` or `gzip` encoding. Unsupported media or encoding returns `406`
-`not_acceptable`. Responses use `Cache-Control: no-store` and vary by `Accept`
-and `Accept-Encoding`. Each complete response is limited to 1 MiB before and
-after compression. If a domain page is too large, request a smaller `limit` after
-`409 realtime_baseline_required`.
+## Build an integration
 
-Routing responses contain an opaque cursor without resource content. The
-`projects` and `task_comments` scopes return `items`, `resource_id`, `through`
-and `next_page` with the cursor. Projects use an empty `resource_id`; Task comments
-use the Task UUID. Follow each nonempty `next_page` as the next `continuation`.
-Each page has its own snapshot and checkpoint. Reconcile intervening changes
-before treating the assembled view as current.
+The Assign application manages its live connection. For an external integration, use the
+operations and credentials described in the [public API reference](./reference/) and
+[authentication guide](./authentication). Those pages identify the supported integration surface
+and its availability.
 
-## Read, apply and acknowledge
+Read collections with [bounded pagination](./pagination). Keep the returned continuation opaque
+and follow it until the operation reports that no next page remains. An interrupted connection
+does not make a partial list complete.
 
-For a private canonical read, set `X-Assign-Realtime-Baseline` to the matching
-scope in the table. A successful response includes `X-Assign-Realtime-Cursor` and
-`X-Assign-Realtime-Position`. Keep the cursor opaque and the position as a decimal
-string. `/api/v1/realtime/baseline` also supplies routing cursors; its content-free
-responses do not replace canonical resource reads.
+## Recover from an interruption
 
-Time policy, Task entry lists and totals, Project totals and personal timesheet
-reads accept `X-Assign-Realtime-Baseline: 1` for the Workspace subscription. The
-same header applies to Agent instance lists/details, Studio catalog, definition,
-profile, request and usage reads, hosted Agent run history/detail/action/output
-reads, and private Discuss specialist collection/detail reads. These upcoming
-reads return their content and cursor from one
-snapshot. A `time_tracking` or `agents` hint identifies the Workspace collection;
-read the authorized resources your application currently displays. Time policy
-changes use a `workspace` hint.
+When your connection returns, let the view finish refreshing before relying on its current state.
+If your session has ended, sign in again. If Workspace access was removed, ask a Workspace
+administrator to review your access.
 
-An `agent_runs` hint identifies changed hosted Agent run activity for a current
-`agents:read` Workspace member. It contains the Workspace ID, so read the
-authorized run list and any open run, action, approval or output view to learn
-what changed. Studio request/profile/usage and Discuss specialist views also
-reconcile through their authorized canonical reads; a specialist read retains
-its current private recipient and Task access checks. The hint does not identify
-a run or reveal its content. Keep terminal runs subscribed while their actions or
-outputs remain open: a later receipt can change those views. For a retained
-specialist missing from the newest collection page, read its detail by ID;
-absence from one page does not establish deletion.
+Keep unsaved edits while resolving a conflict. Review the latest saved values before choosing
+whether to apply your changes. Save or copy any unsaved work before reloading the page.
 
-An `integrations` hint asks you to refresh the integration views you currently
-display. It contains only the Workspace ID. Reads of installations, resources,
-your personal identities, Project bindings, subscriptions, action definitions and
-action status accept `X-Assign-Realtime-Baseline: 1`. Apply each retained page and
-open detail before acknowledging. Personal-identity changes are sent only to the
-affected User; shared installation changes can also affect that User's list.
-Reading action status never repeats the provider action. The provider catalog is
-loaded at startup and does not use a database baseline. An invalid baseline
-request returns `realtime_baseline_invalid`; an unavailable snapshot returns
-`realtime_baseline_unavailable` without a cursor.
-
-A `billing` or `credits` hint contains only the Workspace ID. Refresh the
-currently displayed authorized billing, credit balance, and feature-availability
-reads before acknowledging it. Discuss availability is one of those reads:
-`GET /api/v1/workspaces/{workspace_id}/discuss/availability` accepts
-`X-Assign-Realtime-Baseline: 1` and returns the access decision with the Workspace
-cursor from the same snapshot. Account-global current work does not. `GET /api/v1/me/current-work`
-and `GET /api/v1/me/current-work/candidates` stay outside Workspace snapshot capture.
-Billing-account and invoice changes are released
-only to Workspace billing managers. The hint never contains payment-provider or
-credit-ledger details.
-
-A `knowledge` hint asks you to refresh the Knowledge results and related Task
-context you currently display. It contains only the Workspace ID and can follow
-summary application, indexing progress or suggestion feedback. Knowledge search,
-answer and Task related-context reads accept `X-Assign-Realtime-Baseline: 1` and
-return an optional cursor and position on success. Core captures the replay
-boundary before calling Knowledge; a `stale` response still means the derived
-index has not caught up. Apply the currently displayed results before ACK.
-
-An event is an invalidation signal. Reread and apply all required retained state
-before sending an `ack` with the exact cursor received for that subscription.
-Receiving a frame, completing one page or opening the socket does not establish
-that the application is current. Each subscription allows one outstanding
-checkpoint.
-
-While your application remains visible and caught up, send `presence_renew`
-with the Workspace subscription ID and its last applied cursor at most once
-every 15 seconds. A transport pong does not renew Workspace presence. Stop
-renewing when the application is hidden, loses access or falls behind.
-
-After applying a Workspace checkpoint, send `presence_observe` with the same
-subscription ID and cursor and up to 256 distinct active member User IDs. An
-empty `users` list clears observation. A `presence` frame is a complete snapshot
-for that selection, with an epoch and revision; update the selected members
-together. Treat `presence_unknown` or a lost application connection as unknown,
-not offline. Renew the eligible application session as above while visible; a
-recovered observer receives a fresh snapshot before showing member status.
-
-On `baseline_required`, discard old custody and obtain fresh authorized reads.
-On `authentication_required`, end the connection and reauthenticate through the
-existing sign-in flow. Never reuse private cursors across sessions or scopes.
-Source-health messages describe the server's source connection, independently of
-whether your client has applied its updates.
-
-The [OpenAPI document](/openapi.yaml) describes HTTP parameters and responses.
+If a remote action is still pending, check its status before submitting it again. A missing update
+or a disconnected view does not establish that the action failed. See
+[integration actions](./integrations#github-gist-actions) for an example, and
+[unknown write outcomes](./writes#recover-an-unknown-outcome) for API recovery.
