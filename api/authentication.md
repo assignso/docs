@@ -91,9 +91,12 @@ substitute for a documented integration operation.
 
 ### The same Task read across clients <Badge type="warning" text="Upcoming" />
 
-The canonical Task collection operation is `listWorkspaceTasks`,
-`GET /api/v1/workspaces/{workspace_id}/tasks`. Client migrations use that resource contract;
-check each client's availability before relying on the new flow.
+The canonical Task collection operation is
+[`listWorkspaceTasks`](./reference/operations/listworkspacetasks),
+`GET /api/v1/workspaces/{workspace_id}/tasks`. HTTP clients use the method and URL in the
+reference with their admitted credential. Signing in through a different client does not
+change the resource URL or grant more access. Check each client's availability before
+relying on the new flow.
 
 | Consumer | Credential or connection | Task-read contract |
 | --- | --- | --- |
@@ -112,8 +115,11 @@ REST endpoint. A client name does not grant extra Workspace or Project access.
 
 Sign in at [assign.so](https://assign.so). Assign manages the browser session and the CSRF
 protection required for its session-authenticated changes. A product bearer request uses
-`Authorization: Bearer` and does not need a browser cookie or CSRF token. Do not copy either
-from a signed-in browser or use a session credential as your integration's token.
+`Authorization: Bearer` and does not need a browser cookie or CSRF token. Send one credential
+source: combining a bearer token with an Assign session cookie is rejected, even if one of
+them is valid. A signed-in browser cannot recover an invalid bearer request. Do not copy
+cookies or CSRF tokens from a signed-in browser or use a session credential as your
+integration's token.
 
 See [authentication migration](./versioning#authentication-migration) when updating an
 existing client.
