@@ -199,6 +199,8 @@ Paste Markdown beginning with `>` to keep its quote formatting, including when
 your clipboard also supplies matching plain HTML wrappers. Quotes copied as
 rich text keep their formatting. Text pasted into a code block stays literal.
 
+<a id="tables"></a>
+
 ## Tables <Badge type="warning" text="Awaiting deployment" />
 
 Open the editor command menu and choose Table. With your cursor in a cell, use the table controls to add or remove rows and columns, merge or split cells, or change the header row. Widen column and Narrow column provide keyboard alternatives to dragging a resize handle. Wide tables scroll within the writing area.

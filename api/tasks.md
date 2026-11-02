@@ -1,184 +1,200 @@
 ---
-description: List, create, update, move, relate, follow, duplicate and archive Tasks, and work with Comments and Task suggestions.
+description: Find Tasks by code or Project, read complete content, create a Task and recover a conditional edit without repeating its effects.
 ---
 
 # Tasks
 
-These operations accept a browser session or a bearer credential listed for the operation in the
-[OpenAPI document](/openapi.yaml). They follow the [API conventions](./conventions): `Idempotency-Key`
-on creates and commands, and `If-Match` with the `ETag` on updates. Browser writes send
-`X-CSRF-Token`; bearer requests don't use cookies or CSRF.
+A Task belongs to one Project in a Workspace. Its Status records workflow progress; archiving or
+trashing it changes its lifecycle. Use the [operation reference](./reference/) for request fields
+and response schemas, and the [Task guide](../guides/tasks) for actions in the application.
+
+The rewritten v1 operations below are awaiting deployment. Public integrations use a bearer
+credential from [Authentication](./authentication); each operation lists its admitted credentials
+and access requirements. Use [writes and retries](./writes) for conditional changes and uncertain
+outcomes.
 
 ## Task object
 
-```json
-{
-  "id": "<task-id>",
-  "workspace_id": "<workspace-id>",
-  "project_id": "<project-id>",
-  "task_number": 42,
-  "status_id": "<status-id>",
-  "assignee_actor_id": null,
-  "title": "Wire the Projects endpoint",
-  "priority": "medium",
-  "description": {"type": "doc", "content": []},
-  "summary": null,
-  "description_text": "",
-  "due_on": null,
-  "milestone_id": null,
-  "resolved_at": null,
-  "resolved_by": null,
-  "resolution": null,
-  "label_ids": [],
-  "revision": 1,
-  "created_at": "2026-08-15T12:00:00Z",
-  "updated_at": "2026-08-15T12:00:00Z",
-  "archived_at": null,
-  "trashed_at": null,
-  "purge_after": null,
-  "purged_at": null,
-  "lifecycle": "active"
-}
-```
+Keep the immutable Task `id` for later reads and edits. The human-readable `code`, such as
+`ASSIGN-42`, combines the Project key and Task number. Use a returned `web_url` when opening a
+collection result in Assign rather than constructing a URL from the code.
 
-- `priority` is `none`, `low`, `medium`, `high` or `urgent`.
-- The Task code is the Project `key` plus `task_number`, such as `ASSIGN-42`. The web app opens
-  Tasks at `/app/{workspaceSlug}/tasks/ASSIGN-42`.
-- `resolved_at`, `resolved_by` and `resolution` (`completed`, `cancelled` or `null`) describe the
-  current terminal state. Entering a completed or cancelled Status sets them and returning to an
-  active Status clears them. Resolving a Task doesn't archive it.
-- `description` is Assign rich-text JSON.
-- `summary` is an optional one- or two-sentence scanning aid for descriptions of 300 or more
-  characters. It's `null` while pending or when the Task changes, so use the canonical fields as
-  evidence.
+A collection row contains metadata and page-scoped display references in `included`; it omits the
+description, summary, history and commands. Read the item for complete content. Collection rows
+and canonical items represent `task_number` and `revision` as decimal strings; retain those
+strings without converting them to JavaScript numbers. An item validator is a separate opaque
+value, not a revision number.
+
+Resolution and lifecycle answer different questions. A completed or cancelled Task can remain
+active and readable. Reopening clears its current terminal resolution; it does not restore an
+archived or trashed Task. A generated summary is a convenience for scanning, not a substitute for
+the description. The [Task read reference](./reference/operations/gettask) defines the complete
+item and canonical representations.
 
 ## Read
 
-- `GET /api/v1/tasks/{task_id}` returns a Task with its `ETag`. A Task in another Workspace returns
-  `404`.
-- `GET /api/v1/workspaces/{workspace_id}/tasks/{task_code}` reads by code, including archived and
-  trashed Tasks and the tombstone left after purge. Use it for direct links.
+[Read a Task](./reference/operations/gettask) by its immutable ID. The default `detail` view
+includes display projections. Before changing it, request `view=canonical` and retain that
+response's strong `ETag`; a collection, detail or create-response tag cannot authorize the edit.
+Keep the same representation and content encoding when sending `If-Match`.
+
+To resolve a code, use [Workspace Tasks](./reference/operations/listworkspacetasks) with `code`:
+
+```http
+GET /api/v1/workspaces/{workspace_id}/tasks?code=ASSIGN-42&limit=1
+Authorization: Bearer <token>
+Accept: application/json
+```
+
+A successful `200` contains a bounded `data` array. Code matching is exact and case-insensitive,
+with uppercase normalization. Take the returned row's `id` into `getTask` when you need its body.
+An absent or invisible code returns an empty page, not a Task or a permission diagnosis. Follow
+any non-null `next_cursor`; an empty page alone does not establish absence. An item outside your
+authority returns `404`, as does a missing item. Check the selected Workspace and your access before continuing.
 
 ## List
 
-**Project Tasks.** `GET /api/v1/projects/{project_id}/tasks?limit=50` returns Tasks ordered by
-`task_number`, plus exact Project `counts` for `active`, `completed`, `cancelled` and `archived`.
-Filters: `state` (`active`, `resolved`, `all`), repeatable `status_id`, `assignee_actor_id`,
-`resolution` and `include_archived`. A cursor is valid only with the filters it came from.
-
-**Workspace Tasks.**
+One [Workspace Task collection](./reference/operations/listworkspacetasks) covers Project,
+followed and exact-code reads. For one Project:
 
 ```http
-GET /api/v1/workspaces/{workspace_id}/tasks?status_category=todo&status_category=in_progress&limit=50
+GET /api/v1/workspaces/{workspace_id}/tasks?project_id={project_id}&limit=50
+Authorization: Bearer <token>
+Accept: application/json
 ```
 
-Results are ordered by `updated_at` descending. Repeated `project_id` and `status_category`
-parameters combine with OR. `assignee_actor_id`, `milestone_id`, `include_archived` and an RFC 3339
-`updated_since` narrow further. This isn't a text search; use [Search](./search) for that. Pages
-default to 50 and cap at 100.
+Get the Workspace ID through [credential setup](./authentication#make-your-first-request).
+Get a permitted Project ID from [Workspace Projects](./reference/operations/listworkspaceprojects).
+Repeated `project_id` values combine with OR; other filters narrow the selection. Number order is
+the default; choose `order=updated_at` explicitly for newest changes. Results default to 50 rows
+and allow at most 100 per page. The operation reference lists supported filters and combinations.
 
-**Followed Tasks.** `GET /api/v1/workspaces/{workspace_id}/subscribed-tasks` returns Tasks the
-current user follows, most recently changed subscription first.
+**Followed Tasks.** Use the same collection with `subscribed=true`. It filters the effective
+human actor's subscriptions; it does not let a caller choose another subscriber or gain access.
 
-**My Work.** `GET /api/v1/workspaces/{workspace_id}/work?view=assigned|overdue|today|upcoming|completed`
-is your personal view. See [Workspaces](./workspaces#my-work).
+**My Work.** Use [My Work](./reference/operations/listmywork) for personal assigned, overdue,
+today, upcoming or completed views. See [Workspaces](./workspaces#my-work).
 
-**Board columns.** `GET /api/v1/projects/{project_id}/tasks?status_id={status_id}&order=rank&limit=50`
-reads one Status in board order. `rank_desc` reverses it. The response has `column.total` and
-`column.can_move_tasks` instead of `counts`. `order=resolved_desc&resolved_since={time}` lists recent
-resolved work. `anchor_task_id` starts strictly after that Task, for neighbor reads before a move.
-Column orders need exactly one Status and can't combine with the history filters. Moves can shift
-Tasks between pages, so deduplicate by ID.
+**Board columns.** Add `project_id`, exactly one `status_id` and `order=rank` to the Workspace
+collection. `rank_desc` reverses the order; `resolved_desc` selects recent resolutions. The
+Project column result includes `column.total` and `column.can_move_tasks`. Keep its documented
+filter restrictions and anchor rules. Deduplicate by Task ID when a move changes page membership.
 
 ### Milestone filtering <Badge type="warning" text="Awaiting deployment" />
 
-Project Task reads in number order accept up to 100 repeated `milestone_id` values. Values combine
-with OR and match before pagination, so matching Tasks can appear even when they fall beyond an
-unfiltered first page. Other filters still apply. Continue with `next_cursor` and the same milestone
-values. Invalid identifiers, more than 100 values, or combining this filter with a column order
-returns `400 invalid_request`. A valid milestone ID outside the Project matches no Tasks.
-Project `counts` still describe the whole Project.
+Use repeated `milestone_id` values on the Workspace collection, with `project_id` when you need
+one Project. Matching happens before pagination. Continue with the same filters and the returned
+cursor; a short page does not end traversal. The reference specifies the supported combinations,
+identifier bounds and Project count semantics.
 
 ### Checked pagination <Badge type="warning" text="Awaiting deployment" />
 
-Send `consistency=checked` to add `query_digest`, `collection_version`, `visibility_revision`,
-`observed_at`, `returned_count` and `coverage` to each page. `state` is `active`, `resolved` or `all`,
-and `resolution` (`completed` or `cancelled`) can't combine with `active`. Continue with
-`next_cursor` and the same filters.
-
-- `complete`: all matching, permitted Tasks were covered.
-- `partial`: more pages remain, or the scan limit of ten pages or 1,000 rows was reached.
-  `limit_reason` is `more_pages` or `scan_limit`.
-- `stale`: data or permissions changed, and the page is empty with
-  `limit_reason=collection_or_visibility_changed`. Restart the query.
-
-A partial or stale result doesn't prove that no matching work exists. A changed filter or an expired
-cursor returns `invalid_cursor`.
+Send `consistency=checked` for coverage and version-bound traversal. `complete` describes this
+filtered, authorized scan at its observation boundary. `partial` means more pages or the scan
+limit remain; `stale` means the collection or visibility changed. Partial or stale coverage cannot
+prove absence. Restart a stale query and discard its old cursor. Treat cursor values as opaque,
+retain the original filters and stop only at `next_cursor: null`. See [Pagination](./pagination)
+for a bounded traversal and invalid-cursor recovery.
 
 ### Due Task filters <Badge type="warning" text="Awaiting deployment" />
 
-Use `due_on=2026-10-11` for an exact civil due date. Add repeated `assignee_actor_ids`
-for People and `project_id` for Projects: values within each filter combine with OR,
-and the filters combine with AND. Each accepts at most 100 identifiers. Keep the
-singular `assignee_actor_id` for existing reads; don't combine it with the plural filter.
-
-For active due work, send `state=active&consistency=checked&order=priority_updated_at`.
-Results sort by urgent, high, medium, low and no priority, then newest update and descending Task ID.
-Continue with `next_cursor` and the same filters. Checked coverage and scan limits
-above still apply; a partial result cannot establish that all due work was returned.
-Omitting `order` preserves newest-update ordering.
+Use `due_on=2026-11-10` for an exact civil due date. Repeated `assignee_actor_ids` select People;
+repeated `project_id` selects Projects. Values within each filter combine with OR; different
+filters combine with AND. Do not combine singular `assignee_actor_id` with `assignee_actor_ids`.
+For active due work, use `state=active&consistency=checked&order=priority_updated_at`. Omit `order`
+for number order. See the reference for limits and the ordering within each mode.
 
 ## Create
 
-```http
-POST /api/v1/projects/{project_id}/tasks HTTP/1.1
-X-CSRF-Token: <csrf-token>
-Idempotency-Key: <opaque-client-key>
-Content-Type: application/json
+This example creates one Task in an existing Project. Choose a Project where you may create
+Tasks; get its ID from [Workspace Projects](./reference/operations/listworkspaceprojects). Obtain
+a credential authorized for writes through [Authentication](./authentication). A read-only token
+cannot perform this workflow.
 
-{
-  "status_id": "<status-id>",
-  "title": "Wire the Projects endpoint",
-  "description": {"type": "doc", "content": []},
-  "due_on": "2026-09-01",
-  "label_ids": ["<label-id>"]
-}
+Choose a unique `Idempotency-Key` for this create and keep it with the exact request body until
+you know the result. The example sets priority explicitly; omitted assignment, Status and other
+defaults follow the Workspace's configured creation policy. To choose a Status, read
+[Project Statuses](./reference/operations/listprojectstatuses) first.
+
+```http
+POST /api/v1/projects/{project_id}/tasks
+Authorization: Bearer <token>
+Idempotency-Key: <key-for-this-create>
+Content-Type: application/json
+Accept: application/json
+
+{"title":"Review onboarding example","priority":"low"}
 ```
 
-Returns `201` with the Task and its `ETag`. `status_id` must be a
-[Status of the Project](./projects#statuses). `priority` defaults to `none` and the Task starts
-unassigned. `milestone_id` and `assignee_actor_id` are optional, and labels must be Task labels
-visible to the Project.
+[Create Task](./reference/operations/createtask) returns `201` with the Task. Record its immutable
+`id` so later edits and cleanup address this Task. Before editing it, read the current canonical
+item as shown below. A create receipt's tag is not an item mutation validator.
+
+If the response is lost, the Task may already exist. Retain the original key and exact body;
+follow [uncertain-outcome recovery](./writes#recover-an-unknown-outcome) before sending another
+request. A new key can create a second Task. A replay reports the original outcome and requires
+current access; read current state before another change. A validation or permission failure
+needs correction or renewed authority, not an automatic retry loop.
 
 ## Update
 
-```http
-PATCH /api/v1/tasks/{task_id} HTTP/1.1
-X-CSRF-Token: <csrf-token>
-Idempotency-Key: <opaque-client-key>
-If-Match: "1"
-Content-Type: application/json
+This example changes only the created Task's title. Use its saved `id` as `task_id`:
 
-{"status_id": "<new-status-id>"}
+```http
+GET /api/v1/tasks/{task_id}?view=canonical
+Authorization: Bearer <token>
+Accept: application/json
+Accept-Encoding: identity
 ```
 
-Every field is optional: `project_id`, `status_id`, `assignee_actor_id`, `title`, `priority`,
-`description`, `due_on` and `milestone_id`. An omitted field keeps its value and `null` clears a
-nullable one. A different `project_id` moves the Task after validating the destination workflow. A
-stale `If-Match` returns `409`. Labels are replaced as a complete set through the target-label
-operation in OpenAPI. A Task with relations can't change Project (`422 task_has_relations`); remove
-the relations first.
+The expected result is `200` with the canonical Task and an opaque strong `ETag`. Keep the tag
+unchanged. Choose a new key for this edit, then [update the Task](./reference/operations/updatetask):
+
+```http
+PATCH /api/v1/tasks/{task_id}
+Authorization: Bearer <token>
+Accept: application/json
+Accept-Encoding: identity
+Content-Type: application/json
+Idempotency-Key: <key-for-this-edit>
+If-Match: <exact-etag-from-canonical-read>
+
+{"title":"Reviewed onboarding example"}
+```
+
+The expected result is `200` with the updated Task. Omitted fields retain their values; `null`
+clears only a nullable field. An empty patch is invalid. Use the generated reference for the
+writable fields instead of copying the read object into a request.
+
+- `412 precondition_failed`: another change invalidated the observed version. Read the canonical
+  Task again, compare the current title with your intended edit and reconcile explicitly. Use the
+  new tag and a new key for a newly agreed edit; do not replace the tag and resubmit blindly.
+- `428 precondition_required`: obtain a canonical item tag before retrying the intended edit.
+- Lost response or cancellation: the write may have committed. Preserve the original body, key,
+  tag and representation selection for recovery; a cancelled request does not undo its effect.
+- `404` or revoked access: stop. Do not treat an unavailable Task as permission to recreate it.
+
+After the outcome is known, read the current canonical Task to verify the title. Keep the saved
+created Task ID if you stop partway through. When the example is finished, use the Task's
+[archive action](../guides/tasks#lifecycle) in Assign to clean up only the record you created.
+Review it before archiving; never remove pre-existing Tasks or issue cleanup while a create's
+outcome is still unknown. Archive and trash have different retention and restoration effects.
+
+A Project move is an [update](./reference/operations/updatetask) with a permitted destination
+`project_id` and a Status applicable to that Project. The move clears the Project-scoped
+Milestone. Reconcile a failed condition before moving; a Task with relations cannot change
+Project (`422 task_has_relations`). Remove relations only when that separate action is intended.
 
 **Undo and redo.** Metadata changes may return a `reversible_command` with an opaque ID, a
 description and `undoable_until`.
 
 ```http
 POST /api/v1/commands/{command_id}/undo HTTP/1.1
-X-CSRF-Token: <csrf-token>
+Authorization: Bearer <token>
 Idempotency-Key: <opaque-client-key>
 ```
 
-`…/redo` re-applies it. A command lasts ten minutes and only its creator can use it. Unrelated
+`POST /api/v1/commands/{command_id}/redo` re-applies it. A command lasts ten minutes and only its creator can use it. Unrelated
 edits can coexist with an undo. A later edit to the same field returns `409 command_conflict`, and
 so does an expired or already used command. Each reversal is an ordinary new change. Description
 edits use the editor's own history.
@@ -187,72 +203,96 @@ edits use the editor's own history.
 Task to the Project's active Status and assigns it to you. The response includes a `reassigned`
 flag, which is `true` if it took the Task from someone else. It changes server state only.
 
-**Bulk update.**
+**Bulk update (awaiting deployment).**
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/tasks/bulk HTTP/1.1
-X-CSRF-Token: <csrf-token>
+Authorization: Bearer <token>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
 {
   "items": [
-    {"task_id": "<task-id>", "expected_revision": 7},
-    {"task_id": "<another-task-id>", "expected_revision": 3}
+    {"item_id": "priority-1", "task_id": "<task-id>", "expected_revision": "7"},
+    {"item_id": "priority-2", "task_id": "<another-task-id>", "expected_revision": "3"}
   ],
   "changes": {"priority": "high"}
 }
 ```
 
-This takes 1–100 distinct Tasks. Each is authorized and revision-checked separately. `changes` can
-set Status, assignee, priority, due date or milestone, with `null` clearing the last three. The
-response has one outcome per Task in request order: `updated`, `not_found`, `conflict`,
-`validation_failed` or `failed`. Successful items stay applied when another fails. To retry failures,
-send only those Tasks with fresh revisions and a new key. Labels, archive and restore aren't
-supported here.
+This synchronous command accepts 1–100 distinct Tasks and at most 5 MiB of JSON. Give each item a
+unique `item_id` and retain the exact decimal `expected_revision` from an authorized read; the
+numbers shown above are illustrative. Do not send `If-Match` on this bulk request. Status,
+assignee, priority, due date and Milestone changes are supported; labels, archive and restore
+are separate operations.
 
-**Move on the board.**
+A `200` contains outcomes in request order: `updated`, `not_found`, `conflict`,
+`validation_failed` or `item_conflict`. Known per-item failures allow successful items to commit;
+an unexpected database or cancellation failure aborts the command. Each successful outcome has
+its original committed revision and receipt identity, not a fresh Task body.
+
+If the response is lost, preserve and recover the original key and complete body. Once that
+outcome is known, review failed items and submit only the intended corrections under a new
+request key, retaining their item IDs and fresh server-authored revisions. A successful item ID
+cannot be reused with a changed effect: it returns `item_conflict`. Do not silently assign new
+item IDs to bypass that result.
+
+**Move on the board (awaiting deployment).**
 
 ```http
 POST /api/v1/tasks/{task_id}/move HTTP/1.1
-X-CSRF-Token: <csrf-token>
+Authorization: Bearer <token>
+If-Match: <exact-etag-from-canonical-read>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
-{"status_id": "<destination-status-id>", "after_task_id": "<preceding-task-id>", "before_task_id": null, "expected_revision": 7}
+{"status_id": "<destination-status-id>", "after_task_id": "<preceding-task-id>", "before_task_id": null}
 ```
 
-This changes Status and position in one step. Never send a rank. A stale revision returns
-`409 revision_conflict` and an unknown, archived or out-of-column anchor `409 anchor_not_found`; both
-include the current Task so you can retry.
+This changes Status and position in one step. Get the destination Status from
+[Project Statuses](./reference/operations/listprojectstatuses), and an adjacent Task ID from the
+[board column](#list) you intend to use. Read the Task's canonical item tag before the move.
+Never send a rank or a numeric `expected_revision`. A stale item tag returns `412`; an invalid
+anchor returns a conflict. Reread the Task and destination column, reconcile the intended position
+and prepare a new request rather than guessing a new anchor. After a lost response, recover the
+original key and exact request before deciding whether another move is needed.
 
 ## Archive, trash and restore
 
-- `DELETE /api/v1/tasks/{task_id}` with `If-Match` archives a Task (`200`, with an optional undo
-  command). It stays readable but leaves Project lists, My Work, references, notifications, public
-  counts and default search.
-- `POST /api/v1/tasks/{task_id}/trash` with `If-Match` moves it to trash for 30 days. The response has
-  `lifecycle: "trashed"`, `trashed_at` and `purge_after`.
-- `POST /api/v1/tasks/{task_id}/restore` returns an archived or trashed Task to active, after
-  revalidating its Project, Status and assignee. A conflict leaves it unchanged.
+These lifecycle operations are awaiting deployment. Read [the canonical Task](./reference/operations/gettask) first and send
+its opaque `ETag` in `If-Match`, with an `Idempotency-Key` for the intended change:
 
-Archived and trashed Tasks reject writes with `409 task_inactive`. After the retention period, purge
-irreversibly removes the content and leaves a `Purged task` tombstone so Activity, relations,
-assignment history and time entries still resolve. Restoring it returns `410 task_purged`.
-Task-only Comments, labels, subscriptions, integration links and orphaned attachments are removed.
-Archive, trash and restore can be undone while their command is valid. Purge can't.
+- `POST /api/v1/tasks/{task_id}/archive` archives the Task (`200`). It stays readable but leaves
+  default active lists and work views. A response may include an undo command.
+- `DELETE /api/v1/tasks/{task_id}` moves the Task to trash for 30 days. It does not merely archive
+  it. Read `trashed_at` and `purge_after` from the result.
+- `POST /api/v1/tasks/{task_id}/restore` restores an archived or trashed Task after revalidating
+  its Project, Status and assignee. It accepts no request body. A failed condition leaves the Task
+  unchanged; a successful no-op on an already active Task still requires the observed tag.
+
+A missing condition returns `428`; a stale one returns `412`. Read current canonical state and
+reconcile before preparing a new intent. After a timeout, retain the original request for
+recovery; repeating it with a different key is not an undo. Do not use an old receipt tag for the
+next change.
+
+Archived and trashed Tasks reject ordinary edits with `409 task_inactive`. After the retention
+period, purge irreversibly removes content and leaves a tombstone for historical references.
+Restoring a purged Task returns `410 task_purged`; Task-only Comments, labels, subscriptions,
+integration links and orphaned attachments are removed. Archive, trash and restore can be undone
+while their command is valid; purge cannot. Verify the target ID before cleanup, and clean up
+only records created by your workflow.
 
 ## Duplicate
 
 ```http
 POST /api/v1/tasks/{task_id}/duplicate HTTP/1.1
-X-CSRF-Token: <csrf-token>
-If-Match: "7"
+Authorization: Bearer <token>
+If-Match: <exact-etag-from-canonical-read>
 Idempotency-Key: <opaque-client-key>
 Content-Type: application/json
 
 {
-  "target_project_id": "<optional-destination-project-id>",
+  "target_project_id": null,
   "target_status_id": null,
   "copy_assignee": true,
   "copy_dates": true,
@@ -262,6 +302,12 @@ Content-Type: application/json
   "copy_attachments": true
 }
 ```
+
+Read the source Task's canonical tag before this command. A null destination keeps the copy in
+the same Project; get another permitted destination ID from Workspace Projects when needed.
+The expected result is `201` with a new root Task and copy counts. Record all created Task IDs.
+After a lost response, recover the original key and exact options before requesting another copy;
+do not delete shared attachment objects as duplicate cleanup.
 
 Title, description and priority always copy, and every `copy_*` flag is required. Comments, Activity,
 assignment periods, time entries, subscriptions and integration history never copy. Attachments are
@@ -277,7 +323,8 @@ A stale revision returns `409`, and an incompatible Status or an oversized copy 
 
 `GET` and `POST /api/v1/tasks/{task_id}/relations` list and create `blocks`, `duplicates`, `relates`
 and `parent` relations. `PATCH /api/v1/task-relations/{relation_id}` changes the type and `DELETE`
-removes it. Writes need CSRF and idempotency headers, and repeating a create or delete is safe.
+removes it. Use each operation's condition and idempotency requirements. Recover a lost response with the
+original request before preparing another change.
 
 - Both Tasks must be in the same Project. Self-relations, duplicates, cycles and invalid parent depth
   are rejected with distinct codes.
@@ -301,8 +348,9 @@ removes it. Writes need CSRF and idempotency headers, and repeating a create or 
 | Mute | `PUT /api/v1/tasks/{task_id}/subscription/mute` |
 | Unmute | `DELETE /api/v1/tasks/{task_id}/subscription/mute` |
 
-These are idempotent, need CSRF and an `Idempotency-Key`, ignore the Task's `If-Match` and never
-grant access. Creators, new assignees, commenters and people mentioned in a description or Comment
+These desired-state commands require an `Idempotency-Key` and accept no Task `If-Match`, query
+or body. They never grant access. After recovering an old response, read the subscription again
+for its current state; the original outcome may predate a later opposite command. Creators, new assignees, commenters and people mentioned in a description or Comment
 follow automatically, up to 100 mentions per change. A later action never overrides your manual
 choice. `GET /api/v1/tasks/{task_id}/subscribers?limit=50` lists active followers, excluding people
 who muted, unfollowed or lost access. Notification preferences still apply.
@@ -317,8 +365,9 @@ who muted, unfollowed or lost access. Notification preferences still apply.
   reacting doesn't make someone a participant.
 - `GET /api/v1/tasks/{task_id}/description-revisions?limit=50` returns description snapshots, newest
   first, with the Task revision, actor, change kind (`baseline`, `created` or `updated`) and the
-  content. `POST …/description-revisions/{revision}/restore` with CSRF, `Idempotency-Key` and the
-  current `If-Match` restores one as a new revision, keeping the overwritten text in history.
+  content. `POST /api/v1/tasks/{task_id}/description-revisions/{revision}/restore` with
+  `Idempotency-Key` and a current canonical item `If-Match` restores one as a new revision, keeping
+  the overwritten text in history. Recover the original intent after a lost response.
 
 ## Files in descriptions
 
@@ -330,8 +379,10 @@ so queue the files and link them after creating it.
 
 ## Comments
 
-- `PATCH /api/v1/comments/{comment_id}` edits your comment, with the revision in `If-Match`.
-- `DELETE` is available to the author and Workspace admins. It leaves a tombstone in the thread and
+- [Edit a Comment](./reference/operations/updatecomment) with the opaque tag from
+  [its current item read](./reference/operations/getcomment), not a revision number. Keep the
+  original edit body, key and tag after a lost response; reconcile a `412` before a new edit.
+- [Delete a Comment](./reference/operations/deletecomment) is available to the author and Workspace admins. It leaves a tombstone in the thread and
   can't be undone.
 - `actor` shows how a Comment was created: `user`, or `user:mcp` when made through MCP. `actor_name`
   carries the client label, such as `Codex`. `author_actor_id` is the stable identity.
@@ -362,8 +413,7 @@ when Knowledge indexing is off. Lookup completes in the background.
 {"entity_kind": "task", "entity_id": "<id>", "outcome": "confirmed"}
 ```
 
-`entity_kind` is `task`, `document` or `commit` and `outcome` is `confirmed` or `discarded`. It needs CSRF and
-an idempotency key and returns `{"accepted": true}`. Confirming a Task creates a `relates` relation,
+`entity_kind` is `task`, `document` or `commit` and `outcome` is `confirmed` or `discarded`. It needs an idempotency key and returns `{"accepted": true}`. Confirming a Task creates a `relates` relation,
 confirming a Document links it, and discarding removes that item from this Task's suggestions
 permanently.
 
@@ -381,13 +431,13 @@ identifier matching and have no Confirm/Discard feedback operation.
 
 ## Live description editing
 
-`POST /api/v1/tasks/{task_id}/collaboration-sessions` opens or renews a browser editing lease, and
-`DELETE …/collaboration-sessions/{session_id}` ends it. Both need a browser session and CSRF.
-Archived, trashed or inaccessible Tasks are refused. REST, SDK, CLI and MCP keep reading and writing
-the structural description. A versioned replacement returns a conflict while live edits await a
-checkpoint. Live editing frames aren't a public API.
+Assign's editor manages the live editing connection and saves checkpoints. Archived, trashed or
+inaccessible Tasks cannot be edited. Integrations read and write the structural description
+through the Task resource; live editor frames are not a public API. If a replacement conflicts
+with live edits, retain your intended content and reread the canonical Task after the editor has
+saved. Do not overwrite the description using an old version.
 
-Proposals and receipts for AI-assisted changes are in [Proposals and receipts](./work-capabilities).
+Proposals and receipts for assisted changes are in [Proposals and receipts](./work-capabilities).
 
 ### Read a Comment window <Badge type="warning" text="Awaiting deployment" />
 
