@@ -11,7 +11,7 @@ const resourceGroups = [
   ["Account and access", ["Authentication", "Account", "Identity", "People", "Billing"]],
   ["Work management", ["Workspaces", "Projects", "Tasks", "Labels", "Time tracking"]],
   ["Content and knowledge", ["Comments", "Documents", "Attachments", "Search", "Knowledge"]],
-  ["Automation and integrations", ["Agents", "Discuss", "Integrations", "Developer clients", "CLI", "Commands"]],
+  ["Automation and integrations", ["Agents", "Discuss", "Integrations", "Webhooks", "Operations", "Developer clients", "CLI", "Commands"]],
   ["Upcoming", ["Activity", "HomeWork", "Realtime"]],
 ]
 
@@ -26,6 +26,9 @@ function operationGuides(spec, item, operation, method) {
     ["Authentication", "/api/authentication"],
     ["Conventions", "/api/conventions"],
   ]
+  if (operation.tags?.includes("Operations")) links.push(["Follow background work", "/api/operations"])
+  if (operation.operationId === "bulkUpdateTasks") links.push(["Change several Tasks", "/api/bulk"])
+  if (/Webhook/.test(operation.operationId ?? "")) links.push(["Receive Task webhooks", "/api/webhooks"])
   if (has("query", "cursor")) links.push(["Pagination", "/api/pagination"])
   if (method === "get" && (has("header", "If-None-Match") || has("header", "If-Match")))
     links.push(["Conditional reads", "/api/conventions#cache-and-conditional-reads"])

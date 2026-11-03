@@ -28,6 +28,14 @@ Use a bearer credential admitted for file writes and obtain the Workspace ID thr
 Document first and save its immutable ID. These requests describe the upcoming resource flow;
 check [operation availability](./reference/) before using it.
 
+Reserve the exact byte count from 1 through 52,428,800 bytes (50 MiB). The display filename must
+fit within 255 UTF-8 bytes after NFC normalization. It cannot contain a path separator, null or
+control character, be `.` or `..`, or start or end with whitespace or a dot. Invalid filenames
+are rejected rather than rewritten.
+
+An optional `content_type` is advisory. Completion detects the stored type from the file bytes;
+changing the declared type does not bypass the [safety rules](#safety).
+
 1. **Reserve.** Choose one local file and determine its exact byte length. For this example,
    `printf 'hello\n' > hello.txt` creates a six-byte UTF-8 file. Reserve those bytes with a fresh
    key, retaining the request until the result is known:
@@ -62,8 +70,9 @@ check [operation availability](./reference/) before using it.
    ```
 
    The expected result is `201` with the attachment's immutable `id`. Completion verifies the
-   stored object and applicable scan state. An optional `sha256` must describe the actual file;
-   do not send a guessed digest. An unverified or quarantined object is not ready to embed.
+   stored object and applicable scan state. An optional `sha256` is the actual file's digest as
+   64 lowercase hexadecimal characters. Do not send a guessed digest. An unverified or
+   quarantined object is not ready to embed.
 
 4. **Link.** Use the completed attachment ID and the saved parent ID. For the Task created in
    [the Task recipe](./tasks#create):

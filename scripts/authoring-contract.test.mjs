@@ -3,7 +3,7 @@ import { createHash } from "node:crypto"
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { spawnSync } from "node:child_process"
+import { execFileSync, spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
 import { approvedAuthoringSource, loadDocsContract } from "./authoring-contract.mjs"
@@ -26,7 +26,13 @@ function authoringFixture(run) {
     writeFileSync(join(root, "public/openapi.yaml"), JSON.stringify(document))
     writeFileSync(join(root, "expected.json"), bytes)
     writeFileSync(approvalPath, JSON.stringify(approval))
-    run({ root, document, approval, approvalPath })
+    const git = (args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim()
+    git(["init", "--quiet"])
+    git(["remote", "add", "origin", "https://example.invalid/private-upstream"])
+    git(["add", "public/openapi.yaml"])
+    git(["-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false", "-c", "user.name=Prepared fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "Prepare public export fixture"])
+    const revision = git(["rev-parse", "HEAD"])
+    run({ root, document, approval, approvalPath, revision })
   } finally { rmSync(root, { recursive: true, force: true }) }
 }
 
@@ -56,12 +62,14 @@ test("changed shared prose, independent expectation and non-product approvals fa
 })
 
 test("authoring environment works for actual generation but cannot promote its output to a release", () => {
-  authoringFixture(({ root, document, approvalPath }) => {
+  authoringFixture(({ root, document, approvalPath, revision }) => {
     const generator = fileURLToPath(new URL("./generate-api-endpoints.mjs", import.meta.url))
     const source = join(root, "public/openapi.yaml")
-    const env = { PATH: process.env.PATH, ASSIGN_DOCS_AUTHORING_APPROVAL: approvalPath }
+    const output = join(root, "export"), receipt = join(root, "private/source.json")
+    const env = { PATH: process.env.PATH, ASSIGN_DOCS_AUTHORING_APPROVAL: approvalPath,
+      ASSIGN_DOCS_SOURCE_REVISION: revision, ASSIGN_DOCS_PRIVATE_PROVENANCE: receipt }
     for (const extra of [[], ["--check"]]) {
-      const result = spawnSync(process.execPath, [generator, source, "--output-root", root, ...extra], { encoding: "utf8", env })
+      const result = spawnSync(process.execPath, [generator, source, "--output-root", output, ...extra], { encoding: "utf8", env })
       assert.equal(result.status, 0, result.stderr)
     }
     assert.equal(loadApiPresentation(root, approvalPath).operations.length, 1)
@@ -70,6 +78,25 @@ test("authoring environment works for actual generation but cannot promote its o
     assert.equal(rejected.status, 1)
     assert.match(rejected.stderr, /release manifest required/)
     assert.deepEqual(loadDocsContract(source, approvalPath).document, document)
+    const pin = JSON.parse(readFileSync(join(output, "public/openapi-provenance.json"), "utf8"))
+    assert.equal(pin.source, undefined)
+    assert.ok(!JSON.stringify(pin).includes(revision))
+    assert.equal(JSON.parse(readFileSync(receipt, "utf8")).source.revision, revision)
+    const unsafe = spawnSync(process.execPath, [generator, source, "--output-root", output], {
+      encoding: "utf8", env: { ...env, ASSIGN_DOCS_PRIVATE_PROVENANCE: join(output, "leak.json") } })
+    assert.equal(unsafe.status, 1)
+    assert.match(unsafe.stderr, /Private provenance must stay outside/)
+    const originalReceipt = readFileSync(receipt, "utf8")
+    writeFileSync(receipt, "different private binding")
+    const immutable = spawnSync(process.execPath, [generator, source, "--output-root", output], { encoding: "utf8", env })
+    assert.equal(immutable.status, 1)
+    assert.match(immutable.stderr, /Immutable private source-to-export receipt differs/)
+    assert.equal(readFileSync(receipt, "utf8"), "different private binding")
+    writeFileSync(receipt, originalReceipt)
+    writeFileSync(source, JSON.stringify({ ...document, info: { ...document.info, title: "Uncommitted change" } }))
+    const drifted = spawnSync(process.execPath, [generator, source, "--output-root", output], { encoding: "utf8", env })
+    assert.equal(drifted.status, 1)
+    assert.match(drifted.stderr, /differs from the pinned committed revision/)
   })
 })
 

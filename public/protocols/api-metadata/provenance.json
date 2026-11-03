@@ -1,0 +1,16 @@
+{
+  "availability": "unreleased-authoring",
+  "contract_version": "1.0.0-rc.10",
+  "limits": "Source authoring reference only; advisory metadata is never authorization or released compatibility evidence.",
+  "openapi": "3.1.1",
+  "operation": {
+    "credentials": "none",
+    "id": "getApiMetadata",
+    "method": "GET",
+    "path": "/api/v1/meta"
+  },
+  "protocol": "anonymous-api-metadata",
+  "schema": "assign.public-protocol-reference.v1",
+  "sha256": "2e66436301d1c0a07c8ee00b521a908b2a68c9abdf474701f253e501fee95cf4",
+  "source_sha256": "5e0f8a652033d1563a89171c4c87aa92cb9507445e1d31f1cad2df84bbfd2e54"
+}

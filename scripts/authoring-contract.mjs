@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { parse } from "yaml"
 import { publicContract } from "./public-contract.mjs"
+import { validateAuthoringExport } from "./public-export.mjs"
 
 // Authoring approval proves exact reviewed content, never released availability.
 export function approvedAuthoringSource(document, path) {
@@ -21,7 +22,9 @@ export function approvedAuthoringSource(document, path) {
 
 export function loadDocsContract(path, approvalPath = process.env.ASSIGN_DOCS_AUTHORING_APPROVAL) {
   const document = parse(readFileSync(path, "utf8"))
-  return approvalPath
-    ? { document: approvedAuthoringSource(document, approvalPath), authoring: true }
-    : { document: publicContract(document), authoring: false }
+  if (approvalPath) return { document: approvedAuthoringSource(document, approvalPath), authoring: true }
+  const pinPath = resolve(dirname(path), "openapi-provenance.json")
+  if (!document["x-assign-release-manifest"] && existsSync(pinPath))
+    return { document: validateAuthoringExport(document, JSON.parse(readFileSync(pinPath, "utf8"))), authoring: true }
+  return { document: publicContract(document), authoring: false }
 }

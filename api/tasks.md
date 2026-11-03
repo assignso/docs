@@ -136,6 +136,13 @@ request. A new key can create a second Task. A replay reports the original outco
 current access; read current state before another change. A validation or permission failure
 needs correction or renewed authority, not an automatic retry loop.
 
+For example source with stale-edit recovery and cleanup of its own Task, download the
+[TypeScript Task app](/examples/task-workflow/typescript.zip)
+or [PHP Task app](/examples/task-workflow/php.zip). Running either app requires its matching
+unreleased SDK artifact.
+The [first-request setup](./quickstart#run-the-complete-workflow) explains the required variables
+and current availability.
+
 ## Update
 
 This example changes only the created Task's title. Use its saved `id` as `task_id`:

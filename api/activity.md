@@ -21,7 +21,7 @@ Activity doesn't decide notifications. Those follow each person's [Inbox](./inbo
 ## Grouping
 
 One action is one entry. A bulk change such as moving 18 Tasks to a Milestone is a single item with
-`count` 18 and an `affected` array of up to 25 resources you can read.
+decimal-string `count` `"18"` and an `affected` array of up to 25 resources you can read.
 
 Consecutive saves of a Document, Comments on a Task and routine priority, due-date or Milestone edits
 by one person collapse into one session while nobody else acts on the resource. A session ends after
@@ -40,11 +40,11 @@ workflow changes stay separate, so In progress, Done and Reopened are three entr
 
 Feeds are newest first with opaque cursors that only work on the feed they came from. `limit` accepts
 1–100 and defaults to 50. It bounds the events examined, so a page can hold fewer items once they're
-grouped. Rely on `has_more`.
+grouped. Follow `next_cursor` until it is `null`, including after a short or empty page.
 
 ```json
 {
-  "items": [{
+  "data": [{
     "id": "018f0d5a-ef50-7fa3-8c11-2ddc6b30dc11",
     "occurred_at": "2026-08-22T10:00:00Z",
     "actor": {"id": "018f0d5a-ef50-7fa3-8c11-2ddc6b30dc12", "display_name": "Ada", "automation": false},
@@ -54,12 +54,11 @@ grouped. Rely on `has_more`.
     "resource_id": "018f0d5a-ef50-7fa3-8c11-2ddc6b30dc13",
     "deep_link": "/tasks/018f0d5a-ef50-7fa3-8c11-2ddc6b30dc13",
     "summary": {},
-    "count": 1,
+    "count": "1",
     "operation_id": null,
     "affected": []
   }],
-  "next_cursor": null,
-  "has_more": false
+  "next_cursor": null
 }
 ```
 
@@ -104,12 +103,13 @@ The next grouped Activity contract adds two companion reads:
 - `GET /api/v1/workspaces/{workspace_id}/activity/groups`
 - `GET /api/v1/workspaces/{workspace_id}/activity/groups/{group_id}/children`
 
-The existing event-shaped reads above keep their response formats. Grouped reads use
+The event-shaped reads above use the canonical `data` and `next_cursor` envelope. Grouped reads use
 `assign.activity.groups.v1` and `assign.activity.children.v1` envelopes and are not yet released.
 
 Supply `scope=workspace`, `account`, `person`, `project` or `task`. Person, Project and Task
 scopes require `resource_id`; Workspace and Account scopes omit it. Account scope selects the
-current human account. Browser sessions and API read credentials use their existing authorization.
+current human account. Each request needs a human product bearer credential and current resource
+permissions.
 
 Choose `day=YYYY-MM-DD`, or a paired inclusive `from_day` and exclusive `before_day` range of at most
 90 days. `time_zone` accepts an IANA timezone; omitting it uses the effective account/Workspace

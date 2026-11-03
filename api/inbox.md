@@ -4,9 +4,9 @@ description: Read and manage your Inbox notifications, notification preferences 
 
 # Inbox
 
-Inbox is your personal, Workspace-scoped notification feed. It uses a browser session and the
-[API conventions](./conventions). You never see another user's items. Native-token access is
-published for planning only, so mobile clients shouldn't use it yet.
+Inbox is your personal, Workspace-scoped notification feed. Use a human product bearer credential
+under the [API conventions](./conventions). Current membership and resource access apply, and you
+never see another user's items. Browser cookies do not authenticate these integration requests.
 
 ## List items
 
@@ -14,13 +14,14 @@ published for planning only, so mobile clients shouldn't use it yet.
 GET /api/v1/workspaces/{workspace_id}/inbox?limit=50&unread_only=true&category=mention
 ```
 
-`limit` is 1–100 (default 50). `cursor` is opaque and bound to the Workspace, unread mode and
-category that created it. `unread_only=true` returns unread items. `unread_count` always counts all
-unread items, not just the page.
+`limit` is 1–100 (default 50). `cursor` is opaque and bound to the current credential, Workspace,
+unread mode and category. Follow `next_cursor` until it is `null`, including after a short or empty
+page. `unread_only=true` returns unread items. The decimal-string `unread_count` counts all unread
+items under the current visibility rules, not just the page.
 
 ```json
 {
-  "items": [
+  "data": [
     {
       "id": "018f0d5a-ef50-7fa3-8c11-2ddc6b30dc11",
       "workspace_id": "018f0d5a-ef50-7fa3-8c11-2ddc6b30dc12",
@@ -35,13 +36,12 @@ unread items, not just the page.
       "read_at": null,
       "seen_at": null,
       "archived_at": null,
-      "revision": 1,
+      "revision": "1",
       "created_at": "2026-08-20T10:00:00Z"
     }
   ],
   "next_cursor": null,
-  "has_more": false,
-  "unread_count": 1
+  "unread_count": "1"
 }
 ```
 
@@ -59,39 +59,53 @@ Read generated Discuss message notices in Discuss. They are excluded from Inbox 
 
 ## Mark read or unread
 
+First read `GET /api/v1/inbox-items/{inbox_item_id}` and retain its opaque item `ETag`.
+The Inbox collection validator cannot authorize this write.
+
 ```http
 PATCH /api/v1/inbox-items/{inbox_item_id} HTTP/1.1
-X-CSRF-Token: <csrf-token>
-If-Match: "1"
+Authorization: Bearer <token>
+If-Match: <exact-etag-from-item-read>
+Idempotency-Key: <unique-key-retained-for-this-command>
 Content-Type: application/json
 
 {"read": true}
 ```
 
-`If-Match` is the item's `revision`. The response is the updated item with its `ETag`. Repeating the
-same state is safe, a stale revision returns `409 revision_conflict` and an item that's absent or
-isn't yours returns `404`.
+Forward the exact item validator for its original credential and encoding, rather than the numeric
+revision. A stale condition returns `412`, a missing one `428`, and a malformed or weak one `400`.
+An absent, expired or inaccessible item returns `404`. Recover an unknown outcome with the original
+body, condition and key before issuing another command.
 
 To sync across devices, `POST /api/v1/workspaces/{workspace_id}/inbox/read-state` with
 `{"cutoff": "2026-08-20T10:00:00Z", "read": true}` marks visible deliveries up to the cutoff read and
-seen (`read: false` marks them seen only). The cutoff is monotonic and idempotent, so late updates
-from another device can't regress state. The response gives `changed` and the current `unread_count`.
+seen (`read: false` marks them seen only). Supply an `Idempotency-Key`; this command takes no
+`If-Match`. The original key preserves the chosen cutoff for recovery. The cutoff is monotonic, so
+late updates from another device cannot regress state. The response gives decimal-string `changed`
+and `unread_count` values.
 Reading an item also cancels its pending email and push, but messages already sent can't be recalled.
 
 ## Notification preferences
 
 `GET /api/v1/workspaces/{workspace_id}/notification-preferences` returns each category with its
 description, Inbox, email and push state, `email_available` and `push_available`, delivery policy, a
-mandatory flag and a revision. Revision `0` is the default, not a saved choice.
+mandatory flag and a decimal-string revision. Revision `"0"` is the default, not a saved choice.
+Read `GET /api/v1/workspaces/{workspace_id}/notification-preferences/{category}` to obtain the
+effective category's opaque item `ETag`; a collection tag or revision number cannot authorize an edit.
 
 ```http
-PATCH /api/v1/workspaces/{workspace_id}/notification-preferences/{category}
+PATCH /api/v1/workspaces/{workspace_id}/notification-preferences/{category} HTTP/1.1
+Authorization: Bearer <token>
+If-Match: <exact-etag-from-category-read>
 Content-Type: application/json
 
-{"web_enabled": true, "email_enabled": false, "push_enabled": true, "delivery_policy": "daily_digest", "expected_revision": 0}
+{"web_enabled": true, "email_enabled": false, "push_enabled": true, "delivery_policy": "daily_digest"}
 ```
 
-Use the returned revision next time. A stale one returns `409 revision_conflict`.
+Preserve the read's credential and encoding when forwarding its validator. A stale condition returns
+`412`. This observed-state patch does not use an `Idempotency-Key`: after an uncertain response,
+read the current authorized singleton and review your intent before making another conditional patch.
+Omitted fields keep their effective values; `null` is invalid.
 
 - **Delivery policy** is `immediate`, `daily_digest` (08:00 in your timezone) or `weekly_digest`
   (Monday 08:00).

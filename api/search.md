@@ -10,9 +10,7 @@ existing integration until its migration is announced.
 `GET /api/v1/workspaces/{workspace_id}/search` searches Projects, Tasks, Documents,
 Comments and active People in one Workspace. Supply a Workspace-scoped bearer
 credential with read permission. Browser cookies do not authenticate this product
-route. Native mobile credentials require `resource_type=project` or
-`resource_type=task`, search titles and identifiers, exclude archived resources
-and return empty snippets.
+route.
 
 ## Request
 

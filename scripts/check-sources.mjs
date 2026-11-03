@@ -10,10 +10,31 @@ import { readFileSync, readdirSync, existsSync } from "node:fs"
 import { resolve, dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { publicPageSources, privateWireReferences } from "./publication-audit.mjs"
+import { checkMetadataSource } from "./protocol-metadata.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const workspace = process.env.ASSIGN_WORKSPACE ?? resolve(root, "..")
 const problems = []
+
+try {
+  const approval = process.env.ASSIGN_DOCS_METADATA_PRIVATE_PROVENANCE
+  if (!approval) throw new Error("Private anonymous metadata approval path is required")
+  const report = checkMetadataSource(join(root, "public"), workspace, resolve(approval))
+  console.log(`Checked anonymous metadata source reference: ${report.components} reachable components`)
+} catch (error) {
+  problems.push(`Anonymous metadata source check failed: ${error.message.split("\n")[0]}`)
+}
+
+try {
+  const proof = process.env.ASSIGN_DOCS_EXAMPLE_WORKFLOW_PROOF
+  const receipt = process.env.ASSIGN_DOCS_EXAMPLE_PRIVATE_PROVENANCE
+  if (!proof || !receipt) throw new Error("Private example workflow proof and source receipt paths are required")
+  const compatibility = process.env.ASSIGN_DOCS_EXAMPLE_MAIN_COMPATIBILITY
+  execFileSync("python3", [join(root, "scripts/export-example-sources.py"), "check-source", "--workspace", workspace,
+    "--workflow-proof", proof, "--private-receipt", receipt, ...(compatibility ? ["--main-compatibility", compatibility] : [])], { stdio: "pipe" })
+} catch (error) {
+  problems.push(`Example source export check failed: ${error.message.split("\n")[0]}`)
+}
 
 const publicationRegistry = join(workspace, "assign-core/contracts/api/metadata/canonical-registry.json")
 try {

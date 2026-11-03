@@ -84,19 +84,23 @@ The public contract is an [OpenAPI 3.1 document](/openapi.yaml). It is the autho
 request and response schemas, and the [endpoint index](./endpoints) lists every operation in it.
 Import it into an API client or use it to generate your own client.
 
-Official SDKs are generated from the same document:
+Official SDK authoring sources are generated from the same approved public contract. A generated
+source package does not establish that a matching package has been released:
 
 | Language | Package |
 | --- | --- |
-| TypeScript | [`@assignso/sdk`](https://www.npmjs.com/package/@assignso/sdk) (release candidate) |
-| PHP | `assignso/php-sdk` (not yet published on Packagist) |
+| TypeScript | `@assignso/sdk` (matching contract not yet released) |
+| PHP | `assignso/php-sdk` (matching contract not yet released) |
 
-SDKs release on their own schedule. See [Versioning](./versioning#sdk-and-client-releases).
+Use the [first-request tutorial](./quickstart#3-read-one-task-page) for the current source examples
+and availability. SDKs release on their own schedule. See
+[Versioning](./versioning#sdk-and-client-releases).
 
 ## Page totals <Badge type="warning" text="Awaiting deployment" />
 
 My Work, Workspace Document lists, Activity, Task Comments and Agent run history return
 `total_count` for the collection you can access with the selected filters, before the cursor position.
-Divide it by your requested page size to calculate total pages. The count can change as items change.
+Use it as an item count, not a fixed page count: response byte limits can shorten pages, and
+the count can change as items change. Follow `next_cursor` until null to finish the traversal.
 Activity counts events before display grouping; Comments include retained deleted-comment ordinals.
 Totals do not allow arbitrary cursor jumps.

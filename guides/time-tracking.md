@@ -63,8 +63,9 @@ See [Integrations](../api/integrations#providers).
 The public API has operations for the Workspace policy, Task entries, Task and Project totals, bounded Project Task groups, manager-only Project Task entries, contributor groups, your
 timesheet and CSV export. See the [endpoint index](../api/endpoints#time-tracking) and the
 [OpenAPI document](/openapi.yaml). Before a Workspace saves its first policy, the policy read reports
-revision `0`, so send `If-Match: "0"` on the first update. Later updates use the revision from the
-preceding read.
+the display revision `"0"`. Use the policy read's exact opaque item ETag in `If-Match`, preserving
+its credential and encoding; never construct a tag from that revision. Policy writes also require
+an `Idempotency-Key` retained with the original request for unknown-outcome recovery.
 The four Project report reads return `X-Assign-Report-Revision`. Compare this
 value across totals, Task groups, contributor groups, selected Task entries and
 all continuation pages for one range; restart the whole range if it differs.

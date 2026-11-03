@@ -19,9 +19,12 @@ export const developerNavigation = [
   { text: "Integration guides", items: [
     { text: "List and filter Tasks", link: "/api/tasks#list" },
     { text: "Edit a Task safely", link: "/api/writes#make-an-edit" },
+    { text: "Change several Tasks", link: "/api/bulk" },
+    { text: "Follow background work", link: "/api/operations" },
     { text: "Work with Documents", link: "/api/documents" },
     { text: "Upload and download files", link: "/api/attachments" },
     { text: "Connect a provider", link: "/api/integrations" },
+    { text: "Receive Task webhooks", link: "/api/webhooks" },
   ] },
   { text: "Concepts and conventions", items: [
     { text: "Shared rules", link: "/api/conventions" },

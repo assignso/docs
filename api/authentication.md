@@ -26,6 +26,15 @@ does not include read access. Discovery may also need the relevant Workspace or 
 scope. Scopes limit access further: current membership, role, Project visibility and resource
 permissions still apply. Changing an ID or requesting a wider scope cannot bypass them.
 
+For a personal token, select the intended Workspace in Assign before opening
+**Account settings → Access tokens**. The retained form provides group controls.
+**Read Assign data** includes `tasks:read` and other resource read scopes. Review the issued
+scope list before using the credential; this control grants more than Task-only read access.
+Use narrower individual scopes when your supported setup provides them.
+
+Copy the immutable [Workspace ID](./account#copy-workspace-id) from the selected Workspace's
+General settings and keep it with the credential's setup. Use that ID in resource requests.
+
 Product credentials, Assign client credentials and MCP credentials have different audiences.
 Send a credential only to the service and operations it was issued for. An MCP service
 credential is not a product service-account credential.
@@ -102,7 +111,7 @@ relying on the new flow.
 | --- | --- | --- |
 | Web | Sign in to Assign; the application manages access | `listWorkspaceTasks` |
 | Mobile | The registered Assign app manages its native sign-in | `listWorkspaceTasks` |
-| Desktop | Its hosted Assign view or registered native connection | `listWorkspaceTasks` |
+| Desktop | Integration setup is not yet available | Intended contract: `listWorkspaceTasks` |
 | CLI | `assign login`, or an explicitly configured personal token | `listWorkspaceTasks` |
 | MCP | Its own OAuth or MCP service credential; use `task_list` | The authorized collection semantics of `listWorkspaceTasks`, exposed as an MCP tool |
 | Public HTTP and SDK clients | A product credential from the chooser above | `listWorkspaceTasks` |

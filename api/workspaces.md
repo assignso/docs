@@ -41,7 +41,9 @@ Wait for Assign to show the completed purchase and the new Workspace before open
 If confirmation is delayed or the connection is interrupted, check the existing checkout's status
 in Assign before starting another purchase.
 
-## Read, update and archive
+<a id="read-update-and-archive"></a>
+
+## Read and update
 
 `GET /api/v1/workspaces/{workspace_id}` returns a Workspace for any active member. Keep the
 canonical response's opaque item `ETag` for an edit, using the same credential and content
@@ -52,29 +54,35 @@ everyone but its owners.
 PATCH /api/v1/workspaces/{workspace_id} HTTP/1.1
 Authorization: Bearer <token>
 If-Match: <exact-etag-from-canonical-read>
+Idempotency-Key: <unique-key-retained-for-this-command>
 Content-Type: application/json
 
 {"name": "Acme Corporation"}
 ```
 
-Send exactly one of `name`, `slug`, `icon_url` or `archived`. Renaming and changing the URL or icon
-need an owner or admin. A taken `slug` returns `409 workspace_url_taken` and an invalid one
-`400 invalid_workspace_url`. `icon_url` is an HTTPS image URL; an empty string removes it.
-`archived` accepts only `false`, which lets an owner un-archive.
+Send exactly one of `name` or `slug`. Renaming or changing the URL needs an owner or admin.
+A name has 1–100 characters; a slug has 1–63 lowercase letters, numbers and interior hyphens.
+A taken `slug` returns `409 workspace_url_taken` and an invalid one `400 invalid_workspace_url`.
+Retain the original body, condition and key when recovering an unknown write outcome.
 
-Workspace icons can also be uploaded through the [attachment flow](./attachments) (512 × 512 PNG or
-JPEG, 5 MiB at most) and set with `POST /api/v1/workspaces/{workspace_id}/icon`. `DELETE` removes
-it.
+### Workspace icon
+
+An owner or admin can upload a 512 × 512 PNG or JPEG of at most 5 MiB through the
+[attachment flow](./attachments). After the upload completes and passes scanning, send its
+`attachment_id` in `POST /api/v1/workspaces/{workspace_id}/icon`. The attachment must belong to
+the current Workspace and have been uploaded by the current Actor. `DELETE` on the same path
+removes the association without a request body. Both commands require the Workspace's exact
+opaque item `ETag` in `If-Match` and an `Idempotency-Key`; an image URL is not accepted as input.
 
 ## Archive <Badge type="warning" text="Awaiting deployment" />
 
-`POST /api/v1/workspaces/{workspace_id}/archive` archives the Workspace (`204`). Send the exact
-opaque canonical item `ETag` in `If-Match` and an `Idempotency-Key`; retain both for an uncertain
-outcome. Do not construct the condition from a revision. Only an
-owner can archive, after signing in within the last 15 minutes
-([recent authentication](./account#recent-authentication)). Nothing is deleted, but every session in
-the Workspace ends, it returns `404` to non-owners and all writes stop. Your last Workspace can't be
-archived (`409 last_workspace`).
+Archiving and restoration are first-party Account actions managed in Assign. An owner needs a
+sign-in within the last 15 minutes. Integration bearer credentials do not provide that proof;
+these actions are outside the public integration operations.
+
+Archiving deletes nothing, ends the Workspace's sessions, hides it from non-owners and stops
+writes. Your last Workspace cannot be archived. Manage restoration through Assign's supported
+Workspace controls rather than adding an archive field to an integration update.
 
 ## Settings
 
@@ -82,6 +90,9 @@ Any active member can read `GET /api/v1/workspaces/{workspace_id}/settings`. Own
 it with `PATCH` and `If-Match`. It holds the description and the defaults for locale, timezone, first
 day of week, Project visibility and Task workflow category, priority and assignee. New Projects and
 Tasks use these defaults unless the request says otherwise.
+
+Use the declared read's opaque item validator and an `Idempotency-Key` for a conditional update.
+Keep its credential and encoding unchanged; a numeric revision is not a valid `If-Match` value.
 
 `GET` and `PATCH /api/v1/workspaces/{workspace_id}/knowledge-settings` control
 [Workspace Knowledge](./knowledge): the included Projects, sources and whether it's enabled. Enabling
@@ -92,17 +103,16 @@ progress and readiness.
 
 Read `GET /api/v1/workspaces/{workspace_id}/features` to see registered features, their state and
 whether you can manage them. Update a feature with
-`PATCH /api/v1/workspaces/{workspace_id}/features/{feature}` and an `enabled` boolean. Send the
-returned revision in `If-Match`, plus an idempotency key and your session's CSRF token.
+`PATCH /api/v1/workspaces/{workspace_id}/features/{feature}` and an `enabled` boolean. Send that
+feature row's exact `item_validator.etag` in `If-Match`, preserving its `encoding`, plus an
+`Idempotency-Key`. A collection ETag or numeric revision cannot authorize the edit.
 
 Time tracking uses `time:manage`; other features use `workspace:manage`. Planned features are
 read-only. A disabled feature retains its data. Prerequisites must be enabled first, and enabled
 dependents must be disabled before their prerequisite. After `workspace.feature.updated`, reread
 the feature list. Enabling a feature preserves the permission checks for each operation.
 
-The legacy Time tracking and Project lifecycle policy endpoints still accept `enabled`, but that
-field is deprecated. Use the Features endpoint for enablement and the policy endpoints for
-configuration. See the [endpoint reference](./endpoints) for request and response schemas.
+Use the [endpoint reference](./endpoints) for each feature and policy operation's current fields.
 
 ### Billing
 
@@ -126,14 +136,16 @@ Any member can read `GET /api/v1/workspaces/{workspace_id}/ai-access-policy`. It
 PUT /api/v1/workspaces/{workspace_id}/ai-access-policy HTTP/1.1
 Authorization: Bearer <token>
 If-Match: <exact-etag-from-canonical-read>
+Idempotency-Key: <unique-key-retained-for-this-command>
 Content-Type: application/json
 
 {"enabled": false}
 ```
 
 Changing it needs an owner or admin. Disabling it immediately blocks new MCP authorizations and
-existing MCP connections for this Workspace only. Enabling restores them. A stale revision returns
-`409 revision_conflict`.
+existing MCP connections for this Workspace only. Enabling restores them. Use the AI policy
+read's opaque item ETag; a stale condition returns `412`, a missing condition `428`, and a malformed
+or weak condition `400`.
 
 ## Workspace-wide Statuses
 
@@ -165,11 +177,16 @@ Update, archive and reorder them as described in
 
 | Operation | Notes |
 | --- | --- |
-| `POST /api/v1/workspaces/{workspace_id}/members` with `{"user_id"}` | Reactivates someone who was previously a member. It can't add a stranger; use an invitation. |
+| `POST /api/v1/workspaces/{workspace_id}/members` with `{"user_id": "<existing-user-id>"}` | Reactivates someone who was previously a member. It can't add a stranger; use an invitation. |
 | `PATCH …/members/{member_id}` with `If-Match` | Send `role` and/or `state` (`active` or `suspended`). Suspending ends their sessions in this Workspace. |
-| `DELETE …/members/{member_id}` | `204`, also if repeated. Ends their sessions. Their past Tasks and Comments stay attributed to them. |
+| `DELETE …/members/{member_id}` with `If-Match` | Returns `204`; same-key recovery returns the original outcome. Ends their sessions. Past Tasks and Comments stay attributed to them. |
 
-All need an owner or admin. You can't change or remove your own membership
+Each command needs an `Idempotency-Key`. For a member update or removal, use that member's
+`item_validator.etag` from the member list with its original encoding, rather than the collection
+ETag or a numeric revision.
+
+These commands need an owner or admin, but only an owner can grant, change, reactivate or remove
+an owner membership. You can't change or remove your own membership
 (`422 self_membership_mutation`), and the last owner can't be demoted, suspended or removed
 (`409 last_owner`).
 
@@ -204,10 +221,12 @@ nothing.
 - `GET /api/v1/workspaces/{workspace_id}/invitations?limit=50` lists them, newest first, without tokens. `state` is `pending`,
   `accepted`, `revoked` or `expired`.
 - `POST …/invitations/{invitation_id}/resend` revokes the old link and sends a fresh 7-day one. If
-  delivery fails, the original stays valid.
+  delivery fails, the original stays valid. Forward the invitation row's opaque `item_validator.etag`
+  in `If-Match`, preserving its encoding.
 - `DELETE …/invitations/{invitation_id}` revokes it (`204`).
 
-All need an owner or admin.
+All need an owner or admin. Creation, resend and revocation require an `Idempotency-Key` retained
+with the original request for recovery.
 
 ### Accept an invitation
 
@@ -257,7 +276,6 @@ In addition to the [shared errors](./conventions):
 | Status | Code | Meaning |
 | --- | --- | --- |
 | `409` | `last_owner` | The change would leave no active owner. |
-| `409` | `last_workspace` | It's the caller's only Workspace. |
 | `409` | `invitation_pending` | An unexpired invitation for that address exists. |
 | `409` | `already_member` | The address belongs to an active member. |
 | `409` | `invitation_not_pending` | The invitation was revoked or already accepted. |

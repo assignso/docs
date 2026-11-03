@@ -5,6 +5,7 @@ import { dirname, join } from "node:path"
 import { root } from "./prepare-pages.mjs"
 import { methods, isInternal } from "./public-contract.mjs"
 import { loadDocsContract } from "./authoring-contract.mjs"
+import { execFileSync } from "node:child_process"
 import { loadApiPresentation, operationExampleSetup, operationGuideLinks } from "./api-presentation.mjs"
 import { docsOrigin, imageEntry } from "./api-og.mjs"
 import { developerNavigation, compatibilityPages } from "./api-navigation.mjs"
@@ -12,10 +13,19 @@ import { verifyApiImages } from "./render-api-og.mjs"
 import { operationExamples } from "./operation-examples.mjs"
 import { auditStaticPublication, pageRoute, publicPageSources } from "./publication-audit.mjs"
 import { errorCatalog } from "./error-catalog.mjs"
+import { checkMetadataReference, metadataFiles } from "./protocol-metadata.mjs"
 import { parse as parseOpenApi } from "../node_modules/vocs/dist/internal/openapi/parser.js"
 import { codeSamples, responseSamples } from "../node_modules/vocs/dist/internal/openapi/sample.js"
 
 const output = join(root, "dist/public")
+checkMetadataReference(output)
+for (const file of metadataFiles)
+  assert.deepEqual(readFileSync(join(output, file)), readFileSync(join(root, "public", file)),
+    `Built anonymous protocol differs from its maintained source: ${file}`)
+execFileSync("python3", [join(root, "scripts/export-example-sources.py"), "check-public",
+  "--output", join(output, "examples/task-workflow"), "--contract-directory", output], { stdio: "pipe" })
+assert.deepEqual(readFileSync(join(output, "openapi.yaml")), readFileSync(join(root, "public/openapi.yaml")),
+  "Built OpenAPI differs from the pinned public source")
 const searchIndexes = readdirSync(join(output, "assets")).filter(name => /^search-index-.*\.json$/.test(name))
 assert.equal(searchIndexes.length, 1, "Expected one current keyword search index")
 const searchJson = readFileSync(join(output, "assets", searchIndexes[0]), "utf8")

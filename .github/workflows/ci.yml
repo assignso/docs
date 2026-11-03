@@ -28,6 +28,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm audit --audit-level=high
+      - name: Verify public references and examples without private sources
+        run: |
+          node scripts/protocol-metadata.mjs
+          python3 scripts/export-example-sources.py check-public
       - run: npm test
       - run: npm run check # lint, Markdown audit and dead-link checked static build
       - name: Require released contract before publishing

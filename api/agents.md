@@ -72,12 +72,13 @@ Content-Type: application/json
 PATCH /api/v1/workspaces/{workspace_id}/agents/{agent_id} HTTP/1.1
 Authorization: Bearer <token>
 If-Match: <exact-etag-from-canonical-read>
+Idempotency-Key: <unique-key-retained-for-this-command>
 Content-Type: application/json
 
 {"status": "paused", "scope_kind": "workspace", "project_ids": [], "enabled_trigger_types": ["manual"], "additional_instructions": "Prefer concise review comments."}
 ```
 
-An update replaces the whole editable configuration, and a stale revision returns a conflict.
+An update replaces the whole editable configuration; a stale opaque condition returns `412`.
 Pausing stops new manual, event and scheduled runs, but doesn't undo committed actions. Pausing or
 narrowing the scope also cancels pending work and pending approvals.
 
@@ -103,6 +104,7 @@ The `202` response is a compact Operation receipt, not the completed run or its 
 identity and the original key and body. Follow the returned status location; reading status does
 not start work. After an uncertain outcome, recover the original request rather than submit a new
 run. Work requiring reconciliation must not be redispatched automatically.
+See [Follow background work](./operations) for status reads, bounded polling and terminal outcomes.
 
 Use an authorized run ID to read `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}`.
 Page history with `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs?limit=50&cursor=<cursor>`.
@@ -121,8 +123,12 @@ resource references are re-authorized when read, so they may be redacted.
 A completed run can still have provider usage pending, so its final charge may not be known yet.
 Insufficient credits produce a visible blocked or skipped run without blocking normal collaboration.
 
-`POST …/runs/{run_id}/cancel` with `Idempotency-Key` and an empty body cancels a queued, running or
-approval-waiting run. It doesn't undo committed actions, and a terminal run returns a conflict.
+`POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/cancel` with
+`Idempotency-Key` and an empty body requests cancellation of a queued, running or approval-waiting
+run. Current Agent-run authority and the initiator-or-manager
+restriction apply. Started work can remain cancellation-requested until it acknowledges completion.
+Repeating the command observes the retained cancellation or terminal outcome under current access.
+Cancellation does not undo committed actions; read status before treating it as complete.
 
 ## Actions and outputs
 

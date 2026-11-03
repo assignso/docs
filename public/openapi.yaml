@@ -6,7 +6,7 @@ components:
         minLength: 1
         type: string
     AssignDeadlineMs:
-      description: Effective remaining Core request budget at admission in milliseconds, bounded by any inherited context deadline. Diagnostic only; client-supplied values do not extend work. Cancellation is cooperative and bounds context-aware work. A timeout or disconnect does not prove that a committed mutation rolled back; recover using the operation's retained idempotency key/receipt before issuing another mutation. Committed responses are preserved.
+      description: Remaining request time budget at admission in milliseconds, capped by any earlier deadline already applied to the request. The value is diagnostic; client-supplied values do not extend work. Cancellation is cooperative and bounds work that observes it. A timeout or disconnect does not prove that a committed mutation rolled back; recover using the operation's retained idempotency key/receipt before issuing another mutation. Committed responses are preserved.
       schema:
         pattern: ^[0-9]+$
         type: string
@@ -91,6 +91,12 @@ components:
         maxLength: 200
         minLength: 16
         type: string
+    ObservedIfMatch:
+      in: header
+      name: If-Match
+      required: true
+      schema:
+        $ref: "#/components/schemas/EntityTagCondition"
     PageLimit:
       description: Maximum number of resources to return.
       in: query
@@ -192,6 +198,30 @@ components:
           $ref: "#/components/headers/CacheControlNoStore"
         X-Content-Type-Options:
           $ref: "#/components/headers/ContentTypeOptions"
+        X-Request-ID:
+          $ref: "#/components/headers/AssignRequestID"
+    GoneProblem:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/GoneProblem"
+      description: Resource no longer available
+      headers:
+        Assign-API-Version:
+          $ref: "#/components/headers/AssignAPIVersion"
+        Assign-Deadline-Ms:
+          $ref: "#/components/headers/AssignDeadlineMs"
+        Assign-Limit:
+          $ref: "#/components/headers/AssignLimit"
+        Assign-Request-ID:
+          $ref: "#/components/headers/AssignRequestID"
+        Assign-Server-Version:
+          $ref: "#/components/headers/AssignServerVersion"
+        Cache-Control:
+          schema:
+            enum:
+              - no-store
+            type: string
         X-Request-ID:
           $ref: "#/components/headers/AssignRequestID"
     InternalServerError:
@@ -409,6 +439,34 @@ components:
           $ref: "#/components/headers/RetryAfter"
         WWW-Authenticate:
           $ref: "#/components/headers/WWWAuthenticate"
+        X-Request-ID:
+          $ref: "#/components/headers/AssignRequestID"
+    ServiceUnavailableProblem:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ServiceUnavailableProblem"
+      description: Service unavailable
+      headers:
+        Assign-API-Version:
+          $ref: "#/components/headers/AssignAPIVersion"
+        Assign-Deadline-Ms:
+          $ref: "#/components/headers/AssignDeadlineMs"
+        Assign-Limit:
+          $ref: "#/components/headers/AssignLimit"
+        Assign-Request-ID:
+          $ref: "#/components/headers/AssignRequestID"
+        Assign-Server-Version:
+          $ref: "#/components/headers/AssignServerVersion"
+        Cache-Control:
+          schema:
+            enum:
+              - no-store
+            type: string
+        Retry-After:
+          schema:
+            minLength: 1
+            type: string
         X-Request-ID:
           $ref: "#/components/headers/AssignRequestID"
     TooManyRequests:
@@ -1684,6 +1742,203 @@ components:
         - name
         - status
         - revision
+      type: object
+    CanonicalOperationActive:
+      additionalProperties: true
+      properties:
+        actor_id: false
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+        error: false
+        expires_at:
+          $ref: "#/components/schemas/Timestamp"
+        id:
+          $ref: "#/components/schemas/Identifier"
+        outcome:
+          const: active
+        progress:
+          description: Domain-measured fraction only; null when unknown. Elapsed time never invents progress.
+          maximum: 1
+          minimum: 0
+          type:
+            - number
+            - "null"
+        provider_credentials: false
+        provider_response: false
+        result: false
+        result_body: false
+        secret: false
+        signed_url: false
+        state:
+          enum:
+            - pending
+            - running
+            - cancel_requested
+          type: string
+        token: false
+        updated_at:
+          $ref: "#/components/schemas/Timestamp"
+        worker_payload: false
+        workspace_id: false
+      required:
+        - outcome
+        - id
+        - state
+        - expires_at
+        - created_at
+        - updated_at
+        - progress
+      type: object
+    CanonicalOperationCancelled:
+      additionalProperties: true
+      properties:
+        actor_id: false
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+        error: false
+        expires_at:
+          $ref: "#/components/schemas/Timestamp"
+        id:
+          $ref: "#/components/schemas/Identifier"
+        outcome:
+          const: cancelled
+        provider_credentials: false
+        provider_response: false
+        result: false
+        result_body: false
+        secret: false
+        signed_url: false
+        state:
+          enum:
+            - cancelled
+          type: string
+        token: false
+        updated_at:
+          $ref: "#/components/schemas/Timestamp"
+        worker_payload: false
+        workspace_id: false
+      required:
+        - outcome
+        - id
+        - state
+        - expires_at
+        - created_at
+        - updated_at
+      type: object
+    CanonicalOperationFailed:
+      additionalProperties: true
+      properties:
+        actor_id: false
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+        error:
+          $ref: "#/components/schemas/ProblemDetails"
+        expires_at:
+          $ref: "#/components/schemas/Timestamp"
+        id:
+          $ref: "#/components/schemas/Identifier"
+        outcome:
+          const: failed
+        provider_credentials: false
+        provider_response: false
+        result: false
+        result_body: false
+        secret: false
+        signed_url: false
+        state:
+          enum:
+            - failed
+          type: string
+        token: false
+        updated_at:
+          $ref: "#/components/schemas/Timestamp"
+        worker_payload: false
+        workspace_id: false
+      required:
+        - outcome
+        - id
+        - state
+        - expires_at
+        - created_at
+        - updated_at
+        - error
+      type: object
+    CanonicalOperationResultReference:
+      additionalProperties: true
+      properties:
+        href:
+          description: Normalized same-API-origin canonical result path, authorized afresh on access. No query, fragment, credentials, signed capability, arbitrary external URL or parent traversal. Result content remains complete under its owning endpoint schema/continuation.
+          maxLength: 2048
+          minLength: 9
+          pattern: ^/api/v1/[^?#\s]+$
+          type: string
+        kind:
+          const: authorized-resource
+        media_type:
+          maxLength: 128
+          minLength: 1
+          type: string
+        operation_id:
+          description: Stable canonical GET operationId for the result owner. The server validates this against the full operation registry; a client never supplies or selects it.
+          maxLength: 128
+          minLength: 1
+          type: string
+      required:
+        - kind
+        - operation_id
+        - href
+        - media_type
+      type: object
+    CanonicalOperationStatus:
+      discriminator:
+        mapping:
+          active: "#/components/schemas/CanonicalOperationActive"
+          cancelled: "#/components/schemas/CanonicalOperationCancelled"
+          failed: "#/components/schemas/CanonicalOperationFailed"
+          succeeded: "#/components/schemas/CanonicalOperationSucceeded"
+        propertyName: outcome
+      oneOf:
+        - $ref: "#/components/schemas/CanonicalOperationActive"
+        - $ref: "#/components/schemas/CanonicalOperationSucceeded"
+        - $ref: "#/components/schemas/CanonicalOperationFailed"
+        - $ref: "#/components/schemas/CanonicalOperationCancelled"
+    CanonicalOperationSucceeded:
+      additionalProperties: true
+      properties:
+        actor_id: false
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+        error: false
+        expires_at:
+          $ref: "#/components/schemas/Timestamp"
+        id:
+          $ref: "#/components/schemas/Identifier"
+        outcome:
+          const: succeeded
+        provider_credentials: false
+        provider_response: false
+        result:
+          $ref: "#/components/schemas/CanonicalOperationResultReference"
+        result_body: false
+        secret: false
+        signed_url: false
+        state:
+          enum:
+            - succeeded
+          type: string
+        token: false
+        updated_at:
+          $ref: "#/components/schemas/Timestamp"
+        worker_payload: false
+        workspace_id: false
+      required:
+        - outcome
+        - id
+        - state
+        - expires_at
+        - created_at
+        - updated_at
+        - result
       type: object
     CanonicalProjectIdentifier:
       description: Opaque Assign-owned UUIDv7 identifier. Clients must not derive meaning from it.
@@ -3531,6 +3786,40 @@ components:
         - resolved_by
         - resolution
       type: object
+    CanonicalTaskArchiveResult:
+      allOf:
+        - $ref: "#/components/schemas/CanonicalTask"
+        - properties:
+            reversible_command:
+              $ref: "#/components/schemas/ReversibleCommand"
+          type: object
+      description: Complete canonical Task plus an optional reversible command from the same archive transaction.
+    CanonicalTaskCommandResult:
+      allOf:
+        - $ref: "#/components/schemas/CanonicalTask"
+        - properties:
+            item_validator:
+              additionalProperties: false
+              description: Present only on fresh command delivery. Replay preserves the original effect outcome and omits both this historical item validator and the receipt ETag; read the current authorized canonical Task before another conditional write.
+              properties:
+                encoding:
+                  const: identity
+                  type: string
+                etag:
+                  minLength: 1
+                  type: string
+                representation:
+                  const: canonical-item
+                  type: string
+              required:
+                - etag
+                - encoding
+                - representation
+              type: object
+            reversible_command:
+              $ref: "#/components/schemas/ReversibleCommand"
+          type: object
+      description: Complete canonical Task and optional same-transaction reversible command. Validators are supplied only with a fresh delivery; recover historical receipts before acquiring a new authorized Task observation.
     CanonicalTaskIncluded:
       additionalProperties: true
       description: One page-scoped deduplicated set containing only display references from this page. Labels use (project_id,id), reflecting effective Project-specific labels. Every unresolved reference has a typed unavailable entry; complete means all referenced displays resolved. Advisory display metadata never authorizes a command.
@@ -6232,13 +6521,18 @@ components:
     TaskCreateRequest:
       additionalProperties: false
       not:
+        properties:
+          description: {}
+          description_markdown: {}
         required:
           - description
           - description_markdown
       properties:
         assignee_actor_id:
-          $ref: "#/components/schemas/Identifier"
-          description: Omit to use the Workspace's default Task assignee policy.
+          description: Omit to use the Workspace's default Task assignee policy. An explicit null creates an unassigned Task, overriding the default.
+          oneOf:
+            - $ref: "#/components/schemas/Identifier"
+            - type: "null"
         description:
           $ref: "#/components/schemas/RichTextDocument"
         description_markdown:
@@ -6778,6 +7072,71 @@ paths:
       summary: Add the caller's reaction to a comment
       tags:
         - Comments
+  /api/v1/operations/{operation_id}:
+    get:
+      description: |-
+        Read the current authorized state of a durable operation. Terminal outcomes are authoritative; a client disconnect does not cancel work. Active states are pending, running or cancellation requested, and progress can be unknown.
+
+        Supported initial read scopes are agents:read, knowledge:read, read, time:read and workspaces:read. The operation also enforces its own source-specific scope, credential-family and current resource requirements; one listed scope does not authorize every operation. Result links name an approved same-API-origin resource which is authorized again when read. Private projection-capture operations remain outside ordinary public credentials.
+      operationId: getOperation
+      parameters:
+        - in: path
+          name: operation_id
+          required: true
+          schema:
+            $ref: "#/components/schemas/Identifier"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanonicalOperationStatus"
+          description: Compact currently authorized operation projection; terminal state is authoritative, cancellation is never inferred from a client disconnect.
+          headers:
+            Assign-Recovery-Required:
+              description: "Unknown Knowledge external outcome: explicit source reconciliation is required; no automatic retry."
+              schema:
+                const: reconcile
+                type: string
+            Cache-Control:
+              schema:
+                const: no-store
+                type: string
+            Link:
+              description: Lifecycle and partial Work sources; fixed registry-bound related source reader for separately authorized inspection, including failed or cancelled jobs. No result content or delegated authority.
+              schema:
+                maxLength: 512
+                type: string
+            Retry-After:
+              description: Only nonterminal status carries this header; accepted external recovery minimum is two seconds. Terminal status omits it.
+              schema:
+                const: "2"
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/ProductProblem"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "410":
+          $ref: "#/components/responses/GoneProblem"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailableProblem"
+        default:
+          $ref: "#/components/responses/ProductProblem"
+      security:
+        - bearerToken: []
+      summary: Recover current authorized durable operation status
+      tags:
+        - Operations
   /api/v1/projects/{project_id}:
     get:
       description: Read the current authorized canonical Project through bearer admission. The request accepts no query parameters or body. Revision, next_task_number and resolved lifecycle revisions are exact decimal strings. The response ETag is opaque and bound to the complete authorized JSON representation, source and selected identity/gzip encoding; forward it unchanged to conditional Project commands. Revoked access cannot reuse a cached observation. Do not construct a validator from the revision.
@@ -6990,7 +7349,10 @@ paths:
         - Projects
   /api/v1/projects/{project_id}/tasks:
     post:
-      description: Create a complete Task with an atomically allocated Project number under current Workspace and Project authority. Defaults, assignment, content schema, dates and Milestone rules apply in the same transaction. Request JSON allows 2 MiB of canonical description plus 8 KiB scalar/envelope overhead; content node, nesting, mention and attachment limits apply independently. Keep the original key and exact complete request after an uncertain outcome. Current credential, Project and created-Task access precede original receipt delivery; changed intent or unreconciled historical custody conflicts without another effect. A fresh response ETag identifies the receipt; recovered historical outcomes withhold it. Read the current authorized canonical Task before a conditional edit. Identity/gzip preserve complete content. Current stored receipt version, stable grant family, original key and exact intent are checked before recovery; current resource authority is required. Historical recovery withholds response/item validators and cannot repeat effects. Unknown historical custody fails closed. Read current authorized state before another conditional edit.
+      description: |-
+        Create a complete Task in a Project and return the created Task. Assign allocates its Project number atomically. Current Workspace and Project authority is required; defaults, assignment, content schema, dates and Milestone rules apply in the same transaction. Request JSON allows 2 MiB of canonical description plus 8 KiB of scalar/envelope overhead; content node, nesting, mention and attachment limits apply independently. Identity and gzip responses preserve complete content.
+
+        After an uncertain outcome, retain the original idempotency key and the exact complete request. Recovery checks that the original result and authorization grant are recognized and that the key and request intent are unchanged. Current credential, Project and created-Task access are required before returning the original result, without repeating effects. Changed intent or an unrecognized original result or authorization grant returns a conflict. A fresh response ETag identifies the receipt, not the Task; recovery withholds response and item validators. Read the current authorized canonical Task before a conditional edit.
       operationId: createTask
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -7092,6 +7454,136 @@ paths:
       tags:
         - Tasks
   /api/v1/tasks/{task_id}:
+    delete:
+      description: Current product/native source, Workspace/Project mutation authority and the exact Task are fenced before original-key receipt lookup. Apply the opaque canonical Task If-Match observation with revision CAS in the same transaction as the existing Task trash lifecycle, Work/assignment/participation cleanup, events/outbox and reversible-command history. Missing/stale observations return 428/412; the key never replaces the observation. No query or body is accepted. Preserve tasks.trash as the effect namespace. Fresh receipt and Task item validators are distinct; historical recovery returns neither and requires a fresh authorized getTask before another write. Unknown retained lineage/version requires reconciliation. The old POST /tasks/{task_id}/trash handler/route and active source are retired. Public reconciliation, actual consumer and runtime/qualification gates remain open.
+      operationId: trashTask
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+        - $ref: "#/components/parameters/ObservedIfMatch"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanonicalTaskCommandResult"
+          description: Complete canonical Task and optional fresh item validator.
+          headers:
+            Cache-Control:
+              schema:
+                const: private, no-store
+                type: string
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
+            ETag:
+              $ref: "#/components/headers/CanonicalETag"
+            Vary:
+              schema:
+                type: string
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "406":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "410":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: The Task was purged; this identity cannot be restored or mutated.
+        "412":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "428":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+      security:
+        - bearerToken: []
+      summary: Move a Task to Trash
+      tags:
+        - Tasks
     get:
       description: Read a complete authorized Task. view=canonical returns revision-owned fields and the opaque item validator for mutation; detail adds independently changing display projections. Body, coding, query and conditional-header bounds are checked. Complete construction and current source/Task authority share one snapshot, including before bodyless 304. A supplied strong If-Match must match the selected representation or returns412. Identity/gzip validators are separate. Responses are private, no-store.
       operationId: getTask
@@ -7231,7 +7723,10 @@ paths:
       tags:
         - Tasks
     patch:
-      description: Read this resource with view=canonical and forward its exact opaque strong identity or gzip ETag in If-Match. Missing conditions return 428; malformed/weak 400 and stale/foreign/numeric/wildcard 412. Omitted fields preserve the current Task; explicit nullable fields clear only their declared values. Current source/Workspace/Project authority, conditional merge, revision CAS, reversible effects and receipt commit together. Keep the original key, body and condition after an uncertain outcome. Original version/family/key/intent custody recovers the safe committed result under current Task authority before old conditions, with no new effect; historical responses withhold validators. Changed intent or unsupported historical custody conflicts. Identity/gzip preserve complete content. Current stored receipt version, stable grant family, original key and exact intent are checked before recovery; current resource authority is required. Historical recovery withholds response/item validators and cannot repeat effects. Unknown historical custody fails closed. Read current authorized state before another conditional edit. Encoded PATCH request JSON retains its existing 8 KiB limit; content constraints remain independent.
+      description: |-
+        Update the permitted fields of a Task atomically and return the updated Task. First read this Task with view=canonical, then forward its exact opaque strong identity or gzip ETag in If-Match. Missing conditions return 428; malformed or weak conditions return 400; stale, foreign, numeric or wildcard conditions return 412. Omitted fields preserve the current Task; explicit nullable fields clear only their declared values. Current credential, Workspace and Project authority, the conditional merge and Task revision comparison, reversible effects and the original result commit together.
+
+        After an uncertain outcome, retain the original idempotency key, body and condition. Recovery checks that the original result and authorization grant are recognized and that the key and request intent are unchanged. Under current Task authority, recovery returns the original committed result before checking the original condition, without repeating effects. Changed intent or an unrecognized original result or authorization grant returns a conflict. Historical recovery withholds response and item validators. Read the current authorized state before another conditional edit. Identity and gzip responses preserve complete content. Encoded PATCH request JSON retains its 8 KiB limit; content constraints apply independently.
       operationId: updateTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -7340,6 +7835,89 @@ paths:
       security:
         - bearerToken: []
       summary: Update a Task
+      tags:
+        - Tasks
+  /api/v1/tasks/{task_id}/archive:
+    post:
+      description: |-
+        Archives a Task with optimistic concurrency. The current opaque canonical Task validator
+        must be forwarded unchanged in `If-Match`; retries with the same idempotency key
+        replay the original response.
+         Current bearer/native source and Workspace/Project authority are observed in the same writer transaction before receipt lookup, opaque observed-version condition and effect. Write does not imply read. Missing condition428, malformed/weak400 and stale/foreign/wildcard412 preserve unsaved intent. Same key and exact request recovers the original safe receipt under current authority before retry conditions; changed intent409. No Session cookie product admission or client-constructed numeric validator. Identity/gzip response coding preserves complete content. Runtime, race, rollback, cancellation and endpoint qualification remain deferred. Current stored receipt version, stable grant family, original key and exact intent are checked before recovery; current resource authority is required. Historical recovery withholds response/item validators and cannot repeat effects. Unknown historical custody fails closed. Read current authorized state before another conditional edit.
+      operationId: archiveTask
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+        - $ref: "#/components/parameters/ObservedIfMatch"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanonicalTaskArchiveResult"
+          description: The archived Task, including a reversible command handle when state changed.
+          headers:
+            Cache-Control:
+              schema:
+                const: private, no-store
+                type: string
+            Content-Encoding:
+              description: Present only when the selected response uses gzip.
+              schema:
+                enum:
+                  - gzip
+                type: string
+            Content-Length:
+              description: Length of the selected encoded response in bytes.
+              schema:
+                minimum: 0
+                type: integer
+            ETag:
+              description: Opaque representation validator. Forward unchanged.
+              schema:
+                type: string
+            Vary:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptableProblem"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "410":
+          description: The Task has already been purged and cannot be archived.
+        "412":
+          $ref: "#/components/responses/PreconditionFailedProblem"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeProblem"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "428":
+          $ref: "#/components/responses/PreconditionRequiredProblem"
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+          description: Current authority, input, condition, replay custody or admission failure.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/MaintenanceUnavailable"
+        default:
+          $ref: "#/components/responses/ProductProblem"
+      security:
+        - bearerToken: []
+      summary: Archive a Task
       tags:
         - Tasks
   /api/v1/tasks/{task_id}/comments:
@@ -8703,13 +9281,14 @@ paths:
             type: array
             uniqueItems: true
           style: form
-        - description: Column rank order or newest resolution first; number retains history semantics. Workspace number order is the default. Activity orders retain updated_at/ID; priority_updated_at requires checked consistency.
+        - description: Column rank order or newest resolution first; number retains history semantics. Manual order spans Statuses in one Project, by rank with an immutable ID tie-break, and retains Status, assignee and Milestone filters. It requires exactly one project_id and cannot combine with code, consistency, anchor_task_id or resolved_since. Workspace number order is the default. Activity orders retain updated_at/ID; priority_updated_at requires checked consistency.
           in: query
           name: order
           schema:
             default: number
             enum:
               - number
+              - manual
               - rank
               - rank_desc
               - resolved_desc
@@ -9025,4 +9604,6 @@ tags:
     name: Activity
   - description: Workspace Documents and reusable reference candidates.
     name: Documents
+  - description: Durable operation status and result recovery.
+    name: Operations
 x-assign-api-major: 1

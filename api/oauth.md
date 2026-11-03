@@ -12,7 +12,8 @@ and the registered sign-in flows used by Assign's own clients. Use a
 
 Arrange a reviewed registration with your application's administrator before starting. You
 need its client ID, exact allowed redirect URI, approved scopes and client type, plus the
-immutable Workspace ID supplied by the Workspace administrator. For the
+immutable [Workspace ID](./account#copy-workspace-id) copied from the selected Workspace's
+General settings or supplied with the approved setup. For the
 [first Task read](./quickstart), request `tasks:read`. There is no anonymous dynamic registration
 for product OAuth; discovering the server's metadata does not register an application.
 A confidential application also receives a client secret. Keep that secret on its server;

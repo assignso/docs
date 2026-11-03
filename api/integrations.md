@@ -11,6 +11,9 @@ Writing back to a provider stays off until an administrator configures it.
 
 For external automation, use operations and credentials listed in the [public API reference](./reference/).
 
+To receive Task events at your own HTTPS service, use [Customer webhooks](./webhooks). The
+provider connections below configure Assign's integrations with external tools.
+
 ## Required Workspace features <Badge type="warning" text="Awaiting deployment" />
 
 The provider catalog includes an optional `required_features` list. Clockify and Toggl Track

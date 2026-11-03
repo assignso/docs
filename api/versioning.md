@@ -25,6 +25,48 @@ broad incompatible changes to a released contract.
 - The [OpenAPI document](/openapi.yaml) is the compatibility authority. Its version identifies the
   contract, not the server release or the URL major.
 
+### Read API metadata <Badge type="warning" text="Awaiting deployment" />
+
+`getApiMetadata` is the anonymous protocol operation `GET /api/v1/meta`. It is separate from
+the bearer product methods in the SDKs. Send it directly over HTTP without an authorization
+header, browser cookies or a CSRF token:
+
+```sh
+curl --disable --proto '=https' --silent --show-error --fail-with-body \
+  --connect-timeout 5 --max-time 10 --max-filesize 16384 \
+  --header 'Accept: application/json' \
+  'https://api.assign.so/api/v1/meta'
+```
+
+Download its [OpenAPI reference](/protocols/api-metadata/openapi.json) and
+[source-only provenance](/protocols/api-metadata/provenance.json).
+
+Use the trusted API origin for your integration; the example uses the same origin as
+[the first-request tutorial](./quickstart#3-read-one-task-page).
+This request performs no Workspace or Account lookup. Its JSON response contains:
+
+| Field | Meaning |
+| --- | --- |
+| `api_major` | The URL major, currently `1`. |
+| `contract_epoch`, `schema_epoch` | Current server epochs used to admit compatible retained representations. |
+| `server_version` | The server build version, independent of the contract and SDK versions. |
+| `capabilities` | Advertised capability keys. A capability does not grant permission. |
+| `supported_clients` | Advisory client names and minimum/maximum version ranges. An empty list makes no client-version compatibility promise. |
+| `minimum_version_enforcement` | Currently `none`; a client identity header does not grant or remove authority. |
+
+The bounded response uses `Cache-Control: no-store`. Each metadata request returns the current
+document; an old ETag or conditional date cannot select an earlier response.
+
+Before reusing a retained observation, compare its `contract_epoch` and `schema_epoch` with
+the currently admitted server epochs. A missing or incompatible epoch requires a fresh
+authorized baseline. An epoch observation that is still current can be reused; restoring
+cached state does not by itself require a new metadata request.
+
+Epoch compatibility grants no resource access. Current authorization still applies to each
+request. ETags and cursors remain opaque: use the values issued for the current representation,
+credential and query rather than constructing them from an epoch or numeric revision. Preserve
+an interrupted write's original request and key while reconciling its outcome.
+
 ## SDK and client releases
 
 Each SDK and client releases on its own schedule, and their version numbers don't need to match. An
@@ -92,3 +134,16 @@ migration notice and explicitly reissue or rotate it when needed; switching a Wo
 the app does not change a token's Workspace. Product OAuth, native/developer-client grants
 and MCP credentials keep distinct audiences. A product token cannot replace an MCP credential.
 See [Authentication](./authentication) for expiry, overlap and lost-response recovery.
+
+## Sign out or switch Workspace
+
+An integration credential stays bound to its admitted audience, environment and Workspace.
+Selecting another Workspace in the Assign app does not retarget that credential. Obtain a
+credential for the intended Workspace before changing the integration's requests, and discard
+cached resource data from the prior Workspace.
+
+Assign's browser application manages its session and CSRF token. Sign out through the app;
+an external integration should not copy or clear those cookies to manage a bearer credential.
+For a native application or CLI, use that client's sign-out and credential-management commands.
+Preserve an interrupted write's original request and key while resolving its result, even if
+you sign in again or change clients. See [unknown write outcomes](./writes#recover-an-unknown-outcome).

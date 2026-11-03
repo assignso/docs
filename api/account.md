@@ -65,9 +65,13 @@ end it when closed. An expired or revoked session requires sign-in again.
 
 ## Personal API tokens
 
-Create and manage personal tokens in **Account settings → Access tokens**. Copy each new secret
-once into a secret manager. Lists show safe metadata such as name, prefix, scopes, last use
-and expiry; they cannot reveal the secret again. Revocation is permanent.
+Select the intended Workspace, then create and manage personal tokens in
+**Account settings → Access tokens**. In the retained form, **Read Assign data** selects a group
+of resource read scopes, including `tasks:read`. Review the scopes actually issued and use the
+narrowest supported choice for your integration.
+
+Copy each new secret once into a secret manager. Lists show safe metadata such as name, prefix,
+scopes, last use and expiry; they cannot reveal the secret again. Revocation is permanent.
 
 A personal token acts as you in its selected Workspace and stops authorizing work when you
 lose the required access. Choose the minimum available scopes. The forthcoming product
@@ -108,6 +112,16 @@ See [Connect a client](../mcp/connect#review-or-disconnect).
 Use the Workspace chooser to switch between memberships. Owners and admins manage invitations
 and roles in **Workspace settings → Members**. Review plans under **Account settings → Billing
 & plans**; payment and invoice details stay in Workspace billing settings.
+
+<a id="copy-workspace-id"></a>
+
+### Copy the Workspace ID <Badge type="warning" text="Awaiting deployment" />
+
+Select the intended Workspace, then open **Workspace settings → General**. Use **Copy** beside
+**Workspace ID** to obtain its immutable identifier for your integration. The field is unavailable
+while the current Workspace identity is loading or access has changed. A Workspace name or URL
+slug cannot replace this ID. See [the first-request tutorial](./quickstart#2-set-the-workspace-id)
+for matching it to your credential.
 
 ## Project shortcuts
 

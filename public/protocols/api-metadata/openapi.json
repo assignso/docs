@@ -1,0 +1,1053 @@
+{
+  "components": {
+    "headers": {
+      "AssignAPIVersion": {
+        "description": "Assign-API-Version diagnostic, never authorization or an old-contract selector.",
+        "schema": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "AssignDeadlineMs": {
+        "description": "Remaining request time budget at admission in milliseconds, capped by any earlier deadline already applied to the request. The value is diagnostic; client-supplied values do not extend work. Cancellation is cooperative and bounds work that observes it. A timeout or disconnect does not prove that a committed mutation rolled back; recover using the operation's retained idempotency key/receipt before issuing another mutation. Committed responses are preserved.",
+        "schema": {
+          "pattern": "^[0-9]+$",
+          "type": "string"
+        }
+      },
+      "AssignLimit": {
+        "description": "Assign application limit metadata version 1, independent of draft IETF RateLimit fields. The closed kind/scope/policy/unit labels identify the applicable existing budget, never a bucket, credential, actor identifier or private queue depth. The search class is query cost (one admitted query unit), not paid entitlement. cost is the units required by this request; limit/remaining are window units when known; reset is Unix seconds. Concurrent and entitlement outcomes omit unknown counters. A reset or Retry-After is earliest retry guidance, not guaranteed admission. Honor Retry-After within the caller deadline, use bounded backoff with jitter and do not loop automatically on quota/entitlement failures.",
+        "schema": {
+          "maxLength": 256,
+          "pattern": "^version=1; kind=(rate|cost|quota|concurrency|entitlement|overload|availability); scope=(principal|peer|upstream|workspace|session|service); policy=[a-z]+(?:[._][a-z]+)*; unit=(request|query|byte|connection|credit)(?:; cost=[1-9][0-9]*)?(?:; limit=[1-9][0-9]*; remaining=[0-9]+)?(?:; reset=[0-9]+)?$",
+          "type": "string"
+        }
+      },
+      "AssignRequestID": {
+        "description": "Assign-Request-ID on every response; X-Request-ID is its correlation alias.",
+        "schema": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "AssignServerVersion": {
+        "description": "Assign-Server-Version diagnostic, independent artifact version.",
+        "schema": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "CacheControlNoStore": {
+        "description": "Prevents storage of error responses by clients and intermediaries.",
+        "schema": {
+          "const": "no-store",
+          "type": "string"
+        }
+      },
+      "ContentTypeOptions": {
+        "description": "Prevents user agents from MIME-sniffing the response.",
+        "schema": {
+          "const": "nosniff",
+          "type": "string"
+        }
+      },
+      "RetryAfter": {
+        "description": "Retry-After delay-seconds or HTTP-date; honor within the caller deadline.",
+        "schema": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "WWWAuthenticate": {
+        "description": "Applicable bearer challenge on product authentication failures.",
+        "schema": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "Forbidden": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        },
+        "description": "The request is forbidden.",
+        "headers": {
+          "Assign-API-Version": {
+            "$ref": "#/components/headers/AssignAPIVersion"
+          },
+          "Assign-Request-ID": {
+            "$ref": "#/components/headers/AssignRequestID"
+          },
+          "Assign-Server-Version": {
+            "$ref": "#/components/headers/AssignServerVersion"
+          },
+          "Cache-Control": {
+            "$ref": "#/components/headers/CacheControlNoStore"
+          },
+          "X-Content-Type-Options": {
+            "$ref": "#/components/headers/ContentTypeOptions"
+          },
+          "X-Request-ID": {
+            "$ref": "#/components/headers/AssignRequestID"
+          }
+        }
+      },
+      "ProductProblem": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/MalformedRequestProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/UnauthenticatedProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/PaymentRequiredProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/ForbiddenProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/NotFoundProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/MethodNotAllowedProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/NotAcceptableProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/ConflictProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/IdempotencyKeyConflictProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/OperationInProgressProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/GoneProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/PreconditionFailedProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/ContentTooLargeProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/UnsupportedMediaTypeProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/ValidationFailedProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/LockedProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/PreconditionRequiredProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/RateLimitedProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/InternalErrorProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/NotImplementedProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/BadGatewayProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/ServiceUnavailableProblem"
+                },
+                {
+                  "$ref": "#/components/schemas/GatewayTimeoutProblem"
+                }
+              ]
+            }
+          }
+        },
+        "description": "An HTTP admission, validation, domain or availability failure. The status and code select a catalog entry. Errors use no-store; 401 includes WWW-Authenticate, 405 includes Allow, and 429/503 include Retry-After. Stream errors use this response only before the stream is committed.",
+        "headers": {
+          "Allow": {
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "Assign-API-Version": {
+            "$ref": "#/components/headers/AssignAPIVersion"
+          },
+          "Assign-Deadline-Ms": {
+            "$ref": "#/components/headers/AssignDeadlineMs"
+          },
+          "Assign-Limit": {
+            "$ref": "#/components/headers/AssignLimit"
+          },
+          "Assign-Request-ID": {
+            "$ref": "#/components/headers/AssignRequestID"
+          },
+          "Assign-Server-Version": {
+            "$ref": "#/components/headers/AssignServerVersion"
+          },
+          "Cache-Control": {
+            "schema": {
+              "enum": [
+                "no-store"
+              ],
+              "type": "string"
+            }
+          },
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          },
+          "WWW-Authenticate": {
+            "$ref": "#/components/headers/WWWAuthenticate"
+          },
+          "X-Request-ID": {
+            "$ref": "#/components/headers/AssignRequestID"
+          }
+        }
+      },
+      "TooManyRequests": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        },
+        "description": "The caller has exceeded an applicable abuse-control limit.",
+        "headers": {
+          "Assign-API-Version": {
+            "$ref": "#/components/headers/AssignAPIVersion"
+          },
+          "Assign-Request-ID": {
+            "$ref": "#/components/headers/AssignRequestID"
+          },
+          "Assign-Server-Version": {
+            "$ref": "#/components/headers/AssignServerVersion"
+          },
+          "Cache-Control": {
+            "$ref": "#/components/headers/CacheControlNoStore"
+          },
+          "Retry-After": {
+            "description": "Seconds until the client may retry.",
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "X-Content-Type-Options": {
+            "$ref": "#/components/headers/ContentTypeOptions"
+          },
+          "X-Request-ID": {
+            "$ref": "#/components/headers/AssignRequestID"
+          }
+        }
+      }
+    },
+    "schemas": {
+      "BadGatewayProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "bad_gateway"
+              },
+              "retryable": {
+                "const": true
+              },
+              "status": {
+                "const": 502
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/bad_gateway"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "ConflictProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "conflict"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 409
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/conflict"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "ContentTooLargeProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "content_too_large"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 413
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/content_too_large"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "ErrorResponse": {
+        "$ref": "#/components/schemas/ProblemDetails"
+      },
+      "FieldError": {
+        "additionalProperties": true,
+        "anyOf": [
+          {
+            "required": [
+              "pointer"
+            ]
+          },
+          {
+            "required": [
+              "parameter"
+            ]
+          }
+        ],
+        "properties": {
+          "code": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "message": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "parameter": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "pointer": {
+            "pattern": "^(/([^~/]|~[01])*)*$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "ForbiddenProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "forbidden"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 403
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/forbidden"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "GatewayTimeoutProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "gateway_timeout"
+              },
+              "retryable": {
+                "const": true
+              },
+              "status": {
+                "const": 504
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/gateway_timeout"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "GoneProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "gone"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 410
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/gone"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "IdempotencyKeyConflictProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "idempotency_key_conflict"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 409
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/idempotency_key_conflict"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "InternalErrorProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "internal_error"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 500
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/internal_error"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "LockedProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "locked"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 423
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/locked"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "MalformedRequestProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "malformed_request"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 400
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/malformed_request"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "MethodNotAllowedProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "method_not_allowed"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 405
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/method_not_allowed"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "NotAcceptableProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "not_acceptable"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 406
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/not_acceptable"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "NotFoundProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "not_found"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 404
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/not_found"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "NotImplementedProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "not_implemented"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 501
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/not_implemented"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "OperationInProgressProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "operation_in_progress"
+              },
+              "retryable": {
+                "const": true
+              },
+              "status": {
+                "const": 409
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/operation_in_progress"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "PaymentRequiredProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "payment_required"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 402
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/payment_required"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "PreconditionFailedProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "precondition_failed"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 412
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/precondition_failed"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "PreconditionRequiredProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "precondition_required"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 428
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/precondition_required"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "ProblemDetails": {
+        "additionalProperties": true,
+        "description": "RFC 9457 product errors only, application/problem+json and Cache-Control no-store. instance is an opaque occurrence identifier, never the request URL. Clients preserve unknown extensions and branch on code/type; protocol-native errors are separate.",
+        "properties": {
+          "code": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "detail": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Safe domain metadata, such as affected feature keys or counts. Field violations also appear in errors with a JSON Pointer.",
+            "type": "object"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            },
+            "type": "array"
+          },
+          "instance": {
+            "pattern": "^urn:assign:problem:[A-Za-z0-9_-]+$",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Domain-specific refusal discriminator. code and type identify the canonical error category; reason preserves the precise domain cause.",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "status": {
+            "maximum": 599,
+            "minimum": 400,
+            "type": "integer"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "pattern": "^https://docs\\.assign\\.so/errors/[a-z][a-z0-9_]*$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "instance",
+          "code",
+          "request_id",
+          "retryable"
+        ],
+        "type": "object"
+      },
+      "RateLimitedProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "rate_limited"
+              },
+              "retryable": {
+                "const": true
+              },
+              "status": {
+                "const": 429
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/rate_limited"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "ServiceUnavailableProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "service_unavailable"
+              },
+              "retryable": {
+                "const": true
+              },
+              "status": {
+                "const": 503
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/service_unavailable"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "UnauthenticatedProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "unauthenticated"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 401
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/unauthenticated"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "UnsupportedMediaTypeProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "unsupported_media_type"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 415
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/unsupported_media_type"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "ValidationFailedProblem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProblemDetails"
+          },
+          {
+            "properties": {
+              "code": {
+                "const": "validation_failed"
+              },
+              "retryable": {
+                "const": false
+              },
+              "status": {
+                "const": 422
+              },
+              "type": {
+                "const": "https://docs.assign.so/errors/validation_failed"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      }
+    }
+  },
+  "info": {
+    "description": "Anonymous nonpersonalized API identity and advisory capability discovery. This document does not grant authority or promise released client compatibility.",
+    "license": {
+      "identifier": "LicenseRef-Proprietary",
+      "name": "Proprietary"
+    },
+    "title": "Assign API metadata discovery protocol",
+    "version": "1.0.0-rc.10"
+  },
+  "openapi": "3.1.1",
+  "paths": {
+    "/api/v1/meta": {
+      "get": {
+        "description": "Returns build-backed API identity and advisory client support without requiring credentials. Client headers do not change this response or authorize other operations. An empty supported_clients list makes no client-version compatibility promise. Always fetch the current document; conditional request headers do not select a cached response.",
+        "operationId": "getApiMetadata",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "api_major": {
+                      "const": 1,
+                      "type": "integer"
+                    },
+                    "capabilities": {
+                      "items": {
+                        "pattern": "^[a-z][a-z0-9._-]{0,63}$",
+                        "type": "string"
+                      },
+                      "maxItems": 64,
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "contract_epoch": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "minimum_version_enforcement": {
+                      "const": "none",
+                      "type": "string"
+                    },
+                    "schema_epoch": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "server_version": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "supported_clients": {
+                      "items": {
+                        "properties": {
+                          "client": {
+                            "pattern": "^[a-z][a-z0-9._-]{0,63}$",
+                            "type": "string"
+                          },
+                          "maximum_version": {
+                            "maxLength": 64,
+                            "minLength": 5,
+                            "type": "string"
+                          },
+                          "minimum_version": {
+                            "maxLength": 64,
+                            "minLength": 5,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "client",
+                          "minimum_version",
+                          "maximum_version"
+                        ],
+                        "type": "object"
+                      },
+                      "maxItems": 32,
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "api_major",
+                    "contract_epoch",
+                    "schema_epoch",
+                    "server_version",
+                    "capabilities",
+                    "supported_clients",
+                    "minimum_version_enforcement"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Current metadata. No Workspace, user or provider data is included.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProductProblem"
+          }
+        },
+        "security": [],
+        "summary": "Read API identity and supported capabilities",
+        "tags": [
+          "Metadata"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "Production",
+      "url": "https://api.assign.so"
+    },
+    {
+      "description": "Local development",
+      "url": "http://localhost:8080"
+    }
+  ]
+}

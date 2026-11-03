@@ -16,10 +16,12 @@ process making the request. Do not paste a token into source code, shell history
 
 ### Personal script
 
-Sign in to Assign and open **Account settings → Access tokens**. Create a named token for the
-Workspace you want to read, selecting `tasks:read` when the rewritten scope policy is available.
-Complete any requested sign-in confirmation. Copy the secret once into your secret manager;
-the credential list cannot show it again. Use the expiry displayed at issuance.
+Sign in to Assign and select the Workspace you want to read before opening
+**Account settings → Access tokens**. Create a named token and choose **Read Assign data**.
+That control includes `tasks:read` and other available resource-read scopes; review the issued
+scopes before using the credential. Complete any requested sign-in confirmation. Copy the
+secret once into your secret manager; the credential list cannot show it again. Use the
+expiry displayed at issuance.
 
 An existing token may use an earlier scope policy. Follow its migration notice rather than
 assuming `tasks:write` includes read access. See [token lifecycle](./authentication#expiry-rotation-and-revocation)
@@ -49,11 +51,13 @@ refresh token or MCP token is not the bearer token for a Task request.
 
 ## 2. Set the Workspace ID
 
-Obtain the immutable Workspace ID from the administrator arranging your integration and set
-`ASSIGN_WORKSPACE_ID` in the same process. Confirm that it is the Workspace selected for the
-credential or OAuth grant. A Workspace name, URL slug or Project key is not this ID. Switching
-Workspace in the app does not retarget a saved token. Stop if you cannot obtain the ID;
-do not inspect browser cookies or call undocumented setup endpoints.
+Select the Workspace, open **Workspace settings → General**, and use **Copy** beside
+**Workspace ID**. This control is part of the upcoming flow described here. If an administrator
+is arranging your integration, ask them for that same immutable ID. Set `ASSIGN_WORKSPACE_ID`
+in the process making the request and confirm that it matches the credential or OAuth grant.
+A Workspace name, URL slug or Project key is not this ID. Switching Workspace in the app does
+not retarget a saved token. Stop if you cannot obtain the ID; do not inspect browser cookies
+or call undocumented setup endpoints.
 
 The read below needs no Project or Task ID. Scopes and current membership, role, Project
 visibility and resource permissions all apply; a scope alone does not grant access.
@@ -126,6 +130,7 @@ require __DIR__ . '/vendor/autoload.php';
 use Assign\Sdk\Api\TasksApi;
 use Assign\Sdk\ApiException;
 use Assign\Sdk\Configuration;
+use Assign\Sdk\ProductClient;
 
 $token = getenv('ASSIGN_TOKEN');
 $workspaceId = getenv('ASSIGN_WORKSPACE_ID');
@@ -134,10 +139,10 @@ if (!$token || !$workspaceId) {
     exit(1);
 }
 
-$config = (new Configuration())
-    ->setHost('https://api.assign.so')
-    ->setAccessToken($token);
-$api = new TasksApi(null, $config);
+$origin = 'https://api.assign.so';
+$config = (new Configuration())->setHost($origin);
+$client = ProductClient::create(static fn(): string => $token, $origin);
+$api = new TasksApi($client, $config);
 try {
     [$page, $status] = $api->listWorkspaceTasksWithHttpInfo(
         workspace_id: $workspaceId,
@@ -200,6 +205,10 @@ for integration examples. A read-only credential cannot create a Task. Obtain a 
 credential or fresh OAuth consent with both `tasks:read` and `tasks:write` before continuing;
 refresh and narrowing cannot expand the original grant.
 
+In the retained token form, select both **Read Assign data** and **Create and change Assign
+data**, then review the issued scopes. Those controls grant more than Task access. Product
+OAuth applications request the explicit scopes described above.
+
 Set `ASSIGN_PROJECT_ID` from a returned Task's `project_id` only after confirming the Project
 is suitable. If the page is empty or you need another Project, request `projects:read` and
 use [listWorkspaceProjects](./reference/operations/listworkspaceprojects) in the same Workspace
@@ -210,3 +219,17 @@ with [createTask](./reference/operations/createtask). It explains the request bo
 idempotency key per creation intent, the expected `201`, interrupted-response recovery and
 verification using the returned Task ID. Check the result before creating again. Remove or
 archive example work through Assign when you finish; do not modify unrelated Tasks.
+
+### Run the complete workflow
+
+Download the [TypeScript Task app source](/examples/task-workflow/typescript.zip) or
+[PHP Task app source](/examples/task-workflow/php.zip). Each app reads a bounded Task page,
+creates and edits its own Task, recovers from a stale validator, and trashes that Task during
+cleanup. The downloads contain application source and locked dependency manifests. Running
+an app requires its matching unreleased SDK artifact; that artifact is excluded from the
+downloads. The SDK packages and API behavior retain the availability labels above.
+
+Supply the credential from step 1 as the app's `ASSIGN_API_TOKEN`, the Workspace ID from step 2
+as `ASSIGN_WORKSPACE_ID`, and the approved Project ID from step 5 as `ASSIGN_PROJECT_ID`.
+Use the API origin for that credential's environment. An optional `ASSIGN_STATUS_ID` comes from
+[listProjectStatuses](./reference/operations/listprojectstatuses) for the selected Project.

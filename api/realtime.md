@@ -36,6 +36,10 @@ Read collections with [bounded pagination](./pagination). Keep the returned cont
 and follow it until the operation reports that no next page remains. An interrupted connection
 does not make a partial list complete.
 
+For customer event delivery, use [Task webhooks](./webhooks), with signature verification,
+deduplication and explicit gap recovery. For accepted background work, use the workflow's
+[operation status](./operations). These interfaces have their own authorization and recovery.
+
 ## Recover from an interruption
 
 When your connection returns, let the view finish refreshing before relying on its current state.

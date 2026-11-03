@@ -110,8 +110,10 @@ assign reopen <TASK-CODE> --revision <n>
 | `reopen` | Reopen a completed Task |
 
 `--revision` is required and must be the Task's current revision. It is the `revision` field
-printed by `assign task show <TASK-CODE> --field revision`. Requests send `If-Match`, so a
-stale revision fails with exit code `5` instead of overwriting a newer change. The optional
+printed by `assign task show <TASK-CODE> --field revision`. The CLI checks that revision against
+a canonical Task read and forwards the read's opaque ETag in `If-Match`; the revision flag is not
+encoded as a numeric HTTP tag. A stale observation fails with exit code `5` instead of overwriting
+a newer change. The optional
 `--idempotency-key` retains retry identity; see [Retries](./scripting#retries). The same actions are available as `assign task <action>`.
 
 ### Task reads <Badge type="warning" text="Upcoming" /> {#task-reads}

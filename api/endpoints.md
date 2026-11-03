@@ -9,7 +9,7 @@ outline: 2
 
 <Badge type="warning" text="Awaiting deployment" />
 
-19 operations from the public contract, **Assign API 1.0.0-rc.10**. Paths are
+22 operations from the public contract, **Assign API 1.0.0-rc.10**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -56,6 +56,8 @@ Guide: [Tasks](./tasks)
 | `POST /api/v1/projects/{project_id}/tasks` | Create a Task | Bearer |
 | `GET /api/v1/tasks/{task_id}` | Read a Task | Bearer |
 | `PATCH /api/v1/tasks/{task_id}` | Update a Task | Bearer |
+| `DELETE /api/v1/tasks/{task_id}` | Move a Task to Trash | Bearer |
+| `POST /api/v1/tasks/{task_id}/archive` | Archive a Task | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/tasks` | List Workspace Tasks | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/work` | Read My Work | Bearer |
 
@@ -87,3 +89,11 @@ Guide: [Documents](./documents)
 | Operation | Summary | Auth |
 | --- | --- | --- |
 | `GET /api/v1/workspaces/{workspace_id}/reference-options` | Find reference and mention candidates | Bearer |
+
+## Operations
+
+Durable operation status and result recovery.
+
+| Operation | Summary | Auth |
+| --- | --- | --- |
+| `GET /api/v1/operations/{operation_id}` | Recover current authorized durable operation status | Bearer |
