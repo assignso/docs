@@ -1,0 +1,1670 @@
+{
+  "schema": "assign.docs-public-export.v1",
+  "state": "approved-authoring",
+  "contract_version": "1.0.0-rc.10",
+  "document_sha256": "9a09854d8264b5fdcc4006b2832c54864cd3fa63226f2fc496250734420ae30b",
+  "operations": [
+    {
+      "operationId": "addCommentReaction",
+      "method": "PUT",
+      "path": "/api/v1/comments/{comment_id}/reactions/{reaction}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "addProjectMember",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/members",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "addWorkspaceMember",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/members",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "admitWorkspaceCustomAgentRequest",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "applyChangeSet",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/change-sets/{change_set_id}/apply",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "applyLifecycleMapping",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/lifecycle-definitions/{definition_id}/mapping-applications",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "archiveAndReplaceProjectState",
+      "method": "POST",
+      "path": "/api/v1/project-states/{state_id}/archive-and-replace",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "archiveDocument",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/archive",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "archiveLabelDefinition",
+      "method": "POST",
+      "path": "/api/v1/label-definitions/{label_id}/archive",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "archiveMilestone",
+      "method": "POST",
+      "path": "/api/v1/milestones/{milestone_id}/archive",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "archiveProject",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/archive",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "archiveProjectState",
+      "method": "POST",
+      "path": "/api/v1/project-states/{state_id}/archive",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "archiveStatus",
+      "method": "POST",
+      "path": "/api/v1/statuses/{status_id}/archive",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "archiveStatusAndReplace",
+      "method": "POST",
+      "path": "/api/v1/statuses/{status_id}/archive-and-replace",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "archiveTask",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/archive",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "attachDocumentAttachment",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/attachments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "attachProjectAttachment",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/attachments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "attachTaskAttachment",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/attachments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "beginIntegrationAuthorization",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/integration-authorizations",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "bulkUpdateTasks",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/tasks/bulk",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "cancelAttachmentUpload",
+      "method": "DELETE",
+      "path": "/api/v1/attachment-uploads/{upload_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "cancelOperation",
+      "method": "POST",
+      "path": "/api/v1/operations/{operation_id}/cancel",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "cancelWorkspaceAgentRun",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/cancel",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "clearCurrentTask",
+      "method": "DELETE",
+      "path": "/api/v1/me/current-work",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "clearProjectTaskLabelOverride",
+      "method": "DELETE",
+      "path": "/api/v1/projects/{project_id}/label-overrides/{label_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "clearWorkspaceIconUpload",
+      "method": "DELETE",
+      "path": "/api/v1/workspaces/{workspace_id}/icon",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "compareDocumentRevisions",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/revisions/compare",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "completeAttachmentUpload",
+      "method": "POST",
+      "path": "/api/v1/attachment-uploads/{upload_id}/complete",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "completeIntegrationAuthorizationWithCredential",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/integration-authorizations/credential",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "completeTask",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/complete",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "connectKnowledgeRepository",
+      "method": "PUT",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-repository",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "convergeInboxReadState",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/inbox/read-state",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createChangeSet",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/change-sets",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createComment",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/comments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createDocument",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/documents",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createDocumentPatch",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/document-patches",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createDocumentWorkLink",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/links/{target_kind}/{target_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createEvidenceCollection",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/evidence-collections",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createIntegrationSubscription",
+      "method": "POST",
+      "path": "/api/v1/integration-bindings/{binding_id}/subscriptions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createMilestone",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/milestones",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createProject",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/projects",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createProjectIntegrationBinding",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/integration-bindings",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createProjectLabelDefinition",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/label-definitions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createProjectStatus",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/statuses",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createTask",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/tasks",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createTaskRelation",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/relations",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createTaskResultSet",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/task-result-sets",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createTaskSavedView",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/task-saved-views",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createTaskSelection",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/task-selections",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createTaskTimeEntry",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/time-entries",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createTimesheetExport",
+      "method": "POST",
+      "path": "/api/v1/timesheet-exports",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createWebhookEndpoint",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/webhook-endpoints",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createWorkspaceAgent",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/agents",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createWorkspaceAgentRun",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createWorkspaceCustomAgent",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/studio/definitions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createWorkspaceInvitation",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/invitations",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createWorkspaceKnowledgeAnswer",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge/answers",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createWorkspaceLabelDefinition",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/label-definitions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createWorkspaceProjectState",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/project-states",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "createWorkspaceStatus",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/statuses",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "decideWorkspaceAgentApproval",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions/{action_id}/approvals/{approval_id}/decision",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "delegateTaskToWorkspaceCustomAgent",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/delegations/{task_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "deleteAttachment",
+      "method": "DELETE",
+      "path": "/api/v1/attachments/{attachment_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "deleteComment",
+      "method": "DELETE",
+      "path": "/api/v1/comments/{comment_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "deleteDocument",
+      "method": "DELETE",
+      "path": "/api/v1/documents/{document_id}/permanent",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "deleteDocumentWorkLink",
+      "method": "DELETE",
+      "path": "/api/v1/documents/{document_id}/links/{target_kind}/{target_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "deleteTaskRelation",
+      "method": "DELETE",
+      "path": "/api/v1/task-relations/{relation_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "deleteTaskSavedView",
+      "method": "DELETE",
+      "path": "/api/v1/workspaces/{workspace_id}/task-saved-views/{view_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "disconnectIntegrationBinding",
+      "method": "DELETE",
+      "path": "/api/v1/integration-bindings/{binding_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "disconnectIntegrationInstallation",
+      "method": "DELETE",
+      "path": "/api/v1/integration-installations/{installation_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "disconnectPersonalIntegrationIdentity",
+      "method": "DELETE",
+      "path": "/api/v1/me/integration-identities/{identity_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "duplicateTask",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/duplicate",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "excludeEvidenceCollection",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/evidence-collections/exclusions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "followTask",
+      "method": "PUT",
+      "path": "/api/v1/tasks/{task_id}/subscription",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getAttachment",
+      "method": "GET",
+      "path": "/api/v1/attachments/{attachment_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getAuthContext",
+      "method": "GET",
+      "path": "/api/v1/auth-context",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getChangeSet",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/change-sets/{id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getChangeSetOperationResult",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/change-set-operations/{operation_id}/result",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getComment",
+      "method": "GET",
+      "path": "/api/v1/comments/{comment_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getCurrentWork",
+      "method": "GET",
+      "path": "/api/v1/me/current-work",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getDocument",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getDocumentContent",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/content",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getDocumentPatch",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/document-patches/{id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getDocumentRevision",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/revisions/{revision}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getEvidenceCollection",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/evidence-collections/{id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getInboxItem",
+      "method": "GET",
+      "path": "/api/v1/inbox-items/{inbox_item_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getIntegrationAction",
+      "method": "GET",
+      "path": "/api/v1/integration-actions/{action_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getIntegrationInstallation",
+      "method": "GET",
+      "path": "/api/v1/integration-installations/{installation_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getIntegrationInstallationManagement",
+      "method": "POST",
+      "path": "/api/v1/integration-installations/{installation_id}/management-link",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getKnowledgeRepository",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-repository",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getKnowledgeRepositorySyncRun",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-repository/runs/{run_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getLabelDefinition",
+      "method": "GET",
+      "path": "/api/v1/label-definitions/{label_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getLifecycleMigration",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/lifecycle-migrations/{job_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getMilestone",
+      "method": "GET",
+      "path": "/api/v1/milestones/{milestone_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getMyTimesheet",
+      "method": "GET",
+      "path": "/api/v1/timesheets/me",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getNotificationPreference",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/notification-preferences/{category}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getOperation",
+      "method": "GET",
+      "path": "/api/v1/operations/{operation_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getOperationReceipt",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/operation-receipts/{id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getProject",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getProjectCompletionPolicy",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/completion-policy",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getProjectDisplayPreferences",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/project-display-preferences",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getProjectOverview",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/overview",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getProjectShortcuts",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/project-shortcuts",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getProjectTimeTotals",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/time-totals",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getStatus",
+      "method": "GET",
+      "path": "/api/v1/statuses/{status_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getTask",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getTaskContext",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/context",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getTaskRelatedContext",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getTaskResultSet",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/task-result-sets/{id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getTaskSelection",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/task-selections/{id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getTaskSubscription",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/subscription",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getTaskTimeTotals",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/time-totals",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getTimesheetExport",
+      "method": "GET",
+      "path": "/api/v1/timesheet-exports/{operation_id}/content",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getTimeTrackingPolicy",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/time-tracking",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWebhookDelivery",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/webhook-endpoints/{endpoint_id}/deliveries/{delivery_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWebhookEndpoint",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/webhook-endpoints/{endpoint_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspace",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceAgent",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceAgentRun",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceAiAccessPolicy",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/ai-access-policy",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceCustomAgent",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceCustomAgentProfile",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/profile",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceCustomAgentUsage",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/usage",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceIconContent",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/icon/content",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceKnowledgeAnswer",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge/answers/{answer_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceKnowledgeSettings",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-settings",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceMilestoneLifecycle",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/milestone-lifecycle",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspacePersonProfile",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/people/{username}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspacePersonProfilePicture",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/people/{user_id}/profile-picture/content",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceProjection",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/projections",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceProjectLifecyclePolicy",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/project-lifecycle",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "getWorkspaceSettings",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/settings",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "headTaskContext",
+      "method": "HEAD",
+      "path": "/api/v1/tasks/{task_id}/context",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "importKnowledgeRepository",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-repository/import",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listActivityGroupChildren",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/activity/groups/{group_id}/children",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listActivityGroups",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/activity/groups",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listCurrentWorkCandidates",
+      "method": "GET",
+      "path": "/api/v1/me/current-work/candidates",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listDocumentAttachments",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/attachments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listDocumentRevisions",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/revisions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listDocumentWorkLinks",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/links",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listInboxItems",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/inbox",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listIntegrationActionDefinitions",
+      "method": "GET",
+      "path": "/api/v1/integration-installations/{installation_id}/actions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listIntegrationCatalog",
+      "method": "GET",
+      "path": "/api/v1/integration-catalog",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listIntegrationResources",
+      "method": "GET",
+      "path": "/api/v1/integration-installations/{installation_id}/resources",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listIntegrationSubscriptions",
+      "method": "GET",
+      "path": "/api/v1/integration-bindings/{binding_id}/subscriptions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listKnowledgeRepositoryConflicts",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listKnowledgeRepositorySyncRuns",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-repository/runs",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listLifecycleBehaviors",
+      "method": "GET",
+      "path": "/api/v1/lifecycle-behaviors",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listLifecycleDefinitions",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/lifecycle-definitions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listMyWork",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/work",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listNotificationPreferences",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/notification-preferences",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listPersonalIntegrationIdentities",
+      "method": "GET",
+      "path": "/api/v1/me/integration-identities",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listProjectActivity",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/activity",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listProjectAttachments",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/attachments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listProjectIntegrationBindings",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/integration-bindings",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listProjectLabelDefinitions",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/label-definitions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listProjectMembers",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/members",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listProjectStatuses",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/statuses",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listProjectTaskAttachments",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/task-attachments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listProjectTaskLabelOverrides",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/label-overrides",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listProjectTimeBreakdown",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/time-breakdown",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTargetLabelAssignments",
+      "method": "GET",
+      "path": "/api/v1/{target_kind}/{target_id}/labels",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskActivity",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/activity",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskAssignments",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/assignments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskAttachments",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/attachments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskComments",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/comments",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskDescriptionRevisions",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/description-revisions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskParticipants",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/participants",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskRelations",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/relations",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskRichEntities",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/rich-entities",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskSavedViews",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/task-saved-views",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listTaskSubscribers",
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/subscribers",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWebhookDeliveries",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/webhook-endpoints/{endpoint_id}/deliveries",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceActivity",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/activity",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceAgentDefinitions",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/definitions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceAgentRunActions",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceAgentRunOutputs",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/outputs",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceAgentRuns",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceAgents",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceCustomAgentRequests",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceCustomAgents",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/studio/definitions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceDocuments",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/documents",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceFeatures",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/features",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceIntegrationInstallations",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/integration-installations",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceInvitations",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/invitations",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceLabelDefinitions",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/label-definitions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceMcpServiceCredentials",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/mcp-service-credentials",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceMembers",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/members",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceMilestones",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/milestones",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspacePersonActivity",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/people/{username}/activity",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceProjects",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/projects",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceProjectStates",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/project-states",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceReferenceOptions",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/reference-options",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceStatuses",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/statuses",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceTasks",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/tasks",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceTimeEntries",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/time-entries",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "listWorkspaceWebhookEndpoints",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/webhook-endpoints",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "moveProject",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/move",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "moveProjectState",
+      "method": "POST",
+      "path": "/api/v1/project-states/{state_id}/move",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "moveStatus",
+      "method": "POST",
+      "path": "/api/v1/statuses/{status_id}/move",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "moveTask",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/move",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "muteTask",
+      "method": "PUT",
+      "path": "/api/v1/tasks/{task_id}/subscription/mute",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "previewLifecycleMapping",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/lifecycle-definitions/{definition_id}/mapping-previews",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "previewStatusLifecycleChange",
+      "method": "GET",
+      "path": "/api/v1/statuses/{status_id}/lifecycle-preview",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "quarantineWorkspaceAgent",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}/quarantine",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "redeliverWebhookDelivery",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/webhook-endpoints/{endpoint_id}/deliveries/{delivery_id}/redeliveries",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "redoCommand",
+      "method": "POST",
+      "path": "/api/v1/commands/{command_id}/redo",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "refreshIntegrationResources",
+      "method": "POST",
+      "path": "/api/v1/integration-installations/{installation_id}/resources/refresh",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "removeCommentReaction",
+      "method": "DELETE",
+      "path": "/api/v1/comments/{comment_id}/reactions/{reaction}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "removeProjectMember",
+      "method": "DELETE",
+      "path": "/api/v1/projects/{project_id}/members/{actor_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "removeWorkspaceAgent",
+      "method": "DELETE",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "removeWorkspaceMember",
+      "method": "DELETE",
+      "path": "/api/v1/workspaces/{workspace_id}/members/{member_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "renameProject",
+      "method": "PATCH",
+      "path": "/api/v1/projects/{project_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "reopenTask",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/reopen",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "replaceDocumentContent",
+      "method": "PUT",
+      "path": "/api/v1/documents/{document_id}/content",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "replaceTargetLabels",
+      "method": "PUT",
+      "path": "/api/v1/{target_kind}/{target_id}/labels",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "requestIntegrationAction",
+      "method": "POST",
+      "path": "/api/v1/integration-actions",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "requestIntegrationProvider",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/integration-requests",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "resendWorkspaceInvitation",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/invitations/{invitation_id}/resend",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "reserveAttachmentUpload",
+      "method": "POST",
+      "path": "/api/v1/attachment-uploads",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "resolveKnowledgeRepositoryConflict",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts/{conflict_id}/resolve",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "resolveLifecycleCompletionTarget",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/lifecycle-completion-targets",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "resolveWorkspaceMember",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/members/resolve",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "restoreDocument",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/restore",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "restoreDocumentRevision",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/revisions/{revision}/restore",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "restoreTask",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/restore",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "restoreTaskDescriptionRevision",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/description-revisions/{revision}/restore",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "retryLifecycleMigration",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/lifecycle-migrations/{job_id}/retry",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "revokeWorkspaceInvitation",
+      "method": "DELETE",
+      "path": "/api/v1/workspaces/{workspace_id}/invitations/{invitation_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "revokeWorkspaceMcpServiceCredential",
+      "method": "DELETE",
+      "path": "/api/v1/workspaces/{workspace_id}/mcp-service-credentials/{credential_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "rollbackWorkspaceAgent",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}/rollback",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "rotateWebhookEndpointSecret",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/webhook-endpoints/{endpoint_id}/secret-rotations",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "searchWorkspace",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/search",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "searchWorkspaceKnowledge",
+      "method": "GET",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge/search",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "setCurrentTask",
+      "method": "PUT",
+      "path": "/api/v1/me/current-work",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "setProjectTaskLabelOverride",
+      "method": "PUT",
+      "path": "/api/v1/projects/{project_id}/label-overrides/{label_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "setWorkspaceIconUpload",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/icon",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "startTask",
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/start",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "submitTaskSuggestionFeedback",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/tasks/{task_id}/suggestion-feedback",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "syncKnowledgeRepository",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-repository/sync",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "trashTask",
+      "method": "DELETE",
+      "path": "/api/v1/tasks/{task_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "undoCommand",
+      "method": "POST",
+      "path": "/api/v1/commands/{command_id}/undo",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "undoOperationReceipt",
+      "method": "POST",
+      "path": "/api/v1/workspaces/{workspace_id}/operation-receipts/undo",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "unfollowTask",
+      "method": "DELETE",
+      "path": "/api/v1/tasks/{task_id}/subscription",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "unmuteTask",
+      "method": "DELETE",
+      "path": "/api/v1/tasks/{task_id}/subscription/mute",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateComment",
+      "method": "PATCH",
+      "path": "/api/v1/comments/{comment_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateDocument",
+      "method": "PATCH",
+      "path": "/api/v1/documents/{document_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateInboxItemReadState",
+      "method": "PATCH",
+      "path": "/api/v1/inbox-items/{inbox_item_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateIntegrationSubscription",
+      "method": "PATCH",
+      "path": "/api/v1/integration-subscriptions/{subscription_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateKnowledgeRepositoryState",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-repository",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateLabelDefinition",
+      "method": "PATCH",
+      "path": "/api/v1/label-definitions/{label_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateMilestone",
+      "method": "PATCH",
+      "path": "/api/v1/milestones/{milestone_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateNotificationPreference",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/notification-preferences/{category}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateProjectCompletionPolicy",
+      "method": "PUT",
+      "path": "/api/v1/projects/{project_id}/completion-policy",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateProjectDisplayPreferences",
+      "method": "PUT",
+      "path": "/api/v1/workspaces/{workspace_id}/project-display-preferences",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateProjectMember",
+      "method": "PATCH",
+      "path": "/api/v1/projects/{project_id}/members/{actor_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateProjectShortcuts",
+      "method": "PUT",
+      "path": "/api/v1/workspaces/{workspace_id}/project-shortcuts",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateProjectState",
+      "method": "PATCH",
+      "path": "/api/v1/project-states/{state_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateStatus",
+      "method": "PATCH",
+      "path": "/api/v1/statuses/{status_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateTask",
+      "method": "PATCH",
+      "path": "/api/v1/tasks/{task_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateTaskRelation",
+      "method": "PATCH",
+      "path": "/api/v1/task-relations/{relation_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateTaskSavedView",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/task-saved-views/{view_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateTimeEntry",
+      "method": "PATCH",
+      "path": "/api/v1/time-entries/{entry_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateTimeTrackingPolicy",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/time-tracking",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWebhookEndpointState",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/webhook-endpoints/{endpoint_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspace",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspaceAgent",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/{agent_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspaceAiAccessPolicy",
+      "method": "PUT",
+      "path": "/api/v1/workspaces/{workspace_id}/ai-access-policy",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspaceCustomAgent",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspaceFeature",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/features/{feature}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspaceKnowledgeSettings",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/knowledge-settings",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspaceMembership",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/members/{member_id}",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspaceMilestoneLifecycle",
+      "method": "PUT",
+      "path": "/api/v1/workspaces/{workspace_id}/milestone-lifecycle",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspaceProjectLifecyclePolicy",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/project-lifecycle",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "updateWorkspaceSettings",
+      "method": "PATCH",
+      "path": "/api/v1/workspaces/{workspace_id}/settings",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "verifySentryBinding",
+      "method": "POST",
+      "path": "/api/v1/integration-bindings/{binding_id}/sentry-readiness",
+      "availability": "upcoming"
+    },
+    {
+      "operationId": "voidTimeEntry",
+      "method": "DELETE",
+      "path": "/api/v1/time-entries/{entry_id}",
+      "availability": "upcoming"
+    }
+  ]
+}
