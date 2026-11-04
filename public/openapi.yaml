@@ -821,6 +821,7 @@ components:
       type: object
     ActivityGroupActor:
       additionalProperties: false
+      description: The initiating actor, separate from affected people. Use the supplied display name; an unavailable profile has no profile link.
       properties:
         automation:
           type: boolean
@@ -833,9 +834,11 @@ components:
             - string
             - "null"
         identity_state:
+          description: Identity availability state. Preserve unknown values and show a neutral fallback.
           maxLength: 128
           type: string
         profile_link:
+          description: Link to a currently accessible Workspace Person profile, or null when no profile link can be disclosed.
           maxLength: 1024
           type:
             - string
@@ -849,6 +852,7 @@ components:
       type: object
     ActivityGroupChildPage:
       additionalProperties: false
+      description: A bounded page of narrative children for the originating group revision and snapshot. All fields are present; nullable fields remain present when null.
       properties:
         counts:
           $ref: "#/components/schemas/ActivityGroupCounts"
@@ -861,13 +865,16 @@ components:
           maxLength: 128
           type: string
         has_more:
+          description: Whether more children are retrievable under this snapshot; this does not establish complete lifetime history.
           type: boolean
         items:
+          description: Narrative children ordered oldest first by occurrence, then by stable child identity.
           items:
             $ref: "#/components/schemas/ActivityGroupChildView"
           maxItems: 25
           type: array
         next_cursor:
+          description: Opaque continuation when has_more is true; otherwise null.
           maxLength: 4096
           type:
             - string
@@ -879,6 +886,7 @@ components:
           maxLength: 128
           type: string
         previews:
+          description: Deduplicated preview objects referenced by child preview_keys.
           items:
             $ref: "#/components/schemas/ActivityGroupPreview"
           maxItems: 150
@@ -889,9 +897,11 @@ components:
           maxLength: 128
           type: string
         snapshot:
+          description: Opaque expiring handle from the originating list. Discard stale continuation and refresh the baseline when the snapshot or group revision becomes stale.
           maxLength: 4096
           type: string
         snapshot_id:
+          description: Opaque fingerprint for snapshot equality across pages. Continue with the snapshot handle, not this fingerprint.
           maxLength: 128
           type: string
       required:
@@ -911,10 +921,13 @@ components:
       type: object
     ActivityGroupChildSection:
       additionalProperties: false
+      description: A timed section within the snapshot. Its stable identity and continuation flags let adjacent pages merge the same section without repeating children.
       properties:
         continues_after:
+          description: The section continues on a later child page.
           type: boolean
         continues_before:
+          description: The section continues on an earlier child page.
           type: boolean
         first_occurred_at:
           format: date-time
@@ -929,6 +942,7 @@ components:
           anyOf:
             - $ref: "#/components/schemas/ActivityGroupReference"
             - type: "null"
+          description: Authorized Project context, or null when no Project reference is supplied.
       required:
         - id
         - first_occurred_at
@@ -939,6 +953,7 @@ components:
       type: object
     ActivityGroupChildView:
       additionalProperties: false
+      description: One narrative child with its actual occurrence times, authorized facts and references. Preserve unknown outcome values with a neutral fallback.
       properties:
         actor:
           $ref: "#/components/schemas/ActivityGroupActor"
@@ -970,11 +985,13 @@ components:
           maxLength: 128
           type: string
         parent_id:
+          description: Opaque child identity for a proven canonical automation effect; null for ordinary or provider children.
           maxLength: 128
           type:
             - string
             - "null"
         preview_keys:
+          description: Keys into the containing page's deduplicated previews collection.
           items:
             maxLength: 4096
             type: string
@@ -1013,6 +1030,7 @@ components:
       type: object
     ActivityGroupChildrenOptions:
       additionalProperties: false
+      description: Expand a group using its originating group_id, group_revision and snapshot. Keep the originating scope, date window, normalized filters, time zone and preview option; only limit may change within its allowed range. On stale cursor or group errors, discard continuation and refresh the baseline.
       properties:
         activity_types:
           items:
@@ -1029,23 +1047,28 @@ components:
           maxItems: 50
           type: array
         actor_ids:
+          description: Match visible initiating actors. Values are normalized as a deduplicated, sorted set.
           items:
             format: uuid
             type: string
           maxItems: 50
           type: array
         before_day:
+          description: Exclusive civil end date; supply with from_day.
           format: date
           maxLength: 10
           type: string
         cursor:
+          description: Opaque continuation; normalized selectors must match the originating read.
           maxLength: 4096
           type: string
         day:
+          description: Civil date; mutually exclusive with from_day and before_day.
           format: date
           maxLength: 10
           type: string
         from_day:
+          description: Inclusive civil start date. Supply with before_day for a nonempty interval of at most 90 civil days. When neither day nor range is supplied, use the latest 90 retained days.
           format: date
           maxLength: 10
           type: string
@@ -1064,12 +1087,14 @@ components:
           minimum: 1
           type: integer
         project_ids:
+          description: Match authorized semantic, source or destination Project context. Values are normalized as a deduplicated, sorted set.
           items:
             format: uuid
             type: string
           maxItems: 50
           type: array
         resource_id:
+          description: Required for person, project or task scope; forbidden for workspace or account scope.
           format: uuid
           type: string
         scope:
@@ -1084,6 +1109,7 @@ components:
           maxLength: 4096
           type: string
         time_zone:
+          description: IANA time zone. Omission resolves the effective Account setting and Workspace inheritance; local is invalid.
           maxLength: 128
           type: string
       required:
@@ -1094,13 +1120,16 @@ components:
       type: object
     ActivityGroupCollectionCounts:
       additionalProperties: false
+      description: Authorized collection counts under the selected snapshot and window, not lifetime totals. Read each count with its accuracy and resource kind; unknown accuracy has a null value.
       properties:
         distinct_resources:
           $ref: "#/components/schemas/ActivityGroupCount"
+          description: Resources deduplicated across groups; summing each group's distinct-resource count is not this total.
         groups:
           $ref: "#/components/schemas/ActivityGroupCount"
         occurrences:
           $ref: "#/components/schemas/ActivityGroupCount"
+          description: Included source occurrences, separate from distinct resources and reduced narrative children.
         projects:
           $ref: "#/components/schemas/ActivityGroupCount"
       required:
@@ -1113,6 +1142,7 @@ components:
       additionalProperties: false
       properties:
         accuracy:
+          description: Exact means complete authorized aggregation under this snapshot/window, not a global total. Lower bounds count proven visible members. Unknown requires a null value.
           enum:
             - exact
             - lower_bound
@@ -1120,9 +1150,11 @@ components:
           maxLength: 128
           type: string
         resource_kind:
+          description: Unit of the count. Preserve unfamiliar kinds; an occurrence count is not a Task count.
           maxLength: 128
           type: string
         value:
+          description: Nonnegative count in the stated unit, or null when accuracy is unknown; null does not mean zero.
           format: int64
           minimum: 0
           type:
@@ -1138,12 +1170,16 @@ components:
       properties:
         children:
           $ref: "#/components/schemas/ActivityGroupCount"
+          description: Reduced narrative children, counted separately from source occurrences.
         distinct_resources:
           $ref: "#/components/schemas/ActivityGroupCount"
+          description: Distinct authorized resources of the stated resource kind; summing parent counts does not yield cross-group distinct totals.
         occurrences:
           $ref: "#/components/schemas/ActivityGroupCount"
+          description: Source occurrences, excluding suppressed narrative noise and net-zero work.
         projects:
           $ref: "#/components/schemas/ActivityGroupCount"
+          description: Distinct authorized Projects under this snapshot and window.
       required:
         - projects
         - distinct_resources
@@ -1154,11 +1190,13 @@ components:
       additionalProperties: false
       properties:
         history_before_retention:
+          description: Older history is unknown; never infer that no older or hidden work existed.
           enum:
             - unknown
           maxLength: 128
           type: string
         reasons:
+          description: Completeness reasons such as retention, scan_budget, byte_budget, legacy_facts and preview_budget; preview limits do not imply missing historical members. Preserve unfamiliar reason strings.
           items:
             maxLength: 4096
             type: string
@@ -1169,9 +1207,11 @@ components:
             - 90
           type: integer
         retained_from:
+          description: UTC retention boundary for this read.
           format: date-time
           type: string
         status:
+          description: Current successful reads report complete or partial. The compatibility schema also accepts stale; a stale continuation is rejected with activity_cursor_stale or activity_group_stale. Discard stale continuation and refresh the authorized baseline.
           enum:
             - complete
             - partial
@@ -1189,10 +1229,13 @@ components:
       additionalProperties: false
       properties:
         available:
+          description: Whether this group offers child expansion. A single complete child need not offer expansion.
           type: boolean
         coverage:
           $ref: "#/components/schemas/ActivityGroupCoverage"
+          description: Expansion completeness is independent of the parent aggregate count.
         first_cursor:
+          description: Opaque nullable child cursor bound to the originating scope, snapshot and group revision. Expand with originating selectors; refresh the baseline on stale group/snapshot errors. Do not invent a null-means-complete guarantee.
           maxLength: 4096
           type:
             - string
@@ -1207,12 +1250,16 @@ components:
       properties:
         after:
           $ref: "#/components/schemas/ActivityGroupValue"
+          description: Historical value after the change, using the same known/unknown/empty/unavailable distinction. References obey current authorization; content uses markers/revision references, never journal bodies.
         before:
           $ref: "#/components/schemas/ActivityGroupValue"
+          description: Historical value before the change. unknown means missing evidence, empty an explicit clear, unavailable an undisclosable fact. Only known supplies value; do not substitute null or invent missing text.
         field:
+          description: Historical fact field; preserve unknown field strings with a neutral fallback.
           maxLength: 128
           type: string
         value_type:
+          description: Reference, text, date, integer or boolean vocabulary. Date is a civil YYYY-MM-DD value; preserve unknown strings.
           maxLength: 128
           type: string
       required:
@@ -1225,44 +1272,56 @@ components:
       additionalProperties: false
       properties:
         before:
+          description: Exclusive normalized UTC end; civil-day windows account for timezone transitions.
           format: date-time
           type: string
         counts:
           $ref: "#/components/schemas/ActivityGroupCollectionCounts"
+          description: Authorized snapshot/window collection totals. Root totals may be unknown while returned-parent membership is complete. Distinct totals deduplicate across groups.
         coverage:
           $ref: "#/components/schemas/ActivityGroupCoverage"
+          description: Retained-history completeness; empty arrays and has_more false do not override partial coverage.
         from:
+          description: Inclusive normalized UTC start of the requested civil window.
           format: date-time
           type: string
         has_more:
+          description: Whether further groups are retrievable under this snapshot, not whether lifetime history is complete.
           type: boolean
         items:
+          description: Bounded Activity groups. An empty page does not establish complete lifetime history; a failed read is not an empty result.
           items:
             $ref: "#/components/schemas/ActivityGroupView"
           maxItems: 50
           type: array
         next_cursor:
+          description: Opaque continuation when has_more is true, otherwise null. Keep normalized selectors and the originating snapshot; only limit may vary within bounds.
           maxLength: 4096
           type:
             - string
             - "null"
         observed_at:
+          description: UTC observation time of the read.
           format: date-time
           type: string
         policy_version:
+          description: Admission/grouping policy version, separate from representation version.
           maxLength: 128
           type: string
         previews:
+          description: Deduplicated current authorized previews referenced by group preview_keys; current preview state does not rewrite history.
           items:
             $ref: "#/components/schemas/ActivityGroupPreview"
           maxItems: 150
           type: array
         resource_id:
+          description: Selected Person, Project or Task identity; null for Workspace/Account scope.
           format: uuid
           type:
             - string
             - "null"
         schema:
+          description: Representation version, separate from grouping policy and server release.
           enum:
             - assign.activity.groups.v1
           maxLength: 128
@@ -1277,12 +1336,15 @@ components:
           maxLength: 128
           type: string
         snapshot:
+          description: Opaque expiring originating handle used for continuation and expansion. On activity_cursor_stale discard continuation and refresh baseline; on group stale refresh the group baseline. Invalid input is corrected rather than silently restarted; denial clears private state.
           maxLength: 4096
           type: string
         snapshot_id:
+          description: Stable opaque fingerprint for snapshot equality; handle strings can differ for the same snapshot. Continue with snapshot, never snapshot_id.
           maxLength: 128
           type: string
         time_zone:
+          description: Resolved IANA zone used for civil-day boundaries.
           maxLength: 128
           type: string
       required:
@@ -1307,35 +1369,44 @@ components:
       additionalProperties: false
       properties:
         excerpt:
+          description: Authorized current plain-text excerpt or null, limited to 140 Unicode characters and 256 UTF-8 bytes. It contains no raw HTML, editor JSON or provider payload.
           maxLength: 140
           type:
             - string
             - "null"
         key:
+          description: Opaque key referenced by group or child preview_keys in the page.
           maxLength: 128
           type: string
         kind:
+          description: Preview resource kind; preserve unfamiliar strings with a neutral fallback.
           maxLength: 128
           type: string
         metadata:
+          description: At most three typed current Now facts, separate from historical before/after evidence. The compatibility schema accepts up to sixteen entries.
           items:
             $ref: "#/components/schemas/ActivityGroupFact"
           maxItems: 16
           type: array
         observed_at:
+          description: Observation time for the current preview, distinct from historical change time.
           format: date-time
           type: string
         reference:
           $ref: "#/components/schemas/ActivityGroupReference"
+          description: Currently authorized reference or permitted tombstone; unavailable references disclose no identity or link.
         resource_revision:
+          description: Opaque current resource revision, or null; separate from group revision.
           maxLength: 128
           type:
             - string
             - "null"
         state:
+          description: Availability vocabulary includes available, deleted, unavailable and omitted_budget. Budget omission is not evidence that historical members are absent.
           maxLength: 128
           type: string
         title:
+          description: Authorized current title or null; do not reconstruct redacted text.
           maxLength: 256
           type:
             - string
@@ -1355,12 +1426,15 @@ components:
       additionalProperties: false
       properties:
         kind:
+          description: Source/initiator provenance kind; preserve unfamiliar strings.
           maxLength: 128
           type: string
         name:
+          description: Safe source display name, separate from the initiating Actor.
           maxLength: 256
           type: string
         source_key:
+          description: Opaque safe source discriminator; never a credential or repository secret.
           maxLength: 128
           type: string
       required:
