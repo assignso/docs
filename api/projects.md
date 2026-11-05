@@ -43,6 +43,11 @@ opaque `ETag`. A collection tag cannot authorize a Project edit. The overview op
 bounded Project sections for a screen; it is not a way to fetch or count every related resource.
 Use the appropriate collection when you need to continue one section.
 
+Check `degradation.degraded` and `degradation.unavailable_sections` before displaying overview
+sections. Show a named unavailable section as unavailable; do not interpret it as an empty list
+or a zero count. Recent Document rows always include `summary`, which can be `null`. In that
+case, display the title alone; a derived summary does not replace the Document body.
+
 ### Consistent Project pagination <Badge type="warning" text="Awaiting deployment" />
 
 Pages default to 50 Projects and cap at 100. Continue until `next_cursor: null`, retaining the

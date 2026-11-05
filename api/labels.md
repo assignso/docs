@@ -19,9 +19,10 @@ checks on every call. Follow the [API conventions](./conventions).
 | List, set, clear Project overrides | `GET /api/v1/projects/{project_id}/label-overrides`, `PUT`, `DELETE …/label-overrides/{label_id}` |
 
 - Lists return only active labels unless a settings client passes `include_archived=true`.
-- The upcoming paginated list contract accepts `limit` (1–100, default 50) and
-  `cursor`. When `has_more` is true, pass `next_cursor` with the same scope and
-  filters. A cursor cannot be reused for another Workspace, Project or filter;
+- The upcoming paginated definition lists accept `limit` (1–100, default 50) and
+  `cursor`. Pass each non-null `next_cursor` with the same scope and filters until
+  `next_cursor` is `null`, including after a short or empty page.
+  A cursor cannot be reused for another Workspace, Project or filter;
   start again at the first page after a catalog change if a complete current
   view is needed. A changed catalog returns `409 catalog_changed`; discard the
   partial traversal and start again at page one. This also applies to definition

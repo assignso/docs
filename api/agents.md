@@ -114,6 +114,10 @@ History shows the trigger, state, pinned version, a safe summary, credit totals,
 and timestamps, never prompts, retrieved context, model output or traces. It is kept for 90 days, and
 resource references are re-authorized when read, so they may be redacted.
 
+`AgentRun` always includes `scheduled_for`, `started_at`, `finished_at`,
+`cancellation_requested_at` and `error_code`; each can be `null`. A cancellation request timestamp
+records the request, so check `state` for the outcome.
+
 | Error code | Meaning |
 | --- | --- |
 | `provider_outcome_unknown` | The provider may have done the work before the reply was lost. Credits stay held, the paid attempt isn't repeated automatically and the run needs reconciliation. |
@@ -139,6 +143,9 @@ valid for 24 hours. Owners and admins approve or reject it at the action's decis
 rechecks current access and applies the reviewed change to the reviewed revision. If the target
 changed, the decision expired, or the Agent was quarantined or removed, it won't run. Outputs are
 comments, reports or notifications attributed to the automated actor, Agent, run and version.
+
+An output without a target has an empty `target_id` string. Its `content` is the recorded output;
+read the action status to confirm a proposed change took effect.
 
 A suggestion is not a completed change. If an acknowledgment is uncertain, check the original run or
 action status before starting another. Rewording the request can create a different action.
@@ -216,3 +223,7 @@ unsaved fields in the open tab.
   replacing the human assignee or changing its state.
 - Production use of custom Agents depends on rollout and billing, so a saved or active definition
   doesn't prove it can run.
+
+In request history, the requester and Studio managers can read `instructions`; other members
+receive an empty string. `task_id` and `finished_at` are omitted when unavailable. These optional
+fields differ from the required nullable timestamps in `AgentRun`.
