@@ -1444,6 +1444,7 @@ components:
       type: object
     ActivityGroupReadOptions:
       additionalProperties: false
+      description: Selectors for an authorized Activity read. Person, Project and Task scopes require resource_id; Workspace and Account scopes forbid it. Continue with the same normalized selectors and snapshot.
       properties:
         activity_types:
           items:
@@ -1513,6 +1514,7 @@ components:
       type: object
     ActivityGroupReference:
       additionalProperties: false
+      description: A presentation-safe resource reference. All keys are present; unavailable identity, label or link values are null. An unavailable reference must not be used to reconstruct a hidden identity.
       properties:
         id:
           format: uuid
@@ -1536,6 +1538,7 @@ components:
           maxLength: 128
           type: string
         state:
+          description: available permits currently authorized identity and links; deleted supplies only a permitted tombstone; unavailable withholds identity and links.
           enum:
             - available
             - deleted
@@ -1552,6 +1555,7 @@ components:
       type: object
     ActivityGroupValue:
       additionalProperties: false
+      description: A historical fact value and its evidence state. known has a retained, disclosable value; empty records an explicit clear; unknown lacks historical evidence; unavailable withholds an existing fact.
       properties:
         state:
           enum:
@@ -1562,6 +1566,7 @@ components:
           maxLength: 128
           type: string
         value:
+          description: Present only when state is known, with the scalar or authorized reference matching the enclosing fact value_type. Omitted for empty, unknown and unavailable; null is not a value.
           oneOf:
             - maxLength: 256
               type: string
@@ -1573,6 +1578,7 @@ components:
       type: object
     ActivityGroupView:
       additionalProperties: false
+      description: One authorized narrative group. The actor initiated the outcome; references identify affected resources. Counts retain their accuracy and resource units.
       properties:
         actor:
           $ref: "#/components/schemas/ActivityGroupActor"
@@ -1584,6 +1590,7 @@ components:
           type: string
         expansion:
           $ref: "#/components/schemas/ActivityGroupExpansion"
+          description: Bounded child-expansion locator and coverage. Retain the originating scope, selectors, snapshot and group revision; stale continuation requires a fresh baseline.
         facts:
           items:
             $ref: "#/components/schemas/ActivityGroupFact"
@@ -1596,6 +1603,7 @@ components:
           maxLength: 128
           type: string
         id:
+          description: Opaque group identity; retain it with group_revision and snapshot when expanding children.
           maxLength: 192
           type: string
         importance:
@@ -1626,6 +1634,7 @@ components:
           maxItems: 8
           type: array
         revision:
+          description: Opaque revision of this group observation. Use it as group_revision when expanding children; on activity_group_stale, refresh the baseline before restoring expansion.
           maxLength: 128
           type: string
       required:
@@ -2595,6 +2604,7 @@ components:
           type: object
     BulkTaskUpdateChanges:
       additionalProperties: false
+      description: Shared changes applied to every listed Task. Supply at least one field; omitted fields keep each Task's current value. Set assignee_actor_id, due_on or milestone_id to null to clear that value. status_id and priority do not accept null.
       minProperties: 1
       properties:
         assignee_actor_id:
@@ -2617,6 +2627,7 @@ components:
       type: object
     CanonicalActivityGroupChildPage:
       additionalProperties: false
+      description: One page of authorized narrative children for the supplied parent revision and snapshot. Children are ordered oldest first; coverage records history limits separately from continuation.
       properties:
         counts:
           $ref: "#/components/schemas/ActivityGroupCounts"
@@ -2631,11 +2642,14 @@ components:
           maxLength: 192
           type: string
         group_revision:
+          description: Opaque revision of the originating parent group. On activity_group_stale, refresh the baseline before restoring expansion.
           maxLength: 128
           type: string
         has_more:
+          description: Whether more children are retrievable under this snapshot. False does not imply complete lifetime history.
           type: boolean
         next_cursor:
+          description: Opaque continuation for this group, revision and snapshot, or null when no more children are retrievable. On activity_cursor_stale, discard the cursor and restart the authorized baseline.
           maxLength: 4096
           type:
             - string
@@ -2657,9 +2671,11 @@ components:
           maxLength: 128
           type: string
         snapshot:
+          description: Originating opaque snapshot handle. Reuse it with the parent revision when continuing expansion.
           maxLength: 4096
           type: string
         snapshot_id:
+          description: Stable opaque snapshot identity for equality across pages. Use snapshot for continuation.
           maxLength: 128
           type: string
       required:
@@ -2679,6 +2695,7 @@ components:
       type: object
     CanonicalActivityGroupPage:
       additionalProperties: false
+      description: One page of authorized Activity groups. Counts describe the snapshot window; coverage records limits on the available history.
       properties:
         before:
           format: date-time
@@ -2696,8 +2713,10 @@ components:
           format: date-time
           type: string
         has_more:
+          description: Whether more groups are retrievable under this snapshot. False does not imply complete lifetime history.
           type: boolean
         next_cursor:
+          description: Opaque continuation for the same snapshot and selectors, or null when no more groups are retrievable. On activity_cursor_stale, discard the cursor and restart the authorized baseline.
           maxLength: 4096
           type:
             - string
@@ -2733,9 +2752,11 @@ components:
           maxLength: 128
           type: string
         snapshot:
+          description: Opaque expiring handle for continuation and expansion. Reuse the originating handle; its string may change without changing snapshot_id.
           maxLength: 4096
           type: string
         snapshot_id:
+          description: Stable opaque snapshot identity for equality across pages. Continue and expand with snapshot.
           maxLength: 128
           type: string
         time_zone:
@@ -2776,6 +2797,7 @@ components:
       additionalProperties: false
       properties:
         sha256:
+          description: Optional SHA-256 digest of the uploaded file bytes. Completion rejects a declared digest that does not match the object.
           pattern: ^[0-9a-f]{64}$
           type: string
       type: object
@@ -2801,10 +2823,12 @@ components:
       description: Safe original reservation receipt. upload_url, method and required_headers are first-response-only and absent from durable receipts/replay.
       properties:
         content_length:
+          description: Expected upload size in bytes, reserved against the Workspace storage quota. Completion verifies the actual object size.
           minimum: 1
           type: integer
         expires_at:
           $ref: "#/components/schemas/Timestamp"
+          description: Expiry of the issued upload grant and reservation. Completion requires an unexpired reservation; safe receipt recovery does not issue another upload URL.
         method:
           enum:
             - PUT
@@ -2920,11 +2944,11 @@ components:
       additionalProperties: true
       properties:
         current_revision:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: Current authorized Task revision at hydration. Exact decimal integer; never deserialize through floating point.
           pattern: ^[1-9][0-9]*$
           type: string
         observed_revision:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: Task revision captured by the immutable result-set or selection version. Exact decimal integer; never deserialize through floating point.
           pattern: ^[1-9][0-9]*$
           type: string
         preview:
@@ -2933,6 +2957,7 @@ components:
           format: uuid
           type: string
         state:
+          description: current means the current revision and Project match the original observation; changed means one differs. Current hydration preserves the original snapshot membership and observed revision.
           enum:
             - current
             - changed
@@ -2952,10 +2977,11 @@ components:
       additionalProperties: false
       properties:
         expected_revision:
-          description: Exact positive int64 decimal. Never round through a JavaScript number.
+          description: Observed Task revision used as the item write condition. Exact positive int64 decimal; never round through a JavaScript number.
           pattern: ^[1-9][0-9]*$
           type: string
         item_id:
+          description: Client-chosen item identity, unique within the request. Keep it when retrying a failed item; reusing a successful item identity for a different effect returns item_conflict.
           pattern: ^[A-Za-z0-9._-]{1,128}$
           type: string
         task_id:
@@ -2972,6 +2998,7 @@ components:
           pattern: ^[A-Za-z0-9._-]{1,128}$
           type: string
         outcome:
+          description: updated confirms a committed effect; not_found masks unavailable targets; conflict requires reading and reconciling current state; validation_failed requires correcting the change. item_conflict means a successful item identity was reused for a different effect; recover its original result first.
           enum:
             - updated
             - not_found
@@ -2980,13 +3007,14 @@ components:
             - item_conflict
           type: string
         receipt_id:
-          description: Opaque stable work-receipt identity; derived UUIDs are supported.
+          description: Opaque stable work-receipt identity for an updated item, omitted for failed items.
           format: uuid
           type: string
         replayed:
+          description: True when this item returns a previously committed matching effect under current authorization.
           type: boolean
         revision:
-          description: Exact positive int64 decimal. Never round through a JavaScript number.
+          description: Original committed Task revision for an updated item, omitted for failed items. A replay does not return current Task state. Exact positive int64 decimal; never round through a JavaScript number.
           pattern: ^[1-9][0-9]*$
           type: string
         task_id:
@@ -2999,6 +3027,7 @@ components:
       type: object
     CanonicalBulkTaskRequest:
       additionalProperties: false
+      description: Applies the same changes to every listed Task. Task IDs and item IDs must each be unique. Omitted change fields are preserved; only fields declared nullable accept null.
       properties:
         changes:
           $ref: "#/components/schemas/BulkTaskUpdateChanges"
@@ -3014,6 +3043,7 @@ components:
       type: object
     CanonicalBulkTaskResult:
       additionalProperties: false
+      description: One outcome per input item, in input order. A successful HTTP response can contain failed items. After an unknown outcome, retry the same request key and exact body before submitting another command.
       properties:
         items:
           items:
@@ -3034,14 +3064,17 @@ components:
       description: Unavailable outcomes disclose no inaccessible resource/receipt.
       properties:
         client_item_id:
+          description: Correlates this outcome with the item in the exact proposal version.
           maxLength: 128
           minLength: 1
           type: string
         operation_id:
+          description: Durable identity of the proposed operation. Keep it when resolving a duplicate apply or lost response.
           format: uuid
           type: string
         receipt:
           $ref: "#/components/schemas/CanonicalChangeReceipt"
+          description: Committed effect receipt when available under current authorization. Omitted for unavailable outcomes; absence does not prove that an in-flight write failed.
         state:
           enum:
             - committed
@@ -3071,6 +3104,7 @@ components:
           type: string
         expected_revision:
           $ref: "#/components/schemas/ResourceRevision"
+          description: Resource revision observed for the original write condition, when applicable.
         initiator_actor_id:
           format: uuid
           type: string
@@ -3095,6 +3129,7 @@ components:
           type: string
         revision:
           $ref: "#/components/schemas/ResourceRevision"
+          description: Resource revision committed by this effect, when applicable. Read current authorized resource state separately.
         schema:
           type: string
         state:
@@ -3115,6 +3150,7 @@ components:
       description: Identity comes only from change_set_id path. Exact reviewed proposal; no caller-supplied approval, edits or replacement targets. Recover existing receipts before another dispatch.
       properties:
         digest:
+          description: Digest of the exact reviewed proposal version. An edit requires a new review before apply.
           pattern: ^[a-f0-9]{64}$
           type: string
         version:
@@ -3130,9 +3166,11 @@ components:
       description: Exact group result. Atomic failure rolls back every effect; per_item retains committed outcomes. Lost acknowledgement resolves original operation receipt and exact authorized proposal outcomes, never a second implicit apply.
       properties:
         id:
+          description: Identity of the ChangeSet whose exact version is returned.
           format: uuid
           type: string
         operation_id:
+          description: Original apply operation identity, when present. Use it to recover the original result after a lost response.
           format: uuid
           type: string
         outcomes:
@@ -3164,6 +3202,7 @@ components:
       additionalProperties: false
       properties:
         data:
+          description: Comments in creation order, including deletion tombstones.
           items:
             $ref: "#/components/schemas/CanonicalCommentRead"
           maxItems: 100
@@ -3171,11 +3210,13 @@ components:
         has_more:
           type: boolean
         next_cursor:
+          description: Opaque continuation for the next page; null ends traversal. Continue after a short page when this value is non-null.
           maxLength: 4096
           type:
             - string
             - "null"
         total_count:
+          description: Total Comments on the Task, including deletion tombstones.
           format: int64
           minimum: 0
           type: integer
@@ -3258,6 +3299,7 @@ components:
           maxItems: 6
           type: array
         revision:
+          description: Comment revision metadata. For If-Match, use the opaque ETag returned by getComment; do not construct a validator from this number.
           minimum: 1
           type: integer
         task_id:
@@ -3289,12 +3331,14 @@ components:
         `orderedList`, `listItem`, `taskList`, `taskItem`, `blockquote`, `callout`,
         `codeBlock`, `blockMath`, `horizontalRule`, `hardBreak`, `image`, `file`, plus the
         reference nodes `userMention`, `projectReference`, `documentReference`,
-        and `taskReference`. Accepted marks: `bold`, `italic`, `underline`,
+        `taskReference`, and Comment-only `agentMention`. Accepted marks: `bold`, `italic`, `underline`,
         `strike`, `code`, `link`.
 
-        A Task-description or Comment mutation accepts at most 100 distinct
-        canonical user identifiers across its `userMention` nodes. Repeated
-        mentions of the same user count once.
+        A Comment mutation accepts at most 100 distinct mention targets across
+        `userMention` user identifiers and `agentMention` Agent definition
+        identifiers. Repeated mentions of the same target count once.
+        `agentMention` stores only the Agent definition UUID and display label;
+        Documents and Task descriptions reject this node.
 
         `image` and `file` name an Assign attachment through
         `attrs.attachmentId` and carry no URL and no bytes: attachments travel
@@ -3358,6 +3402,7 @@ components:
       additionalProperties: false
       properties:
         data:
+          description: Eligible assigned alternatives, ordered by updated_at descending, then Task ID descending. Excludes the current selection.
           items:
             $ref: "#/components/schemas/CanonicalCurrentWorkTask"
           maxItems: 25
@@ -3365,6 +3410,7 @@ components:
         has_more:
           type: boolean
         next_cursor:
+          description: Opaque continuation; null ends traversal. Follow non-null values even after empty or short pages. On invalid_cursor, restart from the first page.
           maxLength: 4096
           type:
             - string
@@ -3378,12 +3424,15 @@ components:
       additionalProperties: true
       properties:
         current:
+          description: The authorized account-wide selection, or null when none can be disclosed through the current credential. A null value does not establish that the account has no selection outside this credential’s access.
           oneOf:
             - $ref: "#/components/schemas/CanonicalCurrentWorkTask"
             - type: "null"
         has_eligible_tasks:
+          description: Whether an eligible Task is visible through the current credential, without loading candidate pages.
           type: boolean
         revision:
+          description: Exact decimal revision of the account-wide focus pointer, advanced by every accepted set or clear, including an unchanged selection. Use the returned opaque ETag for If-Match.
           maxLength: 19
           pattern: ^[1-9][0-9]*$
           type: string
@@ -3398,6 +3447,7 @@ components:
       type: object
     CanonicalCurrentWorkTask:
       additionalProperties: true
+      description: Authorized Task summary for current work or an eligible alternative. Selecting current work changes only the focus pointer; it does not change Task status or start a timer.
       properties:
         project_id:
           $ref: "#/components/schemas/Identifier"
@@ -3423,6 +3473,7 @@ components:
         task_id:
           $ref: "#/components/schemas/Identifier"
         task_number:
+          description: Exact decimal Task number within the Project. Preserve it as a string without numeric rounding; use task_id where an operation requires an immutable ID.
           maxLength: 19
           pattern: ^[1-9][0-9]*$
           type: string
@@ -3484,11 +3535,12 @@ components:
             - $ref: "#/components/schemas/Identifier"
             - type: "null"
         public_id:
+          description: Identity used by the public Document share protocol. Treat it as a sharing capability; it does not grant editing access.
           oneOf:
             - $ref: "#/components/schemas/Identifier"
             - type: "null"
         revision:
-          description: Exact positive decimal integer.
+          description: Exact positive decimal revision of the Document metadata. Preserve it without numeric rounding. For conditional writes, use the opaque item ETag; content and historical revision validators are separate.
           pattern: ^[1-9][0-9]*$
           type: string
         title:
@@ -3544,6 +3596,7 @@ components:
       type: object
     CanonicalDocumentRevision:
       additionalProperties: false
+      description: Immutable Document snapshot with its complete rich-text body at the selected revision.
       properties:
         actor_id:
           oneOf:
@@ -3567,8 +3620,10 @@ components:
           $ref: "#/components/schemas/RichTextDocument"
         content_ref:
           $ref: "#/components/schemas/DocumentRevisionReference"
+          description: Identifies getDocumentRevision for this Document and revision. Access is checked when the snapshot is read.
         created_at:
           $ref: "#/components/schemas/Timestamp"
+          description: Time this immutable revision was recorded.
         document_id:
           $ref: "#/components/schemas/Identifier"
         parent_document_id:
@@ -3584,6 +3639,7 @@ components:
             - $ref: "#/components/schemas/Identifier"
             - type: "null"
         revision:
+          description: Exact decimal revision identifying this snapshot. Obtain a current canonical Document ETag before a conditional write; this value is not an HTTP validator.
           maxLength: 19
           pattern: ^[1-9][0-9]*$
           type: string
@@ -3613,8 +3669,10 @@ components:
         - content
       type: object
     CanonicalDocumentRevisionComparison:
+      description: Immutable metadata for the two selected revisions and the fields that differ. Retrieve each content_ref to read its complete body.
       properties:
         changed_fields:
+          description: Fields whose values differ between from and to. An empty array means none of these fields differ; archived compares archive state.
           items:
             enum:
               - title
@@ -3638,6 +3696,7 @@ components:
       type: object
     CanonicalDocumentRevisionMetadata:
       additionalProperties: false
+      description: Immutable metadata captured at one Document revision. Read content_ref to retrieve the complete body for that revision.
       properties:
         actor_id:
           oneOf:
@@ -3659,8 +3718,10 @@ components:
           type: string
         content_ref:
           $ref: "#/components/schemas/DocumentRevisionReference"
+          description: Identifies getDocumentRevision for this Document and revision. Access is checked when the snapshot is read.
         created_at:
           $ref: "#/components/schemas/Timestamp"
+          description: Time this immutable revision was recorded.
         document_id:
           $ref: "#/components/schemas/Identifier"
         parent_document_id:
@@ -3676,6 +3737,7 @@ components:
             - $ref: "#/components/schemas/Identifier"
             - type: "null"
         revision:
+          description: Exact decimal revision identifying this snapshot. Obtain a current canonical Document ETag before a conditional write; this value is not an HTTP validator.
           maxLength: 19
           pattern: ^[1-9][0-9]*$
           type: string
@@ -3704,6 +3766,7 @@ components:
         - content_ref
       type: object
     CanonicalDocumentRevisionPage:
+      description: A bounded page of immutable revision metadata, without rich-text bodies. Follow next_cursor until null, including after short pages; use each content_ref to read a selected body.
       properties:
         data:
           items:
@@ -3820,6 +3883,7 @@ components:
       type: object
     CanonicalDocumentWorkLink:
       additionalProperties: false
+      description: Association between a Document and a Task or Milestone. The link grants no access; both participants require independent current authorization.
       properties:
         can_remove:
           description: Current write authority for both participants; rechecked on mutation.
@@ -3833,6 +3897,7 @@ components:
         id:
           $ref: "#/components/schemas/Identifier"
         item_validator:
+          description: Coding-specific canonical item observation for a conditional removal. Use its exact etag and encoding; a collection ETag cannot authorize removal. Current authority is checked again on mutation.
           properties:
             encoding:
               enum:
@@ -3881,6 +3946,7 @@ components:
         - item_validator
       type: object
     CanonicalDocumentWorkLinkPage:
+      description: A bounded page of independently authorized Document work links. Follow next_cursor until null, including after a short page. Use each link item_validator for removal; the collection ETag cannot authorize it.
       properties:
         data:
           items:
@@ -4155,12 +4221,12 @@ components:
       type: object
     CanonicalGeneratedResourceSummary:
       additionalProperties: true
-      description: One- or two-sentence derived display projection for scanning resource collections and detail pages.
+      description: One- or two-sentence derived display projection for scanning resource collections and detail pages. Use it for display; it supplies neither authoritative evidence nor a write precondition.
       properties:
         generated_at:
           $ref: "#/components/schemas/Timestamp"
         source_revision:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: Canonical resource revision used to generate the summary. A summary is returned only while this matches the resource's current revision. Exact decimal integer; never deserialize through floating point.
           pattern: ^[1-9][0-9]*$
           type: string
         text:
@@ -4215,6 +4281,7 @@ components:
         - state
       type: object
     CanonicalHydratedTaskTarget:
+      description: Original Task target with its current access-checked state. current means the revision and Project still match the observation; changed means one differs. unavailable omits preview and current_revision without distinguishing denied from missing targets.
       discriminator:
         mapping:
           changed: "#/components/schemas/CanonicalAvailableTaskTarget"
@@ -4226,9 +4293,11 @@ components:
         - $ref: "#/components/schemas/CanonicalAvailableTaskTarget"
     CanonicalInboxCutoffRequest:
       additionalProperties: false
+      description: Advance the current recipient's eligible Inbox items through cutoff without regressing read or seen state. Archived state and newer items are preserved.
       properties:
         cutoff:
           $ref: "#/components/schemas/Timestamp"
+          description: Include eligible items created at or before this time. Future input is clamped once to server transaction time; the result returns that effective cutoff.
         read:
           description: True marks visible web deliveries read and seen; false marks them seen only.
           type: boolean
@@ -4260,9 +4329,11 @@ components:
       description: Complete caller-owned Inbox item. Safe summary and all lifecycle fields survive; no Discuss-generated notice is an Inbox resource. Aggregate UTF-8 bytes/rows/memory use the accepted operation budget.
       properties:
         aggregation_count:
+          description: Number of source events grouped into this Inbox item.
           minimum: 1
           type: integer
         archived_at:
+          description: Required nullable archive state. null means not archived. Archived items are excluded from page data but eligible unread items still contribute to unread_count.
           oneOf:
             - $ref: "#/components/schemas/Timestamp"
             - type: "null"
@@ -4279,7 +4350,9 @@ components:
           $ref: "#/components/schemas/Identifier"
         last_event_at:
           $ref: "#/components/schemas/Timestamp"
+          description: Time of the latest source event grouped into this item.
         read_at:
+          description: Required nullable read state. null means unread; marking unread clears this timestamp while preserving seen and archived state.
           oneOf:
             - $ref: "#/components/schemas/Timestamp"
             - type: "null"
@@ -4292,11 +4365,13 @@ components:
           pattern: ^[1-9][0-9]*$
           type: string
         seen_at:
+          description: Required nullable seen state. null means the item has not been marked seen; seen state is independent of read state.
           oneOf:
             - $ref: "#/components/schemas/Timestamp"
             - type: "null"
         summary:
           additionalProperties: true
+          description: Safe notification display fields for this category and resource. This object is separate from a generated Task or Document summary.
           type: object
         urgency:
           enum:
@@ -4340,7 +4415,7 @@ components:
             - $ref: "#/components/schemas/Cursor"
             - type: "null"
         unread_count:
-          description: Exact nonnegative int64 count; preserve decimal text without a JavaScript Number conversion.
+          description: Authoritative current-recipient Workspace unread count, independent of page and category filters; includes eligible archived unread items. Exact nonnegative int64 count; preserve decimal text without a JavaScript Number conversion.
           pattern: ^(0|[1-9][0-9]*)$
           type: string
       required:
@@ -4352,6 +4427,7 @@ components:
       additionalProperties: false
       properties:
         read:
+          description: True marks this item read; false marks it unread. Both preserve seen and archived state. Unlike the cutoff command, false does not mark items seen.
           type: boolean
       required:
         - read
@@ -4360,6 +4436,7 @@ components:
       additionalProperties: false
       properties:
         authority_mode:
+          description: Provider credential authority required by the action. either permits installation or user authority; current caller authorization still applies.
           enum:
             - installation
             - user
@@ -4367,6 +4444,7 @@ components:
             - none
           type: string
         confirmation_required:
+          description: "When true, submit confirmed: true only after the caller explicitly confirms the action."
           type: boolean
         description:
           maxLength: 500
@@ -4386,6 +4464,7 @@ components:
           pattern: ^[a-z][a-z0-9_]*$
           type: string
         requires_binding:
+          description: When true, the action request must include an active binding_id for this installation.
           type: boolean
         type:
           maxLength: 100
@@ -4404,6 +4483,7 @@ components:
       type: object
     CanonicalInstallationActionDefinitionPage:
       additionalProperties: false
+      description: Continue with next_cursor until it is null, including after a short or empty page. Each page rechecks current authorization and applies item and byte limits.
       properties:
         data:
           items:
@@ -4429,6 +4509,7 @@ components:
       properties:
         fetched_at:
           $ref: "#/components/schemas/Timestamp"
+          description: Time of the provider settings and permission observation. Same-key recovery retains this original time; it does not fetch a new observation.
         granted_permissions:
           items:
             maxLength: 100
@@ -4460,8 +4541,10 @@ components:
       type: object
     CanonicalInstallationRefreshResult:
       additionalProperties: false
+      description: Completed discovery summary for one refresh action. next_cursor is present and null when no further discovery page remains; otherwise pass it unchanged to the next refresh command.
       properties:
         discovered_count:
+          description: Number of resources returned by this discovery page, including resources already known to Assign.
           maximum: 100
           minimum: 0
           type: integer
@@ -4485,6 +4568,7 @@ components:
       additionalProperties: false
       properties:
         canonical_url:
+          description: Provider URL for this resource, or null when no canonical provider URL is available.
           oneOf:
             - format: uri
               maxLength: 2048
@@ -4536,6 +4620,7 @@ components:
       type: object
     CanonicalInstallationResourcePage:
       additionalProperties: false
+      description: Continue with next_cursor until it is null, including after a short or empty page. Each page rechecks current authorization and applies item and byte limits.
       properties:
         data:
           items:
@@ -4602,10 +4687,12 @@ components:
             - none
           type: string
         binding_id:
+          description: Binding associated with this action, or null for an action without a binding.
           oneOf:
             - $ref: "#/components/schemas/Identifier"
             - type: "null"
         completed_at:
+          description: Completion time for succeeded, failed or dead_letter actions; null while pending, processing or awaiting retry.
           oneOf:
             - $ref: "#/components/schemas/Timestamp"
             - type: "null"
@@ -4616,11 +4703,13 @@ components:
         installation_id:
           $ref: "#/components/schemas/Identifier"
         result:
+          description: Safe action-specific result, or null when no result is available. Interpret with status and action_type; a null result alone does not establish success or failure. Successful sentry.binding.verify returns readiness; integration.resources.refresh returns its discovery summary when available.
           oneOf:
             - additionalProperties: true
               type: object
             - type: "null"
         safe_error_code:
+          description: Safe reason for failure or retry, or null when no error code is recorded. integration.action_outcome_unknown means the remote effect is uncertain; do not automatically submit another action.
           oneOf:
             - maxLength: 100
               type: string
@@ -4657,21 +4746,25 @@ components:
       additionalProperties: false
       properties:
         action_type:
+          description: Action type returned by listIntegrationActionDefinitions for this installation. Its definition supplies the input schema, binding requirement and confirmation requirement.
           maxLength: 100
           minLength: 3
           pattern: ^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$
           type: string
         authority_mode:
+          description: When omitted, uses the discovered action definition's authority mode. An explicit mode must be allowed by that definition; current caller authorization still applies.
           enum:
             - installation
             - user
             - none
           type: string
         binding_id:
+          description: Binding for this installation. Omit or use null for an action without a binding; actions whose definition requires_binding is true require an active binding.
           oneOf:
             - $ref: "#/components/schemas/Identifier"
             - type: "null"
         confirmed:
+          description: "Set true after explicit confirmation when the discovered action definition requires it. False is rejected for an action with confirmation_required: true."
           type: boolean
         input:
           additionalProperties: true
@@ -4712,6 +4805,7 @@ components:
       type: object
     CanonicalIntegrationAuthorizationAdmission:
       additionalProperties: false
+      description: Safe original authorization admission receipt, not a completed provider grant. admitted records acceptance; outcome_unknown means the provider outcome is uncertain. Recover with the original key, exact body and target under current authority; never automatically repeat provider dispatch or exchange.
       properties:
         id:
           $ref: "#/components/schemas/Identifier"
@@ -4726,6 +4820,7 @@ components:
       type: object
     CanonicalIntegrationBindingObservation:
       additionalProperties: false
+      description: Original disconnected binding observation returned by disconnectIntegrationBinding and original-key recovery. It does not supply a current item validator; this disconnect accepts no If-Match condition.
       properties:
         created_at:
           $ref: "#/components/schemas/Timestamp"
@@ -4837,11 +4932,13 @@ components:
       additionalProperties: false
       properties:
         encoding:
+          description: Representation encoding associated with this item ETag. Preserve it when sending the conditional write.
           enum:
             - identity
             - gzip
           type: string
         etag:
+          description: Opaque strong item ETag for a later conditional item write, including its quotes. Forward it unchanged with its recorded encoding; never substitute the collection ETag or derive a tag from a decimal revision.
           pattern: ^"[!#-~\x80-\xff]*"$
           type: string
         representation:
@@ -24829,7 +24926,7 @@ paths:
       tags:
         - Labels
     patch:
-      description: Current product bearer scope and live Workspace/Project authority are rechecked in the resource transaction. Requires a product bearer credential. No request body or query selectors are accepted. Complete current or archived metadata includes decimal revisions, identity or gzip encoding and an opaque ETag bound to the current credential, permissions and representation. Command requires exactly one Idempotency-Key and a strong opaque If-Match from getLabelDefinition with the same encoding. Missing428, malformed/weak400, stale412. Current write authority and the existing Label writer fence precede observation and revision CAS. Archive retains assignments and historical rendering. Original committed receipt is recovered under current authority before condition evaluation; no duplicate changes or events. DELETE on the item path is removed. PATCH accepts at most 16KiB identity-coded strict JSON. Omitted name/color are preserved; archived=false restores. Restoration and presentation changes commit as one revision, audit record and event. Empty objects, nulls, unknown/duplicate/case-alias fields and archived=true are rejected.
+      description: Current product bearer scope and live Workspace/Project authority are rechecked in the resource transaction. Requires a product bearer credential. No query selectors are accepted. Complete current or archived metadata includes decimal revisions, identity or gzip encoding and an opaque ETag bound to the current credential, permissions and representation. Command requires exactly one Idempotency-Key and a strong opaque If-Match from getLabelDefinition with the same encoding. Missing428, malformed/weak400, stale412. Current write authority and the existing Label writer fence precede observation and revision CAS. Archive retains assignments and historical rendering. Original committed receipt is recovered under current authority before condition evaluation; no duplicate changes or events. DELETE on the item path is removed. PATCH accepts at most 16KiB identity-coded strict JSON. Omitted name/color are preserved; archived=false restores. Restoration and presentation changes commit as one revision, audit record and event. Empty objects, nulls, unknown/duplicate/case-alias fields and archived=true are rejected.
       operationId: updateLabelDefinition
       parameters:
         - in: path
