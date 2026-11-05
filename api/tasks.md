@@ -367,9 +367,11 @@ who muted, unfollowed or lost access. Notification preferences still apply.
 - `GET /api/v1/tasks/{task_id}/assignments?limit=50` returns assignment periods, newest first: the
   assignee, the assigner when known, start and end times, whether it's active and a source (`direct`
   or `imported`). Imported assignments can have unknown start and assigner.
-- `GET /api/v1/tasks/{task_id}/participants?limit=100` returns the creator and every current or past
-  assignee, with `is_creator`, `is_assigned_now` and `was_previously_assigned`. Commenting or
-  reacting doesn't make someone a participant.
+- `GET /api/v1/tasks/{task_id}/participants?limit=100` returns a bounded `data` window: current
+  assignee first, previous assignees by most-recent involvement, then the creator. Each Actor
+  appears once, with `is_creator`, `is_assigned_now` and `was_previously_assigned`. The default
+  limit is 50 and the maximum is 100. There is no pagination or total; a full window can omit
+  further participants. Commenting or reacting doesn't make someone a participant.
 - `GET /api/v1/tasks/{task_id}/description-revisions?limit=50` returns description snapshots, newest
   first, with the Task revision, actor, change kind (`baseline`, `created` or `updated`) and the
   content. `POST /api/v1/tasks/{task_id}/description-revisions/{revision}/restore` with

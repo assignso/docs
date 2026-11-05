@@ -41,18 +41,18 @@ Guide: [Projects](./projects)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/milestones/{milestone_id}` | Read a Milestone with computed progress | Bearer |
-| `PATCH /api/v1/milestones/{milestone_id}` | Update or restore a Milestone | Bearer |
+| `GET /api/v1/milestones/{milestone_id}` | Read a Milestone and its progress | Bearer |
+| `PATCH /api/v1/milestones/{milestone_id}` | Update a Milestone | Bearer |
 | `POST /api/v1/milestones/{milestone_id}/archive` | Archive a Milestone | Bearer |
 | `PATCH /api/v1/project-states/{state_id}` | Rename or restore a Project state | Bearer |
 | `POST /api/v1/project-states/{state_id}/archive` | Archive an unused Project state | Bearer |
 | `POST /api/v1/project-states/{state_id}/archive-and-replace` | Replace an in-use Project state and archive it | Bearer |
-| `POST /api/v1/project-states/{state_id}/move` | Move a Project state | Bearer |
+| `POST /api/v1/project-states/{state_id}/move` | Reorder a Project lifecycle state | Bearer |
 | `GET /api/v1/projects/{project_id}` | Read a Project | Bearer |
-| `PATCH /api/v1/projects/{project_id}` | Update Project metadata, planning dates, path, visual identity, or visibility | Bearer |
-| `GET /api/v1/projects/{project_id}/activity` | List access-filtered Project activity | Bearer |
+| `PATCH /api/v1/projects/{project_id}` | Rename a Project | Bearer |
+| `GET /api/v1/projects/{project_id}/activity` | Read a Project's Activity | Bearer |
 | `POST /api/v1/projects/{project_id}/archive` | Archive a Project | Bearer |
-| `GET /api/v1/projects/{project_id}/attachments` | List Project attachments | Bearer |
+| `GET /api/v1/projects/{project_id}/attachments` | List a Project's attachments | Bearer |
 | `POST /api/v1/projects/{project_id}/attachments` | Attach a completed upload to a Project | Bearer |
 | `GET /api/v1/projects/{project_id}/completion-policy` | Read a Project's completion policy | Bearer |
 | `PUT /api/v1/projects/{project_id}/completion-policy` | Configure whether completion requires review | Bearer |
@@ -179,20 +179,20 @@ Guide: [Documents](./documents)
 | `DELETE /api/v1/documents/{document_id}/links/{target_kind}/{target_id}` | Remove a Document work link | Bearer |
 | `DELETE /api/v1/documents/{document_id}/permanent` | Permanently delete a Document | Bearer |
 | `POST /api/v1/documents/{document_id}/restore` | Restore an archived Document | Bearer |
-| `GET /api/v1/documents/{document_id}/revisions` | List immutable Document revisions | Bearer |
-| `GET /api/v1/documents/{document_id}/revisions/{revision}` | Read one immutable Document revision | Bearer |
-| `POST /api/v1/documents/{document_id}/revisions/{revision}/restore` | Restore a historical snapshot as a new active revision | Bearer |
-| `GET /api/v1/documents/{document_id}/revisions/compare` | Compare two immutable Document revisions | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/documents` | A bounded Workspace Document metadata page with exact-path and explicit direct-parent/relation filters. | Bearer |
+| `GET /api/v1/documents/{document_id}/revisions` | List a Document's revision history | Bearer |
+| `GET /api/v1/documents/{document_id}/revisions/{revision}` | Read a Document revision | Bearer |
+| `POST /api/v1/documents/{document_id}/revisions/{revision}/restore` | Restore a Document revision | Bearer |
+| `GET /api/v1/documents/{document_id}/revisions/compare` | Compare Document revisions | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/documents` | Find Workspace Documents | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/documents` | Create a Document | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository` | Read the Workspace Git-backed Documents repository | Bearer |
-| `PUT /api/v1/workspaces/{workspace_id}/knowledge-repository` | Validate and connect one existing documentation repository | Bearer |
-| `PATCH /api/v1/workspaces/{workspace_id}/knowledge-repository` | Pause, resume, or disconnect Git-backed Documents | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts` | List open revision-bound synchronization conflicts | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts/{conflict_id}/resolve` | Queue an explicit dual-head conflict decision | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/knowledge-repository/import` | Queue repository Markdown import | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository/runs` | List bounded repository synchronization history | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository/runs/{run_id}` | Read one currently authorized repository synchronization result | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository` | Read the Workspace Documents repository | Bearer |
+| `PUT /api/v1/workspaces/{workspace_id}/knowledge-repository` | Connect a Documents repository | Bearer |
+| `PATCH /api/v1/workspaces/{workspace_id}/knowledge-repository` | Pause or resume the Documents repository | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts` | List open Document sync conflicts | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/knowledge-repository/conflicts/{conflict_id}/resolve` | Queue a Document conflict resolution | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/knowledge-repository/import` | Queue a repository Markdown import | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository/runs` | List repository synchronization runs | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/knowledge-repository/runs/{run_id}` | Read a repository synchronization run | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/knowledge-repository/sync` | Queue repository synchronization | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/reference-options` | Find reference and mention candidates | Bearer |
 
@@ -202,8 +202,8 @@ Durable operation status and result recovery.
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/operations/{operation_id}` | Recover current authorized durable operation status | Bearer |
-| `POST /api/v1/operations/{operation_id}/cancel` | Request durable best-effort cancellation | Bearer |
+| `GET /api/v1/operations/{operation_id}` | Read background work status | Bearer |
+| `POST /api/v1/operations/{operation_id}/cancel` | Request cancellation of background work | Bearer |
 
 ## Attachments
 
@@ -223,23 +223,23 @@ Guide: [Account](./account)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/auth-context` | Read only the current credential authority context | Bearer |
-| `GET /api/v1/inbox-items/{inbox_item_id}` | Read authorized CanonicalInboxItem and its opaque validator | Bearer |
-| `PATCH /api/v1/inbox-items/{inbox_item_id}` | Conditionally update CanonicalInboxItem | Bearer |
-| `GET /api/v1/me/current-work` | Read current human Current Work and acquire its opaque validator | Bearer |
-| `PUT /api/v1/me/current-work` | Conditionally select the current human current Task | Bearer |
-| `DELETE /api/v1/me/current-work` | Conditionally clear the current human current Task | Bearer |
-| `GET /api/v1/me/current-work/candidates` | List tasks eligible to become the current task | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/inbox` | List the current human Inbox with bounded continuation and authoritative count | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/inbox/read-state` | Converge current-human Inbox seen/read state through an explicit cutoff | Bearer |
+| `GET /api/v1/auth-context` | Read your credential context | Bearer |
+| `GET /api/v1/inbox-items/{inbox_item_id}` | Read an Inbox item | Bearer |
+| `PATCH /api/v1/inbox-items/{inbox_item_id}` | Mark an Inbox item read or unread | Bearer |
+| `GET /api/v1/me/current-work` | Read your current work | Bearer |
+| `PUT /api/v1/me/current-work` | Select your current Task | Bearer |
+| `DELETE /api/v1/me/current-work` | Clear your current Task | Bearer |
+| `GET /api/v1/me/current-work/candidates` | Find Tasks to work on next | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/inbox` | Read your Workspace Inbox | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/inbox/read-state` | Mark Inbox items read through a cutoff | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/members` | List Workspace members | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/notification-preferences` | List effective notification preferences | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/notification-preferences/{category}` | Read authorized CanonicalNotificationPreference and its opaque validator | Bearer |
-| `PATCH /api/v1/workspaces/{workspace_id}/notification-preferences/{category}` | Conditionally update CanonicalNotificationPreference | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/project-display-preferences` | Read private Project display preferences for one Workspace | Bearer |
-| `PUT /api/v1/workspaces/{workspace_id}/project-display-preferences` | Save private Project display preferences for one Workspace | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/project-shortcuts` | Read the current human’s private Project shortcuts | Bearer |
-| `PUT /api/v1/workspaces/{workspace_id}/project-shortcuts` | Replace the current human’s private Project shortcuts | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/notification-preferences` | List your notification preferences | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/notification-preferences/{category}` | Read a notification preference | Bearer |
+| `PATCH /api/v1/workspaces/{workspace_id}/notification-preferences/{category}` | Change a notification preference | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/project-display-preferences` | Read your Project display preferences | Bearer |
+| `PUT /api/v1/workspaces/{workspace_id}/project-display-preferences` | Save your Project display preferences | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/project-shortcuts` | Read your Project shortcuts | Bearer |
+| `PUT /api/v1/workspaces/{workspace_id}/project-shortcuts` | Replace your Project shortcuts | Bearer |
 
 ## Commands
 
@@ -254,46 +254,46 @@ Guide: [Integrations](./integrations)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `POST /api/v1/integration-actions` | Request an idempotent typed remote action | Bearer |
-| `GET /api/v1/integration-actions/{action_id}` | Read durable remote-action status | Bearer |
+| `POST /api/v1/integration-actions` | Queue a typed remote action | Bearer |
+| `GET /api/v1/integration-actions/{action_id}` | Read a remote action's status | Bearer |
 | `DELETE /api/v1/integration-bindings/{binding_id}` | Disconnect a Project integration binding | Bearer |
 | `POST /api/v1/integration-bindings/{binding_id}/sentry-readiness` | Verify a Sentry Project binding | Bearer |
-| `GET /api/v1/integration-bindings/{binding_id}/subscriptions` | List configured behavior for one binding | Bearer |
-| `POST /api/v1/integration-bindings/{binding_id}/subscriptions` | Configure explicit ongoing integration behavior | Bearer |
-| `GET /api/v1/integration-catalog` | List Assign integration providers | Bearer |
-| `GET /api/v1/integration-installations/{installation_id}` | Read one current Workspace integration installation | Bearer |
+| `GET /api/v1/integration-bindings/{binding_id}/subscriptions` | List a binding's subscriptions | Bearer |
+| `POST /api/v1/integration-bindings/{binding_id}/subscriptions` | Create an integration subscription | Bearer |
+| `GET /api/v1/integration-catalog` | List integration providers | Bearer |
+| `GET /api/v1/integration-installations/{installation_id}` | Read an integration installation | Bearer |
 | `DELETE /api/v1/integration-installations/{installation_id}` | Disconnect an integration installation | Bearer |
-| `GET /api/v1/integration-installations/{installation_id}/actions` | List typed actions supported by an installation | Bearer |
-| `POST /api/v1/integration-installations/{installation_id}/management-link` | Create a provider installation-management handoff | Bearer |
-| `GET /api/v1/integration-installations/{installation_id}/resources` | List persisted remote resources | Bearer |
+| `GET /api/v1/integration-installations/{installation_id}/actions` | List an installation's actions | Bearer |
+| `POST /api/v1/integration-installations/{installation_id}/management-link` | Create an installation management link | Bearer |
+| `GET /api/v1/integration-installations/{installation_id}/resources` | List an installation's resources | Bearer |
 | `POST /api/v1/integration-installations/{installation_id}/resources/refresh` | Refresh one bounded page of provider resources | Bearer |
 | `PATCH /api/v1/integration-subscriptions/{subscription_id}` | Update, pause, resume, or disable integration behavior | Bearer |
 | `GET /api/v1/me/integration-identities` | List personal integration identities | Bearer |
 | `DELETE /api/v1/me/integration-identities/{identity_id}` | Disconnect the current User's delegated provider identity | Bearer |
 | `GET /api/v1/projects/{project_id}/integration-bindings` | List current integration bindings for a Project | Bearer |
 | `POST /api/v1/projects/{project_id}/integration-bindings` | Bind a discovered remote resource to a Project | Bearer |
-| `GET /api/v1/tasks/{task_id}/rich-entities` | List live external entities linked to a Task | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/integration-authorizations` | Begin an installation or personal provider authorization | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/integration-authorizations/credential` | Complete a provider authorization with a user-supplied credential | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/integration-installations` | List current Workspace integration installations | Bearer |
+| `GET /api/v1/tasks/{task_id}/rich-entities` | Read external entities linked to a Task | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/integration-authorizations` | Begin provider authorization | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/integration-authorizations/credential` | Complete provider authorization with a credential | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/integration-installations` | List Workspace integration installations | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/integration-requests` | Request an integration provider | Bearer |
 
 ## Labels
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/{target_kind}/{target_id}/labels` | List a document, project, or task's label IDs | Bearer |
-| `PUT /api/v1/{target_kind}/{target_id}/labels` | Replace a document, project, or task's complete label assignment set | Bearer |
-| `GET /api/v1/label-definitions/{label_id}` | Read one authorized label definition | Bearer |
-| `PATCH /api/v1/label-definitions/{label_id}` | Rename, recolor or restore an observed Label definition | Bearer |
-| `POST /api/v1/label-definitions/{label_id}/archive` | Archive an observed Label definition | Bearer |
-| `GET /api/v1/projects/{project_id}/label-definitions` | List bounded Project-local Task label definitions | Bearer |
-| `POST /api/v1/projects/{project_id}/label-definitions` | Create one Project-local Task label | Bearer |
-| `GET /api/v1/projects/{project_id}/label-overrides` | List a Project's presentation overrides for Workspace Task labels | Bearer |
-| `PUT /api/v1/projects/{project_id}/label-overrides/{label_id}` | Set this Project's presentation of a Workspace Task label | Bearer |
-| `DELETE /api/v1/projects/{project_id}/label-overrides/{label_id}` | Restore the Workspace default presentation of a Task label in this Project | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/label-definitions` | List active Workspace label definitions | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/label-definitions` | Create a Workspace-scoped label definition | Bearer |
+| `GET /api/v1/{target_kind}/{target_id}/labels` | Read a target's labels | Bearer |
+| `PUT /api/v1/{target_kind}/{target_id}/labels` | Replace a target's labels | Bearer |
+| `GET /api/v1/label-definitions/{label_id}` | Read a label definition | Bearer |
+| `PATCH /api/v1/label-definitions/{label_id}` | Rename, recolor or restore a label | Bearer |
+| `POST /api/v1/label-definitions/{label_id}/archive` | Archive a label | Bearer |
+| `GET /api/v1/projects/{project_id}/label-definitions` | List a Project's Task labels | Bearer |
+| `POST /api/v1/projects/{project_id}/label-definitions` | Create a Project Task label | Bearer |
+| `GET /api/v1/projects/{project_id}/label-overrides` | List a Project's Task label overrides | Bearer |
+| `PUT /api/v1/projects/{project_id}/label-overrides/{label_id}` | Override a Task label in a Project | Bearer |
+| `DELETE /api/v1/projects/{project_id}/label-overrides/{label_id}` | Restore a Task label's Workspace default in a Project | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/label-definitions` | List Workspace labels | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/label-definitions` | Create a Workspace label | Bearer |
 
 ## Workspaces
 
@@ -312,7 +312,7 @@ Guide: [Workspaces](./workspaces)
 | `POST /api/v1/workspaces/{workspace_id}/icon` | Associate a cropped stored Workspace icon | Bearer |
 | `DELETE /api/v1/workspaces/{workspace_id}/icon` | Remove the Workspace icon and retire its stored object | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/icon/content` | Redirect to a short-lived inline object-storage URL for the Workspace icon | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/invitations` | List invitations | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/invitations` | List Workspace invitations | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/invitations` | Invite someone to the Workspace | Bearer |
 | `DELETE /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}` | Revoke an invitation | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}/resend` | Resend an invitation | Bearer |
@@ -362,30 +362,30 @@ Guide: [Agents](./agents)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/workspaces/{workspace_id}/agents` | List Workspace-owned Agent instances | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/agents` | Hire one curated Agent into a Workspace | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Read one Workspace Agent instance | Bearer |
-| `PATCH /api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Update one Workspace Agent's bounded configuration | Bearer |
-| `DELETE /api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Soft-remove one Agent and stop all unfinished work | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/quarantine` | Quarantine an Agent, cancel unfinished runs, and invalidate pending approvals | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/rollback` | Restore the prior qualified definition version in paused state | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs` | List retained safe run history for one Agent | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs` | Durably submit a manual Agent Operation | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}` | Read one safe Agent run projection | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions` | List the run's attributable action and exact approval records | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions/{action_id}/approvals/{approval_id}/decision` | Approve or reject the exact immutable Agent action proposal once | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/cancel` | Request cancellation of a non-terminal Agent run | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/outputs` | List customer-safe comments, reports, and notifications with full Agent provenance | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/definitions` | List curated Agent definitions available to a Workspace | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions` | List custom Agent definitions editable by Workspace managers | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions` | Save a bounded, versioned custom Agent definition | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}` | Read the current editable custom Agent definition | Bearer |
-| `PATCH /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}` | Save a new immutable revision of a custom Agent definition | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/delegations/{task_id}` | Add a revision-fenced Agent responsibility overlay to a Task | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/profile` | Read a member-visible custom Agent profile | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | List permission-filtered custom Agent request outcomes | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | Durably admit a manual or preview-only test request | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/usage` | Read settled and pending credit usage for one custom Agent and period | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents` | List Workspace Agent instances | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/agents` | Hire an Agent for your Workspace | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Read a Workspace Agent | Bearer |
+| `PATCH /api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Replace an Agent configuration | Bearer |
+| `DELETE /api/v1/workspaces/{workspace_id}/agents/{agent_id}` | Remove a Workspace Agent | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/quarantine` | Quarantine a Workspace Agent | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/rollback` | Restore an Agent's prior definition | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs` | List an Agent's run history | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs` | Start a manual Agent run | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}` | Read an Agent run | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions` | Review an Agent run's actions | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/actions/{action_id}/approvals/{approval_id}/decision` | Approve or reject an Agent action | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/cancel` | Request cancellation of an Agent run | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/outputs` | Read an Agent run's outputs | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/definitions` | Find curated Agent definitions | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions` | List custom Agent definitions | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions` | Create a custom Agent definition | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}` | Read a custom Agent definition | Bearer |
+| `PATCH /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}` | Update a custom Agent definition | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/delegations/{task_id}` | Delegate a Task to a custom Agent | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/profile` | Read a custom Agent profile | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | List custom Agent request outcomes | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/requests` | Queue a custom Agent request | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/agents/studio/definitions/{definition_id}/usage` | Read custom Agent usage | Bearer |
 
 ## Discuss
 
@@ -393,8 +393,8 @@ Guide: [Discuss](./discuss)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `POST /api/v1/workspaces/{workspace_id}/evidence-collections` | Capture exact private evidence passages | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/evidence-collections/exclusions` | Replace an exact evidence investigation exclusion set | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/evidence-collections` | Capture private evidence passages | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/evidence-collections/exclusions` | Replace evidence exclusions | Bearer |
 
 ## Knowledge
 
@@ -411,9 +411,9 @@ Guide: [Knowledge](./knowledge)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/workspaces/{workspace_id}/people/{user_id}/profile-picture/content` | Read a workspace member's uploaded profile picture | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/people/{username}` | Get a workspace-scoped person profile | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/people/{username}/activity` | List a person's visible workspace activity | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/people/{user_id}/profile-picture/content` | Read a Workspace person's profile picture | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/people/{username}` | Read a Workspace person's profile | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/people/{username}/activity` | List a person's visible Workspace Activity | Bearer |
 
 ## Webhooks
 

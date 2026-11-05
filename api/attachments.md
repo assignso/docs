@@ -18,8 +18,8 @@ Use **Add files** or drop files onto the page. Queued, uploading and verifying f
 with cancel and retry. A multi-file drop gives one success notice. Wait for verification to finish
 before treating a file as attached.
 
-Project files show as a grid. Clean raster images show a thumbnail. Unscanned files, SVG and
-non-image files show an icon.
+Project files show as a grid. Raster images permitted for preview show a thumbnail. SVG and
+non-image files show an icon; scan restrictions can also prevent a thumbnail.
 
 ### API upload workflow <Badge type="warning" text="Upcoming" />
 
@@ -136,9 +136,12 @@ remain usable until it expires.
   the filename or declared media type says. It recognizes common image formats, including PNG,
   JPEG, GIF, WebP, AVIF, HEIC and TIFF, for previews.
 - SVG is supported as a forced download and is never rendered inside Assign.
-- A file that has not been scanned remains untrusted. It can be linked and force-downloaded, but
-  cannot be previewed inline or embedded in rich text. A file detected as malicious is quarantined
-  and cannot be linked, previewed or downloaded.
+- A file that has not been scanned remains untrusted; `not_scanned` never means `clean`. The
+  pre-launch environment does not malware-scan files. Its temporary policy permits linking,
+  forced downloads, allowlisted previews and file/image references in Task, Document and Comment
+  rich text. Settings media and clean-only duplication still require a clean scan result. Public
+  launch requires malware scanning and removal of this exception.
+- Pending or quarantined files cannot be linked, previewed or downloaded.
 
 ## In the web app
 

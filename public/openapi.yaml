@@ -5367,13 +5367,14 @@ components:
       type: object
     CanonicalMilestoneProgress:
       additionalProperties: true
+      description: Computed Task progress. Totals include only Tasks whose stage includes them in progress; completed Tasks also require completion credit. The category breakdown includes Tasks excluded from those totals. A zero total does not imply completion.
       properties:
         completed_tasks:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: Included Tasks whose stage grants completion credit. Exact decimal integer; never deserialize through floating point.
           pattern: ^(0|[1-9][0-9]*)$
           type: string
         incomplete_tasks:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: "Included Tasks without completion credit: total_tasks minus completed_tasks. Exact decimal integer; never deserialize through floating point."
           pattern: ^(0|[1-9][0-9]*)$
           type: string
         tasks_by_category:
@@ -5381,9 +5382,10 @@ components:
             description: Exact decimal integer; never deserialize through floating point.
             pattern: ^(0|[1-9][0-9]*)$
             type: string
+          description: Exact live Task counts by workflow category, including Tasks excluded from progress totals. Do not sum this map to derive total_tasks.
           type: object
         total_tasks:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: Tasks included in progress by their stage policy. Exact decimal integer; never deserialize through floating point.
           pattern: ^(0|[1-9][0-9]*)$
           type: string
       required:
@@ -5410,11 +5412,13 @@ components:
         created_at:
           $ref: "#/components/schemas/Timestamp"
         description:
+          description: Plain-text Milestone description; null when unset.
           oneOf:
             - maxLength: 2000
               type: string
             - type: "null"
         due_on:
+          description: Calendar due date without a time or timezone; null when unset.
           oneOf:
             - format: date
               type: string
@@ -5442,7 +5446,7 @@ components:
           pattern: ^[1-9][0-9]*$
           type: string
         stage_id:
-          description: Optional stable Workspace Milestone stage ID. Must select an active stage whose category agrees with status; null clears the selection. An explicit legacy status update without stage_id clears a custom selection.
+          description: Selected Workspace Milestone stage ID, when supplied. Null means no custom stage selection; status retains the semantic category. Omission does not establish a selection.
           maxLength: 64
           minLength: 1
           type:
@@ -6158,11 +6162,7 @@ components:
       minLength: 1
       type: string
     CanonicalProjectAttachmentScanState:
-      description: |
-        Malware-scan state. New uploads are scanned synchronously before
-        they become usable: only `clean` attachments may be linked, previewed,
-        or downloaded. `quarantined` attachments remain private and unavailable.
-        `not_scanned` is retained only for legacy migration visibility.
+      description: Malware-scan state. clean records a successful scan; not_scanned records that no scan was performed and must never be treated as clean. Whether an attachment may be linked, previewed or downloaded depends on the attachment operation and the current deployment policy. pending and quarantined attachments are unavailable.
       enum:
         - not_scanned
         - pending
@@ -8857,7 +8857,7 @@ components:
               const: project_tasks
             limit:
               default: 50
-              description: Existing canonical Task resource page limit50/default100/max; this is one declared window, not whole capture aggregate/reservation/work feasibility. I2 must still bound all legal content, groups, bytes and work.
+              description: "Maximum Tasks requested for this window: 1 to 100, default 50. This bounds one page, not the complete selected collection."
               maximum: 100
               minimum: 1
               type: integer
@@ -8883,7 +8883,7 @@ components:
               const: project_tasks
             limit:
               default: 50
-              description: Existing canonical Task resource page limit50/default100/max; this is one declared window, not whole capture aggregate/reservation/work feasibility. I2 must still bound all legal content, groups, bytes and work.
+              description: "Maximum Tasks requested for this window: 1 to 100, default 50. This bounds one page, not the complete selected collection."
               maximum: 100
               minimum: 1
               type: integer
@@ -9411,17 +9411,17 @@ components:
           minLength: 1
           type: string
         resolution:
-          description: Terminal outcome for the current resolved episode; null for active Tasks.
+          description: "Terminal outcome of the current resolved episode; null while the Task is unresolved. Resolution is separate from archival: a completed or cancelled Task can remain in the active lifecycle."
           oneOf:
             - $ref: "#/components/schemas/TaskResolution"
             - type: "null"
         resolved_at:
-          description: Instant the current terminal episode began; cleared when the Task becomes active again.
+          description: Instant the current resolved episode began; cleared when the Task returns to an unresolved Status. Archiving does not reopen the Task.
           oneOf:
             - $ref: "#/components/schemas/Timestamp"
             - type: "null"
         resolved_by:
-          description: Actor that started the current terminal episode; null only for migrated or trusted automated provenance gaps.
+          description: Actor that started the current resolved episode. Null while unresolved; during a resolved episode, null can represent a migrated or trusted automated provenance gap.
           oneOf:
             - $ref: "#/components/schemas/Identifier"
             - type: "null"
@@ -9759,7 +9759,7 @@ components:
         `stage_revision` and `definition_revision` for staleness; `behaviors`
         is the complete set for the entity kind, so clients never infer policy
         from names or categories. Absent when the selection has no lifecycle
-        status. Resolved for a whole page with one batch lookup. Project list
+        status. Project list
         rows carry identities and revisions only: `stage_name` and `behaviors`
         are omitted there and returned by Project detail and the lifecycle
         definition list.
@@ -9886,6 +9886,7 @@ components:
       additionalProperties: false
       properties:
         enabled_routes:
+          description: Routes returned by the readiness observation. Null means route information was not returned; it does not establish that no routes are configured.
           oneOf:
             - items:
                 maxLength: 100
@@ -9894,8 +9895,10 @@ components:
               type: array
             - type: "null"
         provider_online:
+          description: Whether this observation established that the provider was online. False can also mean the observation did not reach provider reconciliation; it does not by itself establish an outage.
           type: boolean
         ready:
+          description: Whether this observation completed with a ready result. It does not grant execution permission or guarantee continued readiness; verify the original action under current authorization and configuration.
           type: boolean
         safe_state:
           enum:
@@ -9926,13 +9929,13 @@ components:
         category:
           $ref: "#/components/schemas/StatusCategory"
         color:
-          description: Optional shared Tailwind family or pinned shade, retaining legacy six-digit hex colors. A bare family uses step 500 for Status markers; null inherits the lifecycle default.
+          description: shared Tailwind family or pinned shade, retaining legacy six-digit hex colors. A bare family uses step 500 for Status markers; null inherits the lifecycle default.
           oneOf:
             - pattern: ^(#[0-9A-Fa-f]{6}|(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(-(50|[1-9]00|950))?)$
               type: string
             - type: "null"
         icon:
-          description: Optional Lucide icon slug. Null inherits the lifecycle default.
+          description: Lucide icon slug. Null inherits the lifecycle default.
           oneOf:
             - pattern: ^[a-z][a-z0-9-]{0,63}$
               type: string
@@ -9975,7 +9978,7 @@ components:
         category:
           $ref: "#/components/schemas/StatusCategory"
         color:
-          description: Optional shared Tailwind family or pinned shade, retaining legacy six-digit hex colors. A bare family uses step 500 for Status markers; null inherits the lifecycle default.
+          description: shared Tailwind family or pinned shade, retaining legacy six-digit hex colors. A bare family uses step 500 for Status markers; null inherits the lifecycle default.
           oneOf:
             - pattern: ^(#[0-9A-Fa-f]{6}|(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(-(50|[1-9]00|950))?)$
               type: string
@@ -9983,7 +9986,7 @@ components:
         created_at:
           $ref: "#/components/schemas/Timestamp"
         icon:
-          description: Optional Lucide icon slug. Null inherits the lifecycle default.
+          description: Lucide icon slug. Null inherits the lifecycle default.
           oneOf:
             - pattern: ^[a-z][a-z0-9-]{0,63}$
               type: string
@@ -9997,6 +10000,7 @@ components:
           minLength: 1
           type: string
         marks_task_resolved:
+          description: Read-only convenience indicating whether the Status resolves a Task as completed or cancelled. It does not describe archival or grant mutation authority.
           readOnly: true
           type: boolean
         position:
@@ -10186,6 +10190,7 @@ components:
       additionalProperties: false
       properties:
         label_ids:
+          description: The complete replacement assignment set. An empty array clears all assignments.
           items:
             $ref: "#/components/schemas/Identifier"
           maxItems: 20
@@ -10320,6 +10325,7 @@ components:
           maxItems: 100
           type: array
         next_cursor:
+          description: Opaque continuation cursor; null when traversal is complete. Continue after a short or empty data page when this value is non-null.
           maxLength: 4096
           type:
             - string
@@ -10377,6 +10383,7 @@ components:
         revision:
           $ref: "#/components/schemas/ResourceRevision"
         text:
+          description: Untrusted Comment excerpt of at most 2,048 UTF-8 bytes. When truncated is true, read the authorized Comment for complete text.
           maxLength: 2048
           type: string
         truncated:
@@ -10924,23 +10931,19 @@ components:
       type: object
     CanonicalTaskParticipantsPage:
       additionalProperties: false
+      description: One bounded involvement-ordered Task participant window. data contains complete factual rows; no cursor or total is returned. Reaching the requested limit does not establish that every participant is included.
       properties:
         data:
           items:
             $ref: "#/components/schemas/TaskParticipant"
           maxItems: 100
           type: array
-        next_cursor:
-          maxLength: 4096
-          type:
-            - string
-            - "null"
       required:
         - data
-        - next_cursor
       type: object
     CanonicalTaskQueryCoverage:
       additionalProperties: true
+      description: Coverage of the bounded authorized query scan at observed_at. query_digest identifies the normalized query; collection_version and visibility_revision are opaque collection and caller-visibility watermarks. Partial or stale coverage, including an empty result, cannot prove absence. returned_count is the number of rows returned by this scan, not a total for all matching Tasks.
       properties:
         collection_version:
           type: string
@@ -11028,6 +11031,7 @@ components:
       type: object
     CanonicalTaskRelation:
       additionalProperties: false
+      description: A same-Project Task relation. For blocks and parent, source_task_id blocks or is the parent of target_task_id. duplicates and relates are symmetric; stored endpoint order does not imply direction. revision is not an ETag. Fresh creation includes item_validator; replay omits it. Read the current relation before another conditional mutation.
       properties:
         id:
           $ref: "#/components/schemas/Identifier"
@@ -11076,6 +11080,7 @@ components:
       type: object
     CanonicalTaskRelationPage:
       additionalProperties: false
+      description: One bounded page of Task relations. Continue with next_cursor until it is null, including after a short or empty page. A collection validator cannot authorize an item mutation.
       properties:
         data:
           items:
@@ -11093,6 +11098,7 @@ components:
       type: object
     CanonicalTaskRelationRow:
       additionalProperties: false
+      description: A relation and the other Task in the requested Task’s context. source_task_id and target_task_id retain stored relation orientation; related_task is not necessarily the target. blocks and parent are directed; duplicates and relates are symmetric. item_validator identifies the canonical relation item and its encoding for conditional mutation; neither the collection tag nor revision substitutes for its ETag.
       properties:
         id:
           $ref: "#/components/schemas/Identifier"
@@ -13094,6 +13100,7 @@ components:
         - $ref: "#/components/schemas/CanonicalWorkspaceProjection"
     ChangeOperation:
       additionalProperties: false
+      description: Operation in the exact proposal version, with a server-assigned operation_id. Tool-specific fields describe the reviewed target and edits.
       properties:
         assignee_actor_id:
           format: uuid
@@ -13106,18 +13113,20 @@ components:
           type: string
         description:
           additionalProperties: true
+          description: Task rich-text document to write; for task_update, omission preserves the current description.
           type: object
         draft_id:
           format: uuid
           type: string
         draft_version:
-          description: Exact positive decimal int64 observation; never round through a JavaScript number.
+          description: Exact current immutable draft version for document_patch_apply. Exact positive decimal int64; never round through a JavaScript number.
           pattern: ^[1-9][0-9]*$
           type: string
         excluded:
+          description: Keep this operation in the reviewed proposal but skip its effects when true.
           type: boolean
         expected_revision:
-          description: Exact positive decimal int64 observation; never round through a JavaScript number.
+          description: Observed Task revision, or Document base revision for document_patch_apply. Exact positive decimal int64; never round through a JavaScript number.
           pattern: ^[1-9][0-9]*$
           type: string
         operation_id:
@@ -13141,7 +13150,7 @@ components:
           format: uuid
           type: string
         status_revision:
-          description: Exact positive decimal int64 observation; never round through a JavaScript number.
+          description: Observed revision of status_id; supply both fields together. Exact positive decimal int64; never round through a JavaScript number.
           pattern: ^[1-9][0-9]*$
           type: string
         task_id:
@@ -13328,7 +13337,7 @@ components:
           - status_revision
         status_revision:
           - status_id
-      description: Strict tool-specific input; never supply a server operation identity.
+      description: Strict tool-specific proposal input; never supply a server operation identity. Omit unused optional fields; null is rejected. For task_update, omitted edit fields preserve their current values.
       properties:
         assignee_actor_id:
           format: uuid
@@ -13341,18 +13350,20 @@ components:
           type: string
         description:
           additionalProperties: true
+          description: Task rich-text document to write; for task_update, omission preserves the current description.
           type: object
         draft_id:
           format: uuid
           type: string
         draft_version:
-          description: Exact positive decimal int64 observation; never round through a JavaScript number.
+          description: Exact current immutable draft version for document_patch_apply. Exact positive decimal int64; never round through a JavaScript number.
           pattern: ^[1-9][0-9]*$
           type: string
         excluded:
+          description: Keep this operation in the reviewed proposal but skip its effects when true.
           type: boolean
         expected_revision:
-          description: Exact positive decimal int64 observation; never round through a JavaScript number.
+          description: Observed Task revision, or Document base revision for document_patch_apply. Exact positive decimal int64; never round through a JavaScript number.
           pattern: ^[1-9][0-9]*$
           type: string
         priority:
@@ -13371,7 +13382,7 @@ components:
           format: uuid
           type: string
         status_revision:
-          description: Exact positive decimal int64 observation; never round through a JavaScript number.
+          description: Observed revision of status_id; supply both fields together. Exact positive decimal int64; never round through a JavaScript number.
           pattern: ^[1-9][0-9]*$
           type: string
         task_id:
@@ -13393,16 +13404,20 @@ components:
       type: object
     ChangeOutcome:
       additionalProperties: false
+      description: Outcome for one operation in the exact reviewed proposal. Resolve uncertain apply results through the original operation before proposing a retry.
       properties:
         client_item_id:
+          description: Correlates this outcome with the caller item in the exact proposal version.
           maxLength: 128
           minLength: 1
           type: string
         operation_id:
+          description: Identity of the operation in the reviewed proposal; distinct from the apply group identity.
           format: uuid
           type: string
         receipt:
           $ref: "#/components/schemas/CanonicalChangeReceipt"
+          description: Committed effect receipt when available under current authorization. Omitted for unavailable outcomes; absence does not prove that an uncertain write failed.
         state:
           enum:
             - committed
@@ -13419,7 +13434,7 @@ components:
       type: object
     ChangeSet:
       additionalProperties: false
-      description: Immutable versioned proposal. Exact digest and initiating-human approval are required for compound changes, creates and Document applies. Approval expires after24 hours; proposal after30 days. Editing invalidates approval. Review URL identifies the same authorized HTTP resource; it grants no authority.
+      description: Immutable versioned proposal; creation does not apply its edits. Exact digest and initiating-human approval are required for compound changes, creates and Document applies. Approval expires after 24 hours; proposal after 30 days. Editing invalidates approval. Review URL identifies the same authorized HTTP resource; it grants no authority.
       properties:
         actor_id:
           format: uuid
@@ -13438,6 +13453,7 @@ components:
             - cancelled
           type: string
         approved_at:
+          description: Approval time when approved; omitted before approval.
           format: date-time
           type: string
         digest:
@@ -13455,6 +13471,7 @@ components:
           format: uuid
           type: string
         mode:
+          description: Sequential execution policy. atomic rolls back the group on failure; per_item retains committed successes and reports each item outcome.
           enum:
             - atomic
             - per_item
@@ -13468,6 +13485,7 @@ components:
           maxItems: 100
           type: array
         outcomes:
+          description: Per-operation outcomes when available; omitted before results are available.
           items:
             $ref: "#/components/schemas/ChangeOutcome"
           maxItems: 100
@@ -13482,6 +13500,7 @@ components:
         schema:
           type: string
         selection_id:
+          description: Task selection constraining the proposal targets and observed revisions, when supplied.
           format: uuid
           type: string
         state:
@@ -13507,15 +13526,18 @@ components:
       type: object
     ChangeSetCreateRequest:
       additionalProperties: false
+      description: Create an immutable proposal, or append a review version using paired id and expected_version. Resolve an uncertain command through its original receipt before submitting a new intent.
       properties:
         expected_version:
-          description: Exact positive decimal int64 observation; never round through a JavaScript number.
+          description: Exact current proposal version paired with id; stale versions conflict. Exact positive decimal int64 observation; never round through a JavaScript number.
           pattern: ^[1-9][0-9]*$
           type: string
         id:
+          description: Existing proposal identity for a new review version; supply with expected_version. Omit both fields for a new proposal.
           format: uuid
           type: string
         mode:
+          description: Sequential execution policy. atomic rolls back the group on failure; per_item retains committed successes and reports each item outcome.
           enum:
             - atomic
             - per_item
@@ -13531,6 +13553,7 @@ components:
           format: uuid
           type: string
         selection_id:
+          description: Optional Task selection; every proposed Task and expected_revision must match its captured targets. Omit for an explicit failed-item retry.
           format: uuid
           type: string
       required:
@@ -33583,7 +33606,7 @@ paths:
         - Tasks
   /api/v1/tasks/{task_id}/participants:
     get:
-      description: Complete factual creator/current/prior-assignee participants in stable Actor-ID order. Uses bounded indexed distinct-Actor seeks and indexed assignment facts, without total-history aggregation or counts. Each page rechecks current credential, membership and Project permissions before accepting a cursor or returning conditional 304. Only limit1-100 (default50) and one nonempty cursor up to4096 bytes are accepted. Encrypted opaque cursors bind the Task, caller, credential, current permissions and visibility, page size and order. Complete data/next_cursor responses fit262144 logical and encoded bytes; whole-row page fitting never truncates fields. Continue until next_cursor is null. Restart after invalidation.
+      description: "Returns one bounded window of factual Task participants: current assignee first, previous assignees by most-recent involvement, then the creator. Each Actor appears once; a creator who was also assigned keeps the corresponding assignment position. Commenting, following or reacting does not establish participation. Only limit is accepted: 1 to 100, default 50. There is no pagination; a full window can omit further participants. Current credentials, Workspace membership and Project permissions are checked before returning data or a conditional 304. Complete rows fit within 262144 response bytes; the window may contain fewer rows to fit that bound."
       operationId: listTaskParticipants
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -33595,13 +33618,6 @@ paths:
             maximum: 100
             minimum: 1
             type: integer
-        - in: query
-          name: cursor
-          required: false
-          schema:
-            maxLength: 4096
-            minLength: 1
-            type: string
         - description: Opaque validators or wildcard; current authority is checked before bodyless304.
           in: header
           name: If-None-Match
@@ -33622,12 +33638,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CanonicalTaskParticipantsPage"
-          description: Complete bounded page; short/empty pages may still continue.
+          description: One bounded involvement-ordered window; no continuation cursor or implicit total.
           headers:
-            Assign-Next-Cursor:
-              schema:
-                maxLength: 4096
-                type: string
             Cache-Control:
               schema:
                 const: private, no-store
@@ -33651,10 +33663,6 @@ paths:
         "304":
           description: Current authorized representation retained; no body.
           headers:
-            Assign-Next-Cursor:
-              description: Opaque continuation when another page remains, including on an authorized 304.
-              schema:
-                type: string
             Cache-Control:
               schema:
                 const: private, no-store

@@ -2,7 +2,7 @@
   "schema": "assign.docs-public-export.v1",
   "state": "approved-authoring",
   "contract_version": "1.0.0-rc.10",
-  "document_sha256": "6fbdc4036ea60edd2ee8e648f8bbf87fa8b2b2c4cd3df5606468ec1fde49f72b",
+  "document_sha256": "1f59e13e28b53591225d4f157bd763a0c8af221718a5e37cd64dec6dad07b8ac",
   "operations": [
     {
       "operationId": "addCommentReaction",
