@@ -94,10 +94,9 @@ Tasks use these defaults unless the request says otherwise.
 Use the declared read's opaque item validator and an `Idempotency-Key` for a conditional update.
 Keep its credential and encoding unchanged; a numeric revision is not a valid `If-Match` value.
 
-`GET` and `PATCH /api/v1/workspaces/{workspace_id}/knowledge-settings` control
-[Workspace Knowledge](./knowledge): the included Projects, sources and whether it's enabled. Enabling
-needs the `workspace_knowledge` entitlement and at least one Project. The response reports setup
-progress and readiness.
+Configure [Workspace Knowledge](./knowledge) in Assign, choosing the included Projects and sources.
+Enabling it needs an active Knowledge entitlement and at least one included Project. Check its
+setup progress and readiness in the application.
 
 ### Features <Badge type="warning" text="Awaiting deployment" />
 

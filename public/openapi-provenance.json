@@ -2,7 +2,7 @@
   "schema": "assign.docs-public-export.v1",
   "state": "approved-authoring",
   "contract_version": "1.0.0-rc.10",
-  "document_sha256": "1f59e13e28b53591225d4f157bd763a0c8af221718a5e37cd64dec6dad07b8ac",
+  "document_sha256": "7c3051cecbea54b0176a1531ffaaa33cb35c0e1146313f663fd70b5872a2ef8d",
   "operations": [
     {
       "operationId": "addCommentReaction",
@@ -227,12 +227,6 @@
       "availability": "upcoming"
     },
     {
-      "operationId": "createEvidenceCollection",
-      "method": "POST",
-      "path": "/api/v1/workspaces/{workspace_id}/evidence-collections",
-      "availability": "upcoming"
-    },
-    {
       "operationId": "createIntegrationSubscription",
       "method": "POST",
       "path": "/api/v1/integration-bindings/{binding_id}/subscriptions",
@@ -341,12 +335,6 @@
       "availability": "upcoming"
     },
     {
-      "operationId": "createWorkspaceKnowledgeAnswer",
-      "method": "POST",
-      "path": "/api/v1/workspaces/{workspace_id}/knowledge/answers",
-      "availability": "upcoming"
-    },
-    {
       "operationId": "createWorkspaceLabelDefinition",
       "method": "POST",
       "path": "/api/v1/workspaces/{workspace_id}/label-definitions",
@@ -437,12 +425,6 @@
       "availability": "upcoming"
     },
     {
-      "operationId": "excludeEvidenceCollection",
-      "method": "POST",
-      "path": "/api/v1/workspaces/{workspace_id}/evidence-collections/exclusions",
-      "availability": "upcoming"
-    },
-    {
       "operationId": "followTask",
       "method": "PUT",
       "path": "/api/v1/tasks/{task_id}/subscription",
@@ -506,12 +488,6 @@
       "operationId": "getDocumentRevision",
       "method": "GET",
       "path": "/api/v1/documents/{document_id}/revisions/{revision}",
-      "availability": "upcoming"
-    },
-    {
-      "operationId": "getEvidenceCollection",
-      "method": "GET",
-      "path": "/api/v1/workspaces/{workspace_id}/evidence-collections/{id}",
       "availability": "upcoming"
     },
     {
@@ -746,18 +722,6 @@
       "operationId": "getWorkspaceIconContent",
       "method": "GET",
       "path": "/api/v1/workspaces/{workspace_id}/icon/content",
-      "availability": "upcoming"
-    },
-    {
-      "operationId": "getWorkspaceKnowledgeAnswer",
-      "method": "GET",
-      "path": "/api/v1/workspaces/{workspace_id}/knowledge/answers/{answer_id}",
-      "availability": "upcoming"
-    },
-    {
-      "operationId": "getWorkspaceKnowledgeSettings",
-      "method": "GET",
-      "path": "/api/v1/workspaces/{workspace_id}/knowledge-settings",
       "availability": "upcoming"
     },
     {
@@ -1403,12 +1367,6 @@
       "availability": "upcoming"
     },
     {
-      "operationId": "searchWorkspaceKnowledge",
-      "method": "GET",
-      "path": "/api/v1/workspaces/{workspace_id}/knowledge/search",
-      "availability": "upcoming"
-    },
-    {
       "operationId": "setCurrentTask",
       "method": "PUT",
       "path": "/api/v1/me/current-work",
@@ -1622,12 +1580,6 @@
       "operationId": "updateWorkspaceFeature",
       "method": "PATCH",
       "path": "/api/v1/workspaces/{workspace_id}/features/{feature}",
-      "availability": "upcoming"
-    },
-    {
-      "operationId": "updateWorkspaceKnowledgeSettings",
-      "method": "PATCH",
-      "path": "/api/v1/workspaces/{workspace_id}/knowledge-settings",
       "availability": "upcoming"
     },
     {

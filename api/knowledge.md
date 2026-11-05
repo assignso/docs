@@ -1,5 +1,5 @@
 ---
-description: Search Workspace Knowledge for evidence across Tasks, Documents, integrations and code, and get short cited answers.
+description: Use Workspace Knowledge in Assign and connect supported MCP tools for bounded evidence and cited answers.
 ---
 
 # Workspace Knowledge
@@ -21,71 +21,30 @@ enabled, Comments. A rebuild or outage can delay new evidence. Access is checked
 moved, deleted or excluded content can disappear before replacement evidence is ready. Turning off a
 source option removes its derived content but not the original resources.
 
-These operations need current Workspace and Project access and an active Knowledge entitlement
-and policy. Use [Authentication](./authentication) for public integration credentials. Responses
-are private and never include scores, prompts, model details or traces.
-Upcoming [live updates](./realtime) refresh the Knowledge views you have open.
-Results can still be stale while background indexing catches up.
+Knowledge views need current Workspace and Project access and an active Knowledge entitlement
+and policy. Upcoming [live updates](./realtime) refresh the views you have open. Results can still
+be stale while background indexing catches up.
 
 ## Search
 
-```http
-GET /api/v1/workspaces/018f0d5a-ef50-7fa3-8c11-2ddc6b30dc11/knowledge/search?q=launch%20readiness&limit=20
-```
-
-| Parameter | Rules |
-| --- | --- |
-| `q` | Required, 2–200 characters after trimming. |
-| `project_id` | Limits results to one authorized, included Project plus permitted shared material. |
-| `limit` | Default and maximum 20. |
-
-The response state is `ready`, `empty` or `unavailable`. When Knowledge is disabled, unentitled or not
-ready, you get `unavailable` so ordinary work carries on. Unexpected failures can return
-`503 knowledge_unavailable`.
-
-Each result has a kind, title, bounded excerpt, explanation, provenance (`authoritative`, `extracted`
-or `inferred`), source time and, where available, navigation metadata. Code results can include a
-repository, path and symbol. If the code index is unavailable, other results are marked incomplete.
-Source citations are opaque identities, not download URLs. Treat `stale` and `truncated` as warnings,
-and never conclude that something doesn't exist from a bounded result.
-
-Passage excerpts quote source content. When a result includes separate retrieval context, use its
-source, Project and section labels to locate the work; those labels do not add requirements or facts
-to the quoted passage. Search can remain available while background evidence is being rebuilt.
+Use Knowledge search in Assign to find evidence across your included sources. Each result carries
+source context and a bounded excerpt. Access changes can remove a result. An empty or incomplete
+result does not establish that the source does not exist. Use ordinary [Search](./search) to find
+canonical resources.
 
 <a id="answers"></a>
 
 ## Answers <Badge type="warning" text="Awaiting deployment" />
 
-Submit an answer only after an explicit request, never per keystroke. The upcoming route is
-`POST /api/v1/workspaces/{workspace_id}/knowledge/answers`, with a typed question and context and
-an `Idempotency-Key`. A `202` response accepts the work; it contains a compact Operation receipt,
-not the answer. Follow its `Location` for status and honor `Retry-After`. Status reads do not
-start or repeat answer generation.
-
-Keep the original key and exact body after a timeout or lost response. Recover that request;
-do not create another key to retry an unknown outcome. Cancellation is best effort and cannot
-undo usage or committed work. An outcome requiring reconciliation must not be resubmitted
-automatically. See [writes and retries](./writes).
-
-After completion, use the Operation's answer result reference to read
-`GET /api/v1/workspaces/{workspace_id}/knowledge/answers/{answer_id}`.
-Result reads separately check the original caller's current access and every original evidence
-source. If a source is no longer authorized, removing its citation does not make the stored
-wording available. Pending or unknown work returns `409`; terminal result recovery lasts seven
-days. Answers contain at most five sources and 4,000 characters. Their `supported`, `partial`,
-`conflicting` and `none` states make uncertainty explicit. Search still works when Knowledge is
-down.
+Ask a question in Assign or use the supported MCP tools below. Answers include citations and
+state when evidence is partial, conflicting or missing. Check the cited sources before acting.
 
 ## Related Task context
 
-`GET /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context` returns up to five related
-items for a Task's **Suggestions** tab, with a `confidence` of `high`, `medium` or `low`. It never
-blocks the Task. When Knowledge is off or not ready, it's empty, and `unavailable` means a genuine
-retrieval failure. Results are direct, permission-filtered neighbors such as the Project, parent,
-dependencies, relations, Comments and explicit references. A shared title, assignee, status or
-Project, or similarity, isn't treated as proof of a relationship. Users confirm or discard results
-with the feedback operation in [Tasks](./tasks#related-context-and-suggestions-awaiting-deployment).
+Task [Suggestions](./tasks#related-context-and-suggestions-awaiting-deployment) offer bounded,
+permission-filtered evidence. Use the Task operations in that guide to read Suggestions and submit
+an explicit confirmation or discard. Code references identify a repository, revision and path;
+they are read-only evidence and cannot be confirmed as a Task relation.
 
 ## MCP
 

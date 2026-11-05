@@ -38,8 +38,9 @@ checks on every call. Follow the [API conventions](./conventions).
   it, idempotently, restoring the Workspace default. Only Workspace-scope Task labels can be
   overridden.
 - Project override lists accept `limit` (1–100, default 50) and `cursor`. Follow
-  `next_cursor` while `has_more` is true; start again after a catalog change
-  when you need a complete current view. <Badge type="warning" text="Awaiting deployment" />
+  each non-null `next_cursor` until it is `null`, including after a short or empty
+  page. If a catalog change invalidates the cursor, discard the partial traversal
+  and start at page one. <Badge type="warning" text="Awaiting deployment" />
 
 ## Read one label <Badge type="warning" text="Awaiting deployment" />
 

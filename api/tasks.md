@@ -31,6 +31,13 @@ archived or trashed Task. A generated summary is a convenience for scanning, not
 the description. The [Task read reference](./reference/operations/gettask) defines the complete
 item and canonical representations.
 
+Project Task counts cover the whole authorized Project, independently of the returned page,
+filters and recent-resolution cutoff. `active` counts unresolved, unarchived Tasks; `completed`
+and `cancelled` count their respective resolutions while unarchived. `archived` counts archived
+Tasks with any resolution. The buckets do not overlap, and all exclude trashed and purged Tasks.
+Keep these exact decimal strings intact. Home's non-archived Task total includes `active`,
+`completed` and `cancelled`; progress uses the lifecycle's inclusion and completion policies.
+
 ## Read
 
 [Read a Task](./reference/operations/gettask) by its immutable ID. The default `detail` view

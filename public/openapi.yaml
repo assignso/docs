@@ -3962,263 +3962,6 @@ components:
         - data
         - next_cursor
       type: object
-    CanonicalEvidenceCapture:
-      additionalProperties: false
-      description: Exact unique quote against an observed current source revision. Core persists coordinates and fingerprints, never the quote. Stale, missing, ambiguous or denied sources fail.
-      properties:
-        entity_id:
-          $ref: "#/components/schemas/Identifier"
-        entity_type:
-          enum:
-            - task
-            - document
-            - project
-            - comment
-          type: string
-        field:
-          enum:
-            - title
-            - name
-            - description
-            - content
-            - body
-          type: string
-        quote:
-          maxLength: 1800
-          minLength: 1
-          type: string
-        revision:
-          $ref: "#/components/schemas/ResourceRevision"
-      required:
-        - entity_type
-        - entity_id
-        - revision
-        - field
-        - quote
-      type: object
-    CanonicalEvidenceCollectionItems:
-      additionalProperties: true
-      description: Membership-private collection with at most 32 references and 100 active versions per member. Expires 30 days after creation; exclusion edits preserve expiry. Sources and claims are not exhaustive. No copied text, titles or summaries are stored.
-      properties:
-        audience:
-          enum:
-            - private
-          type: string
-        coverage:
-          enum:
-            - partial
-          type: string
-        expires_at:
-          format: date-time
-          type: string
-        id:
-          format: uuid
-          type: string
-        items:
-          additionalProperties: true
-          description: Continue until next_cursor is null, including after a short or empty page. A page does not fetch all results, calculate an implicit total or guarantee a snapshot. Current authorization and item and byte bounds apply to every page.
-          properties:
-            data:
-              items:
-                $ref: "#/components/schemas/CanonicalHydratedEvidence"
-              maxItems: 20
-              type: array
-            has_more: false
-            items: false
-            next_cursor:
-              oneOf:
-                - $ref: "#/components/schemas/Cursor"
-                - type: "null"
-          required:
-            - data
-            - next_cursor
-          type: object
-        items_url:
-          format: uri-reference
-          type: string
-        latest_version:
-          $ref: "#/components/schemas/ResourceRevision"
-        observed_at:
-          format: date-time
-          type: string
-        operation_id:
-          format: uuid
-          type: string
-        schema:
-          type: string
-        source_count:
-          maximum: 32
-          minimum: 1
-          type: integer
-        sources: false
-        version:
-          description: Exact decimal integer; never deserialize through floating point.
-          pattern: ^[1-9][0-9]*$
-          type: string
-        view:
-          const: items
-          type: string
-      required:
-        - schema
-        - id
-        - version
-        - audience
-        - coverage
-        - observed_at
-        - expires_at
-        - source_count
-        - items_url
-        - view
-        - items
-        - latest_version
-      type: object
-    CanonicalEvidenceCollectionSummary:
-      additionalProperties: true
-      description: Membership-private collection with at most 32 references and 100 active versions per member. Expires 30 days after creation; exclusion edits preserve expiry. Sources and claims are not exhaustive. No copied text, titles or summaries are stored.
-      properties:
-        audience:
-          enum:
-            - private
-          type: string
-        coverage:
-          enum:
-            - partial
-          type: string
-        expires_at:
-          format: date-time
-          type: string
-        id:
-          format: uuid
-          type: string
-        items: false
-        items_url:
-          format: uri-reference
-          type: string
-        observed_at:
-          format: date-time
-          type: string
-        operation_id:
-          format: uuid
-          type: string
-        schema:
-          type: string
-        source_count:
-          maximum: 32
-          minimum: 1
-          type: integer
-        sources: false
-        version:
-          description: Exact decimal integer; never deserialize through floating point.
-          pattern: ^[1-9][0-9]*$
-          type: string
-        view:
-          const: summary
-          type: string
-      required:
-        - schema
-        - id
-        - version
-        - audience
-        - coverage
-        - observed_at
-        - expires_at
-        - source_count
-        - items_url
-        - view
-      type: object
-    CanonicalEvidenceCollectionView:
-      discriminator:
-        mapping:
-          items: "#/components/schemas/CanonicalEvidenceCollectionItems"
-          summary: "#/components/schemas/CanonicalEvidenceCollectionSummary"
-        propertyName: view
-      oneOf:
-        - $ref: "#/components/schemas/CanonicalEvidenceCollectionSummary"
-        - $ref: "#/components/schemas/CanonicalEvidenceCollectionItems"
-    CanonicalEvidenceCommandResult:
-      allOf:
-        - $ref: "#/components/schemas/CanonicalEvidenceCollectionSummary"
-        - required:
-            - operation_id
-          type: object
-    CanonicalEvidenceCreate:
-      additionalProperties: false
-      properties:
-        sources:
-          items:
-            $ref: "#/components/schemas/CanonicalEvidenceCapture"
-          maxItems: 32
-          minItems: 1
-          type: array
-      required:
-        - sources
-      type: object
-    CanonicalEvidenceExclude:
-      additionalProperties: false
-      description: Complete exclusion-set replacement against this exact latest immutable version. Empty includes every original reference. Duplicate/unknown references fail. Original IDs and expiry are preserved.
-      properties:
-        excluded_ids:
-          items:
-            $ref: "#/components/schemas/Identifier"
-          maxItems: 32
-          minItems: 0
-          type: array
-          uniqueItems: true
-        expected_version:
-          $ref: "#/components/schemas/ResourceRevision"
-        id:
-          $ref: "#/components/schemas/Identifier"
-      required:
-        - id
-        - expected_version
-        - excluded_ids
-      type: object
-    CanonicalEvidenceReference:
-      additionalProperties: true
-      description: Immutable reference. Start inclusive/end exclusive count Unicode scalar values in server-extracted plain text. Fingerprint binds complete selected field and source metadata; do not fabricate coordinates or treat them as current content.
-      properties:
-        end:
-          minimum: 1
-          type: integer
-        entity_id:
-          format: uuid
-          type: string
-        entity_type:
-          type: string
-        excluded:
-          type: boolean
-        field:
-          type: string
-        fingerprint:
-          pattern: ^[a-f0-9]{64}$
-          type: string
-        id:
-          format: uuid
-          type: string
-        project_id:
-          format: uuid
-          type:
-            - string
-            - "null"
-        revision:
-          description: Exact decimal integer; never deserialize through floating point.
-          pattern: ^[1-9][0-9]*$
-          type: string
-        start:
-          minimum: 0
-          type: integer
-      required:
-        - id
-        - entity_type
-        - entity_id
-        - revision
-        - field
-        - project_id
-        - start
-        - end
-        - fingerprint
-        - excluded
-      type: object
     CanonicalGeneratedResourceSummary:
       additionalProperties: true
       description: One- or two-sentence derived display projection for scanning resource collections and detail pages. Use it for display; it supplies neither authoritative evidence nor a write precondition.
@@ -4237,48 +3980,6 @@ components:
         - text
         - source_revision
         - generated_at
-      type: object
-    CanonicalHydratedEvidence:
-      additionalProperties: true
-      description: Only current included items in the latest collection version have a passage. Older collection versions return superseded after an exclusion edit. Changed content is withheld instead of substituting current text at old coordinates. Only current included references in the latest version carry passages; all other states withhold copied content.
-      oneOf:
-        - properties:
-            reference:
-              properties:
-                excluded:
-                  const: false
-            state:
-              const: current
-          required:
-            - passage
-        - not:
-            properties:
-              passage: {}
-            required:
-              - passage
-          properties:
-            state:
-              enum:
-                - changed
-                - unavailable
-                - excluded
-                - superseded
-      properties:
-        passage:
-          $ref: "#/components/schemas/EvidencePassage"
-        reference:
-          $ref: "#/components/schemas/CanonicalEvidenceReference"
-        state:
-          enum:
-            - current
-            - changed
-            - unavailable
-            - excluded
-            - superseded
-          type: string
-      required:
-        - reference
-        - state
       type: object
     CanonicalHydratedTaskTarget:
       description: Original Task target with its current access-checked state. current means the revision and Project still match the observation; changed means one differs. unavailable omits preview and current_revision without distinguishing denied from missing targets.
@@ -8720,21 +8421,22 @@ components:
       type: object
     CanonicalProjectTaskCounts:
       additionalProperties: true
+      description: "Project-wide factual Task counts, independent of page size, cursor, filters and recent-resolution cutoff. The four buckets are disjoint; all exclude trashed and purged Tasks. These are not progress totals: active + completed + cancelled is the non-archived lifecycle total, while progress uses the lifecycle inclusion and completion policies."
       properties:
         active:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: Unresolved, non-archived Tasks in this Project. Excludes completed and cancelled Tasks. Exact decimal integer; never deserialize through floating point.
           pattern: ^(0|[1-9][0-9]*)$
           type: string
         archived:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: Archived Tasks in this Project, regardless of resolution. Exact decimal integer; never deserialize through floating point.
           pattern: ^(0|[1-9][0-9]*)$
           type: string
         cancelled:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: Tasks in this Project with cancelled resolution that are not archived. Exact decimal integer; never deserialize through floating point.
           pattern: ^(0|[1-9][0-9]*)$
           type: string
         completed:
-          description: Exact decimal integer; never deserialize through floating point.
+          description: Tasks in this Project with completed resolution that are not archived. Exact decimal integer; never deserialize through floating point.
           pattern: ^(0|[1-9][0-9]*)$
           type: string
       required:
@@ -13763,10 +13465,13 @@ components:
       type: string
     CustomAgentDefinition:
       additionalProperties: false
+      description: Versioned Studio configuration. Use the profile projection for viewer-safe Agent details.
       properties:
         actor_id:
           $ref: "#/components/schemas/Identifier"
+          description: Automated Actor identity used to attribute this Agent's work.
         approval_policy:
+          description: manage_actions requires approval for Manage actions; every_action requires approval for every action.
           enum:
             - manage_actions
             - every_action
@@ -13790,6 +13495,7 @@ components:
           uniqueItems: true
         definition_id:
           $ref: "#/components/schemas/Identifier"
+          description: Stable identity of the custom Agent definition across configuration revisions.
         description:
           maxLength: 500
           minLength: 1
@@ -13821,6 +13527,7 @@ components:
           minLength: 1
           type: string
         revision:
+          description: Configuration revision pinned by work using this definition. Use the operation's documented conditional headers for HTTP concurrency.
           format: int64
           minimum: 1
           type: integer
@@ -13864,6 +13571,7 @@ components:
           pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]{1,9})?Z$
           type: string
         version_digest:
+          description: Digest identifying the saved configuration snapshot; treat it as opaque.
           pattern: ^sha256:[0-9a-f]{64}$
           type: string
         visibility:
@@ -13889,9 +13597,11 @@ components:
       type: object
     CustomAgentDefinitionInput:
       additionalProperties: false
+      description: Customer-authored Studio configuration. Bindings and delegated Agents remain subject to current Workspace permissions.
       properties:
         approval_policy:
           default: manage_actions
+          description: manage_actions requires approval for Manage actions; every_action requires approval for every action.
           enum:
             - manage_actions
             - every_action
@@ -13914,6 +13624,7 @@ components:
           minLength: 1
           type: string
         instructions:
+          description: Customer-authored instructions for this Agent. These do not replace Assign policy or grant additional permissions.
           maxLength: 8000
           minLength: 1
           type: string
@@ -13996,14 +13707,17 @@ components:
       type: object
     CustomAgentProfile:
       additionalProperties: false
+      description: Viewer-safe Agent profile. Activity facts use a bounded recent request window filtered by current viewer access; omitted facts do not establish that the Agent has never run.
       properties:
         actor_id:
           $ref: "#/components/schemas/Identifier"
         approval_boundary:
+          description: Readable summary of the configured action approval policy.
           maxLength: 200
           minLength: 1
           type: string
         capabilities:
+          description: Configured capability labels. Each invocation still requires current authorization.
           items:
             maxLength: 200
             type: string
@@ -14022,6 +13736,7 @@ components:
           minLength: 1
           type: string
         knowledge_categories:
+          description: Distinct resource types from the Agent's Knowledge bindings. Source names and content are excluded.
           items:
             maxLength: 80
             type: string
@@ -14029,15 +13744,20 @@ components:
           type: array
         last_finished_at:
           $ref: "#/components/schemas/Timestamp"
+          description: Most recent visible request finish time, including unsuccessful outcomes. Omitted when none is available.
         last_started_at:
           $ref: "#/components/schemas/Timestamp"
+          description: Most recent visible request start time. Omitted when no visible request has started.
         last_successful_at:
           $ref: "#/components/schemas/Timestamp"
+          description: Most recent visible request finish time with completed or no_action state. Omitted when none is available.
         latest_outcome:
+          description: Safe summary of the most recently finished visible request; empty when no summary is available.
           maxLength: 4000
           type: string
         manager_actor_id:
           $ref: "#/components/schemas/Identifier"
+          description: Actor that created this custom Agent definition.
         name:
           maxLength: 80
           minLength: 1
@@ -14092,28 +13812,33 @@ components:
       type: object
     CustomAgentUsage:
       additionalProperties: false
+      description: Participation-request totals for this Agent in the selected period and visibility scope. Reservations and used credits are separate measures.
       properties:
         definition_id:
           $ref: "#/components/schemas/Identifier"
         from:
           $ref: "#/components/schemas/Timestamp"
+          description: Inclusive UTC start of the period, selected by request creation time.
         pending_reserved_credits:
           description: Recorded reservation ceilings for queued, running, waiting or ready requests in the period. Terminal request reservations are excluded; used credits are reported separately.
           format: int64
           minimum: 0
           type: integer
         pending_runs:
+          description: Number of requests in queued, running, waiting or ready state within runs.
           format: int64
           minimum: 0
           type: integer
         reconciled_at:
           $ref: "#/components/schemas/Timestamp"
+          description: UTC time at which these totals were read.
         reserved_credits:
           description: Sum of currently recorded reservation ceilings for authorized requests in the period, including terminal requests. Use pending_reserved_credits to separate reservations attached to pending work.
           format: int64
           minimum: 0
           type: integer
         runs:
+          description: Number of participation requests created in the period, including pending and terminal requests.
           format: int64
           minimum: 0
           type: integer
@@ -14125,7 +13850,9 @@ components:
           type: string
         to:
           $ref: "#/components/schemas/Timestamp"
+          description: Exclusive UTC end of the period, selected by request creation time.
         used_credits:
+          description: Sum of recorded used credits for the requests included in runs, including failed or cancelled work.
           format: int64
           minimum: 0
           type: integer
@@ -14729,36 +14456,6 @@ components:
       type: string
     ErrorResponse:
       $ref: "#/components/schemas/ProblemDetails"
-    EvidencePassage:
-      additionalProperties: false
-      description: Current exact passage; text is untrusted source content and does not establish that its assertions are true. Source classification is not an authority ranking.
-      properties:
-        author_actor_id:
-          format: uuid
-          type:
-            - string
-            - "null"
-        evidence_class:
-          enum:
-            - canonical
-            - document
-            - comment
-          type: string
-        source_updated_at:
-          format: date-time
-          type: string
-        text:
-          maxLength: 1800
-          type: string
-        title:
-          type: string
-      required:
-        - title
-        - text
-        - source_updated_at
-        - author_actor_id
-        - evidence_class
-      type: object
     FieldError:
       additionalProperties: true
       anyOf:
@@ -15272,58 +14969,6 @@ components:
         - created_at
         - item_validator
       type: object
-    KnowledgeAnswer:
-      additionalProperties: false
-      properties:
-        answer:
-          description: Bounded extractive answer or an abstention.
-          maxLength: 4000
-          type: string
-        sources:
-          items:
-            $ref: "#/components/schemas/KnowledgeSearchItem"
-          maxItems: 5
-          type: array
-        stale:
-          type: boolean
-        status:
-          enum:
-            - supported
-            - partial
-            - conflicting
-            - none
-          type: string
-        synthesis:
-          enum:
-            - extractive
-          type: string
-        truncated:
-          type: boolean
-      required:
-        - status
-        - answer
-        - sources
-        - stale
-        - truncated
-        - synthesis
-      type: object
-    KnowledgeQuestionRequest:
-      additionalProperties: false
-      properties:
-        context:
-          additionalProperties: false
-          properties:
-            project_id:
-              $ref: "#/components/schemas/Identifier"
-              description: "Optional strict evidence scope: one currently authorized included Project plus permitted shared material; this input never grants authority."
-          type: object
-        question:
-          maxLength: 500
-          minLength: 2
-          type: string
-      required:
-        - question
-      type: object
     KnowledgeRepository:
       additionalProperties: false
       properties:
@@ -15689,247 +15334,6 @@ components:
         - items
         - next_cursor
         - truncated
-      type: object
-    KnowledgeSearchItem:
-      additionalProperties: false
-      properties:
-        entity_id:
-          oneOf:
-            - $ref: "#/components/schemas/Identifier"
-            - type: "null"
-        excerpt:
-          maxLength: 4000
-          type: string
-        identifier:
-          description: Current Core-owned canonical resource identifier when resolvable.
-          oneOf:
-            - maxLength: 500
-              type: string
-            - type: "null"
-        kind:
-          maxLength: 80
-          minLength: 1
-          type: string
-        project_id:
-          oneOf:
-            - $ref: "#/components/schemas/Identifier"
-            - type: "null"
-        project_path:
-          oneOf:
-            - maxLength: 100
-              type: string
-            - type: "null"
-        provenance:
-          enum:
-            - authoritative
-            - extracted
-            - inferred
-          type: string
-        repository_id:
-          oneOf:
-            - $ref: "#/components/schemas/Identifier"
-            - type: "null"
-        repository_path:
-          oneOf:
-            - maxLength: 4096
-              type: string
-            - type: "null"
-        source_time:
-          format: date-time
-          type: string
-        symbol:
-          oneOf:
-            - maxLength: 1000
-              type: string
-            - type: "null"
-        task_id:
-          description: Parent Task for a Comment result when resolvable.
-          oneOf:
-            - $ref: "#/components/schemas/Identifier"
-            - type: "null"
-        title:
-          maxLength: 1000
-          type: string
-        why:
-          maxLength: 2000
-          type: string
-      required:
-        - kind
-        - entity_id
-        - project_id
-        - title
-        - excerpt
-        - why
-        - provenance
-        - source_time
-        - identifier
-        - project_path
-        - task_id
-        - repository_id
-        - repository_path
-        - symbol
-      type: object
-    KnowledgeSearchProjection:
-      additionalProperties: false
-      properties:
-        observed_at:
-          oneOf:
-            - format: date-time
-              type: string
-            - type: "null"
-        results:
-          items:
-            $ref: "#/components/schemas/KnowledgeSearchItem"
-          maxItems: 20
-          type: array
-        stale:
-          type: boolean
-        state:
-          enum:
-            - ready
-            - empty
-            - unavailable
-          type: string
-        truncated:
-          type: boolean
-      required:
-        - state
-        - results
-        - stale
-        - observed_at
-        - truncated
-      type: object
-    KnowledgeSettings:
-      additionalProperties: false
-      properties:
-        applied_revision:
-          oneOf:
-            - $ref: "#/components/schemas/ResourceRevision"
-            - type: "null"
-        available:
-          description: True only when the Workspace has the active workspace_knowledge entitlement.
-          type: boolean
-        backlog:
-          $ref: "#/components/schemas/DecimalInteger"
-        enabled:
-          description: Desired enablement defaults to the active paid-plan Knowledge entitlement unless explicitly changed. Empty included_projects keeps indexing and retrieval inactive.
-          type: boolean
-        entity_counts:
-          additionalProperties:
-            minimum: 0
-            type: integer
-          type: object
-        failure_code:
-          oneOf:
-            - maxLength: 80
-              type: string
-            - type: "null"
-        included_projects:
-          items:
-            $ref: "#/components/schemas/Identifier"
-          maxItems: 100
-          type: array
-          uniqueItems: true
-        index_attachments:
-          type: boolean
-        index_audio_video:
-          type: boolean
-        index_comments:
-          type: boolean
-        index_external_urls:
-          type: boolean
-        index_repositories:
-          type: boolean
-        index_task_descriptions:
-          type: boolean
-        indexed_through:
-          $ref: "#/components/schemas/DecimalInteger"
-        last_success_at:
-          oneOf:
-            - format: date-time
-              type: string
-            - type: "null"
-        revision:
-          $ref: "#/components/schemas/ResourceRevision"
-        session_learning:
-          enum:
-            - off
-            - ask
-          type: string
-        source_sequence:
-          $ref: "#/components/schemas/DecimalInteger"
-        status:
-          enum:
-            - off
-            - provisioning
-            - on
-            - degraded
-            - disabling
-          type: string
-        status_observed_at:
-          oneOf:
-            - format: date-time
-              type: string
-            - type: "null"
-        updated_at:
-          format: date-time
-          type: string
-        workspace_id:
-          $ref: "#/components/schemas/Identifier"
-      required:
-        - workspace_id
-        - enabled
-        - available
-        - status
-        - index_task_descriptions
-        - index_comments
-        - index_attachments
-        - index_external_urls
-        - index_repositories
-        - index_audio_video
-        - session_learning
-        - included_projects
-        - applied_revision
-        - status_observed_at
-        - indexed_through
-        - source_sequence
-        - backlog
-        - last_success_at
-        - failure_code
-        - entity_counts
-        - revision
-        - updated_at
-      type: object
-    KnowledgeSettingsPatch:
-      additionalProperties: false
-      minProperties: 1
-      properties:
-        enabled:
-          description: Saves an explicit enablement choice that survives billing changes. Enabling requires the active Knowledge entitlement and may precede Project selection.
-          type: boolean
-        included_projects:
-          items:
-            $ref: "#/components/schemas/Identifier"
-          maxItems: 100
-          type: array
-          uniqueItems: true
-        index_attachments:
-          type: boolean
-        index_audio_video:
-          type: boolean
-        index_comments:
-          type: boolean
-        index_external_urls:
-          type: boolean
-        index_repositories:
-          type: boolean
-        index_task_descriptions:
-          type: boolean
-        session_learning:
-          enum:
-            - off
-            - ask
-          type: string
       type: object
     LabelDefinition:
       additionalProperties: false
@@ -41751,283 +41155,6 @@ paths:
       summary: Create a Document
       tags:
         - Documents
-  /api/v1/workspaces/{workspace_id}/evidence-collections:
-    post:
-      description: A partial evidence investigation restricted to the current person and their Workspace and Project access. Personal and delegated-user credentials require knowledge:write or retained assign:write and current WorkWrite permission; service accounts cannot act as the member. Browser cookies do not authenticate this product route. Requires Idempotency-Key and identity-coded declared JSON at most 262144 bytes; query parameters and HTTP condition headers are unsupported. Responses are private/no-store with identity or gzip. The original safe result and change commit together, retaining the original command, intent, key and verified grant. Retrying the original exact request/key returns its original summary before any latest-version condition, after current source/target authority checks. An unknown original authorization must not be treated as a new command. Decimal text preserves all source revisions and collection versions. Summary omits source references; items_url selects the canonical reader. No quote is persisted, no provider call is made and no shared publication is authorized. Capture 1–32 distinct unambiguous quotes of at most 1800 Unicode scalars in current Task/Document/Project/Comment fields, allocate fresh immutable identity/version1 and preserve thirty-day expiry. Enforce original 100-active-version/member and storage bounds.
-      operationId: createEvidenceCollection
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - $ref: "#/components/parameters/IdempotencyKey"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CanonicalEvidenceCreate"
-        required: true
-      responses:
-        "201":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CanonicalEvidenceCommandResult"
-          description: Capture exact private evidence passages. Original receipt recovery remains distinct from current state.
-          headers:
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            Location:
-              description: Exact canonical summary resource/version.
-              schema:
-                format: uri-reference
-                type: string
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "402":
-          $ref: "#/components/responses/ProductProblem"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "406":
-          $ref: "#/components/responses/ProductProblem"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "413":
-          $ref: "#/components/responses/ProductProblem"
-        "415":
-          $ref: "#/components/responses/ProductProblem"
-        "422":
-          $ref: "#/components/responses/ProductProblem"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "503":
-          $ref: "#/components/responses/MaintenanceUnavailable"
-        default:
-          $ref: "#/components/responses/ProductProblem"
-      security:
-        - bearerToken: []
-      summary: Capture exact private evidence passages
-      tags:
-        - Discuss
-  /api/v1/workspaces/{workspace_id}/evidence-collections/exclusions:
-    post:
-      description: A partial evidence investigation restricted to the current person and their Workspace and Project access. Personal and delegated-user credentials require knowledge:write or retained assign:write and current WorkWrite permission; service accounts cannot act as the member. Browser cookies do not authenticate this product route. Requires Idempotency-Key and identity-coded declared JSON at most 262144 bytes; query parameters and HTTP condition headers are unsupported. Responses are private/no-store with identity or gzip. The original safe result and change commit together, retaining the original command, intent, key and verified grant. Retrying the original exact request/key returns its original summary before any latest-version condition, after current source/target authority checks. An unknown original authorization must not be treated as a new command. Decimal text preserves all source revisions and collection versions. Summary omits source references; items_url selects the canonical reader. No quote is persisted, no provider call is made and no shared publication is authorized. Body id plus expected_version is the named immutable domain-command observation. Lock the owner, compare latest version, replace the complete exclusion set, reject duplicate/unknown reference IDs and append a new immutable version preserving original source identities and expiry. Older items become superseded without passages.
-      operationId: excludeEvidenceCollection
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - $ref: "#/components/parameters/IdempotencyKey"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CanonicalEvidenceExclude"
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CanonicalEvidenceCommandResult"
-          description: Replace an exact evidence investigation exclusion set. Original receipt recovery remains distinct from current state.
-          headers:
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            Location:
-              description: Exact canonical summary resource/version.
-              schema:
-                format: uri-reference
-                type: string
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "402":
-          $ref: "#/components/responses/ProductProblem"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "406":
-          $ref: "#/components/responses/ProductProblem"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "413":
-          $ref: "#/components/responses/ProductProblem"
-        "415":
-          $ref: "#/components/responses/ProductProblem"
-        "422":
-          $ref: "#/components/responses/ProductProblem"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "503":
-          $ref: "#/components/responses/MaintenanceUnavailable"
-        default:
-          $ref: "#/components/responses/ProductProblem"
-      security:
-        - bearerToken: []
-      summary: Replace an exact evidence investigation exclusion set
-      tags:
-        - Discuss
-  /api/v1/workspaces/{workspace_id}/evidence-collections/{id}:
-    get:
-      description: Current Workspace human membership and original source Project access are required on every request. Personal and delegated-user credentials require knowledge:read or retained assign:read; service accounts cannot impersonate the owner. Private canonical design. Credential/Workspace/source authority is checked on every page, independently of query or client/platform headers. Opaque cursors bind the exact operation, normalized query, order and current visibility, and remain valid for 24 hours. Reject retired/expired or mismatched cursors and restart at a current first page. Stable order always includes immutable ID; traversal is live, not a snapshot. Metadata/row validators cannot be used as mutable item validators. Records remain restricted to the current human membership and expire after thirty days; a cursor grants neither access nor a snapshot. items_url uses this same resource with view=items and the exact version; no /hydrate alias remains. Snapshot membership and observed revisions never change during hydration. Older evidence versions retain immutable references but return superseded without passages after exclusion; latest_version invalidates in-flight dependencies. Current passages are at most 1,800 Unicode scalar values. Summary omits source references. Items contain at most twenty original references, and only current, included passages from the latest collection version have text. Complete pages are reduced to at most 240 KiB of serialized JSON without truncating passages. Hydration reads at most twenty source fields within their existing two-MiB maximum; no provider calls or implicit fetch-all. Unsupported conditional headers fail. Responses are private/no-store; identity and gzip coding are supported. Unknown, repeated and case-aliased query fields fail before domain reads.
-      operationId: getEvidenceCollection
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - in: path
-          name: id
-          required: true
-          schema:
-            $ref: "#/components/schemas/Identifier"
-        - description: Summary returns immutable metadata and the canonical items_url; items returns only one currently authorized bounded nested page.
-          in: query
-          name: view
-          required: false
-          schema:
-            default: summary
-            enum:
-              - summary
-              - items
-            type: string
-        - description: Opaque items-view cursor, bound to this exact record version and latest evidence version. Omit for first page.
-          in: query
-          name: cursor
-          required: false
-          schema:
-            $ref: "#/components/schemas/Cursor"
-        - description: Bounded items page size. Invalid values fail; never hydrate all implicitly.
-          in: query
-          name: limit
-          required: false
-          schema:
-            default: 20
-            maximum: 20
-            minimum: 1
-            type: integer
-        - description: Exact immutable version as decimal text; mandatory even after a newer version exists.
-          in: query
-          name: version
-          required: true
-          schema:
-            $ref: "#/components/schemas/ResourceRevision"
-      responses:
-        "200":
-          content:
-            application/json:
-              examples:
-                items:
-                  value:
-                    audience: private
-                    coverage: partial
-                    expires_at: 2026-11-27T00:00:00Z
-                    id: 019c0000-0000-7000-8000-000000000001
-                    items:
-                      data:
-                        - reference:
-                            end: 4
-                            entity_id: 019c0000-0000-7000-8000-000000000004
-                            entity_type: task
-                            excluded: false
-                            field: title
-                            fingerprint: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-                            id: 019c0000-0000-7000-8000-000000000003
-                            project_id: 019c0000-0000-7000-8000-000000000005
-                            revision: "1"
-                            start: 0
-                          state: unavailable
-                      next_cursor: null
-                    items_url: /api/v1/workspaces/019c0000-0000-7000-8000-000000000002/evidence-collections/019c0000-0000-7000-8000-000000000001?version=1&view=items
-                    latest_version: "1"
-                    observed_at: 2026-10-28T00:00:00Z
-                    schema: evidence_collection.v1
-                    source_count: 1
-                    version: "1"
-                    view: items
-                summary:
-                  value:
-                    audience: private
-                    coverage: partial
-                    expires_at: 2026-11-27T00:00:00Z
-                    id: 019c0000-0000-7000-8000-000000000001
-                    items_url: /api/v1/workspaces/019c0000-0000-7000-8000-000000000002/evidence-collections/019c0000-0000-7000-8000-000000000001?version=1&view=items
-                    observed_at: 2026-10-28T00:00:00Z
-                    schema: evidence_collection.v1
-                    source_count: 1
-                    version: "1"
-                    view: summary
-              schema:
-                $ref: "#/components/schemas/CanonicalEvidenceCollectionView"
-          description: One EvidenceCollection summary or one bounded nested items page
-        "400":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetails"
-          description: Unknown/duplicate/invalid selector, unsupported combination, malformed or incompatible cursor
-        "401":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, source visibility, conflict, dependency or admission failure
-        "403":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, source visibility, conflict, dependency or admission failure
-        "404":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, source visibility, conflict, dependency or admission failure
-        "406":
-          $ref: "#/components/responses/ProductProblem"
-        "409":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, source visibility, conflict, dependency or admission failure
-        "410":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetails"
-          description: Expired cursor or immutable capability; restart explicitly
-        "413":
-          $ref: "#/components/responses/ProductProblem"
-        "415":
-          $ref: "#/components/responses/ProductProblem"
-        "422":
-          $ref: "#/components/responses/ProductProblem"
-        "429":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, source visibility, conflict, dependency or admission failure
-        "500":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, source visibility, conflict, dependency or admission failure
-        "503":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, source visibility, conflict, dependency or admission failure
-        default:
-          $ref: "#/components/responses/ProductProblem"
-      security:
-        - bearerToken: []
-      summary: Read an exact authorized evidence collection summary or one items page
-      tags:
-        - Knowledge
   /api/v1/workspaces/{workspace_id}/features:
     get:
       description: "Read Workspace feature descriptors and state. Canonical current Workspace source and live capability are fenced in the snapshot/effect/recovery transaction. Requires a product bearer credential; cookies and caller-selected authority do not grant access. Duplicate or escaped keys, declared-field aliases, invalid UTF-8, unknown fields and ambiguous media, content coding or query input are rejected before any change or original-key claim. Responses use JSON with identity or gzip encoding and Cache-Control: private, no-store. Treat ETags as opaque and specific to the current credential, permissions, complete representation and encoding. Complete code-owned descriptor rows and acknowledged state, default50/max100 rows within the64-definition registry ceiling and128KiB per page; private source/page-size/key-order continuation preserves complete rows. Follow next_cursor to null, including short pages; each row includes its complete opaque item_validator.etag/encoding for the Feature write. Planned flags remain visible/read-only; can_manage is live and grants no authority."
@@ -44531,432 +43658,6 @@ paths:
       summary: Queue repository synchronization
       tags:
         - Documents
-  /api/v1/workspaces/{workspace_id}/knowledge-settings:
-    get:
-      description: Read Workspace Knowledge indexing settings and lifecycle state Current credential, Workspace permissions and active lifecycle are checked for the complete read or command. Cookies grant no product authority. Structured input rejects duplicates, case aliases, unsupported media/coding and unknown fields before receipt/effects. JSON identity/gzip responses are private/no-store; no provider inference runs on this endpoint. Complete desired policy and persisted asynchronous applied/status observations. Remote policy application is asynchronous; GET and PATCH do not contact the Knowledge service or a model provider. Included Project membership is validated atomically, maximum 100 unique IDs.
-      operationId: getWorkspaceKnowledgeSettings
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - in: header
-          name: If-None-Match
-          required: false
-          schema:
-            maxLength: 8192
-            type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/KnowledgeSettings"
-          description: Knowledge settings.
-          headers:
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            ETag:
-              $ref: "#/components/headers/CanonicalETag"
-        "304":
-          description: Current authorized representation unchanged; no body.
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "406":
-          $ref: "#/components/responses/NotAcceptableProblem"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaTypeProblem"
-        "422":
-          $ref: "#/components/responses/UnprocessableEntity"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "503":
-          $ref: "#/components/responses/MaintenanceUnavailable"
-        default:
-          $ref: "#/components/responses/ProductProblem"
-      security:
-        - bearerToken: []
-      summary: Read Workspace Knowledge indexing settings and lifecycle state
-      tags:
-        - Workspaces
-    patch:
-      description: Update desired Workspace Knowledge indexing settings Current credential, Workspace permissions and active lifecycle are checked for the complete read or command. Cookies grant no product authority. Structured input rejects duplicates, case aliases, unsupported media/coding and unknown fields before receipt/effects. JSON identity/gzip responses are private/no-store; no provider inference runs on this endpoint. Complete desired policy and persisted asynchronous applied/status observations. Remote policy application is asynchronous; GET and PATCH do not contact the Knowledge service or a model provider. Included Project membership is validated atomically, maximum 100 unique IDs.
-      operationId: updateWorkspaceKnowledgeSettings
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - description: Forward the exact strong opaque canonical item ETag for its declared encoding. Missing 428, malformed/weak 400, stale/wildcard/foreign 412. Recover an original key before retry conditions.
-          in: header
-          name: If-Match
-          required: true
-          schema:
-            maxLength: 8192
-            type: string
-        - $ref: "#/components/parameters/IdempotencyKey"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/KnowledgeSettingsPatch"
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/KnowledgeSettings"
-          description: Updated desired state.
-          headers:
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            ETag:
-              $ref: "#/components/headers/CanonicalETag"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "406":
-          $ref: "#/components/responses/NotAcceptableProblem"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "412":
-          $ref: "#/components/responses/PreconditionFailedProblem"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaTypeProblem"
-        "422":
-          $ref: "#/components/responses/UnprocessableEntity"
-        "428":
-          $ref: "#/components/responses/PreconditionRequiredProblem"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "503":
-          $ref: "#/components/responses/MaintenanceUnavailable"
-        default:
-          $ref: "#/components/responses/ProductProblem"
-      security:
-        - bearerToken: []
-      summary: Update desired Workspace Knowledge indexing settings
-      tags:
-        - Workspaces
-  /api/v1/workspaces/{workspace_id}/knowledge/answers:
-    post:
-      description: Submit one explicitly requested bounded extractive answer as durable work. Typed question/context, current verified human or service Workspace/Project authority, enabled/entitled Knowledge policy, the accepted8-principal/40-Workspace active-job budget and stable credential family are bound atomically before dispatch. Research/model-selection input is not accepted. The same original key/body recovers the original202 receipt, including after the transient HTTP receipt expires; a different body/family conflicts. Reads never dispatch work. No automatic worker/provider replay follows a crash, timeout or uncertain outcome; original keys and occupied capacity remain for explicit reconciliation. Terminal recovery is seven days; pending/unknown records never expire into redispatch. Cancellation is best effort and cannot undo usage or committed external work.
-      operationId: createWorkspaceKnowledgeAnswer
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - $ref: "#/components/parameters/IdempotencyKey"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/KnowledgeQuestionRequest"
-        required: true
-      responses:
-        "202":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CanonicalOperationStatus"
-          description: Original compact durable acceptance receipt, without answer/result content.
-          headers:
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            Content-Encoding:
-              description: Present only when the complete body is encoded with gzip.
-              schema:
-                const: gzip
-                type: string
-            Content-Length:
-              description: Exact encoded complete-body length in bytes.
-              schema:
-                maximum: 12648448
-                minimum: 1
-                type: integer
-            Location:
-              schema:
-                pattern: ^/api/v1/operations/
-                type: string
-            Retry-After:
-              schema:
-                const: "2"
-                type: string
-            Vary:
-              description: Includes Accept-Encoding for complete negotiated JSON; middleware may add other fields.
-              schema:
-                type: string
-            X-Content-Type-Options:
-              $ref: "#/components/headers/ContentTypeOptions"
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-        "400":
-          $ref: "#/components/responses/ProductProblem"
-        "401":
-          $ref: "#/components/responses/ProductProblem"
-        "403":
-          $ref: "#/components/responses/ProductProblem"
-        "404":
-          $ref: "#/components/responses/ProductProblem"
-        "406":
-          $ref: "#/components/responses/ProductProblem"
-        "409":
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/ConflictProblem"
-                  - $ref: "#/components/schemas/IdempotencyKeyConflictProblem"
-                  - $ref: "#/components/schemas/OperationInProgressProblem"
-          description: Original-key conflict or a current-authority reconciliation requirement. A known original Operation supplies Location; pending or unknown work must not be redispatched.
-          headers:
-            Assign-Recovery-Required:
-              description: Present only when the original work requires explicit reconciliation.
-              schema:
-                const: reconcile
-                type: string
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            Location:
-              description: Present when the original Operation identity is known; inspect that handle with current authority.
-              schema:
-                format: uri-reference
-                type: string
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-        "410":
-          $ref: "#/components/responses/ProductProblem"
-        "413":
-          $ref: "#/components/responses/ProductProblem"
-        "415":
-          $ref: "#/components/responses/ProductProblem"
-        "422":
-          $ref: "#/components/responses/ProductProblem"
-        "429":
-          $ref: "#/components/responses/ProductProblem"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-        "503":
-          $ref: "#/components/responses/ProductProblem"
-        default:
-          $ref: "#/components/responses/ProductProblem"
-      security:
-        - bearerToken: []
-      summary: Explicitly submit a bounded Knowledge question
-      tags:
-        - Knowledge
-  /api/v1/workspaces/{workspace_id}/knowledge/answers/{answer_id}:
-    get:
-      description: Separately authorize the immutable original principal/Workspace/Project and stable credential family, current entitlement and every original evidence source. A revoked/changed source refuses the entire stored wording; dropping its citation does not authorize that wording. No provider work or automatic resubmission occurs. Nonterminal/unknown work returns409; terminal recovery expires after seven days. At most five sources, 4,000 answer characters and 128 KiB of stored evidence are allowed. Recovery rechecks current authorization and requires the same authorized credential family as the original command.
-      operationId: getWorkspaceKnowledgeAnswer
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - in: path
-          name: answer_id
-          required: true
-          schema:
-            $ref: "#/components/schemas/Identifier"
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/KnowledgeAnswer"
-          description: Complete bounded original answer under current source authorization.
-          headers:
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            Content-Encoding:
-              description: Present only when the complete body is encoded with gzip.
-              schema:
-                const: gzip
-                type: string
-            Content-Length:
-              description: Exact encoded complete-body length in bytes.
-              schema:
-                maximum: 12648448
-                minimum: 1
-                type: integer
-            Vary:
-              description: Includes Accept-Encoding for complete negotiated JSON; middleware may add other fields.
-              schema:
-                type: string
-            X-Content-Type-Options:
-              $ref: "#/components/headers/ContentTypeOptions"
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-        "400":
-          $ref: "#/components/responses/ProductProblem"
-        "401":
-          $ref: "#/components/responses/ProductProblem"
-        "403":
-          $ref: "#/components/responses/ProductProblem"
-        "404":
-          $ref: "#/components/responses/ProductProblem"
-        "406":
-          $ref: "#/components/responses/ProductProblem"
-        "409":
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/ConflictProblem"
-                  - $ref: "#/components/schemas/IdempotencyKeyConflictProblem"
-                  - $ref: "#/components/schemas/OperationInProgressProblem"
-          description: Original-key conflict or a current-authority reconciliation requirement. A known original Operation supplies Location; pending or unknown work must not be redispatched.
-          headers:
-            Assign-Recovery-Required:
-              description: Present only when the original work requires explicit reconciliation.
-              schema:
-                const: reconcile
-                type: string
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            Location:
-              description: Present when the original Operation identity is known; inspect that handle with current authority.
-              schema:
-                format: uri-reference
-                type: string
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-        "410":
-          $ref: "#/components/responses/ProductProblem"
-        "413":
-          $ref: "#/components/responses/ProductProblem"
-        "415":
-          $ref: "#/components/responses/ProductProblem"
-        "422":
-          $ref: "#/components/responses/ProductProblem"
-        "429":
-          $ref: "#/components/responses/ProductProblem"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-        "503":
-          $ref: "#/components/responses/ProductProblem"
-        default:
-          $ref: "#/components/responses/ProductProblem"
-      security:
-        - bearerToken: []
-      summary: Read a currently authorized completed Knowledge answer
-      tags:
-        - Knowledge
-  /api/v1/workspaces/{workspace_id}/knowledge/search:
-    get:
-      description: Runs one explicitly submitted, bounded, permission-filtered Knowledge query. This operation is distinct from ordinary lexical Search and represents disabled, unready, and temporarily unavailable Knowledge without blocking canonical Workspace work. Requires a product bearer credential. Unknown/duplicate query keys, malformed UTF-8 and request bodies fail before retrieval. Current source and credential authority is checked before and after retrieval. At most20 evidence items and40,000 characters are returned; an explicit truncated flag reports the bounded retrieval window, never a fabricated exhaustive cursor.
-      operationId: searchWorkspaceKnowledge
-      parameters:
-        - $ref: "#/components/parameters/WorkspaceId"
-        - in: query
-          name: q
-          required: true
-          schema:
-            maxLength: 200
-            minLength: 2
-            type: string
-        - description: Strictly restrict evidence to one currently authorized included Project plus permitted shared material.
-          in: query
-          name: project_id
-          schema:
-            $ref: "#/components/schemas/Identifier"
-        - in: query
-          name: limit
-          schema:
-            default: 20
-            maximum: 20
-            minimum: 1
-            type: integer
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/KnowledgeSearchProjection"
-          description: Bounded evidence projection or an explicit empty/unavailable state.
-          headers:
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            Content-Encoding:
-              description: Present only when the complete body is encoded with gzip.
-              schema:
-                const: gzip
-                type: string
-            Content-Length:
-              description: Exact encoded complete-body length in bytes.
-              schema:
-                maximum: 12648448
-                minimum: 1
-                type: integer
-            Vary:
-              description: Includes Accept-Encoding for complete negotiated JSON; middleware may add other fields.
-              schema:
-                type: string
-            X-Content-Type-Options:
-              $ref: "#/components/headers/ContentTypeOptions"
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-        "400":
-          $ref: "#/components/responses/ProductProblem"
-        "401":
-          $ref: "#/components/responses/ProductProblem"
-        "403":
-          $ref: "#/components/responses/ProductProblem"
-        "404":
-          $ref: "#/components/responses/ProductProblem"
-        "406":
-          $ref: "#/components/responses/ProductProblem"
-        "409":
-          content:
-            application/problem+json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/ConflictProblem"
-                  - $ref: "#/components/schemas/IdempotencyKeyConflictProblem"
-                  - $ref: "#/components/schemas/OperationInProgressProblem"
-          description: Original-key conflict or a current-authority reconciliation requirement. A known original Operation supplies Location; pending or unknown work must not be redispatched.
-          headers:
-            Assign-Recovery-Required:
-              description: Present only when the original work requires explicit reconciliation.
-              schema:
-                const: reconcile
-                type: string
-            Cache-Control:
-              $ref: "#/components/headers/CacheControlNoStore"
-            Location:
-              description: Present when the original Operation identity is known; inspect that handle with current authority.
-              schema:
-                format: uri-reference
-                type: string
-            X-Request-ID:
-              $ref: "#/components/headers/RequestId"
-        "410":
-          $ref: "#/components/responses/ProductProblem"
-        "413":
-          $ref: "#/components/responses/ProductProblem"
-        "415":
-          $ref: "#/components/responses/ProductProblem"
-        "422":
-          $ref: "#/components/responses/ProductProblem"
-        "429":
-          $ref: "#/components/responses/ProductProblem"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-        "503":
-          $ref: "#/components/responses/ProductProblem"
-        default:
-          $ref: "#/components/responses/ProductProblem"
-      security:
-        - bearerToken: []
-      summary: Search Workspace Knowledge for evidence
-      tags:
-        - Knowledge
   /api/v1/workspaces/{workspace_id}/label-definitions:
     get:
       description: Verified product credential scope, current Workspace/target/Project authority and the existing Labels writer ordering are rechecked in the transaction. Requires a product bearer credential; a Session cookie does not authorize writes. Commands require exactly one Idempotency-Key. Recover current-authorized versioned original receipts before reevaluating conditions; changed intent with the same key is409 and no duplicate changes or events or automatic dispatch is permitted. Product reads return bounded complete data/next_cursor pages with exact decimal definition metadata and opaque identity/gzip page validators. Cursors bind purpose/archive filters, page size, current authority, encoding and the commit-ordered catalog fence.

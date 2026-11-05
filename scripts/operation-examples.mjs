@@ -135,8 +135,6 @@ const actionTitles = {
   restoredocumentrevision: "Restore a Document revision",
   listworkspacedocuments: "Find Workspace Documents",
   createdocument: "Create a Document",
-  createevidencecollection: "Capture private evidence passages",
-  excludeevidencecollection: "Replace evidence exclusions",
   createworkspaceagentrun: "Start a manual Agent run",
   getworkspaceagentrun: "Read an Agent run",
   listworkspaceagentrunactions: "Review an Agent run's actions",
@@ -259,8 +257,6 @@ const customAgentInput = {
   instructions: "Review the supplied release checklist. Summarize missing steps and ask before making changes.",
   state: "draft", bindings: [],
 }
-const evidenceCollectionId = "0198ac5e-f9b7-7000-8000-000000000040"
-const evidenceReferenceId = "0198ac5e-f9b7-7000-8000-000000000041"
 const repositoryId = "0198ac5e-f9b7-7000-8000-000000000050"
 const repositorySyncRunId = "0198ac5e-f9b7-7000-8000-000000000056"
 const repositoryConflictId = "0198ac5e-f9b7-7000-8000-000000000053"
@@ -472,13 +468,6 @@ export const operationExamples = {
   listdocumentattachments: { query: { limit: "100" } },
   attachdocumentattachment: { headers: keyed, body: { attachment_id: attachmentId } },
   getdocumentcontent: { query: { format: "json", view: "canonical" } },
-  createevidencecollection: { headers: keyed, body: { sources: [
-    { entity_type: "task", entity_id: "0198ac5e-f9b7-7000-8000-000000000003", revision: "1", field: "title", quote: "Plan the next release" },
-    { entity_type: "task", entity_id: "0198ac5e-f9b7-7000-8000-000000000003", revision: "1", field: "description", quote: "Review the release checklist." },
-  ] } },
-  excludeevidencecollection: { headers: keyed, body: {
-    id: evidenceCollectionId, expected_version: "1", excluded_ids: [evidenceReferenceId],
-  } },
   redocommand: { headers: keyed },
   undocommand: { headers: keyed },
   reserveattachmentupload: { headers: keyed, body: {
@@ -852,11 +841,6 @@ const documentWorkLink = {
   document_title: canonicalDocument.title, document_path: documentRow.path,
   target_kind: "task", target_id: taskId, target_title: "Plan the next release", target_code: "APP-42",
   project_id: projectId, project_path: "release-planning", can_remove: true,
-}
-const evidenceSummary = {
-  schema: "evidence_collection.v1", id: evidenceCollectionId, version: "1", audience: "private", coverage: "partial",
-  observed_at: timestamp, expires_at: "2026-11-26T10:00:00Z", source_count: 2, view: "summary",
-  items_url: `/api/v1/workspaces/${workspace}/evidence-collections/${evidenceCollectionId}?version=1&view=items`,
 }
 const documentRevision = {
   document_id: documentId, revision: "1", actor_id: actorId, change_kind: "created",
@@ -1306,11 +1290,6 @@ const successBodies = {
   listdocumentattachments: { data: [attachmentRecord], next_cursor: null },
   attachdocumentattachment: attachmentRecord,
   getdocumentcontent: { document_id: documentId, revision: 1, content: richText("Review the release checklist."), updated_at: timestamp },
-  createevidencecollection: { ...evidenceSummary, operation_id: "0198ac5e-f9b7-7000-8000-000000000042" },
-  excludeevidencecollection: { ...evidenceSummary, version: "2", observed_at: "2026-10-27T10:01:00Z",
-    items_url: `/api/v1/workspaces/${workspace}/evidence-collections/${evidenceCollectionId}?version=2&view=items`,
-    operation_id: "0198ac5e-f9b7-7000-8000-000000000043",
-  },
   undocommand: {
     command: { ...reversibleCommand, state: "undone" },
     task: { ...taskCommand, label_ids: [], revision: 3, updated_at: "2026-10-27T10:02:00Z" },
@@ -1720,7 +1699,7 @@ export function applyResponseExamples(operation) {
     return { ...presented, responses: operation.responses.map((response) => ["200", "201", "202"].includes(response.status)
       ? { ...response, content: response.content.map((media) => media.mediaType === "application/json"
         ? { ...media, example: response.status === "202" ? changeSetAccepted : body } : media) } : response) }
-  const status = ["retrylifecyclemigration", "applylifecyclemapping", "resolveknowledgerepositoryconflict", "importknowledgerepository", "syncknowledgerepository", "createworkspaceagentrun", "canceloperation", "delegatetasktoworkspacecustomagent", "admitworkspacecustomagentrequest", "requestintegrationaction", "verifysentrybinding", "refreshintegrationresources"].includes(operation.id) ? "202" : ["createwebhookendpoint", "createtasktimeentry", "createtasksavedview", "createtaskselection", "createtaskresultset", "createtaskrelation", "duplicatetask", "attachtaskattachment", "createproject", "createworkspaceprojectstate", "createmilestone", "createprojectstatus", "createworkspacestatus", "attachprojectattachment", "addprojectmember", "beginintegrationauthorization", "createdocument", "createdocumentworklink", "createevidencecollection", "reserveattachmentupload", "completeattachmentupload", "attachdocumentattachment", "createtask", "createcomment", "createworkspaceinvitation", "resendworkspaceinvitation", "createworkspaceagent", "createworkspacecustomagent", "createintegrationsubscription", "createprojectintegrationbinding", "createprojectlabeldefinition", "createworkspacelabeldefinition"].includes(operation.id) ? "201" : "200"
+  const status = ["retrylifecyclemigration", "applylifecyclemapping", "resolveknowledgerepositoryconflict", "importknowledgerepository", "syncknowledgerepository", "createworkspaceagentrun", "canceloperation", "delegatetasktoworkspacecustomagent", "admitworkspacecustomagentrequest", "requestintegrationaction", "verifysentrybinding", "refreshintegrationresources"].includes(operation.id) ? "202" : ["createwebhookendpoint", "createtasktimeentry", "createtasksavedview", "createtaskselection", "createtaskresultset", "createtaskrelation", "duplicatetask", "attachtaskattachment", "createproject", "createworkspaceprojectstate", "createmilestone", "createprojectstatus", "createworkspacestatus", "attachprojectattachment", "addprojectmember", "beginintegrationauthorization", "createdocument", "createdocumentworklink", "reserveattachmentupload", "completeattachmentupload", "attachdocumentattachment", "createtask", "createcomment", "createworkspaceinvitation", "resendworkspaceinvitation", "createworkspaceagent", "createworkspacecustomagent", "createintegrationsubscription", "createprojectintegrationbinding", "createprojectlabeldefinition", "createworkspacelabeldefinition"].includes(operation.id) ? "201" : "200"
   if (["beginintegrationauthorization", "completeintegrationauthorizationwithcredential"].includes(operation.id))
     return { ...presented, responses: operation.responses.map((response) => [status, "202"].includes(response.status)
       ? { ...response, content: response.content.map((media) => media.mediaType === "application/json"

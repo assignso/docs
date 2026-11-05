@@ -64,32 +64,13 @@ overwrites someone's later edit.
 
 ## Evidence collections
 
-An evidence collection captures exact passages for an investigation.
+In Discuss, select exact passages to collect evidence for an investigation. Source access is
+checked when you use the collection. Review changed or unavailable passages before relying on
+them; a quotation does not establish that its claims are true. Excluding a passage changes only
+that investigation. A collection does not grant permission to publish its content.
 
-```http
-POST /api/v1/workspaces/{workspace_id}/evidence-collections
-```
-
-Send `sources`, each with `entity_type`, `entity_id`, the current `revision`, a `field` and a unique
-exact `quote`. Fields are Task title or description, Document title or content, Project name or
-description and Comment body. Quotes are plain text of up to 1,800 characters, and a collection holds
-up to 32 passages. Missing, ambiguous or stale passages are rejected.
-
-- The response has a private collection ID and version, source references and a 30-day expiry.
-- `GET /api/v1/workspaces/{workspace_id}/evidence-collections/{id}?version=<version>` reads
-  the summary. Keep its exact immutable version and `items_url`; the summary omits source references.
-- Read `items_url`, or the same resource with `view=items&version=<version>`, for one page of
-  passages (`limit` 1–20, default 20). Follow the opaque `next_cursor` until it is `null`; do not
-  use an offset or infer completion from page length. Pages contain at most 20 original references
-  and 240 KiB of JSON, with complete passages. Changed, unavailable and excluded references have no
-  text, so read the current items before reusing one. A quotation doesn't make its claims true.
-- Post to the collection's exclusions endpoint with `id`, `expected_version` and the complete
-  `excluded_ids` array to create a new version with those references left out. An empty array
-  includes everything again. Older versions stay unchanged and hydrate as `superseded`, so open the
-  current one. Exclusions apply only to this investigation.
-
-Writes need the operation's admitted credential and an `Idempotency-Key`. Resolve an uncertain
-result through the receipt. A collection doesn't grant permission to publish its content.
+Use the supported `evidence_collection_*` MCP tools in the [tool catalog](../mcp/tools) for
+programmatic access.
 
 ## MCP
 
