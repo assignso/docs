@@ -221,3 +221,10 @@ An unchanged collaboration save does not add another content-history revision. I
 while an earlier save finishes, your newer changes remain unsaved until the server confirms them.
 A Document can briefly show **Unsaved changes** while live collaboration initializes, even before
 you type. Wait for **Saved** before closing it.
+
+## Starting a shared editing session <Badge type="warning" text="Upcoming" />
+
+Editing starts after the shared content has been recovered. If Assign cannot
+recover that content safely, keep the current view for reading and copying and
+follow the connection's recovery prompt before making changes. Reopening the
+page does not reapply discarded edits automatically.
