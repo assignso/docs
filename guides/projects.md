@@ -199,3 +199,31 @@ in the results; collection totals keep their existing meaning.
 Milestone create and edit pages use inline name and description fields, with compact Status and Target date pickers. The issued Milestone code appears on the form. Press Enter or leave the name field to save; leave the description field to save it. Status/date choices save immediately, and the date picker supports clearing. Failed saves keep your draft and show Retry. Back to milestones saves valid pending edits before leaving.
 
 Workspace owners and administrators configure **Workspace settings → Work management → Milestone lifecycle**. Add named stages within Planned, Active, Completed and Cancelled; rename, reorder, archive or restore them. Each category needs an active stage. If active Milestones use a stage being archived, choose a replacement in the same category. Progress remains derived from Tasks. Task statuses and Project lifecycle retain their own rules while using the same editing controls.
+
+## Browse Projects on mobile <Badge type="warning" text="Upcoming" />
+
+Open a Project to see its Overview, then choose Tasks, Milestones or Documents.
+Task and Document links open their detail pages. Select a Milestone to see its
+progress and member Tasks; progress reflects the whole Milestone, independently
+of the Tasks currently loaded.
+
+Use Next and Previous to browse Milestones or Documents, or Load more for Tasks.
+The Milestones menu can include archived items; the Documents menu switches
+between active and archived Documents. Archived Projects and Milestones remain
+read-only. If a section cannot load, use its retry action; unavailable content is
+shown separately from an empty list.
+
+## Read Documents on mobile <Badge type="warning" text="Upcoming" />
+
+Open a Document to read its text and checklists. Select a child Document or
+Parent Document to move through the hierarchy. Use Next and Previous for longer
+Document and file lists.
+
+If content cannot load, its title and navigation remain available. Use the
+section's Reload action to try again. Unsupported content has an explicit
+placeholder; Open in browser is available for the full page.
+
+Files show their name, type, size and scan state. Use Preview for supported
+images and PDFs, or Download when available. Files that are still scanning,
+quarantined or no longer accessible cannot open. Reload files if access changes.
+This reader has no general editing or Document comments.

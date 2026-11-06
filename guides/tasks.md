@@ -40,6 +40,23 @@ A Comment link ends in `/tasks/WEB-42?comment=3`. Opening it scrolls to that Com
 highlights it. Comments posted through an AI assistant show who posted them and through which
 client, for example **Codex · via MCP**.
 
+### Native Comment recovery <Badge type="warning" text="Upcoming" />
+
+In the native app, write your Comment and choose **Comment** while online. Your input
+stays in place until posting is confirmed. If the outcome is unknown, choose
+**Retry same comment** to recover that submission. **Reload comment data** refreshes
+what you can read; it does not post another Comment.
+
+After a rejection, your input stays available while you reload and correct it. If
+write access is removed while you can still read the Task, your retained input stays
+visible and posting is disabled. Unsaved input is kept only while the Task remains
+open; leaving asks you before discarding it. Closing the app does not save a draft.
+
+Comment and attachment results are confirmed separately. **Comment posted** does not
+mean a file was attached. If a file link is not confirmed, use **Retry same file action**
+to recover it without posting your Comment again. Discarding file recovery does not
+remove content that was already saved.
+
 ## Relations
 
 Use **Link task** under Relations to choose a relation type, such as *blocks*, *duplicates*, *relates to*
@@ -67,6 +84,21 @@ menus.
 - **Copy task link** copies the Task's permanent URL.
 - **Copy prompt** copies a short handoff with the Task code, title and URL, ready to paste into an
   AI assistant. Assign never sends private Task content to an outside service when you do this.
+
+## Share content to Assign <Badge type="warning" text="Upcoming" />
+
+Native sharing is upcoming; saving shared content is not available yet. The review
+will offer **New Task**, **Add to Task** and **New Document**, with an explicit
+Workspace and Project, removable content, a title and an optional note before
+**Save**. Adding to a Task preserves its existing description.
+
+Only content supplied by the sending app is included. Sharing a link does not fetch
+the page. Document visibility defaults to the selected Project or Workspace, and
+cancelling cannot undo content that has already saved. If only part of a share saves,
+review the confirmed results and retry **Save** to continue the same share.
+On Android, **Open Task** or **Open Document** appears after the whole share is
+confirmed. On iOS, **Done** returns you to the app you shared from after the share
+is confirmed and its temporary files are cleaned up.
 
 ## Follow
 
@@ -181,3 +213,48 @@ The creation form keeps your title, description, properties and queued attachmen
 When repository indexing is enabled for the Task's Project, Suggestions can also show indexed code
 references. Each shows the repository, revision, file or symbol, and a reason for the match.
 **Open code** opens that exact GitHub revision. Code references are read-only in this first version.
+
+## Change Status in the native app <Badge type="warning" text="Upcoming" />
+
+Status changes require a connection. While **Saving status…** is visible, wait for the result.
+**Status saved** confirms the change; a separate refresh error means current data still needs reloading.
+
+If a change is not confirmed, **Reload Task** checks current data. **Retry status change** retries
+that original change. Keep the recovery screen open until you resolve it; leaving discards local
+recovery details and does not cancel an action already sent. After a rejected change, reload the
+Task before choosing another Status. Returning to Work preserves your view and refreshes its
+Tasks and counts from saved data.
+
+## Create a Task in the native app <Badge type="warning" text="Upcoming" />
+
+Select **+ (Create task)** in the browsing header. On a Project page, that Project is selected;
+elsewhere, choose a Project. Enter a title and select **Create task** to submit. Your configured
+creation defaults apply. Read-only, archived or unavailable Project permissions prevent submission.
+
+The form keeps your input if the request is not confirmed. Retry the unchanged form to recover the
+original request. Once creation is confirmed, the new Task opens; **Back** returns to your previous
+screen. **Cancel** lets you keep editing or discard unsaved input. Opening the form and choosing a
+Project do not create a Task.
+
+## Edit Task properties in the native app <Badge type="warning" text="Upcoming" />
+
+Use **Edit Task** for the title, priority, due date, assignee or milestone. Enter due dates as
+**YYYY-MM-DD**; leaving the date empty clears it. Date-only values keep the calendar day you choose.
+On Task detail, **Add property** offers available optional properties. Saved selections appear in
+the property row. Unassigning or clearing an optional property removes its control.
+
+Edits require a connection and current permission. If an edit is not confirmed, **Retry Task edit**
+recovers the original request; **Reload Task** checks current data. Keep recovery details until the
+outcome is resolved. **Task saved** confirms the write even when current data still needs reloading.
+If the form reports an older Task revision, your input stays visible: cancel and reopen **Edit Task**
+to start from current data. **Cancel** lets you keep editing or discard unsaved input.
+
+## Choose an assignee and view a person on mobile <Badge type="warning" text="Upcoming" />
+
+Use the assignee menu or **Edit Task** to choose from loaded members. **Load more assignees** requests
+another page. **Find assignee** looks up an exact username or display name. If several people match,
+choose the intended username; opening or cancelling the lookup does not change the Task.
+
+**View** opens that person's Workspace profile and visible assigned Tasks. An unavailable person
+shows an unavailable state. **Edit profile** on your own page opens your Account Profile settings.
+Task assignment still requires a connection and permission to edit the Task.

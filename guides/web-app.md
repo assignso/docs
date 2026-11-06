@@ -126,3 +126,9 @@ and filters in its URL, so you can return with Back or share the search with a W
 
 If a search fails, your query stays in place. Choose Retry search to try again. People load
 independently, so a delayed People lookup does not hold up your work results.
+
+## Open a notification on mobile <Badge type="warning" text="Upcoming" />
+
+Tap a notification to open its item after signing in and choosing a Workspace. Assign checks your current access before opening it. If the item is unavailable, open your Inbox and find the work there. Opening a notification does not mark it read.
+
+The Inbox badge uses the selected Workspace’s unread total. The app icon follows that total where your device supports badges and permits them. Your Inbox remains available when system notifications are off.

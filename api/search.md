@@ -68,6 +68,16 @@ the background, and Search withholds rows whose source is no longer available.
 Rate limits return `429`. Query timeout or temporary Search unavailability returns
 `503 search_unavailable`. Wait for the `Retry-After` delay before retrying.
 
+## Search in the native app <Badge type="warning" text="Upcoming" />
+
+Open **Search** from a main screen and enter at least two characters. Native Search finds Project
+and Task titles and codes in your current Workspace. Document, Comment and People results aren't
+available there yet.
+
+Choose a result to open it; **Back** returns to Search. **Load more** requests another page. If Search
+fails, **Try again** starts from the first page for your current query. Removed results and content
+you can no longer access are withheld. Changing accounts or Workspaces clears your search.
+
 ## Ask Discuss about results <Badge type="warning" text="Upcoming" />
 
 Search stays deterministic, including on Enter. **Use work results in Discuss** shows your query, the

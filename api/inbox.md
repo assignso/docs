@@ -85,6 +85,19 @@ late updates from another device cannot regress state. The response gives decima
 and `unread_count` values.
 Reading an item also cancels its pending email and push, but messages already sent can't be recalled.
 
+## Use Inbox in the native app <Badge type="warning" text="Upcoming" />
+
+Open **Inbox** from a main screen, then choose **Open item** to view its Task, Project or Document.
+**Back** returns to Inbox. Removed items and content you can no longer access show an unavailable state.
+Use **Load more** for older notifications; the unread badge includes notifications beyond the loaded page.
+Inbox works even when device push notifications are unavailable or denied.
+
+**Mark read** and **Mark unread** require a connection. Wait while **Saving read state…** appears.
+If the result is uncertain, **Reload Inbox** checks current data and **Retry read state change**
+recovers the original action. Keep recovery details until the outcome is resolved; leaving discards
+those details without cancelling an action already sent. After a rejected change, reload before
+trying another action. **Read state saved** confirms the change even if a separate refresh error appears.
+
 ## Notification preferences
 
 `GET /api/v1/workspaces/{workspace_id}/notification-preferences` returns each category with its

@@ -17,6 +17,27 @@ Public status pages use a separate anonymous share protocol.
 
 ### List and read
 
+#### Resolve a canonical Project link <Badge type="warning" text="Awaiting deployment" />
+
+The canonical collection accepts an exact Project URL segment:
+`GET /api/v1/workspaces/{workspace_id}/projects?path=my-project`.
+Use a scoped bearer credential as described in [Authentication](./authentication).
+The segment must contain 1–63 lowercase ASCII letters, digits or hyphens and
+start and end with a letter or digit. This selector grants no access.
+
+The response uses `data` and nullable `next_cursor`. A missing or inaccessible
+Project produces an empty authorized page. Archived Projects are excluded unless
+`include_archived=true`. Supplying both `code` and `path` requires the same Project
+to match both. Use the returned Project ID for subsequent reads; paths can change.
+See the [OpenAPI document](/openapi.yaml) for the complete collection contract.
+
+For PHP SDK query booleans, select the existing string format before making calls:
+
+```php
+Assign\Sdk\Configuration::getDefaultConfiguration()
+    ->setBooleanFormatForQueryString(Assign\Sdk\Configuration::BOOLEAN_FORMAT_STRING);
+```
+
 #### Project task totals <Badge type="warning" text="Awaiting deployment" />
 
 [Workspace Projects](./reference/operations/listworkspaceprojects) returns complete Project

@@ -10,6 +10,8 @@ require the owner or admin role. Both have **Back to app** at the top of their s
 
 ## Account settings
 
+The upcoming [Account deletion flow](./delete-account.md) belongs to **Security → Delete account**.
+
 | Page | What you can do |
 | --- | --- |
 | **Profile** | Name, username, avatar and other personal details |
@@ -80,3 +82,15 @@ dates, members and visibility. The Project **key** is shown for reference and ca
 ## Theme preference
 
 Under Account Settings → Interface, choose **System**, **Light** or **Dark**. System follows this device’s appearance and responds when it changes. Theme changes save immediately in this browser. Other interface preferences apply across Workspaces and devices.
+
+## Mobile Account settings <Badge type="warning" text="Upcoming" />
+
+On mobile, open **Profile → Settings** to reach your Profile and **Preferences → Interface**. Profile changes save after you finish a valid text edit; Interface choices save when selected. Timezone, Locale and First day of week distinguish your Account override from **Use Workspace default**. These choices do not grant Workspace administration access.
+
+Keep your draft if a save fails. **Recover original change** checks the result of the same change; **Refresh profile** loads the current acknowledged values. Account changes require a connection. Picture replacement depends on your mobile build; when available, choose a PNG or JPEG, review the square crop and select **Use picture**. Your existing picture stays in place until the new one is acknowledged.
+
+## Native account recovery <Badge type="warning" text="Upcoming" />
+
+Choose **Forgot password?** at native login to request an email. A request confirmation does not confirm delivery; check your inbox and spam folder, then request another email if needed. An unverified address may receive a verification link first. After verifying it, request a password reset.
+
+When a supported email link opens in Assign, confirm verification or enter your new password and confirmation. An expired or used link offers **Request a new link**. Resetting signs out existing sessions; sign in again with your new password. Verification alone does not sign you in. If the result cannot be confirmed, request a new link before trying again. Reopen the email after leaving or backgrounding the recovery form. Browser recovery remains available when the email opens there.

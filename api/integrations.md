@@ -90,6 +90,16 @@ development activity; other providers and behavior types keep their current even
 For GitHub, **Manage access in GitHub** opens the organization's installation settings, where an
 owner changes repository access. Assign can't grant GitHub permissions itself.
 
+## In the mobile app <Badge type="warning" text="Upcoming" />
+
+Project overview shows connected Git repositories and their connection status. Tasks show linked
+issues, pull requests, reviews and checks under **Linked development**, above Attachments. Expand a
+card for stored details and freshness; use its separate **Open … in browser** action to visit the
+provider. Stale or unavailable snapshots are labelled. A failed read offers Reload; lost access
+clears the affected context. Revoked Project connections have no active browser action.
+
+Integration setup and provider administration remain on web and desktop.
+
 ## Providers
 
 | Provider | Behaviors and actions |
