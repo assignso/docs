@@ -11,13 +11,15 @@ import { resolve, dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { publicPageSources, privateWireReferences } from "./publication-audit.mjs"
 import { checkMetadataSource } from "./protocol-metadata.mjs"
+import { sourceCheckEnvironment } from "./source-check-config.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const workspace = process.env.ASSIGN_WORKSPACE ?? resolve(root, "..")
+const sourceEnvironment = sourceCheckEnvironment(workspace)
 const problems = []
 
 try {
-  const approval = process.env.ASSIGN_DOCS_METADATA_PRIVATE_PROVENANCE
+  const approval = sourceEnvironment.ASSIGN_DOCS_METADATA_PRIVATE_PROVENANCE
   if (!approval) throw new Error("Private anonymous metadata approval path is required")
   const report = checkMetadataSource(join(root, "public"), workspace, resolve(approval))
   console.log(`Checked anonymous metadata source reference: ${report.components} reachable components`)
@@ -26,10 +28,10 @@ try {
 }
 
 try {
-  const proof = process.env.ASSIGN_DOCS_EXAMPLE_WORKFLOW_PROOF
-  const receipt = process.env.ASSIGN_DOCS_EXAMPLE_PRIVATE_PROVENANCE
+  const proof = sourceEnvironment.ASSIGN_DOCS_EXAMPLE_WORKFLOW_PROOF
+  const receipt = sourceEnvironment.ASSIGN_DOCS_EXAMPLE_PRIVATE_PROVENANCE
   if (!proof || !receipt) throw new Error("Private example workflow proof and source receipt paths are required")
-  const compatibility = process.env.ASSIGN_DOCS_EXAMPLE_MAIN_COMPATIBILITY
+  const compatibility = sourceEnvironment.ASSIGN_DOCS_EXAMPLE_MAIN_COMPATIBILITY
   execFileSync("python3", [join(root, "scripts/export-example-sources.py"), "check-source", "--workspace", workspace,
     "--workflow-proof", proof, "--private-receipt", receipt, ...(compatibility ? ["--main-compatibility", compatibility] : [])], { stdio: "pipe" })
 } catch (error) {
@@ -108,9 +110,10 @@ if (existsSync(cliDir)) {
 const openapi = join(workspace, "openapi-spec/openapi.yaml")
 if (existsSync(openapi)) {
   try {
-    execFileSync(process.execPath, [join(root, "scripts/generate-api-endpoints.mjs"), openapi, "--check"], { stdio: "pipe" })
+    execFileSync(process.execPath, [join(root, "scripts/generate-api-endpoints.mjs"), openapi, "--check"], { stdio: "pipe", env: sourceEnvironment })
   } catch (error) {
-    problems.push(`OpenAPI artifacts are stale: ${error.stderr?.toString().split("\n").find((line) => line.includes("is stale")) ?? "run npm run generate:api"}`)
+    const detail = error.stderr?.toString().split("\n").find(line => /^Error: /.test(line))
+    problems.push(`OpenAPI source check failed: ${detail ?? error.message.split("\n")[0]}`)
   }
 } else {
   console.warn(`skip API: ${openapi} not found`)

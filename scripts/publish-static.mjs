@@ -57,6 +57,14 @@ for (const group of new Set(referenceOperations.map((operation) => operation.gro
     const requests = codeSamples(model, referenceModel.servers[0]?.url).map((sample) => `\`\`\`${sample.lang}\n${sample.code.trim()}\n\`\`\``)
     const responses = responseSamples(model).filter((sample) => /^2/.test(sample.status)).map((sample) =>
       `Illustrative HTTP \`${sample.status}\` response:\n\n\`\`\`json\n${sample.code}\n\`\`\``)
+    for (const response of model.responses.filter((response) => /^2/.test(response.status))) {
+      for (const media of response.content.filter((media) => media.mediaType !== "application/json")) {
+        if (media.mediaType === "text/csv" && typeof media.example === "string")
+          responses.push(`Illustrative HTTP \`${response.status}\` response (\`text/csv\`):\n\n\`\`\`csv\n${media.example}\`\`\``)
+        else if (media.schema?.type === "string" && media.schema.format === "binary")
+          responses.push(`HTTP \`${response.status}\` returns a binary \`${media.mediaType}\` body.`)
+      }
+    }
     for (const response of model.responses.filter((response) => /^2/.test(response.status) && response.content.length === 0))
       responses.push(`HTTP \`${response.status}\` with no response body.`)
     assert.ok(requests.length && responses.length, `Missing examples: ${operation.id}`)

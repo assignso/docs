@@ -1,0 +1,67 @@
+{
+  "examples": {
+    "php": {
+      "archive": "php.zip",
+      "contract_release": null,
+      "contract_state": "approved-authoring",
+      "contract_version": "1.0.0-rc.10",
+      "document_sha256": "7c3051cecbea54b0176a1531ffaaa33cb35c0e1146313f663fd70b5872a2ef8d",
+      "files": {
+        ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
+        "PROVENANCE.json": "1cc0b1e808010dcff1f89985ec162a3c72ab237bed6ed20706c6f3792080071a",
+        "README.md": "d328217a971bf04814112ec639f8cb0e2ff6949118e953934ecea119ea3b30fa",
+        "composer.json": "f4fbf2cd10726691a8c73616f669063eb059861f52ec7482f9e88111a87c9924",
+        "composer.lock": "8fe1373bdb8a02563c769edaf8c3b82dd9379bf8ff8c6adef066ca2febd40e8f",
+        "main.php": "3d0c43be5f67a8176eac3d143513296fadcff7870bd95703245e2b1922b262d3"
+      },
+      "recipe": "task-workflow",
+      "schema": "assign.docs-example-source.v1",
+      "sdk": {
+        "availability": "unreleased-authoring",
+        "language": "php",
+        "name": "assignso/php-sdk",
+        "version": "1.0.0-rc.9"
+      },
+      "sha256": "ea7650809e407ebd9d2cd7b550d4c472a6aa2a7b9ee725706a7237e931a3dfa9",
+      "size": 38068,
+      "source_files": {
+        ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
+        "composer.json": "f4fbf2cd10726691a8c73616f669063eb059861f52ec7482f9e88111a87c9924",
+        "composer.lock": "8fe1373bdb8a02563c769edaf8c3b82dd9379bf8ff8c6adef066ca2febd40e8f",
+        "main.php": "3d0c43be5f67a8176eac3d143513296fadcff7870bd95703245e2b1922b262d3"
+      }
+    },
+    "typescript": {
+      "archive": "typescript.zip",
+      "contract_release": null,
+      "contract_state": "approved-authoring",
+      "contract_version": "1.0.0-rc.10",
+      "document_sha256": "7c3051cecbea54b0176a1531ffaaa33cb35c0e1146313f663fd70b5872a2ef8d",
+      "files": {
+        ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
+        "PROVENANCE.json": "6c505791bd3c26330b11ffbd4a83213ae7690b9e461e5ef07e4d08ea85c76652",
+        "README.md": "0351c1dbe81eb29126b19e25aba816a09c464b90ad91afae8fa1d45d4fb100b5",
+        "main.mjs": "9ead859d24d2b1a6285b1a246d7d548557774d56cb931e3f65a18811f1ad081b",
+        "package-lock.json": "c13a44360aa5827dc367ee85fc486d0f795c75b3b8994c9089512134033f58c6",
+        "package.json": "dce707b841e16c2dbbf88f81e76668f6a5a54dbb737ed0b83b40f2925cac8e88"
+      },
+      "recipe": "task-workflow",
+      "schema": "assign.docs-example-source.v1",
+      "sdk": {
+        "availability": "unreleased-authoring",
+        "language": "typescript",
+        "name": "@assignso/sdk",
+        "version": "1.0.0-rc.9"
+      },
+      "sha256": "19e49d5bca9309dbc516df90da899cf89f9e37f0284eacf2c9d4b8db1e7317eb",
+      "size": 11075,
+      "source_files": {
+        ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
+        "main.mjs": "9ead859d24d2b1a6285b1a246d7d548557774d56cb931e3f65a18811f1ad081b",
+        "package-lock.json": "c13a44360aa5827dc367ee85fc486d0f795c75b3b8994c9089512134033f58c6",
+        "package.json": "dce707b841e16c2dbbf88f81e76668f6a5a54dbb737ed0b83b40f2925cac8e88"
+      }
+    }
+  },
+  "schema": "assign.docs-example-downloads.v1"
+}

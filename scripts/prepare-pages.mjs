@@ -9,6 +9,7 @@ import { loadDocsContract } from "./authoring-contract.mjs"
 import { compatibilityPages, compatibilityPage } from "./api-navigation.mjs"
 import { errorCatalog, errorPage, errorTable } from "./error-catalog.mjs"
 import { publicPageSources, publicSections as sections } from "./publication-audit.mjs"
+import { metadataFiles } from "./protocol-metadata.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const pages = join(root, ".vocs-src/pages")
@@ -65,8 +66,11 @@ export function preparePages() {
     writeGenerated(join(pages, "api/reference/operations", `${page.id}.md`), compatibilityPage(page, operations))
   writeGenerated(join(pages, "_root.css"), readFileSync(join(root, "styles/root.css")))
   // Vocs 2.10's dead-link checker resolves downloads against pages, not public/.
-  // YAML is not a page route; the served download remains public/openapi.yaml.
-  writeGenerated(join(pages, "openapi.yaml"), readFileSync(join(root, "public/openapi.yaml")))
+  // These are not page routes; the served downloads remain in public/.
+  const downloads = ["openapi.yaml", ...metadataFiles,
+    ...["manifest.json", "typescript.zip", "php.zip"].map(file => `examples/task-workflow/${file}`)]
+  for (const file of downloads)
+    writeGenerated(join(pages, file), readFileSync(join(root, "public", file)))
   function removeStale(directory) {
     for (const item of readdirSync(directory, { withFileTypes: true })) {
       const path = join(directory, item.name)
