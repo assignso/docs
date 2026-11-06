@@ -228,3 +228,15 @@ Editing starts after the shared content has been recovered. If Assign cannot
 recover that content safely, keep the current view for reading and copying and
 follow the connection's recovery prompt before making changes. Reopening the
 page does not reapply discarded edits automatically.
+
+## Mobile Document checklists <Badge type="warning" text="Upcoming" />
+
+When online and permitted to edit a Document, use its checkboxes to check or uncheck
+items. **Pending…** means Assign is waiting for acknowledgement. Repeated taps are
+disabled while an action is unresolved.
+
+If access, connectivity or the Document changes, use **Reload checklist** to read
+its current state before trying again. A submitted change may already have been
+saved. Leaving the Document or closing the app does not cancel a submitted change;
+unsent changes are not restored automatically. This checklist interaction does not
+provide general Document editing or offline writes.
