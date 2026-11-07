@@ -9187,6 +9187,179 @@ components:
         - summary
         - web_url
       type: object
+    CanonicalProjectionProjectGroup:
+      additionalProperties: false
+      allOf:
+        - else:
+            properties:
+              id:
+                format: uuid
+                type: string
+          if:
+            properties:
+              kind:
+                const: unassigned
+            required:
+              - kind
+          then:
+            properties:
+              id:
+                type: "null"
+      properties:
+        id:
+          oneOf:
+            - format: uuid
+              type: string
+            - type: "null"
+        kind:
+          enum:
+            - status
+            - assignee
+            - milestone
+            - unassigned
+          type: string
+        matching_count:
+          maxLength: 19
+          pattern: ^[1-9][0-9]*$
+          type: string
+        row_ids:
+          items:
+            format: uuid
+            type: string
+          maxItems: 0
+          type: array
+        window_state:
+          const: not_loaded
+      required:
+        - kind
+        - id
+        - matching_count
+        - row_ids
+        - window_state
+      type: object
+    CanonicalProjectionProjectGroupWindow:
+      additionalProperties: false
+      allOf:
+        - else:
+            properties:
+              next_cursor:
+                type: "null"
+          if:
+            properties:
+              has_more:
+                const: true
+            required:
+              - has_more
+          then:
+            properties:
+              next_cursor:
+                maxLength: 4096
+                minLength: 1
+                type: string
+      properties:
+        complete_window:
+          const: true
+        cursor:
+          oneOf:
+            - maxLength: 4096
+              minLength: 1
+              type: string
+            - type: "null"
+        has_more:
+          type: boolean
+        limit:
+          maximum: 100
+          minimum: 1
+          type: integer
+        matching_group_count:
+          maxLength: 19
+          pattern: ^(0|[1-9][0-9]*)$
+          type: string
+        next_cursor:
+          oneOf:
+            - maxLength: 4096
+              minLength: 1
+              type: string
+            - type: "null"
+      required:
+        - limit
+        - matching_group_count
+        - cursor
+        - next_cursor
+        - has_more
+        - complete_window
+      type: object
+    CanonicalProjectionProjectGroups:
+      additionalProperties: false
+      description: An independently requested Project group-header metadata page. It contains no Task rows, bodies or action grants and cannot replace a Task baseline. Demand is opt-in via group_limit or group_cursor. Group IDs and exact counts reflect one authorized source; continue with the issued scope and group cursor only. A changed source resets with409; unknown or denied scope is concealed404. Existing common metadata epochs and original scope deadline apply.
+      properties:
+        contract_epoch:
+          minimum: 1
+          type: integer
+        epoch:
+          format: uuid
+          type: string
+        group_window:
+          $ref: "#/components/schemas/CanonicalProjectionProjectGroupWindow"
+        groups:
+          items:
+            $ref: "#/components/schemas/CanonicalProjectionProjectGroup"
+          maxItems: 100
+          type: array
+        kind:
+          const: project_groups
+        schema_epoch:
+          minimum: 1
+          type: integer
+        scope:
+          additionalProperties: false
+          properties:
+            authority_revision:
+              maxLength: 19
+              pattern: ^(0|[1-9][0-9]*)$
+              type: string
+            contract_epoch:
+              minimum: 1
+              type: integer
+            generation:
+              maxLength: 19
+              pattern: ^(0|[1-9][0-9]*)$
+              type: string
+            id:
+              format: uuid
+              type: string
+            schema_epoch:
+              minimum: 1
+              type: integer
+            view_hash:
+              pattern: ^[a-f0-9]{64}$
+              type: string
+            workspace_id:
+              format: uuid
+              type: string
+          required:
+            - id
+            - workspace_id
+            - authority_revision
+            - contract_epoch
+            - schema_epoch
+            - view_hash
+            - generation
+          type: object
+        through:
+          maxLength: 19
+          pattern: ^(0|[1-9][0-9]*)$
+          type: string
+      required:
+        - kind
+        - scope
+        - epoch
+        - through
+        - contract_epoch
+        - schema_epoch
+        - groups
+        - group_window
+      type: object
     CanonicalProjectionRecord:
       oneOf:
         - additionalProperties: false
@@ -12800,6 +12973,7 @@ components:
     CanonicalWorkspaceProjectionReadResult:
       oneOf:
         - $ref: "#/components/schemas/CanonicalWorkspaceProjection"
+        - $ref: "#/components/schemas/CanonicalProjectionProjectGroups"
     ChangeOperation:
       additionalProperties: false
       description: Operation in the exact proposal version, with a server-assigned operation_id. Tool-specific fields describe the reviewed target and edits.
@@ -46533,7 +46707,7 @@ paths:
         - Workspaces
   /api/v1/workspaces/{workspace_id}/projects:
     get:
-      description: Read an authorized Workspace Project page, or resolve an exact Workspace Project key with code. Project keys normalize to uppercase ASCII. Invisible or missing matches return an empty page. Default limit 50, maximum 100. Pages may be short or empty while still providing next_cursor; continue until next_cursor is null. Results include complete Project metadata, permissions, lifecycle references and Task totals. Revisions, Task numbers and totals are decimal strings. Cursors are opaque and bound to the credential, filters and current visibility; restart after authority changes or expiry. Current authorization precedes conditional responses. Collection validators cannot authorize item writes. Identity and decoded gzip representations are bounded to 262144 bytes. Read bodies, duplicate scalar keys, unknown query keys and unsupported request coding are rejected.
+      description: Read an authorized Workspace Project page, or resolve an exact Workspace Project key with code or canonical URL segment with path. Project keys normalize to uppercase ASCII; paths are exact lowercase 1–63-character segments. Both selectors combine with AND. Invisible or missing matches return an empty page. Default limit 50, maximum 100. Pages may be short or empty while still providing next_cursor; continue until next_cursor is null. Results include complete Project metadata, permissions, lifecycle references and Task totals. Revisions, Task numbers and totals are decimal strings. Cursors are opaque and bound to the credential, filters and current visibility; restart after authority changes or expiry. Current authorization precedes conditional responses. Collection validators cannot authorize item writes. Identity and decoded gzip representations are bounded to 262144 bytes. Read bodies, duplicate scalar keys, unknown query keys and unsupported request coding are rejected.
       operationId: listWorkspaceProjects
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -46560,6 +46734,15 @@ paths:
             maxLength: 8
             minLength: 2
             pattern: ^[A-Za-z][A-Za-z0-9]{1,7}$
+            type: string
+        - description: Exact canonical Project URL segment; combines with code using AND. Missing or invisible matches return an empty authorized page.
+          in: query
+          name: path
+          required: false
+          schema:
+            maxLength: 63
+            minLength: 1
+            pattern: ^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$
             type: string
         - description: Include archived Projects; false selects active rows only.
           in: query
@@ -46709,7 +46892,7 @@ paths:
           description: Current authorization, source visibility, conflict, dependency or admission failure
       security:
         - bearerToken: []
-      summary: Read a bounded canonical Project page; optionally resolve an exact Workspace Project key.
+      summary: Read a bounded canonical Project page; optionally resolve an exact Workspace Project key or URL path.
       tags:
         - Projects
     post:

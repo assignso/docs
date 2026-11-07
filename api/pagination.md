@@ -114,3 +114,11 @@ and window selectors. Locators expire after five minutes. Refresh the parent on
 Use a documented nested continuation or collection operation for more data. A preview, a
 bounded candidate list or one file page is not a complete export. See
 [CSV pages and complete exports](./conventions#csv-pages-and-complete-exports).
+
+## Project group metadata <Badge type="warning" text="Upcoming" />
+
+Request Project group headers separately using the projection operation's optional `group_limit` or `group_cursor`. Use the returned scope and `next_cursor` for continuation while `has_more` is true. Group pages contain at most100 headers; counts and positions are decimal strings, which preserve values beyond JavaScript's safe integer range.
+
+A `project_groups` result contains group IDs and matching counts, with empty `row_ids` and `window_state=not_loaded`. Fetch the admitted Task projection separately for actual rows and actions. A completed group window does not mean Task rows are loaded. An unassigned group can have a null ID.
+
+Keep the original scope with its cursor. If the source changes, a409 response requires refreshing the scope rather than continuing an old group cursor. The existing scope lifetime and authorization still apply. See `CanonicalProjectionProjectGroups` in the [OpenAPI document](/openapi.yaml).
