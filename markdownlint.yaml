@@ -2,7 +2,7 @@ config:
   default: true
   MD013: false # prose is wrapped for reading, tables and generated rows are not
   MD033:
-    allowed_elements: [Badge, div, section, p, h1, h2, a, span, code, ul, li]
+    allowed_elements: [Badge, div, section, p, h1, h2, a, span, code, ul, li, img]
   MD041: false # pages may start with frontmatter
   MD024:
     siblings_only: true
