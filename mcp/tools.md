@@ -476,7 +476,9 @@ the result. A Task can mix Workspace labels with labels local to its Project.
 #### Edit or restore a label <Badge type="warning" text="Awaiting deployment" />
 
 Workspace owners and admins can use `label_create`, `label_update` and `label_archive`
-for Workspace labels. The same permission applies when recovering an earlier result.
+for Workspace labels. Project managers, the Project owner and Workspace owners
+and admins can use those tools for Project-local labels. These permissions also
+apply when recovering an earlier result.
 
 Read `label_get` for the current revision, then call `label_update` with at least one of `name`,
 `color` or `archived: false`. Omitted fields keep their current values. Explicit `null` values and

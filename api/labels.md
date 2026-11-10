@@ -10,8 +10,9 @@ The rewritten v1 operations below are awaiting deployment. Public integrations u
 checks on every call. Follow the [API conventions](./conventions).
 
 Workspace owners and admins can create, edit, archive and restore Workspace labels.
-The same permission applies when recovering a write response. Members can assign
-existing labels to items they can update.
+Project managers, the Project owner and Workspace owners and admins can manage
+Project-local labels and overrides. These permissions also apply when recovering
+a write response. Members can assign existing labels to items they can update.
 
 | Operation | Route |
 | --- | --- |
