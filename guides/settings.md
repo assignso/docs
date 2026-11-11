@@ -91,6 +91,8 @@ Keep your draft if a save fails. **Recover original change** checks the result o
 
 ## Native account recovery <Badge type="warning" text="Upcoming" />
 
+If sign-in fails, Assign keeps your email so you can re-enter your password and try again. If Assign can't load your account after sign-in, choose **Try again** to retry loading it.
+
 Choose **Forgot password?** at native login to request an email. A request confirmation does not confirm delivery; check your inbox and spam folder, then request another email if needed. An unverified address may receive a verification link first. After verifying it, request a password reset.
 
 When a supported email link opens in Assign, confirm verification or enter your new password and confirmation. An expired or used link offers **Request a new link**. Resetting signs out existing sessions; sign in again with your new password. Verification alone does not sign you in. If the result cannot be confirmed, request a new link before trying again. Reopen the email after leaving or backgrounding the recovery form. Browser recovery remains available when the email opens there.
