@@ -9,7 +9,7 @@ outline: 2
 
 <Badge type="warning" text="Awaiting deployment" />
 
-268 operations from the public contract, **Assign API 1.0.0-rc.10**. Paths are
+269 operations from the public contract, **Assign API 1.0.0-rc.10**. Paths are
 relative to `https://api.assign.so`.
 
 - **OpenAPI document:** [`openapi.yaml`](/openapi.yaml) (OpenAPI 3.1). Use it to generate a client,
@@ -101,6 +101,7 @@ Guide: [Tasks](./tasks)
 | `POST /api/v1/tasks/{task_id}/attachments` | Attach a file to a Task | Bearer |
 | `POST /api/v1/tasks/{task_id}/complete` | Complete a Task | Bearer |
 | `GET /api/v1/tasks/{task_id}/context` | Read a Task's bounded context | Bearer |
+| `HEAD /api/v1/tasks/{task_id}/context` | Read Task context headers | Bearer |
 | `GET /api/v1/tasks/{task_id}/description-revisions` | List a Task's description revisions | Bearer |
 | `POST /api/v1/tasks/{task_id}/description-revisions/{revision}/restore` | Restore a Task's description revision | Bearer |
 | `POST /api/v1/tasks/{task_id}/duplicate` | Duplicate a Task | Bearer |
