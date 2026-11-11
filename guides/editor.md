@@ -4,8 +4,8 @@ description: Format, link, mention and collaborate in Assign's single editor for
 
 # Writing in Assign
 
-Documents, Task descriptions and Comments all use the same editor, so shortcuts, formatting, mentions
-and Markdown work the same everywhere.
+In the Assign web app, Documents, Task descriptions and Comments share an editor.
+Available commands depend on what you're editing and your access.
 
 ## Callouts <Badge type="warning" text="Awaiting deployment" />
 
@@ -232,11 +232,12 @@ page does not reapply discarded edits automatically.
 ## Mobile Document checklists <Badge type="warning" text="Upcoming" />
 
 When online and permitted to edit a Document, use its checkboxes to check or uncheck
-items. **Pending…** means Assign is waiting for acknowledgement. Repeated taps are
+existing items. **Pending…** means Assign is waiting for acknowledgement. Repeated taps are
 disabled while an action is unresolved.
 
 If access, connectivity or the Document changes, use **Reload checklist** to read
 its current state before trying again. A submitted change may already have been
 saved. Leaving the Document or closing the app does not cancel a submitted change;
-unsent changes are not restored automatically. This checklist interaction does not
-provide general Document editing or offline writes.
+unsent changes are not restored automatically. If you're offline, reconnect before
+trying a checklist change. If a Document opens read-only because its content
+needs a newer editor, open it in a compatible client before editing.
