@@ -59,6 +59,7 @@ lastUpdated: false
     <li><a href="/api/endpoints">Endpoint index <span>Every public operation</span></a></li>
     <li><a href="/openapi.yaml">OpenAPI document <span>Import or generate a client</span></a></li>
     <li><a href="/guides/editor">Writing in Assign <span>Blocks, Markdown, mentions</span></a></li>
+    <li><a href="/branding">Branding <span>Logos, downloads and usage guidelines</span></a></li>
     <li><a href="/guides/keyboard-shortcuts">Keyboard shortcuts <span>Move without the mouse</span></a></li>
   </ul>
 </section>

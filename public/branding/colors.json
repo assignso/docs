@@ -1,0 +1,9 @@
+{
+  "schema": "assign.brand-colors.v1",
+  "colors": {
+    "oilBlack": "#0c0c0c",
+    "black": "#000000",
+    "white": "#ffffff",
+    "deepBlue": "#00075D"
+  }
+}
