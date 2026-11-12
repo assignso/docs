@@ -89,10 +89,16 @@ On mobile, open **Profile → Settings** to reach your Profile and **Preferences
 
 Keep your draft if a save fails. **Recover original change** checks the result of the same change; **Refresh profile** loads the current acknowledged values. Account changes require a connection. Picture replacement depends on your mobile build; when available, choose a PNG or JPEG, review the square crop and select **Use picture**. Your existing picture stays in place until the new one is acknowledged.
 
+## Log in or create an account on mobile <Badge type="warning" text="Upcoming" />
+
+On the Assign welcome screen, choose **Log in** or **Create account**. Enter your email and choose **Continue with email**. You can edit your email while entering your password or account details.
+
+When you create an account, check your inbox for the verification link. If Assign says it could not send the email, choose **Resend verification email**. After you log in, select a Workspace or create your first one.
+
 ## Native account recovery <Badge type="warning" text="Upcoming" />
 
 If sign-in fails, Assign keeps your email so you can re-enter your password and try again. If Assign can't load your account after sign-in, choose **Try again** to retry loading it.
 
-Choose **Forgot password?** at native login to request an email. A request confirmation does not confirm delivery; check your inbox and spam folder, then request another email if needed. An unverified address may receive a verification link first. After verifying it, request a password reset.
+After continuing with your email, choose **Forgot password?** to request a recovery email. A request confirmation does not confirm delivery; check your inbox and spam folder, then request another email if needed. An unverified address may receive a verification link first. After verifying it, request a password reset.
 
 When a supported email link opens in Assign, confirm verification or enter your new password and confirmation. An expired or used link offers **Request a new link**. Resetting signs out existing sessions; sign in again with your new password. Verification alone does not sign you in. If the result cannot be confirmed, request a new link before trying again. Reopen the email after leaving or backgrounding the recovery form. Browser recovery remains available when the email opens there.
