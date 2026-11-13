@@ -928,7 +928,7 @@ const sentryProjectBinding = {
 }
 const sentryBindingCreated = {
   id: sentryBindingId, workspace_id: workspace, installation_id: sentryInstallationId, resource_id: sentryResourceId,
-  project_id: projectId, status: "disconnected", revision: "1", created_at: timestamp, updated_at: timestamp,
+  project_id: projectId, status: "active", revision: "1", created_at: timestamp, updated_at: timestamp,
 }
 const projectLabel = {
   id: projectLabelId, workspace_id: workspace, project_id: projectId, purpose: "task", scope: "project",

@@ -176,6 +176,17 @@ Submitting the same provider name again updates your existing request. A provide
 catalog does not need another request. This records feedback in Assign; it does not contact the
 provider.
 
+## Request a provider through the API <Badge type="warning" text="Upcoming" />
+
+Use [Request an integration provider](./reference/operations/requestintegrationprovider) with a
+bearer credential that has `workspace:read` in the target Workspace. Viewers can submit requests.
+Keep the original `Idempotency-Key` and exact request for recovery if you lose the response.
+An authorized replay returns the original `200` acknowledgement.
+
+A new key for the same provider and requester returns `409 revision_conflict`. For
+`409 integration_already_available`, look up the provider in the
+[integration catalog](./reference/operations/listintegrationcatalog).
+
 ## Task Rich Entities
 
 A Rich Entity is Assign's stable reference to an object owned by a provider, such as an error,
