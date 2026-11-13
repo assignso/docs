@@ -9243,6 +9243,7 @@ components:
             properties:
               id:
                 type: "null"
+      description: A group header with the exact count of matching Tasks as a decimal string. The unassigned group has a null ID. Row IDs are empty because this page leaves Task rows unloaded.
       properties:
         id:
           oneOf:
@@ -9275,7 +9276,6 @@ components:
         - row_ids
         - window_state
       type: object
-      description: A group header with the exact count of matching Tasks as a decimal string. The unassigned group has a null ID. Row IDs are empty because this page leaves Task rows unloaded.
     CanonicalProjectionProjectGroupWindow:
       additionalProperties: false
       allOf:
@@ -9295,6 +9295,7 @@ components:
                 maxLength: 4096
                 minLength: 1
                 type: string
+      description: Paging state for Project group headers. When has_more is true, send next_cursor with the same projection scope. A null next_cursor ends group traversal. A complete group window leaves Task rows unloaded.
       properties:
         complete_window:
           const: true
@@ -9328,7 +9329,6 @@ components:
         - has_more
         - complete_window
       type: object
-      description: Paging state for Project group headers. When has_more is true, send next_cursor with the same projection scope. A null next_cursor ends group traversal. A complete group window leaves Task rows unloaded.
     CanonicalProjectionProjectGroups:
       additionalProperties: false
       description: An independently requested Project group-header metadata page. It contains no Task rows, bodies or action grants and cannot replace a Task baseline. Demand is opt-in via group_limit or group_cursor. Group IDs and exact counts reflect one authorized source; continue with the issued scope and group cursor only. A changed source resets with409; unknown or denied scope is concealed404. Existing common metadata epochs and original scope deadline apply.
@@ -20896,6 +20896,7 @@ paths:
         - Attachments
   /api/v1/auth-context:
     get:
+      description: Check the verified principal and effective scopes for the bearer credential on this request. Workspace-bound credentials return their Workspace ID. A first-party credential with account authority can return a null Workspace ID. Each resource request checks access separately. Renew the credential after a 401. If the Workspace differs from the one you intend to use, obtain a credential bound to that Workspace.
       operationId: getAuthContext
       parameters: []
       responses:
@@ -21017,7 +21018,6 @@ paths:
       summary: Read only the current credential authority context
       tags:
         - Account
-      description: Check the verified principal and effective scopes for the bearer credential on this request. Workspace-bound credentials return their Workspace ID. A first-party credential with account authority can return a null Workspace ID. Each resource request checks access separately. Renew the credential after a 401. If the Workspace differs from the one you intend to use, obtain a credential bound to that Workspace.
   /api/v1/commands/{command_id}/redo:
     post:
       description: Executes the original server-owned forward mutation with the same ownership, expiry, permission, and field-aware conflict checks as Undo. Canonical bodyless atomic command. Current credential, same Actor/Workspace and Task/Project read/write authority are checked in the transaction. Only recorded fields participate in compensation; unrelated edits are preserved. Expiry, lifecycle and changed recorded effects conflict safely. Idempotency-Key retains the original authorized receipt through unknown outcomes, later state changes and executable-handle cleanup. No HTTP item precondition, response ETag or client inverse is accepted. Responses preserve complete Task content and labels; identity/gzip are transport encodings of the original result.
