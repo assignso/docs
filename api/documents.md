@@ -32,7 +32,8 @@ Documents, use `task_id` or `milestone_id`; each related item and Document must 
 `parent_document_id` cannot combine with `include_descendants=true`. `q` searches titles and
 extracted text; `project_id`, `scope` and `location` narrow the selection. `location` describes
 structure, not permission. Use `archived_only=true` for archived roots; active and archived
-Documents are not mixed. The contract defines the accepted filter combinations and limits.
+Documents are not mixed. See [Workspace Documents](./reference/operations/listworkspacedocuments)
+for accepted filter combinations and pagination limits.
 
 Pages default to 50 and cap at 100. Follow every non-null `next_cursor`, including after an empty
 or short page, with the original filters, order and credential. Traversal is live rather than a
@@ -54,32 +55,35 @@ Accept: application/json
 {"title":"Review onboarding notes","visibility":"workspace"}
 ```
 
-The expected result is `201` with the created metadata. Save its `id` for content reads and later
-cleanup. After a lost response, recover the original key and body before considering another
-create. Do not issue a new key merely because the Document is not on the first list page.
+[Create a Document](./reference/operations/createdocument) returns `201` with the created
+metadata. Save its `id` for content reads and cleanup. After a lost response, recover with the
+original key and body. A list page can omit a Document whose create already committed.
 
 ### Edit metadata or content
 
-For a metadata edit, read the current metadata item and forward its opaque strong `ETag` in
-`If-Match` on `PATCH /api/v1/documents/{document_id}`, with a key for that edit. For content,
-read `GET /api/v1/documents/{document_id}/content?format=json&view=canonical` and use its own tag
-on `PUT /api/v1/documents/{document_id}/content?format=json`. The JSON request wraps a supported
-rich-text document in `content`; consult the contract for its schema and bounds.
+To [edit metadata](./reference/operations/updatedocument), first
+[read the metadata item](./reference/operations/getdocument) with `view=canonical`.
+Forward its tag in `If-Match` with a key for that edit.
+To [replace content](./reference/operations/replacedocumentcontent), first
+[read the canonical content](./reference/operations/getdocumentcontent) with
+`format=json&view=canonical`. Use its tag and `format=json` on the replacement request.
 
 The expected result is `200` with the new metadata or content. Keep the same content format and
 encoding; metadata, JSON content, Markdown content and historical revision validators cannot
 substitute for one another. Never construct a tag from a revision number.
 
-A missing required condition returns `428`; a stale condition returns `412`. Retain the intended
-edit, read current state and reconcile before preparing another write. Metadata commands use
-keyed recovery. Content replacement uses its observed condition and does not accept an
-`Idempotency-Key`: after a timeout or cancellation, reread current content and reconcile rather
-than blindly repeating the replacement. If access is lost, stop with the local draft intact.
+A missing condition returns `428`. Read the appropriate representation to obtain its tag.
+A stale condition returns `412`. Compare the current state with your draft before preparing
+another write. After an interrupted metadata edit, recover the original keyed request. Content
+replacement takes only a condition. After a timeout or cancellation, reread the current content
+and compare it with the draft. If the draft is already saved, continue from the current result.
+If the content differs, review the differences before choosing whether to save again. If access
+is lost, stop with the local draft intact.
 
 ## Attachments
 
-`GET /api/v1/documents/{document_id}/attachments` lists linked files. Follow its continuation
-until `next_cursor: null`; a file outside the first page is not necessarily missing. Complete
+[List Document attachments](./reference/operations/listdocumentattachments) to find linked
+files. Follow the cursor through the final page. Complete
 the [upload flow](./attachments#upload-and-attach) before linking a clean attachment:
 
 ```http
@@ -91,7 +95,8 @@ Content-Type: application/json
 {"attachment_id":"<completed-attachment-id>"}
 ```
 
-Use the immutable ID from upload completion. You need write access to the Document and access to
+The [link operation](./reference/operations/attachdocumentattachment) uses the immutable ID from
+upload completion. You need write access to the Document and access to
 the file. Confirm the link before inserting its ID in the body. After a lost response, recover
 the original link request; do not upload the bytes again automatically. A Document's historical
 revisions can still use its linked files. Store attachment IDs in content, never temporary URLs.
@@ -195,11 +200,15 @@ archiving preserve their revocation effects.
 
 ## Permanently delete a Document
 
-Permanent deletion removes the Document, its history and resource links and cannot be undone.
-Use archive when you may need it again. For example cleanup, first verify the saved ID belongs
-to the Document your workflow created. Do not delete pre-existing or shared Documents.
+For example cleanup, verify the saved ID belongs to the Document your workflow created.
+[Archive it](./reference/operations/archivedocument) with its current metadata item tag and a
+fresh key, then verify the archived state in the `200` result. After a lost archive response,
+recover the original keyed request before taking another action.
 
-`DELETE /api/v1/documents/{document_id}/permanent` requires the current metadata item's opaque
+Permanent deletion removes the Document, its history and resource links and cannot be undone.
+Leave pre-existing or shared Documents available to their users.
+
+[Permanently delete a Document](./reference/operations/deletedocument) requires the current metadata item's opaque
 `If-Match` and an `Idempotency-Key`. Success returns `204` without a body; later reads return
 `404`. After a lost response, recover the original key and condition before another intent.
 A stale condition returns `412` and leaves the Document unchanged.

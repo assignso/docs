@@ -74,6 +74,10 @@ the current Workspace and have been uploaded by the current Actor. `DELETE` on t
 removes the association without a request body. Both commands require the Workspace's exact
 opaque item `ETag` in `If-Match` and an `Idempotency-Key`; an image URL is not accepted as input.
 
+To fetch the icon, [resolve its temporary URL](./reference/operations/getworkspaceiconcontent).
+Read the `302` response's `Location` and fetch it without forwarding your Assign credentials.
+Request a fresh URL if it expires.
+
 ## Archive <Badge type="warning" text="Awaiting deployment" />
 
 Archiving and restoration are first-party Account actions managed in Assign. An owner needs a
@@ -98,7 +102,11 @@ Configure [Workspace Knowledge](./knowledge) in Assign, choosing the included Pr
 Enabling it needs an active Knowledge entitlement and at least one included Project. Check its
 setup progress and readiness in the application.
 
-### Features <Badge type="warning" text="Awaiting deployment" />
+<span id="features-awaiting-deployment"></span>
+
+### Features
+
+<Badge type="warning" text="Awaiting deployment" />
 
 Read `GET /api/v1/workspaces/{workspace_id}/features` to see registered features, their state and
 whether you can manage them. Update a feature with
@@ -171,6 +179,38 @@ The Status is appended and returned with `201`. `label` is 1–100 characters. `
 `unstarted`, `started`, `completed` or `cancelled`. `icon` and a six-digit hex `color` are optional.
 Update, archive and reorder them as described in
 [Projects and Statuses](./projects#update-archive-restore-and-reorder).
+
+## Lifecycle mappings and migrations
+
+Use a Workspace-bound bearer credential to [list supported lifecycle behaviors](./reference/operations/listlifecyclebehaviors).
+[Read lifecycle definitions](./reference/operations/listlifecycledefinitions) to find their stages,
+bound Statuses and item validators. To select a completing Status, use
+[completion target resolution](./reference/operations/resolvelifecyclecompletiontarget).
+If several Statuses can complete the item, choose a returned Status ID and pass it as `target_status_id`.
+
+With Workspace management authority, [preview the mapping](./reference/operations/previewlifecyclemapping)
+using the source definition's exact validator. Review impact and any required acknowledgement.
+[Apply the mapping](./reference/operations/applylifecyclemapping) with the preview's destination
+validators and an idempotency key. Follow the accepted response's `Location` to
+[track the Operation](./operations). Read its authorized result to get the migration job ID.
+[Inspect the job](./reference/operations/getlifecyclemigration) for progress or failure. To
+[resume a failed job](./reference/operations/retrylifecyclemigration), use its current validator
+and a key for that retry. Previously moved pages stay committed.
+
+## Milestone stages
+
+[Read the Milestone stage catalog](./reference/operations/getworkspacemilestonelifecycle) for
+the ordered stages and their stable IDs. With Workspace management authority,
+[send the complete catalog](./reference/operations/updateworkspacemilestonelifecycle) using the
+read's exact `ETag`. An in-use stage needs an active replacement in the same category before
+it can be archived, subject to the history and migration limits.
+
+## Workspace baselines and deltas
+
+[Read a Workspace baseline](./reference/operations/getworkspaceprojection) with a bounded
+selection in the query. Keep the returned scope and cursor for continuation. Use `view=delta`
+with the issued scope and cursor to read changes. If the response requires a reset, discard the
+invalidated observation and request a fresh baseline.
 
 ## Members
 
@@ -257,16 +297,22 @@ replacement. Let those Project views refresh to show their current state.
 
 ## My Work
 
-A personal, read-only projection of your own Tasks:
+<Badge type="warning" text="Upcoming" />
+
+[Read My Work](./reference/operations/listmywork) with a supported human bearer credential and
+current Workspace access. Choose a calendar view for your own Tasks.
 
 ```http
 GET /api/v1/workspaces/{workspace_id}/work?view=today&limit=50
 ```
 
-`view` is `assigned`, `overdue`, `today`, `upcoming` or `completed`. Due dates are dates, evaluated
-in the timezone returned in the response. Completed Tasks stay in `completed` for 14 days. The
-response has `items`, `next_cursor`, `has_more`, `as_of_date` and `timezone`. Default page size is
-50, maximum 100.
+Use `assigned` (the default), `overdue`, `today`, `upcoming` or `completed`. The calendar uses
+your saved timezone and reports its date in `as_of_date`. The `completed` view uses a 14-day
+lookback from that calendar date. The response includes Task rows in `data`, display references
+in `included` and the exact `total_count` as a decimal string.
+
+Pages default to 50 rows and allow up to 100. Follow `next_cursor` until it is null, keeping the
+same credential and query. If the cursor is invalid or expires, start again at the first page.
 
 ## Errors
 

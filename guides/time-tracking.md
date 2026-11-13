@@ -60,15 +60,22 @@ See [Integrations](../api/integrations#providers).
 
 ## API
 
-The public API has operations for the Workspace policy, Task entries, Task and Project totals, bounded Project Task groups, manager-only Project Task entries, contributor groups, your
-timesheet and CSV export. See the [endpoint index](../api/endpoints#time-tracking) and the
-[OpenAPI document](/openapi.yaml). Before a Workspace saves its first policy, the policy read reports
-the display revision `"0"`. Use the policy read's exact opaque item ETag in `If-Match`, preserving
-its credential and encoding; never construct a tag from that revision. Policy writes also require
-an `Idempotency-Key` retained with the original request for unknown-outcome recovery.
-The four Project report reads return `X-Assign-Report-Revision`. Compare this
-value across totals, Task groups, contributor groups, selected Task entries and
-all continuation pages for one range; restart the whole range if it differs.
+The [Time tracking API reference](/api/reference/time-tracking) is Upcoming. Use it to plan
+an integration with the Workspace policy, Task time entries, Project reports and personal
+timesheets. The [endpoint index](../api/endpoints#time-tracking) links to the OpenAPI download.
+
+- [Read the policy](/api/reference/operations/gettimetrackingpolicy) before
+  [changing it](/api/reference/operations/updatetimetrackingpolicy). Keep the opaque ETag
+  and its response encoding for `If-Match`. A Workspace with no saved policy reports revision `"0"`.
+- [Record time](/api/reference/operations/createtasktimeentry) against a Task.
+  To correct or void an entry, get its item validator from the
+  [entry list](/api/reference/operations/listworkspacetimeentries).
+  Keep the original idempotency key, request and condition for recovery after a lost response.
+- [Read your timesheet as JSON](/api/reference/operations/getmytimesheet) and copy its
+  `report_revision` into the [CSV export request](/api/reference/operations/createtimesheetexport)
+  for the same dates. The response includes a download link. The snapshot expires after seven days.
+- Compare `X-Assign-Report-Revision` across Project totals, groups and entry pages for the same date
+  range. Restart the range if the value changes.
 
 Running timers, payroll, approvals, Agent-written entries and provider report synchronization aren't
 included.

@@ -75,9 +75,10 @@ capabilities, not by comparing server versions.
 
 Choose an available SDK release that identifies the contract you intend to use. Regenerate
 or replace clients built for an earlier schema even when the URL still starts with `/api/v1`.
-The [first-request tutorial](./quickstart#3-read-one-task-page) records SDK availability and
-provides an HTTP example. If no matching SDK release is available, use HTTP instead of an
-older generated client.
+The [Task workflow source downloads](./quickstart#run-the-complete-workflow) pin the exact
+TypeScript and PHP SDK artifacts used by the examples. Those artifacts are unreleased and
+provided separately. Use the tutorial's [HTTP request](./quickstart#http) if you don't have a
+matching SDK artifact.
 
 ## Update an integration <Badge type="warning" text="Awaiting deployment" />
 
@@ -126,8 +127,7 @@ to that Workspace. See [Make your first request](./authentication#make-your-firs
 For an external bearer integration, omit browser cookies and `X-CSRF-Token`. In a browser
 Fetch client, set `credentials: "omit"`; a cookie must not act as fallback when a bearer token
 is missing or invalid. Do not copy an Assign browser session into an integration. Assign's
-own application manages sign-in, cookies and CSRF for its admitted session requests to the
-same canonical resource URL.
+own application handles sign-in, session cookies and CSRF protection for browser access.
 
 Existing personal tokens may carry older scopes or longer lifetimes. Follow the credential's
 migration notice and explicitly reissue or rotate it when needed; switching a Workspace in
@@ -142,8 +142,8 @@ Selecting another Workspace in the Assign app does not retarget that credential.
 credential for the intended Workspace before changing the integration's requests, and discard
 cached resource data from the prior Workspace.
 
-Assign's browser application manages its session and CSRF token. Sign out through the app;
-an external integration should not copy or clear those cookies to manage a bearer credential.
+Sign out through the Assign app to end its browser session. Manage product credentials through
+their [own rotation and revocation steps](./authentication#expiry-rotation-and-revocation).
 For a native application or CLI, use that client's sign-out and credential-management commands.
 Preserve an interrupted write's original request and key while resolving its result, even if
 you sign in again or change clients. See [unknown write outcomes](./writes#recover-an-unknown-outcome).

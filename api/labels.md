@@ -5,14 +5,14 @@ description: Manage Workspace and Project label definitions, assign labels to wo
 # Labels
 
 Labels are defined per Workspace or per Project and assigned to Tasks, Projects and Documents.
-The rewritten v1 operations below are awaiting deployment. Public integrations use
-[bearer credentials](./authentication), with current visibility and Workspace authorization
-checks on every call. Follow the [API conventions](./conventions).
+The v1 operations in the [Labels reference](/api/reference/labels) are awaiting deployment.
+Use a [product bearer credential](./authentication) with read or write scope for the operation
+and current access to the Workspace and resource.
 
 Workspace owners and admins can create, edit, archive and restore Workspace labels.
 Project managers, the Project owner and Workspace owners and admins can manage
 Project-local labels and overrides. These permissions also apply when recovering
-a write response. Members can assign existing labels to items they can update.
+a write response. Assigning existing labels requires label assignment permission and permission to update the target.
 
 | Operation | Route |
 | --- | --- |
@@ -23,29 +23,24 @@ a write response. Members can assign existing labels to items they can update.
 | Read, replace a target's labels | `GET`, `PUT /api/v1/{target_kind}/{target_id}/labels` |
 | List, set, clear Project overrides | `GET /api/v1/projects/{project_id}/label-overrides`, `PUT`, `DELETE …/label-overrides/{label_id}` |
 
-- Lists return only active labels unless a settings client passes `include_archived=true`.
-- The upcoming paginated definition lists accept `limit` (1–100, default 50) and
-  `cursor`. Pass each non-null `next_cursor` with the same scope and filters until
-  `next_cursor` is `null`, including after a short or empty page.
-  A cursor cannot be reused for another Workspace, Project or filter;
-  start again at the first page after a catalog change if a complete current
-  view is needed. A changed catalog returns `409 catalog_changed`; discard the
-  partial traversal and start again at page one. This also applies to definition
-  lists. <Badge type="warning" text="Awaiting deployment" />
-- Archiving stops future assignment but leaves history intact. Send the exact opaque canonical
-  item `ETag` in `If-Match` and retain the `Idempotency-Key` for recovery. Restore with a
-  conditional `PATCH` of `{"archived": false}`, which keeps the same label. See
-  [writes and retries](./writes).
-- Replacing a target's labels sets the complete active set and follows the revision rules in the
-  [OpenAPI document](/openapi.yaml). `target_kind` is `task`, `project` or `document`.
-- A Project can show a Workspace Task label under a different name or color, only in that Project.
-  The label's identity and assignments don't change. `PUT` upserts the override and `DELETE` clears
-  it, idempotently, restoring the Workspace default. Only Workspace-scope Task labels can be
-  overridden.
-- Project override lists accept `limit` (1–100, default 50) and `cursor`. Follow
-  each non-null `next_cursor` until it is `null`, including after a short or empty
-  page. If a catalog change invalidates the cursor, discard the partial traversal
-  and start at page one. <Badge type="warning" text="Awaiting deployment" />
+- Definition lists return active labels by default. Pass `include_archived=true` to include
+  archived definitions. The Workspace list can also filter by `purpose`.
+- Definition and override lists accept `limit` (1–100, default 50). Pass each non-null
+  `next_cursor` as `cursor` with the same scope, filters, limit, credential and encoding,
+  even after a short or empty page. A null cursor ends the traversal. For
+  `409 catalog_changed`, discard the partial traversal and start at page one.
+- To edit or archive a definition, read its exact item `ETag` from
+  [the definition read](/api/reference/operations/getlabeldefinition). Archiving retains existing assignments
+  and history. A conditional `PATCH` with `{"archived": false}` restores the same label.
+- To replace a target's labels, use the `ETag` from that target's assignment-set read in
+  `If-Match`. Send the complete set of up to 20 eligible label IDs. Send `{"label_ids": []}`
+  to clear the set. `target_kind` is `task`, `project` or `document`.
+- A Project override changes the name and color shown for a Workspace Task label in that
+  Project. The label ID and assignments stay the same. Set or clear the override with
+  the matching row's `item_validator.etag` and its encoding. Clearing restores the latest
+  Workspace presentation, including when the definition is archived and the override is retained.
+- For conditional writes, keep the validator's encoding and quotes. Save the original request
+  and `Idempotency-Key` so you can [recover an unknown outcome](./writes#recover-an-unknown-outcome).
 
 ## Read one label <Badge type="warning" text="Awaiting deployment" />
 

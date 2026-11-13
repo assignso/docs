@@ -89,7 +89,7 @@ narrowing the scope also cancels pending work and pending approvals.
 
 ## Run and inspect
 
-An active Agent with `manual` enabled starts with an empty body:
+To queue a run for an active Agent with `manual` enabled, send an empty JSON object:
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs HTTP/1.1
@@ -128,7 +128,7 @@ A completed run can still have provider usage pending, so its final charge may n
 Insufficient credits produce a visible blocked or skipped run without blocking normal collaboration.
 
 `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/cancel` with
-`Idempotency-Key` and an empty body requests cancellation of a queued, running or approval-waiting
+`Idempotency-Key` and an empty JSON object requests cancellation of a queued, running or approval-waiting
 run. Current Agent-run authority and the initiator-or-manager
 restriction apply. Started work can remain cancellation-requested until it acknowledges completion.
 Repeating the command observes the retained cancellation or terminal outcome under current access.

@@ -21,24 +21,24 @@ before treating a file as attached.
 Project files show as a grid. Raster images permitted for preview show a thumbnail. SVG and
 non-image files show an icon; scan restrictions can also prevent a thumbnail.
 
-### API upload workflow <Badge type="warning" text="Upcoming" />
+### API upload workflow <Badge type="warning" text="Upcoming" /> {#api-upload-workflow}
 
-Use a bearer credential admitted for file writes and obtain the Workspace ID through
-[Authentication](./authentication#make-your-first-request). Create the parent Task, Project or
+Use the [credential setup](./quickstart) to get a bearer credential admitted for file writes.
+[Copy the Workspace ID](./account#copy-workspace-id). Create the parent Task, Project or
 Document first and save its immutable ID. These requests describe the upcoming resource flow;
 check [operation availability](./reference/) before using it.
 
-Reserve the exact byte count from 1 through 52,428,800 bytes (50 MiB). The display filename must
-fit within 255 UTF-8 bytes after NFC normalization. It cannot contain a path separator, null or
-control character, be `.` or `..`, or start or end with whitespace or a dot. Invalid filenames
-are rejected rather than rewritten.
+Reserve the exact byte count of the file you are sending. Check the filename and file size
+against the [reservation request](./reference/operations/reserveattachmentupload) before
+starting the upload.
 
 An optional `content_type` is advisory. Completion detects the stored type from the file bytes;
 changing the declared type does not bypass the [safety rules](#safety).
 
 1. **Reserve.** Choose one local file and determine its exact byte length. For this example,
    `printf 'hello\n' > hello.txt` creates a six-byte UTF-8 file. Reserve those bytes with a fresh
-   key, retaining the request until the result is known:
+   key, retaining the request until the result is known. Replace the fictitious Workspace ID
+   with your own.
 
    ```http
    POST /api/v1/attachment-uploads
@@ -46,17 +46,41 @@ changing the declared type does not bypass the [safety rules](#safety).
    Idempotency-Key: <key-for-this-reservation>
    Content-Type: application/json
 
-   {"workspace_id":"<workspace-id>","filename":"hello.txt","content_length":6}
+   {"workspace_id":"0198ac5e-f9b7-7000-8000-000000000002","filename":"hello.txt","content_length":6}
    ```
 
-   The expected result is `201` with `upload_id`, `expires_at` and `content_length`. Only the first
-   committed response includes `upload_url`, its `method` and `required_headers`. Save the upload
-   ID separately from the temporary URL. A recovered reservation has no new upload capability.
+   The first committed [reservation](./reference/operations/reserveattachmentupload) returns
+   `201 Created`. This example uses a fictitious storage URL.
+
+   ```json
+   {
+     "upload_id": "0198ac5e-f9b7-7000-8000-000000000010",
+     "expires_at": "2026-01-01T12:15:00Z",
+     "content_length": 6,
+     "upload_url": "https://storage.example.com/upload/example",
+     "method": "PUT",
+     "required_headers": {
+       "Content-Length": "6",
+       "If-None-Match": "*"
+     }
+   }
+   ```
+
+   Save the upload ID and expiry for recovery. Use the temporary URL and its headers for
+   the transfer, and keep the URL out of logs and durable receipts.
 
 2. **Transfer.** Send the six file bytes to `upload_url` using its returned method and exact
    storage headers. This request goes to storage, not the Assign API. Never send your Assign
-   bearer credential or browser cookies to that URL. Sending bytes does not create a completed
-   attachment or link it to the parent.
+   bearer credential or browser cookies to that URL. Keep redirects disabled when sending
+   the file. With the example headers above, set `UPLOAD_URL` from the first response and send
+   the file this way.
+
+   ```sh
+   curl -q --fail --request PUT \
+     --header 'Content-Length: 6' \
+     --header 'If-None-Match: *' \
+     --upload-file hello.txt "$UPLOAD_URL"
+   ```
 
 3. **Complete.** After the transfer succeeds, use the saved upload ID and a key for completion:
 
@@ -69,13 +93,30 @@ changing the declared type does not bypass the [safety rules](#safety).
    {}
    ```
 
-   The expected result is `201` with the attachment's immutable `id`. Completion verifies the
-   stored object and applicable scan state. An optional `sha256` is the actual file's digest as
-   64 lowercase hexadecimal characters. Do not send a guessed digest. An unverified or
-   quarantined object is not ready to embed.
+   [Completion](./reference/operations/completeattachmentupload) verifies the stored object
+   and applicable scan state. A successful `201` returns attachment metadata. Save the
+   returned `id` for the next step.
+
+   ```json
+   {
+     "id": "0198ac5e-f9b7-7000-8000-000000000011",
+     "workspace_id": "0198ac5e-f9b7-7000-8000-000000000002",
+     "filename": "hello.txt",
+     "content_length": 6,
+     "content_type": "text/plain; charset=utf-8",
+     "scan_state": "clean",
+     "created_by_actor_id": "0198ac5e-f9b7-7000-8000-000000000012",
+     "created_at": "2026-01-01T12:00:06Z"
+   }
+   ```
+
+   If completion rejects the stored bytes, check the length and any digest you supplied.
+   Resolve the failed upload before reserving space for corrected bytes. An unverified or
+   quarantined object is unavailable for embedding.
 
 4. **Link.** Use the completed attachment ID and the saved parent ID. For the Task created in
-   [the Task recipe](./tasks#create):
+   [the Task recipe](./tasks#create), replace `{task_id}` and the example attachment ID
+   with your saved values.
 
    ```http
    POST /api/v1/tasks/{task_id}/attachments
@@ -83,12 +124,13 @@ changing the declared type does not bypass the [safety rules](#safety).
    Idempotency-Key: <key-for-this-attachment-link>
    Content-Type: application/json
 
-   {"attachment_id":"<completed-attachment-id>"}
+   {"attachment_id":"0198ac5e-f9b7-7000-8000-000000000011"}
    ```
 
-   The expected result is `201` with attachment metadata. Confirm the link before storing its
-   ID in rich text. The same stored object can be linked to other permitted parents without
-   uploading its bytes again.
+   [Linking to a Task](./reference/operations/attachtaskattachment) returns `201` with attachment
+   metadata. Confirm the link before storing its ID in rich text. If linking is denied, check
+   your access to the parent and the completed attachment. You can reuse that object for
+   another permitted parent without uploading its bytes again.
 
 ### Recover or cancel an upload
 
@@ -96,20 +138,31 @@ Keep the reservation, completion and link keys separate, with each exact request
 After a lost API response, recover that original request before moving to another step. A lost
 completion or link response does not mean you should upload the file again.
 
-Reservation recovery returns the original safe metadata without a fresh `upload_url`. If the
-first URL was lost or expired, do not automatically create another reservation. Retain the upload
-ID and establish the original outcome. When abandoning a known incomplete upload, use
-`DELETE /api/v1/attachment-uploads/{upload_id}` with a key for cancellation; success is `204`
-without a body. Confirm cancellation before explicitly starting another upload. If you cannot
-recover the ID or outcome, stop and use the request ID for support rather than accumulating
-untracked reservations.
+Replaying the reservation with the original key and body returns the original `201` receipt.
+The recovered body omits `upload_url`, `method` and `required_headers`.
 
-A completed attachment needs its own cleanup decision. `GET /api/v1/attachments/{attachment_id}`
-returns metadata and an opaque item `ETag`. To delete a file your workflow created, read and review
-that exact item, then send `DELETE /api/v1/attachments/{attachment_id}` with its tag in `If-Match`
-and an idempotency key. Deletion affects every linked resource; do not use it to undo just one
-link or remove a pre-existing shared file. A `412` requires reconciliation; after an uncertain
-delete, preserve the original key and condition for recovery.
+```json
+{
+  "upload_id": "0198ac5e-f9b7-7000-8000-000000000010",
+  "expires_at": "2026-01-01T12:15:00Z",
+  "content_length": 6
+}
+```
+
+If the storage PUT was interrupted, keep the upload ID. Try completion for that reservation
+when the transfer may have succeeded. Completion checks the stored bytes before returning an
+attachment. If the reservation is incomplete and you are abandoning it, [cancel the upload](./reference/operations/cancelattachmentupload)
+with a key for cancellation. A `204` confirms release of the reservation. After a lost
+cancellation response, recover that same request. If the first URL was lost or has expired,
+resolve the old reservation before starting another upload. If you cannot recover the ID
+or outcome, stop and use the request ID for support.
+
+For a completed upload, [read the attachment](./reference/operations/getattachment) by the ID
+from completion. Verify that your workflow created the file and that deleting it is appropriate
+for every linked resource. [Delete it](./reference/operations/deleteattachment) with the item's
+tag in `If-Match` and a new idempotency key. Success is `204`. Leave pre-existing or shared files
+available. A `412` requires a fresh read and review. After an uncertain delete, preserve the
+original key and condition for recovery.
 
 ## Resolve older linked files <Badge type="warning" text="Awaiting deployment" />
 

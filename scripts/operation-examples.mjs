@@ -1,7 +1,7 @@
 // Editorial labels only. Operation IDs, routes and contract descriptions stay unchanged.
 const actionTitles = {
-  getworkspaceiconcontent: "Download the Workspace icon",
-  resolvelifecyclecompletiontarget: "Choose a completing lifecycle Status",
+  getworkspaceiconcontent: "Get a temporary Workspace icon URL",
+  resolvelifecyclecompletiontarget: "Resolve a completing lifecycle Status",
   listlifecycledefinitions: "List Workspace lifecycle definitions",
   applylifecyclemapping: "Apply a reviewed lifecycle mapping",
   previewlifecyclemapping: "Preview a lifecycle mapping",
@@ -165,11 +165,12 @@ const actionTitles = {
   updateprojectshortcuts: "Replace your Project shortcuts",
   listcurrentworkcandidates: "Find Tasks to work on next",
   listinboxitems: "Read your Workspace Inbox",
-  convergeinboxreadstate: "Mark Inbox items read through a cutoff",
+  convergeinboxreadstate: "Mark Inbox items seen or read through a cutoff",
   listnotificationpreferences: "List your notification preferences",
   getnotificationpreference: "Read a notification preference",
   updatenotificationpreference: "Change a notification preference",
-  getauthcontext: "Read your credential context",
+  getauthcontext: "Check your API credential’s authority",
+  listworkspacemembers: "List members of a Workspace",
   getinboxitem: "Read an Inbox item",
   updateinboxitemreadstate: "Mark an Inbox item read or unread",
   clearcurrenttask: "Clear your current Task",
@@ -230,6 +231,7 @@ export function operationTitle(operation, fallback) {
 const keyed = { "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
 const conditional = { ...keyed, "If-Match": "${ITEM_ETAG}" }
 const comment = { mediaType: "text/markdown", body: "Please review the release checklist." }
+const editedCommentText = "Please review the release checklist by Friday."
 const attachmentDigest = "31b0a3b37cf018f94688fa626b3043cae6d46667cbfad593aced7909c736c355"
 const attachmentUploadId = "0198ac5e-f9b7-7000-8000-000000000030"
 const attachmentId = "0198ac5e-f9b7-7000-8000-000000000031"
@@ -533,7 +535,7 @@ export const operationExamples = {
   getcurrentwork: {},
   setcurrenttask: { headers: conditional, body: { task_id: "0198ac5e-f9b7-7000-8000-000000000003" } },
   getcomment: { query: { format: "markdown" } },
-  updatecomment: { ...comment, headers: conditional, query: { format: "markdown" } },
+  updatecomment: { ...comment, body: editedCommentText, headers: conditional, query: { format: "markdown" } },
   deletecomment: { headers: conditional },
   addcommentreaction: {},
   removecommentreaction: {},
@@ -634,6 +636,8 @@ export function applyRequestExample(operation, request) {
   const result = { ...request, headers, queryString: Object.entries(example.query ?? {}).map(([name, value]) => ({ name, value })) }
   const url = new URL(request.url), parts = url.pathname.split("/"), path = operation.path.split("/")
   const values = { ...(["getlifecyclemigration", "retrylifecyclemigration"].includes(operation.id) ? { job_id: lifecycleMigrationJobId } : {}), ...(operation.id === "revokeworkspacemcpservicecredential" ? { credential_id: mcpServiceCredentialId } : {}), ...(["applylifecyclemapping", "previewlifecyclemapping"].includes(operation.id) ? { definition_id: curatedDefinitionId } : {}), ...(["getwebhookendpoint", "updatewebhookendpointstate", "listwebhookdeliveries", "getwebhookdelivery", "redeliverwebhookdelivery", "rotatewebhookendpointsecret"].includes(operation.id) ? { endpoint_id: webhookEndpoint.id, delivery_id: webhookDelivery.id } : {}), ...(operation.id === "gettimesheetexport" ? { operation_id: timesheetExportId } : {}), ...(["voidtimeentry", "updatetimeentry"].includes(operation.id) ? { entry_id: timeEntryId } : {}), ...(["deletetasksavedview", "updatetasksavedview"].includes(operation.id) ? { view_id: taskSavedViewId } : {}), ...(operation.id === "gettaskselection" ? { id: taskSelectionId } : {}), ...(operation.id === "getoperationreceipt" ? { id: taskReceiptId } : {}), ...(operation.id === "gettaskresultset" ? { id: taskResultSetId } : {}), ...(["getchangeset", "applychangeset"].includes(operation.id) ? { id: changeSetId, change_set_id: changeSetId } : {}), ...(operation.id === "getdocumentpatch" ? { id: documentPatchId } : {}), ...(operation.id === "getchangesetoperationresult" ? { operation_id: changeSetOperationId } : {}), ...(["removeprojectmember", "updateprojectmember"].includes(operation.id) ? { actor_id: projectMemberActorId } : {}), ...(["getworkspacepersonprofilepicture", "getworkspacepersonprofile", "listworkspacepersonactivity"].includes(operation.id) ? { username: membershipRecord.username, user_id: membershipRecord.user_id } : {}), ...(["createworkspaceagentrun", "getworkspaceagentrun", "listworkspaceagentrunactions", "decideworkspaceagentapproval", "cancelworkspaceagentrun", "listworkspaceagentrunoutputs"].includes(operation.id) ? { agent_id: agentInstance.id, run_id: agentRun.id, action_id: agentAction.id, approval_id: agentAction.approval.id } : {}), ...(["removeworkspaceagent", "getworkspaceagent", "updateworkspaceagent", "quarantineworkspaceagent", "rollbackworkspaceagent", "listworkspaceagentruns"].includes(operation.id) ? { agent_id: agentInstance.id } : {}), ...(["getnotificationpreference", "updatenotificationpreference"].includes(operation.id) ? { category: "assignment" } : {}), ...(operation.id === "updateworkspacefeature" ? { feature: "time_tracking" } : {}), inbox_item_id: inboxRecord.id, workspace_id: workspace, project_id: projectId, task_id: taskId, comment_id: commentRecord.id, ...(["revokeworkspaceinvitation", "resendworkspaceinvitation"].includes(operation.id) ? { invitation_id: invitationRecord.id } : {}), ...(["updateworkspacemembership", "removeworkspacemember"].includes(operation.id) ? { member_id: membershipRecord.membership_id } : {}), ...(["getworkspacecustomagent", "updateworkspacecustomagent", "delegatetasktoworkspacecustomagent", "getworkspacecustomagentprofile", "listworkspacecustomagentrequests", "admitworkspacecustomagentrequest", "getworkspacecustomagentusage"].includes(operation.id) ? { definition_id: customAgentRecord.definition_id } : {}), ...(["createdocumentworklink", "deletedocumentworklink", "listtargetlabelassignments", "replacetargetlabels"].includes(operation.id) ? { target_kind: "task", target_id: taskId } : {}), ...(["getdocumentrevision", "restoredocumentrevision", "restoretaskdescriptionrevision"].includes(operation.id) ? { revision: "1" } : {}), ...(operation.id === "getknowledgerepositorysyncrun" ? { run_id: repositorySyncRunId } : {}), ...(operation.id === "resolveknowledgerepositoryconflict" ? { conflict_id: repositoryConflictId } : {}), ...(operation.id === "getintegrationaction" ? { action_id: sentryResolveActionId } : {}), ...(["disconnectintegrationbinding", "verifysentrybinding", "listintegrationsubscriptions", "createintegrationsubscription"].includes(operation.id) ? { binding_id: sentryBindingId } : {}), ...(["disconnectintegrationinstallation", "getintegrationinstallation", "listintegrationactiondefinitions", "getintegrationinstallationmanagement", "listintegrationresources", "refreshintegrationresources"].includes(operation.id) ? { installation_id: sentryInstallationId } : {}), ...(operation.id === "updateintegrationsubscription" ? { subscription_id: sentrySubscriptionId } : {}), ...(operation.id === "disconnectpersonalintegrationidentity" ? { identity_id: sentryIdentityId } : {}), ...(["getoperation", "canceloperation"].includes(operation.id) ? { operation_id: agentOperation.id } : {}), ...(["getlabeldefinition", "updatelabeldefinition", "archivelabeldefinition"].includes(operation.id) ? { label_id: projectLabelId } : {}), ...(["clearprojecttasklabeloverride", "setprojecttasklabeloverride"].includes(operation.id) ? { label_id: workspaceLabelId } : {}), ...(["movestatus", "getstatus", "updatestatus", "archivestatus", "archivestatusandreplace", "previewstatuslifecyclechange"].includes(operation.id) ? { status_id: reviewStatus.id } : {}), milestone_id: milestoneId, state_id: projectStateId, document_id: documentId, command_id: reversibleCommand.id, upload_id: attachmentUploadId, attachment_id: attachmentId, reaction: "thumbs_up", group_id: "group_example" }
+  if (["deletetaskrelation", "updatetaskrelation"].includes(operation.id))
+    values.relation_id = taskRelationId
   for (const [index, segment] of path.entries()) {
     const name = segment.match(/^\{([^}]+)\}$/)?.[1]
     if (name && values[name]) parts[parts.length - path.length + index] = encodeURIComponent(values[name])
@@ -657,6 +661,7 @@ export function environmentSample(code, lang) {
 
 const workspace = "0198ac5e-f9b7-7000-8000-000000000001"
 const projectId = "0198ac5e-f9b7-7000-8000-000000000002"
+const taskRelationId = "0198ac5e-f9b7-7000-8000-000000000092"
 const taskId = "0198ac5e-f9b7-7000-8000-000000000003"
 const actorId = "0198ac5e-f9b7-7000-8000-000000000004"
 const statusId = "0198ac5e-f9b7-7000-8000-000000000005"
@@ -1007,7 +1012,8 @@ const webhookEndpoint = {
   created_at: "2026-10-27T10:00:00Z", updated_at: "2026-10-27T10:00:00Z",
   item_validator: { etag: '\"example-webhook-endpoint-identity-1\"', encoding: "identity", representation: "canonical-item" },
 }
-const { item_validator: webhookObservationValidator, ...webhookCommittedEndpoint } = webhookEndpoint
+const { item_validator: webhookObservationValidator, ...webhookEndpointItem } = webhookEndpoint
+const { url: webhookCallbackURL, ...webhookCommittedEndpoint } = webhookEndpointItem
 const webhookDelivery = {
   id: "0198ac5e-f9b7-7000-8000-000000000082", endpoint_id: webhookEndpoint.id,
   event_id: "0198ac5e-f9b7-7000-8000-000000000083", event_type: "task.updated",
@@ -1015,7 +1021,7 @@ const webhookDelivery = {
   created_at: "2026-10-27T10:01:00Z", completed_at: "2026-10-27T10:01:01Z", retain_until: "2026-11-03T10:01:00Z",
   item_validator: { etag: '\"example-webhook-delivery-identity-1\"', encoding: "identity", representation: "canonical-item" },
 }
-const { item_validator: webhookDeliveryObservationValidator, ...webhookCommittedDelivery } = webhookDelivery
+const { item_validator: webhookDeliveryObservationValidator, ...webhookDeliveryItem } = webhookDelivery
 const successBodies = {
   resolvelifecyclecompletiontarget: { status_id: "0198ac5e-f9b7-7000-8000-0000000000c2" },
   listlifecycledefinitions: { data: [{
@@ -1095,11 +1101,11 @@ const successBodies = {
   setworkspaceiconupload: { ...iconWorkspace, icon_url: `/api/v1/attachments/${workspaceIconAttachmentId}/content` },
   listworkspacewebhookendpoints: { data: [webhookEndpoint], next_cursor: null, has_more: false },
   createwebhookendpoint: { endpoint: webhookCommittedEndpoint, signing_secret: "whsec_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" },
-  getwebhookendpoint: webhookEndpoint,
+  getwebhookendpoint: webhookEndpointItem,
   updatewebhookendpointstate: { ...webhookCommittedEndpoint, state: "paused", health: "paused", revision: "2", updated_at: "2026-10-27T10:02:00Z" },
   listwebhookdeliveries: { data: [webhookDelivery], next_cursor: null, has_more: false },
-  getwebhookdelivery: webhookDelivery,
-  redeliverwebhookdelivery: { ...webhookCommittedDelivery,
+  getwebhookdelivery: webhookDeliveryItem,
+  redeliverwebhookdelivery: { ...webhookDeliveryItem,
     state: "pending", replay_count: 1, revision: "2", completed_at: null, last_status: null },
   rotatewebhookendpointsecret: { endpoint: { ...webhookCommittedEndpoint, secret_version: 2, revision: "2", updated_at: "2026-10-27T10:02:00Z" },
     signing_secret: "whsec_AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=", previous_valid_until: "2026-10-27T10:07:00Z" },
@@ -1171,15 +1177,15 @@ const successBodies = {
   listtaskparticipants: { data: [{
     actor: { id: actorId, display_name: "Alex Morgan" }, is_creator: true,
     is_assigned_now: true, was_previously_assigned: false, last_assigned_at: timestamp,
-  }], next_cursor: null },
+  }] },
   listtaskrelations: { data: [{
-    id: "0198ac5e-f9b7-7000-8000-000000000092", project_id: projectId, source_task_id: taskId,
+    id: taskRelationId, project_id: projectId, source_task_id: taskId,
     target_task_id: "0198ac5e-f9b7-7000-8000-00000000000c", type: "blocks", revision: "1",
     related_task: { id: "0198ac5e-f9b7-7000-8000-00000000000c", code: "APP-43", title: "Publish the release notes", status_id: statusId },
     item_validator: { etag: '"example-task-relation-identity-1"', encoding: "identity", representation: "canonical-item" },
   }], next_cursor: null },
   createtaskrelation: {
-    id: "0198ac5e-f9b7-7000-8000-000000000092", project_id: projectId, source_task_id: taskId,
+    id: taskRelationId, project_id: projectId, source_task_id: taskId,
     target_task_id: "0198ac5e-f9b7-7000-8000-00000000000c", type: "blocks", revision: "1",
     item_validator: { etag: '"example-task-relation-identity-1"', encoding: "identity", representation: "canonical-item" },
   },
@@ -1301,7 +1307,7 @@ const successBodies = {
   reserveattachmentupload: {
     upload_id: attachmentUploadId, expires_at: "2026-10-27T10:15:00Z", content_length: 30,
     upload_url: "https://uploads.example.com/reservations/0198ac5e-f9b7-7000-8000-000000000030?signature=example",
-    method: "PUT", required_headers: { "Content-Type": "text/plain" },
+    method: "PUT", required_headers: { "Content-Type": "text/plain", "If-None-Match": "*" },
   },
   completeattachmentupload: attachmentRecord,
   getattachment: attachmentRecord,
@@ -1523,7 +1529,7 @@ const successBodies = {
   getworkspacesettings: workspaceSettings,
   updateworkspacesettings: { ...workspaceSettings, default_task_priority: "high", revision: "2", updated_at: "2026-10-27T10:01:00Z" },
   getcomment: markdownComment,
-  updatecomment: { ...markdownComment, revision: 2, edited_at: "2026-10-27T10:01:00Z", updated_at: "2026-10-27T10:01:00Z" },
+  updatecomment: { ...markdownComment, body_markdown: editedCommentText, revision: 2, edited_at: "2026-10-27T10:01:00Z", updated_at: "2026-10-27T10:01:00Z" },
   addcommentreaction: { ...jsonComment, reactions: [{ reaction: "thumbs_up", count: 1, reacted_by_viewer: true }] },
   removecommentreaction: jsonComment,
   listtaskactivity: { data: [{
@@ -1583,8 +1589,8 @@ const successBodies = {
   gettask: canonicalTask,
   updatetask: { ...taskCommand, title: "Review the release plan", revision: 2, updated_at: "2026-10-27T10:01:00Z" },
   updatetaskrelation: {
-    id: "0198ac5e-f9b7-7000-8000-000000000001", project_id: projectId,
-    source_task_id: taskId, target_task_id: "0198ac5e-f9b7-7000-8000-000000000004",
+    id: taskRelationId, project_id: projectId,
+    source_task_id: taskId, target_task_id: "0198ac5e-f9b7-7000-8000-00000000000c",
     type: "relates", revision: "2",
     item_validator: { etag: '"example-relation-identity-2"', encoding: "identity", representation: "canonical-item" },
   },
@@ -1698,7 +1704,13 @@ export function applyResponseExamples(operation) {
   if (["createchangeset", "createdocumentpatch", "applychangeset"].includes(operation.id))
     return { ...presented, responses: operation.responses.map((response) => ["200", "201", "202"].includes(response.status)
       ? { ...response, content: response.content.map((media) => media.mediaType === "application/json"
-        ? { ...media, example: response.status === "202" ? changeSetAccepted : body } : media) } : response) }
+        ? { ...media, example: response.status === "202" ? changeSetAccepted
+          : response.status === "200" && operation.id === "createchangeset" ? {
+            ...changeSetProposal, version: "2", digest: "31b0eafa17119eb629d78ed1b9d69a9cbb4e32e7cb01571d633806a3da5c1136",
+            review_url: `/api/v1/workspaces/${workspace}/change-sets/${changeSetId}?version=2`,
+          }
+          : response.status === "200" && operation.id === "createdocumentpatch" ? { ...documentPatchDraft, version: "2" }
+          : body } : media) } : response) }
   const status = ["retrylifecyclemigration", "applylifecyclemapping", "resolveknowledgerepositoryconflict", "importknowledgerepository", "syncknowledgerepository", "createworkspaceagentrun", "canceloperation", "delegatetasktoworkspacecustomagent", "admitworkspacecustomagentrequest", "requestintegrationaction", "verifysentrybinding", "refreshintegrationresources"].includes(operation.id) ? "202" : ["createwebhookendpoint", "createtasktimeentry", "createtasksavedview", "createtaskselection", "createtaskresultset", "createtaskrelation", "duplicatetask", "attachtaskattachment", "createproject", "createworkspaceprojectstate", "createmilestone", "createprojectstatus", "createworkspacestatus", "attachprojectattachment", "addprojectmember", "beginintegrationauthorization", "createdocument", "createdocumentworklink", "reserveattachmentupload", "completeattachmentupload", "attachdocumentattachment", "createtask", "createcomment", "createworkspaceinvitation", "resendworkspaceinvitation", "createworkspaceagent", "createworkspacecustomagent", "createintegrationsubscription", "createprojectintegrationbinding", "createprojectlabeldefinition", "createworkspacelabeldefinition"].includes(operation.id) ? "201" : "200"
   if (["beginintegrationauthorization", "completeintegrationauthorizationwithcredential"].includes(operation.id))
     return { ...presented, responses: operation.responses.map((response) => [status, "202"].includes(response.status)

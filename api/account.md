@@ -66,9 +66,16 @@ end it when closed. An expired or revoked session requires sign-in again.
 ## Personal API tokens
 
 Select the intended Workspace, then create and manage personal tokens in
-**Account settings → Access tokens**. In the retained form, **Read Assign data** selects a group
-of resource read scopes, including `tasks:read`. Review the scopes actually issued and use the
-narrowest supported choice for your integration.
+**Account settings → Access tokens**. The retained form groups scopes by action. Review the
+scopes shown on the issued token before using it.
+
+| What you need to do | What to select | Task scopes to verify |
+| --- | --- | --- |
+| Read a Task page | **Read Assign data** | `tasks:read` |
+| Read and create Tasks | **Read Assign data** and **Create and change Assign data** | `tasks:read` and `tasks:write` |
+
+These controls grant access to other resource families too. `tasks:write` grants Task writes
+only. Current Workspace membership, Project visibility and resource permissions still apply.
 
 Copy each new secret once into a secret manager. Lists show safe metadata such as name, prefix,
 scopes, last use and expiry; they cannot reveal the secret again. Revocation is permanent.
@@ -82,8 +89,11 @@ work when that feature is available. [MCP service credentials](../mcp/security#s
 are separate and work only with MCP.
 
 Follow [Make your first API request](./quickstart) for the separate personal, service and
-delegated setup paths and a bounded Task read. Account security management happens in Assign;
-an integration does not need browser cookies or a CSRF token to send a product bearer request.
+delegated setup paths and a bounded Task read. Manage tokens in Assign. Assign handles the
+session cookie and CSRF protection for changes you make there. For an integration request,
+send `Authorization: Bearer` with your product token and omit the browser cookies and CSRF
+header. If you send both a bearer token and an Assign session cookie, the request fails with
+`400 invalid_request`. See [browser sessions](./authentication#browser-sessions) for recovery.
 
 ## Linked identities
 

@@ -11,14 +11,15 @@ does not cancel work.
 
 ## Start an Agent job <Badge type="warning" text="Awaiting deployment" />
 
+Use the [credential setup](./quickstart) and [copy the Workspace ID](./account#copy-workspace-id).
 Choose an existing [ready Agent](./agents#run-and-inspect) from
-[Workspace Agents](./reference/operations/listworkspaceagents). This request starts that Agent's
-configured work. The credential needs admitted `agents:write` scope, current Agent authority and
-access to every Project in the run's scope. Current readiness and entitlement requirements still
-apply. Reading status also needs the source workflow's read
-scope; write authority does not imply read authority.
+[Workspace Agents](./reference/operations/listworkspaceagents). To start its configured work,
+use a credential with admitted `agents:write` scope, current Agent authority and access to
+every Project in the run's scope. Current readiness and entitlement requirements apply.
+Reading status requires the source workflow's read scope.
 
-Create a fresh key for this intended job and retain the exact request:
+Create a fresh key for the intended job and retain the exact request. The responses below
+use fictitious IDs.
 
 ```http
 POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs
@@ -30,11 +31,30 @@ Accept: application/json
 {}
 ```
 
-The expected `202` returns a pending operation and its `/api/v1/operations/{operation_id}`
-`Location`.
-Save its ID and status location. The response acknowledges admission; it does not establish a
-successful Agent run. Honor `Retry-After: 2` before reading again. If the response is lost,
-recover the original key and exact request under current access instead of starting another job.
+The [start request](./reference/operations/createworkspaceagentrun) returns `202 Accepted` with
+a pending Operation.
+
+```http
+HTTP/1.1 202 Accepted
+Location: /api/v1/operations/0198ac5e-f9b7-7000-8000-000000000001
+Retry-After: 2
+Cache-Control: no-store
+Content-Type: application/json
+
+{
+  "id": "0198ac5e-f9b7-7000-8000-000000000001",
+  "outcome": "active",
+  "state": "pending",
+  "progress": null,
+  "created_at": "2026-01-01T12:00:00Z",
+  "updated_at": "2026-01-01T12:00:00Z",
+  "expires_at": "2026-01-02T12:00:00Z"
+}
+```
+
+Save the Operation ID and `Location`. Wait at least the indicated two seconds before the first
+status read. If you lose the response, recover the original request with the same key and
+authorized credential family.
 
 ## Read an operation <Badge type="warning" text="Awaiting deployment" />
 
@@ -87,11 +107,60 @@ For nonterminal reads, honor `Retry-After: 2` as a minimum delay. Stop after a f
 attempts or an elapsed-time deadline, retaining the operation ID for a later explicit read.
 Terminal responses omit `Retry-After`.
 
+For the same job, a later status read can return `200 OK` with `outcome: "succeeded"`.
+The response body points to the completed Agent run.
+
+```json
+{
+  "id": "0198ac5e-f9b7-7000-8000-000000000001",
+  "outcome": "succeeded",
+  "state": "succeeded",
+  "created_at": "2026-01-01T12:00:00Z",
+  "updated_at": "2026-01-01T12:00:09Z",
+  "expires_at": "2026-01-02T12:00:00Z",
+  "result": {
+    "kind": "authorized-resource",
+    "operation_id": "getWorkspaceAgentRun",
+    "href": "/api/v1/workspaces/0198ac5e-f9b7-7000-8000-000000000002/agents/0198ac5e-f9b7-7000-8000-000000000003/runs/0198ac5e-f9b7-7000-8000-000000000001",
+    "media_type": "application/json"
+  }
+}
+```
+
 A successful result contains an `authorized-resource` reference with an `href`, `operation_id`
 and `media_type`. The reference names a canonical path on the same API origin. Read it using
 its owning operation and your current credentials; authorization is checked again. Its response
 can have its own pagination. The status response does not contain the full result or a temporary
 download capability.
+
+## Request cancellation <Badge type="warning" text="Awaiting deployment" /> {#request-cancellation}
+
+For the Agent job above, use a personal or delegated bearer credential with `agents:write`
+and current permission to run and read the Agent. Use the operation ID from the job you
+initiated. Set `ASSIGN_TOKEN` to that credential, replace the example operation ID with
+yours, and set `IDEMPOTENCY_KEY` to a fresh key. Keep the key with the operation ID.
+
+```sh
+curl --fail-with-body --include \
+  -X POST \
+  -H "Authorization: Bearer $ASSIGN_TOKEN" \
+  -H "Idempotency-Key: $IDEMPOTENCY_KEY" \
+  -H 'Accept: application/json' \
+  'https://api.assign.so/api/v1/operations/0198ac5e-f9b7-7000-8000-000000000001/cancel'
+```
+
+Send the request without a body, query parameters or conditional headers. A `202` with
+`state: cancel_requested` acknowledges the request. Follow `Location` with
+[`getOperation`](./reference/operations/getoperation) and honor `Retry-After: 2`. The work
+can still succeed or fail before cancellation takes effect. If the operation has already
+ended when you first request cancellation, the response is `200` with the existing terminal
+outcome. Any effects already committed are preserved.
+
+If you lose the cancellation response, send the same request with the original key and
+credential family under current access to recover its receipt. A replay can return the
+original `202` after the work has ended. Read status for the current outcome. See
+[`cancelOperation`](./reference/operations/canceloperation) for the request and response
+reference.
 
 ## Recover after an interruption
 

@@ -22,6 +22,9 @@ an HTTP `If-Match` condition.
 
 ## Submit one shared change
 
+Use the [credential setup](./quickstart), [copy the Workspace ID](./account#copy-workspace-id)
+and [read the Tasks](./tasks#read) before preparing the request.
+
 This illustrative request lowers the priority of two Tasks. Replace both IDs and revisions with
 current values you have read, and choose one fresh key for this entire intended request.
 
@@ -65,6 +68,32 @@ HTTP response can include failed items:
 | `conflict` | The observed Task version is no longer usable | Read current state and reconcile. |
 | `validation_failed` | The change is invalid for that Task | Correct the intended change after review. |
 | `item_conflict` | A successful item ID was reused for a different effect | Establish the original result before another command. |
+
+In this example, the first Task's priority change committed at revision `"8"`. The second
+Task changed after you read it, so its item has no receipt. Read and reconcile that Task
+before submitting only the second item.
+
+```json
+{
+  "mode": "per_item",
+  "items": [
+    {
+      "item_id": "priority-review-1",
+      "task_id": "0198ac5e-f9b7-7000-8000-000000000001",
+      "outcome": "updated",
+      "revision": "8",
+      "receipt_id": "0198ac5e-f9b7-7000-8000-000000000003",
+      "replayed": false
+    },
+    {
+      "item_id": "priority-review-2",
+      "task_id": "0198ac5e-f9b7-7000-8000-000000000002",
+      "outcome": "conflict",
+      "replayed": false
+    }
+  ]
+}
+```
 
 Successful items return their original committed revision and receipt identity. A replay can
 set `replayed: true`; its result does not substitute a fresh current Task. Read current authorized

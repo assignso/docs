@@ -6,15 +6,14 @@ description: Receive signed Task events, acknowledge duplicates and recover cust
 
 ## Register a receiver <Badge type="warning" text="Awaiting deployment" />
 
-Customer webhooks send selected Task events to your HTTPS receiver. They are separate from
-[incoming provider callbacks](./integrations) and the Assign application's
-[live connection](./realtime). Check the [current reference](./reference/) for availability before
-configuring a receiver.
+Customer webhooks send selected Task events to your HTTPS receiver. Check the
+[API reference](./reference/) for availability before configuring a receiver.
 
+Use the [credential setup](./quickstart) and [copy the Workspace ID](./account#copy-workspace-id).
 A current human Workspace Owner or Admin creates the endpoint with an admitted bearer credential
-and `integrations:write` or its supported broad write scope. Read controls require
-`integrations:read` or the supported broad read scope. Current role and resource access still
-apply; an MCP grant or service identity cannot substitute for that administrator.
+and either `integrations:write` or `assign:write`. Read controls require
+`integrations:read` or `assign:read` and the same current Workspace role. Use a credential
+issued to that administrator.
 
 The URL must be publicly reachable HTTPS. Set up a receiver that preserves the exact body bytes
 and enforces the 8192-byte body limit before JSON parsing. This illustrative registration selects
@@ -29,10 +28,11 @@ Content-Type: application/json
 {"url":"https://example.com/assign-events","event_types":["task.updated"]}
 ```
 
-The `201` result includes the endpoint and a one-time `signing_secret`. Store that secret in your
-receiver's credential store immediately and keep it out of logs. Retain the request key and
-endpoint identity separately. A recovered registration contains `signing_secret: null`; recovery
-never reissues a lost secret or grants permission to register another endpoint automatically.
+The [registration](./reference/operations/createwebhookendpoint) returns `201` with the endpoint
+and a one-time `signing_secret`. Store that secret in your receiver's credential store
+immediately and keep it out of logs. Retain the request key and endpoint identity separately.
+A recovered registration contains `signing_secret: null`. If you lose the secret, recover the
+registration outcome first, then rotate the endpoint's key.
 
 You may select up to eight event types and 50 Project IDs. The URL, event selection and Project
 filters are immutable; create a replacement endpoint deliberately to change them. Each Workspace
@@ -91,6 +91,43 @@ Both helpers verify the signed delivery ID against the parsed body's `delivery_i
 verification, validate the event schema and expected Workspace, event type and Project selection
 before processing it. The helpers do not provide persistent deduplication or execute domain work.
 
+### Check a prepared delivery
+
+Use this fictitious key and request to check either helper offline. Set `signingSecret`
+or `$signingSecret` to the key below.
+
+```text
+whsec_AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
+```
+
+Pass the JSON line as the raw UTF-8 body, without a trailing newline.
+
+```http
+POST /assign-events HTTP/1.1
+Content-Type: application/json
+webhook-id: 0198ac5e-f9b7-7000-8000-000000000001
+webhook-timestamp: 1767225600
+webhook-signature: v1,sn6J0xAqFz0RYXyU07a9R6Y5VnvfKwxzbcJeNPXJ7CE=
+
+{"delivery_id":"0198ac5e-f9b7-7000-8000-000000000001","event_id":"evt-task-42","event_type":"task.updated","event_version":1,"workspace_id":"0198ac5e-f9b7-7000-8000-000000000002","occurred_at":"2026-01-01T00:00:00Z","data":{"schema_version":1,"workspace_id":"0198ac5e-f9b7-7000-8000-000000000002","task_id":"0198ac5e-f9b7-7000-8000-000000000003","project_id":"0198ac5e-f9b7-7000-8000-000000000004","operation_id":"0198ac5e-f9b7-7000-8000-000000000005","revision":8,"changed_fields":["priority"],"url":"https://app.assign.so/task/EX-42"}}
+```
+
+Supply the three `webhook-*` headers from the request. Pass its timestamp as the verification
+clock for this check. Omit the fourth argument in your receiver to use the current clock.
+
+```js
+const verified = verifyAssignWebhook(rawBody, headers, [signingSecret], 1767225600)
+console.log(verified.delivery_id)
+```
+
+```php
+$verified = verifyAssignWebhook($rawBody, $headers, [$signingSecret], 1767225600);
+echo $verified['delivery_id'];
+```
+
+Both print `0198ac5e-f9b7-7000-8000-000000000001`. Append a newline to the raw body and
+keep the same signature to check that verification fails.
+
 ## Process an event once
 
 Version 1 events contain `delivery_id`, `event_id`, `event_type`, `event_version`, `workspace_id`,
@@ -98,42 +135,62 @@ Version 1 events contain `delivery_id`, `event_id`, `event_type`, `event_version
 `task.status.changed`, `task.assignment.changed`, `task.comment.created`, `task.comment.updated`,
 `task.comment.deleted` and `task.relation.changed`.
 
-Use the delivery ID to persist a deduplication record together with your own durable acceptance
-of the event. Return a `2xx` only after that acceptance succeeds. For a duplicate already accepted
-delivery, return a successful acknowledgment without repeating its effect. A `2xx` acknowledges
-delivery; it does not establish that your downstream work completed.
+Deliveries can arrive more than once. Persist the delivery ID and the accepted work together
+before returning `2xx`. If you have already accepted the delivery, return `2xx` without repeating
+the work. Track downstream completion in your own system.
 
-Retries preserve the delivery ID, event ID and serialized body. Delivery history omits the
-payload, destination and keys. Keep the signed body in your own authorized storage only as long
-as your workflow needs it. Use the event as a signal to read currently authorized resource state;
-its revision is not an opaque Task `If-Match` validator.
+Retries and manual redelivery preserve the delivery ID, event ID and body. If several endpoints
+feed the same workflow, use the event ID to recognize the same event across deliveries. Use the
+event to decide which resource to read under your current API credentials. Use the Task's current
+validator from the API for a conditional write.
 
-Automatic delivery is ordered within an endpoint and event type. Do not assume total ordering
-across event types. A manual replay can deliver an older event. Reconcile current Task state
-before applying an out-of-order effect, and keep event identity separate from a local checkpoint.
+Automatic delivery is ordered within an endpoint and event type. Other event types and manual
+replays can arrive out of order. Reconcile current Task state before acting on an older event.
+
+### Save your processing checkpoint
+
+Record what your integration has durably applied. For example, update a local Task record and
+mark the event processed in the same transaction. If your receiver queues work, record durable
+acceptance before acknowledgment and advance the processing checkpoint after the worker applies
+the change. Use your stored IDs to skip work you already applied when an event arrives again.
+
+A delivery history cursor continues a history listing. To rebuild local state after a gap, read
+the resources your workflow tracks and save a fresh checkpoint once you have reconciled them.
 
 ## Recover delivery gaps
 
-Each delivery cycle permits up to eight attempts within one hour, with bounded backoff and
-`Retry-After` handling for network failures and `408`, `425`, `429` or `5xx` responses. The callback
-time limit is ten seconds. Keep acknowledgment work short and move longer processing behind
-your own durable queue.
+Each delivery cycle permits up to eight attempts within one hour. Assign retries network
+failures and `408`, `425`, `429` or `5xx` responses with bounded backoff and honors
+`Retry-After` within the retry window. The callback time limit is ten seconds.
 
-Authorized delivery history is retained for seven days, up to 1000 deliveries per endpoint.
-Follow opaque `next_cursor` values through short pages until null. A partial page or missing
-delivery does not prove that an event never occurred.
+1. [Read the endpoint](./reference/operations/getwebhookendpoint) and inspect its state and
+   health. [List delivery history](./reference/operations/listwebhookdeliveries) with the same
+   page size and follow each opaque `next_cursor` until it is null, even after a short page.
+   History contains metadata for up to seven days and 1,000 deliveries per endpoint. A missing
+   delivery may have expired.
+2. For a retained delivery, [read the delivery](./reference/operations/getwebhookdelivery) and
+   use its exact `ETag` in `If-Match`, or use the corresponding list row's `item_validator.etag`. Keep the
+   validator's response encoding as described in the operation reference.
+   [Request redelivery](./reference/operations/redeliverwebhookdelivery) with a fresh
+   `Idempotency-Key` and no body. The endpoint must be active with a free ordering slot for
+   that event type. Each delivery permits up to three manual replays and 32 total attempts.
+   A `200` returns a pending delivery. Read it again to see the receiver outcome.
+3. After a `409`, inspect the endpoint and delivery before deciding whether to replay. After
+   a `412`, reread the delivery and reconcile before sending a new request. If the command's
+   outcome is unknown, retry the exact original request with the same key and condition.
+   Recovery checks the caller's current Workspace authority.
+4. If history is missing or endpoint health reports `rebaseline_required`, reconcile the
+   affected state using [bounded resource reads](./pagination) under current authority.
+   For example, [list the Tasks](./tasks#list) your workflow tracks and apply the current values to
+   your local records. If you decide to abandon pending recovery,
+   [update the endpoint](./reference/operations/updatewebhookendpointstate) with its current
+   validator in `If-Match`, a new `Idempotency-Key`, and
+   `{"state":"active","rebaseline":true}`. The update marks pending deliveries failed and
+   resumes from the current event position under the requesting administrator. Older delivery
+   metadata remains available within the history limits.
 
-For a known retained delivery, a current administrator may request manual redelivery using the
-observed delivery `ETag`, a fresh idempotency key and the original target. The endpoint must be
-active and its event-type ordering slot available. A delivery allows at most three manual
-replays and 32 attempts in total. Read its current status before another request; recover an
-interrupted redelivery command under its original key.
-
-When recovery has a gap, pause and reconcile the application state with authorized bounded
-resource reads. An explicit endpoint update with `rebaseline: true` abandons pending recovery
-and resumes from the current tail under the requesting administrator. It does not replay missing
-history. Review that loss of recovery before enabling it. Customer webhooks do not expose the
-Assign application's private stream or its checkpoints.
+If your Workspace role or access changes, ask a current Owner or Admin to review the endpoint.
+They need their own authorized credential to inspect or recover it.
 
 ## Rotate, pause or revoke
 
@@ -148,5 +205,3 @@ outcome; an original-key replay cannot recover the secret itself.
 
 Pausing stops normal delivery while retaining endpoint recovery state. Revoking clears the
 callback and key custody. An already admitted send can overlap revocation by up to ten seconds.
-After losing access or administrator authority, review the endpoint with a current Workspace
-administrator instead of reusing an old token to bypass the failure.

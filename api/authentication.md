@@ -103,9 +103,10 @@ substitute for a documented integration operation.
 The canonical Task collection operation is
 [`listWorkspaceTasks`](./reference/operations/listworkspacetasks),
 `GET /api/v1/workspaces/{workspace_id}/tasks`. HTTP clients use the method and URL in the
-reference with their admitted credential. Signing in through a different client does not
-change the resource URL or grant more access. Check each client's availability before
-relying on the new flow.
+reference with a credential that the operation accepts. For an integration, send a product
+bearer token issued for that Workspace with `tasks:read`. Assign also checks current
+Workspace access and which Tasks the credential can read. Check your client's availability
+before relying on the new flow.
 
 | Consumer | Credential or connection | Task-read contract |
 | --- | --- | --- |
@@ -122,13 +123,15 @@ REST endpoint. A client name does not grant extra Workspace or Project access.
 
 ## Browser sessions
 
-Sign in at [assign.so](https://assign.so). Assign manages the browser session and the CSRF
-protection required for its session-authenticated changes. A product bearer request uses
-`Authorization: Bearer` and does not need a browser cookie or CSRF token. Send one credential
-source: combining a bearer token with an Assign session cookie is rejected, even if one of
-them is valid. A signed-in browser cannot recover an invalid bearer request. Do not copy
-cookies or CSRF tokens from a signed-in browser or use a session credential as your
-integration's token.
+Sign in at [assign.so](https://assign.so). The Assign web application manages the browser
+session and its CSRF protection. Use the app's [Active sessions](./account#sessions) settings
+to review or end a session, and the [Workspace chooser](#switch-workspace) to change Workspaces.
+
+In your integration, send `Authorization: Bearer` with the product token. Leave Assign
+session cookies and CSRF tokens in the browser. A request containing both a bearer token and
+an Assign session cookie fails with `400 invalid_request`. Retry the read with a valid product
+token and no session cookie. For an invalid token, follow
+[access-error recovery](#recover-from-an-access-error).
 
 See [authentication migration](./versioning#authentication-migration) when updating an
 existing client.

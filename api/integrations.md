@@ -176,7 +176,7 @@ Submitting the same provider name again updates your existing request. A provide
 catalog does not need another request. This records feedback in Assign; it does not contact the
 provider.
 
-## Request a provider through the API <Badge type="warning" text="Upcoming" />
+## Request a provider through the API <Badge type="warning" text="Upcoming" /> {#request-a-provider-through-the-api}
 
 Use [Request an integration provider](./reference/operations/requestintegrationprovider) with a
 bearer credential that has `workspace:read` in the target Workspace. Viewers can submit requests.
