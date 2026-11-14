@@ -31,6 +31,9 @@ choice. It does not override it. An unacceptable selected
 representation returns `406 not_acceptable`. Unknown or duplicate selectors return `400`;
 a valid but unsupported semantic combination returns `422`. There is no silent fallback.
 
+Where an operation declares query limits, a query over the limit returns `413`.
+Reduce the query to the operation’s supported selectors and limits before retrying.
+
 `Content-Type` describes the request body. JSON writes use `application/json`. A content
 operation that explicitly accepts Markdown requires its declared Markdown media type; sending
 `Accept: text/markdown` does not turn a JSON request body into Markdown. Unsupported media types
