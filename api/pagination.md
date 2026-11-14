@@ -115,6 +115,18 @@ Use a documented nested continuation or collection operation for more data. A pr
 bounded candidate list or one file page is not a complete export. See
 [CSV pages and complete exports](./conventions#csv-pages-and-complete-exports).
 
+## Resume a Task projection <Badge type="warning" text="Upcoming" />
+
+Apply the authorized baseline window, then pass its `scope.id` and `cursor` to
+`getWorkspaceProjection` with `view=delta`. Use `views[].next_cursor` with
+`view=baseline` to load the next window from the same source.
+
+Apply each delta's changes before keeping its returned cursor. Continue while
+`has_more` is true, even if `changes` is empty. The `from` and `through` values
+are exact decimal strings. A `409` with reason `incomplete_state` calls for a fresh
+authorized baseline for that scope. See the
+[projection operation](/api/reference/operations/getworkspaceprojection).
+
 ## Project group metadata <Badge type="warning" text="Upcoming" />
 
 Request Project group headers separately using the projection operation's optional `group_limit` or `group_cursor`. Use the returned scope and `next_cursor` for continuation while `has_more` is true. Group pages contain at most100 headers; counts and positions are decimal strings, which preserve values beyond JavaScript's safe integer range.
