@@ -59,6 +59,17 @@ An absent or invisible code returns an empty page, not a Task or a permission di
 any non-null `next_cursor`; an empty page alone does not establish absence. An item outside your
 authority returns `404`, as does a missing item. Check the selected Workspace and your access before continuing.
 
+## Read Task context
+
+Use [GET Task context](./reference/operations/gettaskcontext) to read bounded context for one
+Task you can access. The default response contains structured JSON. Set `format=markdown` and
+choose a documented `profile` to receive Markdown inside the JSON response. Check the coverage
+and omission fields before drawing conclusions from the excerpts.
+
+Use [HEAD Task context](./reference/operations/headtaskcontext) to check access and input
+validity for the same request without downloading the body. Use the
+[Suggestions read](./reference/operations/gettaskrelatedcontext) for related findings.
+
 ## List
 
 One [Workspace Task collection](./reference/operations/listworkspacetasks) covers Project,
@@ -70,10 +81,12 @@ Authorization: Bearer <token>
 Accept: application/json
 ```
 
-Get the Workspace ID through [credential setup](./authentication#make-your-first-request).
-Get a permitted Project ID from [Workspace Projects](./reference/operations/listworkspaceprojects).
-Repeated `project_id` values combine with OR; other filters narrow the selection. Number order is
-the default; choose `order=updated_at` explicitly for newest changes. Results default to 50 rows
+Follow [credential setup](./authentication#make-your-first-request) to get the Workspace ID
+and a product token with `tasks:read`. Get a Project ID you can access from
+[Workspace Projects](./reference/operations/listworkspaceprojects). The response includes
+only Tasks the credential can currently read in that Project. Repeated `project_id` values
+combine with OR. Other filters narrow the selection. Number order is the default. Choose
+`order=updated_at` for newest changes. Results default to 50 rows
 and allow at most 100 per page. The operation reference lists supported filters and combinations.
 
 **Followed Tasks.** Use the same collection with `subscribed=true`. It filters the effective
@@ -135,7 +148,11 @@ Accept: application/json
 
 [Create Task](./reference/operations/createtask) returns `201` with the Task. Record its immutable
 `id` so later edits and cleanup address this Task. Before editing it, read the current canonical
-item as shown below. A create receipt's tag is not an item mutation validator.
+item to obtain its validator.
+
+If Task creation is denied, check that the credential can write to the selected Project. If
+the selected Status is rejected, list that Project's current Statuses and choose an eligible
+one before submitting a corrected create with a new key.
 
 If the response is lost, the Task may already exist. Retain the original key and exact body;
 follow [uncertain-outcome recovery](./writes#recover-an-unknown-outcome) before sending another
@@ -143,12 +160,16 @@ request. A new key can create a second Task. A replay reports the original outco
 current access; read current state before another change. A validation or permission failure
 needs correction or renewed authority, not an automatic retry loop.
 
-For example source with stale-edit recovery and cleanup of its own Task, download the
-[TypeScript Task app](/examples/task-workflow/typescript.zip)
-or [PHP Task app](/examples/task-workflow/php.zip). Running either app requires its matching
-unreleased SDK artifact.
-The [first-request setup](./quickstart#run-the-complete-workflow) explains the required variables
-and current availability.
+### SDK workflow examples
+
+- [Download the TypeScript Task app source](/examples/task-workflow/typescript.zip)
+- [Download the PHP Task app source](/examples/task-workflow/php.zip)
+
+Both apps demonstrate stale-edit recovery and clean up the Task they create. Each download
+includes setup instructions and locked dependencies. Running an app requires obtaining its
+matching unreleased SDK artifact separately. Follow the
+[first-request setup](./quickstart#run-the-complete-workflow) to obtain the credential,
+Workspace ID, Project ID and optional Status ID.
 
 ## Update
 
@@ -189,29 +210,16 @@ writable fields instead of copying the read object into a request.
 - `404` or revoked access: stop. Do not treat an unavailable Task as permission to recreate it.
 
 After the outcome is known, read the current canonical Task to verify the title. Keep the saved
-created Task ID if you stop partway through. When the example is finished, use the Task's
-[archive action](../guides/tasks#lifecycle) in Assign to clean up only the record you created.
-Review it before archiving; never remove pre-existing Tasks or issue cleanup while a create's
-outcome is still unknown. Archive and trash have different retention and restoration effects.
+Task ID if you stop partway through. For cleanup, verify that this ID came from your example
+create, then [archive the Task](./reference/operations/archivetask) with a fresh key and the
+current canonical item tag. Check the returned archived state on `200`. If the condition fails,
+read the Task again and review whether cleanup is still appropriate. If the archive response
+is lost, recover the original request with the saved key and condition.
 
 A Project move is an [update](./reference/operations/updatetask) with a permitted destination
 `project_id` and a Status applicable to that Project. The move clears the Project-scoped
 Milestone. Reconcile a failed condition before moving; a Task with relations cannot change
 Project (`422 task_has_relations`). Remove relations only when that separate action is intended.
-
-**Undo and redo.** Metadata changes may return a `reversible_command` with an opaque ID, a
-description and `undoable_until`.
-
-```http
-POST /api/v1/commands/{command_id}/undo HTTP/1.1
-Authorization: Bearer <token>
-Idempotency-Key: <opaque-client-key>
-```
-
-`POST /api/v1/commands/{command_id}/redo` re-applies it. A command lasts ten minutes and only its creator can use it. Unrelated
-edits can coexist with an undo. A later edit to the same field returns `409 command_conflict`, and
-so does an expired or already used command. Each reversal is an ordinary new change. Description
-edits use the editor's own history.
 
 **Start work.** `POST /api/v1/tasks/{task_id}/start` with `If-Match` and `Idempotency-Key` moves the
 Task to the Project's active Status and assigns it to you. The response includes a `reassigned`
@@ -270,6 +278,29 @@ Never send a rank or a numeric `expected_revision`. A stale item tag returns `41
 anchor returns a conflict. Reread the Task and destination column, reconcile the intended position
 and prepare a new request rather than guessing a new anchor. After a lost response, recover the
 original key and exact request before deciding whether another move is needed.
+
+### Undo and redo a Task change
+
+When a Task mutation returns `reversible_command`, save its `id` and `undoable_until`.
+Use a current bearer credential for the same Actor and Workspace, with read and write access
+to the Task and Project.
+
+1. Before `undoable_until`, use [Undo a reversible command](./reference/operations/undocommand)
+   with the saved ID and a new `Idempotency-Key`. Send no request body or `If-Match`.
+   Undo restores the recorded fields and preserves unrelated edits. A `200` response includes
+   the command in state `undone` and the complete Task.
+2. To reapply the change after a confirmed Undo, use
+   [Redo a previously undone command](./reference/operations/redocommand) with the same ID and
+   a new key before `undoable_until`. A `200` response returns the command in state `done`
+   and the complete Task. Read the current canonical Task before a subsequent conditional edit.
+
+If the response is lost, retry the same operation and command ID with its original key.
+An authorized retry can recover the original result after a later reversal or after the
+command handle expires or is removed. For `409 command_conflict`, read the problem and the
+current Task before deciding whether to make another change. Expiry, a lifecycle change or a
+later edit to a recorded field can prevent reversal.
+
+Description edits use the editor's own history.
 
 ## Archive, trash and restore
 
@@ -337,8 +368,14 @@ A stale revision returns `409`, and an incompatible Status or an oversized copy 
 
 `GET` and `POST /api/v1/tasks/{task_id}/relations` list and create `blocks`, `duplicates`, `relates`
 and `parent` relations. `PATCH /api/v1/task-relations/{relation_id}` changes the type and `DELETE`
-removes it. Use each operation's condition and idempotency requirements. Recover a lost response with the
-original request before preparing another change.
+removes it without deleting either Task. Create requires mutation access to both active Tasks and
+returns `201`. For PATCH or DELETE, take the relation ID and quoted `item_validator.etag` from
+the relation row and send the tag in `If-Match`. Send an `Idempotency-Key` with each write.
+
+After a lost response, retry the exact request with its original key and condition. To resolve a
+`412`, read the current relation and reconcile your intended change before submitting a new
+request. Creating an existing edge with a new key returns `409` with reason `relation_duplicate`.
+A type change that collides with another edge returns `422` with the same reason.
 
 - Both Tasks must be in the same Project. Self-relations, duplicates, cycles and invalid parent depth
   are rejected with distinct codes.
@@ -346,8 +383,9 @@ original request before preparing another change.
   parent, and nesting goes three levels deep. Each keeps its own status, assignee and completion.
 - Removing a `parent` relation makes the child independent. Archiving one Task doesn't archive the
   other.
-- Lists return up to 100 relations, newest first, using `cursor` and `next_cursor`. Each item embeds
-  `related_task` (`id`, `code`, `title`, `status_id`).
+- Lists return up to 100 relations, newest first. Each item embeds a `related_task` summary and its
+  own relation validator. Pass `next_cursor` as `cursor` until it is null, even after a short or empty
+  page.
 
 ## Subscriptions
 
@@ -429,13 +467,19 @@ when Knowledge indexing is off. Lookup completes in the background.
 {"entity_kind": "task", "entity_id": "<id>", "outcome": "confirmed"}
 ```
 
-`entity_kind` is `task`, `document` or `commit` and `outcome` is `confirmed` or `discarded`. It needs an idempotency key and returns `{"accepted": true}`. Confirming a Task creates a `relates` relation,
-confirming a Document links it, and discarding removes that item from this Task's suggestions
-permanently.
+Send the finding's `entity_kind` and `entity_id` from an authorized Suggestions read, along with
+`Idempotency-Key`. The operation accepts Task, Document and commit findings. Confirming a Task
+creates a `relates` relation. Confirming a Document links it. Confirming a commit adds it to
+Linked development after checking current Task write access, the Comment reference and the
+repository connection. Discarding suppresses the finding for this Task.
 
-For a commit, send the finding's `entity_id`. Confirming adds the verified commit to Linked
-development after checking current Task write access, the Comment reference and repository
-connection. Commit confirmations and dismissals persist in Core.
+A successful response includes `accepted: true`. A Task or Document confirmation can report
+`synchronization: pending` while its local link is already committed. A successful Task or
+Document discard requires `complete`. Commit decisions use `not_required`.
+
+After a lost response, keep the original key and exact request for recovery. If a conflicting
+decision returns `409`, refresh authorized Suggestions before deciding what to do next.
+See the [feedback reference](./reference/operations/submittasksuggestionfeedback).
 
 ### Indexed code references <Badge type="warning" text="Awaiting deployment" />
 

@@ -224,7 +224,7 @@ Guide: [Account](./account)
 
 | Operation | Summary | Auth |
 | --- | --- | --- |
-| `GET /api/v1/auth-context` | Read your credential context | Bearer |
+| `GET /api/v1/auth-context` | Check your API credential’s authority | Bearer |
 | `GET /api/v1/inbox-items/{inbox_item_id}` | Read an Inbox item | Bearer |
 | `PATCH /api/v1/inbox-items/{inbox_item_id}` | Mark an Inbox item read or unread | Bearer |
 | `GET /api/v1/me/current-work` | Read your current work | Bearer |
@@ -232,8 +232,8 @@ Guide: [Account](./account)
 | `DELETE /api/v1/me/current-work` | Clear your current Task | Bearer |
 | `GET /api/v1/me/current-work/candidates` | Find Tasks to work on next | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/inbox` | Read your Workspace Inbox | Bearer |
-| `POST /api/v1/workspaces/{workspace_id}/inbox/read-state` | Mark Inbox items read through a cutoff | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/members` | List Workspace members | Bearer |
+| `POST /api/v1/workspaces/{workspace_id}/inbox/read-state` | Mark Inbox items seen or read through a cutoff | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/members` | List members of a Workspace | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/notification-preferences` | List your notification preferences | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/notification-preferences/{category}` | Read a notification preference | Bearer |
 | `PATCH /api/v1/workspaces/{workspace_id}/notification-preferences/{category}` | Change a notification preference | Bearer |
@@ -304,7 +304,7 @@ Guide: [Workspaces](./workspaces)
 | --- | --- | --- |
 | `GET /api/v1/lifecycle-behaviors` | List supported lifecycle behaviors | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}` | Read a Workspace | Bearer |
-| `PATCH /api/v1/workspaces/{workspace_id}` | Rename, change the URL, or restore a Workspace | Bearer |
+| `PATCH /api/v1/workspaces/{workspace_id}` | Rename a Workspace or change its URL | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/activity` | Read Workspace Activity | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/ai-access-policy` | Get the Workspace AI access policy | Bearer |
 | `PUT /api/v1/workspaces/{workspace_id}/ai-access-policy` | Update the Workspace AI access policy | Bearer |
@@ -312,12 +312,12 @@ Guide: [Workspaces](./workspaces)
 | `PATCH /api/v1/workspaces/{workspace_id}/features/{feature}` | Enable or disable a Workspace feature | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/icon` | Set the Workspace icon from an uploaded attachment | Bearer |
 | `DELETE /api/v1/workspaces/{workspace_id}/icon` | Remove the Workspace icon | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/icon/content` | Download the Workspace icon | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/icon/content` | Get a temporary Workspace icon URL | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/invitations` | List Workspace invitations | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/invitations` | Invite someone to the Workspace | Bearer |
 | `DELETE /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}` | Revoke an invitation | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}/resend` | Resend an invitation | Bearer |
-| `GET /api/v1/workspaces/{workspace_id}/lifecycle-completion-targets` | Choose a completing lifecycle Status | Bearer |
+| `GET /api/v1/workspaces/{workspace_id}/lifecycle-completion-targets` | Resolve a completing lifecycle Status | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/lifecycle-definitions` | List Workspace lifecycle definitions | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/lifecycle-definitions/{definition_id}/mapping-applications` | Apply a reviewed lifecycle mapping | Bearer |
 | `POST /api/v1/workspaces/{workspace_id}/lifecycle-definitions/{definition_id}/mapping-previews` | Preview a lifecycle mapping | Bearer |
