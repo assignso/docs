@@ -29,6 +29,12 @@ Assign won't remove your last usable sign-in method. Keep a password or connecte
 you lose a passkey or authenticator. Active sessions never show device, browser, IP address or
 location, because Assign doesn't collect them.
 
+### Sign in with a passkey on mobile <Badge type="warning" text="Upcoming" />
+
+On the Assign login screen, tap **Sign in with a passkey** and choose your
+saved Assign passkey. Follow your device’s prompt to confirm. If your passkey
+is unavailable, tap **Continue with email**.
+
 ### Account deletion <Badge type="warning" text="Upcoming" />
 
 Security includes a deletion request with a seven-day cancellation window. The [account deletion guide](account-deletion.md) explains confirmation, ownership and checkout blockers, status recovery, cancellation and retained records.
