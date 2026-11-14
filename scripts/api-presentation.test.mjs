@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import { createRequire } from 'node:module';
 import { apiPresentation, loadApiPresentation, operationExampleSetup } from './api-presentation.mjs';
@@ -16,6 +17,14 @@ test('every manifest operation has one unique HTML route and sidebar link', () =
   assert.deepEqual(document, before);
   assert.equal(sidebar[0].text, 'API reference');
   assert.equal(sidebar.find(({ text }) => text === 'More resources').items[0].items[0].link, '/api/reference/operations/listexamples');
+});
+
+test('the endpoint index lists every operation in the pinned reference', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const { operations } = loadApiPresentation(root);
+  const index = readFileSync(new URL('../api/endpoints.md', import.meta.url), 'utf8');
+  const indexed = [...index.matchAll(/^\| `([A-Z]+ \/[^`]+)` \|/gm)].map(([, entry]) => entry);
+  assert.deepEqual(indexed.sort(), operations.map(({ method, path }) => `${method} ${path}`).sort());
 });
 
 test('unclassified source cannot become a discoverable HTML reference', () => {

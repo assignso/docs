@@ -114,8 +114,17 @@ publish()
 for (const path of ["index.html", "api/index.html", "api/search/index.html", "api/reference/index.html", "api/reference/tasks/index.html", "api/reference.md", "llms.txt", "llms-full.txt", "CNAME", "openapi.yaml"]) {
   assert.ok(existsSync(join(output, path)), `Missing static artifact: ${path}`)
 }
-assert.match(readFileSync(join(output, "index.html"), "utf8"), /Plan the work\. Wire in your tools\./, "Homepage content did not render")
-for (const file of ["cli/index.md", "cli/commands.md", "cli/scripting.md", "api/authentication.md", "api/account.md", "api/realtime.md", "api/versioning.md"]) {
+const homepage = readFileSync(join(output, "index.html"), "utf8")
+assert.ok(homepage.includes('class="assign-home"'), "Homepage content did not render")
+for (const route of ["/get-started/quickstart", "/api/quickstart"]) {
+  assert.ok(homepage.includes(`href="${route}"`), `Homepage tutorial link is missing: ${route}`)
+}
+const apiOverview = readFileSync(join(output, "api/index.html"), "utf8")
+const apiOverviewMarkdown = readFileSync(join(output, "api.md"), "utf8")
+const workspaceTasks = "/api/reference/operations/listworkspacetasks"
+assert.ok(apiOverview.includes(`href="${workspaceTasks}"`) && apiOverviewMarkdown.includes(`](${workspaceTasks})`),
+  "The Task workflow reference link must resolve from HTML and Markdown")
+for (const file of ["get-started/quickstart.md", "cli/index.md", "cli/commands.md", "cli/scripting.md", "api/authentication.md", "api/account.md", "api/realtime.md", "api/versioning.md"]) {
   const route = file.replace(/(?:\/index)?\.md$/, "/index.html")
   const html = readFileSync(join(output, route), "utf8")
   for (const [, markdownId, htmlId] of readFileSync(join(root, file), "utf8").matchAll(/(?:\{#([^}]+)\}|<a id="([^"]+)")/g)) {

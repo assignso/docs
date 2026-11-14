@@ -9,7 +9,7 @@ import { createHash } from "node:crypto"
 import { execFileSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import { parse, stringify } from "yaml"
-import { isInternal, publicContract } from "./public-contract.mjs"
+import { isInternal, methods, publicContract } from "./public-contract.mjs"
 import { approvedAuthoringSource } from "./authoring-contract.mjs"
 import { operationTitle } from "./api-presentation.mjs"
 import { authoringExportPin, exportDigest } from "./public-export.mjs"
@@ -37,7 +37,6 @@ if (approvalPath) {
 const manifest = process.env.ASSIGN_PUBLIC_RELEASE_MANIFEST
   ? JSON.parse(readFileSync(process.env.ASSIGN_PUBLIC_RELEASE_MANIFEST, "utf8")) : undefined
 const spec = approvalPath ? approvedAuthoringSource(input, approvalPath) : publicContract(input, manifest)
-const methods = ["get", "post", "put", "patch", "delete"]
 
 const guides = {
   Authentication: "./authentication",

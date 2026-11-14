@@ -1,11 +1,12 @@
 ---
-description: Create a Workspace, plan your first Project and connect the CLI and an MCP client.
+description: Create a Project, add a Task and move it through your team's workflow in Assign.
 ---
 
-# Quickstart
+# Create your first Project
 
-This guide walks you through creating your first Workspace, adding a Project and a Task, and
-opening that Task from the terminal and from an AI assistant.
+Create a Project in the Assign web app and move one Task from planned to done. If your team
+already sent you an invitation, open it and sign in with the invited email address. Select
+that Workspace and continue to [creating a Project](#2-create-a-project-and-a-task).
 
 ## 1. Create a Workspace
 
@@ -15,50 +16,46 @@ you. You can change the name, path and icon later in **Workspace settings → Ge
 
 ## 2. Create a Project and a Task
 
-1. In the sidebar, open **Projects** and choose **Create Project** (shortcut `C`).
-2. Give the Project a name and an uppercase **key** such as `WEB`. The key is permanent and
-   prefixes every Task code in the Project.
-3. Open the Project and choose **Create task** (shortcut `N`). Your first Task gets the code
-   `WEB-1`.
+1. In the sidebar, open **Projects** and choose **Create Project**. You can also press `C`.
+2. Name the Project **Help center launch** and give it an uppercase **key**, such as `WEB`.
+   The key is permanent and prefixes every Task code in the Project.
+3. Open the Project and choose **Create task** or press `N`. Name it **Check the help center on mobile**.
+   Your first Task gets the code `WEB-1`.
+4. Open the Task and add a description that explains what done looks like. For example,
+   check that the search field fits on a narrow screen and that you can open a result.
 
-Tasks move through the Project's Statuses. You can view them as a **List**, a **Board** or grouped
-by Milestone. See [Projects](../guides/projects) and [Tasks](../guides/tasks).
+If you can't create a Project, check which Workspace you're in and ask an owner or admin
+to check your role.
 
 ## 3. Invite your team
 
 Open **Workspace settings → Members** to invite people by email and choose their role. Project
-managers can then keep a Project open to the whole Workspace or make it private.
+managers can keep a Project open to the Workspace or [make it private](/guides/projects#members-and-visibility).
+Once a teammate joins and has access to the Project, you can select them in the Task's **Assignee** field.
 
-## 4. Work from the terminal
+## 4. Move the Task through the Board
 
-```sh
-brew install assignso/tap/assign
-assign login
-assign                       # your active Tasks
-assign project tasks WEB     # every Task in the Project
-assign search "onboarding"
-```
+Switch the Project to **Board**. Drag the Task to an in-progress Status when you start.
+You can also change **Status** from the Task page. Add a Comment to record what you found,
+then move the Task to a completed Status. Switch to **List** and confirm the Task shows its
+new Status. If you can't see it, check your [filters and display settings](/guides/projects#filter-and-sort).
 
-`assign login` opens your browser and stores the credential in your operating system's vault. See
-the [CLI documentation](../cli/) for other install methods and every command.
+## Next steps
 
-## 5. Connect an AI assistant
+- [Work with Projects](/guides/projects) to choose a view, set up Statuses or plan Milestones.
+- [Work with Tasks](/guides/tasks) to add details, attachments or relations.
+- [Learn how Assign is organized](/get-started/concepts) to see how Workspaces, Projects and Documents fit together.
 
-```sh
-assign mcp setup codex
-```
+## Connect your tools
 
-That command registers `https://mcp.assign.so/` in Codex and starts its browser authorization.
-You'll choose the Workspace and approve read, and optionally write, access. Other MCP clients
-connect with the same URL. See [Connect a client](../mcp/connect).
+### Work from the terminal {#4-work-from-the-terminal}
 
-## 6. Call the API
+[Install the Assign CLI](/cli/#install) and [sign in](/cli/#first-run) to open your work from the terminal.
 
-The forthcoming v1 integration flow uses bearer credentials. Follow
-[Make your first request](../api/authentication#make-your-first-request) to create a personal
-API token, obtain the Workspace ID and read one page of Tasks. That guide explains the
-expected response and how to recover from missing or revoked access.
+### Connect an AI assistant {#5-connect-an-ai-assistant}
 
-Check the operation's [availability](../api/conventions#availability) before using it.
-The [API overview](../api/) and [OpenAPI document](/openapi.yaml) describe the supported
-integration surface.
+[Connect an MCP client](/mcp/connect) and approve its access to the Workspace.
+
+### Call the API {#6-call-the-api}
+
+[Make your first API request](/api/quickstart) to read one Task page using the upcoming v1 contract.
