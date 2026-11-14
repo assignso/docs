@@ -811,9 +811,10 @@ function presentApi(spec, authoring = false) {
     { text: "API reference", items: [
       { text: "Overview", link: referencePath },
       { text: "Developer guides", link: "/api/" },
-      { text: "First API request", link: "/api/authentication#make-your-first-request" },
+      { text: "First API request", link: "/api/quickstart" },
       { text: "Authentication", link: "/api/authentication" },
-      { text: "Conventions & errors", link: "/api/conventions" },
+      { text: "API conventions", link: "/api/conventions" },
+      { text: "Errors and recovery", link: "/api/errors" },
     ] },
     ...[...resourceGroups, ["More resources", remaining]].flatMap(([text, tags]) => {
       const items = tags.flatMap(resourceItem)
@@ -822,7 +823,6 @@ function presentApi(spec, authoring = false) {
     }),
     protocolNavigation,
     { text: "Reference downloads", items: [
-      { text: "Integration guides", link: "/api" },
       { text: "Endpoint index", link: "/api/endpoints" },
       { text: "OpenAPI document", link: "/openapi.yaml", external: true },
     ] },

@@ -4,9 +4,16 @@ description: Endpoints, request examples and response schemas for the Assign HTT
 
 # API reference
 
-Browse endpoints by resource, or select an operation in the sidebar to see its parameters,
-request example and responses. Start with [authentication](/api/authentication) and
-[API conventions](/api/conventions) before making your first request.
+Each operation page shows its HTTP method, path, access requirements, request example and
+responses. The rewritten v1 operations are **Upcoming**. Check their
+[availability](/api/conventions#availability) before use.
 
-Resources marked **Upcoming** describe accepted contracts that are not yet deployed.
-You can also [download the OpenAPI document](/openapi.yaml) for your integration tools.
+Use the [workflow map](/api/#find-an-operation-by-task) to find common operations, or browse
+by resource in the sidebar.
+
+## Browse or download the contract
+
+- [Endpoint index](/api/endpoints) lists all public operations by HTTP method and path.
+- [OpenAPI document](/openapi.yaml) contains the schemas for your integration tools.
+- [First API request](/api/quickstart) walks through a credential and a bounded Task read.
+- [Errors and recovery](/api/errors) covers denied requests, conflicting edits and retry limits.

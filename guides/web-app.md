@@ -7,6 +7,14 @@ description: Find your way around the Assign web app, including Home, My Work, s
 Assign runs in any current browser at [assign.so](https://assign.so). Signing in opens your
 current Workspace. If you don't have a Workspace yet, Assign asks you to create one.
 
+## Find a guide
+
+- [Create your first Project](/get-started/quickstart) and move a Task from planned to done.
+- [Use the Board and List](/guides/projects#views) to plan work or check progress.
+- [Work with a Task](/guides/tasks) to edit its properties, add a Comment or link related work.
+- [Invite teammates and manage access](/guides/settings#workspace-settings) in Workspace settings.
+- [Log time and review timesheets](/guides/time-tracking) for a Task or Project.
+
 ## Install it as an app
 
 In browsers that support installing web apps, use **Install** or **Add to Home Screen**. The
@@ -97,9 +105,9 @@ just the rows on screen.
 
 ## Related
 
-- [Projects](./projects) · [Tasks](./tasks) · [Settings](./settings)
-- [Keyboard shortcuts](./keyboard-shortcuts)
-- [Writing in Assign](./editor)
+- [Projects](/guides/projects) · [Tasks](/guides/tasks) · [Settings](/guides/settings)
+- [Keyboard shortcuts](/guides/keyboard-shortcuts)
+- [Writing in Assign](/guides/editor)
 
 ### List motion <Badge type="warning" text="Awaiting deployment" />
 

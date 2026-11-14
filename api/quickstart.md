@@ -5,8 +5,11 @@ description: Choose a product credential, obtain your Workspace ID, and read one
 # Make your first API request <Badge type="warning" text="Awaiting deployment" />
 
 Read at most one Task from a Workspace you can access. The rewritten v1 flow is awaiting
-deployment; check [availability](./conventions#availability) before using it. Start with HTTP.
-The SDK examples below describe the same operation for packages that support this contract.
+deployment. Check [availability](/api/conventions#availability) before using it.
+
+For a script you run yourself, start with a [personal token](#personal-script). You'll copy your
+[Workspace ID](#2-set-the-workspace-id), send a [request with curl](#http), and check the
+[response](#4-interpret-the-result). You'll need access to the Workspace and `curl`.
 
 ## 1. Obtain a product credential
 
@@ -24,7 +27,7 @@ secret once into your secret manager; the credential list cannot show it again. 
 expiry displayed at issuance.
 
 An existing token may use an earlier scope policy. Follow its migration notice rather than
-assuming `tasks:write` includes read access. See [token lifecycle](./authentication#expiry-rotation-and-revocation)
+assuming `tasks:write` includes read access. See [token lifecycle](/api/authentication#expiry-rotation-and-revocation)
 for replacement, rotation and exposure recovery.
 
 ### Workspace service
@@ -35,18 +38,18 @@ responsible for its access and offboarding. Store the one-time secret in the ser
 manager and supply it as `ASSIGN_TOKEN`. An MCP service credential cannot substitute for it.
 
 A registered confidential application with an authorized service-account binding can instead
-use the [client-credentials flow](./oauth#run-as-a-service-account). Save the response's
+use the [client-credentials flow](/api/oauth#run-as-a-service-account). Save the response's
 `access_token` as `ASSIGN_TOKEN`; use `expires_in` to replace it before expiry. This grant has
 no refresh token. If your Workspace has no supported service-account setup, wait for that
 feature before running unattended work.
 
 ### Application acting for a person
 
-Complete [product OAuth registration and discovery](./oauth#register-and-discover), then the
-[Authorization Code and PKCE flow](./oauth#obtain-delegated-access) for the selected Workspace
+Complete [product OAuth registration and discovery](/api/oauth#register-and-discover), then the
+[Authorization Code and PKCE flow](/api/oauth#obtain-delegated-access) for the selected Workspace
 and `tasks:read`. Your application needs its registered client ID and redirect URI before it
 can start. Save the returned `access_token` as `ASSIGN_TOKEN` and retain the refresh token
-securely for [renewal](./oauth#renew-delegated-access). A client secret, authorization code,
+securely for [renewal](/api/oauth#renew-delegated-access). A client secret, authorization code,
 refresh token or MCP token is not the bearer token for a Task request.
 
 ## 2. Set the Workspace ID
@@ -64,7 +67,7 @@ visibility and resource permissions all apply; a scope alone does not grant acce
 
 ## 3. Read one Task page
 
-All variants use [listWorkspaceTasks](./reference/operations/listworkspacetasks):
+All variants use [listWorkspaceTasks](/api/reference/operations/listworkspacetasks):
 `GET /api/v1/workspaces/{workspace_id}/tasks?limit=1`. Run one variant once. Do not enable
 verbose HTTP logging or print the authorization header when troubleshooting.
 
@@ -184,18 +187,18 @@ This illustrative response is a valid empty page:
 
 For a nonempty page, each row's `id` is the immutable Task ID and `project_id` is its Project
 ID. Save IDs only for resources your integration needs. A row is a list projection; use
-[getTask](./reference/operations/gettask) for full Task content. The collection's `ETag`, when
+[getTask](/api/reference/operations/gettask) for full Task content. The collection's `ETag`, when
 returned, cannot serve as the `If-Match` value for editing a Task.
 
 This tutorial stops after one page. To continue later, follow every non-null `next_cursor`,
 even after a short or empty page, with the same credential and selectors. See
-[pagination](./pagination) for cursor handling and coverage limits. An empty page alone
+[pagination](/api/pagination) for cursor handling and coverage limits. An empty page alone
 does not prove that a complete scan found no Tasks.
 
 If the request fails, keep the HTTP status, safe error code and request ID with the token
 removed. For `401`, check environment, audience, expiry and revocation. For `403`, compare the
 issued scopes and current access with the operation. For `404`, confirm the Workspace ID and
-membership. See [access-error recovery](./authentication#recover-from-an-access-error).
+membership. See [access-error recovery](/api/authentication#recover-from-an-access-error).
 Do not repeat a failed request with another person's credential.
 
 ## 5. Make an authorized write
@@ -211,11 +214,11 @@ OAuth applications request the explicit scopes described above.
 
 Set `ASSIGN_PROJECT_ID` from a returned Task's `project_id` only after confirming the Project
 is suitable. If the page is empty or you need another Project, request `projects:read` and
-use [listWorkspaceProjects](./reference/operations/listworkspaceprojects) in the same Workspace
+use [listWorkspaceProjects](/api/reference/operations/listworkspaceprojects) in the same Workspace
 to select an accessible Project's immutable `id`. A Project name or key cannot replace it.
 
-Follow the [create/read/update Task recipe](./tasks#create), beginning
-with [createTask](./reference/operations/createtask). It explains the request body, one stable
+Follow the [create/read/update Task recipe](/api/tasks#create), beginning
+with [createTask](/api/reference/operations/createtask). It explains the request body, one stable
 idempotency key per creation intent, the expected `201`, interrupted-response recovery and
 verification using the returned Task ID. Check the result before creating again. Remove or
 archive example work through Assign when you finish; do not modify unrelated Tasks.
@@ -232,4 +235,4 @@ downloads. The SDK packages and API behavior retain the availability labels abov
 Supply the credential from step 1 as the app's `ASSIGN_API_TOKEN`, the Workspace ID from step 2
 as `ASSIGN_WORKSPACE_ID`, and the approved Project ID from step 5 as `ASSIGN_PROJECT_ID`.
 Use the API origin for that credential's environment. An optional `ASSIGN_STATUS_ID` comes from
-[listProjectStatuses](./reference/operations/listprojectstatuses) for the selected Project.
+[listProjectStatuses](/api/reference/operations/listprojectstatuses) for the selected Project.

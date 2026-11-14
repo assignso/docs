@@ -13,10 +13,10 @@ permissions and one audit history.
 
 | Interface | Use it for | Start here |
 | --- | --- | --- |
-| **Web app** | Planning, Boards and Lists, writing Documents, Workspace settings | [Using the web app](../guides/web-app) |
-| **CLI** | Checking your work, searching, moving Tasks and reading Documents from the terminal | [Assign CLI](../cli/) |
-| **MCP server** | Letting Codex or another MCP client read and change work on your behalf | [MCP server](../mcp/) |
-| **HTTP API** | Building integrations and automations on the public, versioned contract | [API overview](../api/) |
+| **Web app** | Planning, Boards and Lists, writing Documents, Workspace settings | [Using the web app](/guides/web-app) |
+| **CLI** | Checking your work, searching, moving Tasks and reading Documents from the terminal | [Assign CLI](/cli/) |
+| **MCP server** | Letting Codex or another MCP client read and change work on your behalf | [MCP server](/mcp/) |
+| **HTTP API** | Building integrations and automations on the public, versioned contract | [API overview](/api/) |
 
 These interfaces are all views of the same Workspace. A Task you complete from the CLI shows up
 as completed in an open browser tab, in an MCP client and in the API. Each interface also enforces
@@ -37,7 +37,7 @@ the same Workspace roles, Project visibility and revision checks.
 
 <div class="next-steps">
 
-- [**Quickstart**](./quickstart): sign in, create work and connect a tool in a few minutes.
-- [**Core concepts**](./concepts): Workspaces, Projects, Tasks, Documents and how they relate.
+- [**Create your first Project**](/get-started/quickstart): add a Task and move it from planned to done.
+- [**Core concepts**](/get-started/concepts): Workspaces, Projects, Tasks, Documents and how they relate.
 
 </div>

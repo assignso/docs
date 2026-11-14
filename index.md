@@ -11,13 +11,11 @@ lastUpdated: false
 <div class="assign-home">
 
 <section class="hero">
-  <p class="eyebrow">Assign documentation</p>
-  <h1>Plan the work. Wire in your tools.</h1>
-  <p class="lede">Guides for running Projects, Tasks and Documents in Assign, plus reference for
-  the CLI, the MCP server and the public API.</p>
+  <h1>Assign documentation</h1>
+  <p class="lede">Create your first Project, learn the web app or connect the tools you use.</p>
   <div class="actions">
-    <a class="button primary" href="/get-started/quickstart">Quickstart</a>
-    <a class="button secondary" href="/get-started/concepts">Core concepts</a>
+    <a class="button primary" href="/get-started/quickstart">Create your first Project</a>
+    <a class="button secondary" href="/api/quickstart">Make your first API request</a>
   </div>
 </section>
 
@@ -43,7 +41,7 @@ lastUpdated: false
   <a class="surface" href="/api/">
     <span class="label">Integrations</span>
     <h2>HTTP API</h2>
-    <p>The versioned public contract behind every Assign client.</p>
+    <p>Build an integration with the public API and endpoint reference.</p>
     <code class="url">https://api.assign.so/api/v1</code>
   </a>
 </div>
