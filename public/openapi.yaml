@@ -10813,6 +10813,22 @@ components:
             $ref: "#/components/schemas/CanonicalTaskRow"
           maxItems: 100
           type: array
+        due_window:
+          additionalProperties: false
+          description: Exact authorized civil-date window metadata, present only for due_page. Each response uses a fresh read snapshot and has a null next_cursor.
+          properties:
+            page:
+              format: int32
+              maximum: 2147483647
+              minimum: 1
+              type: integer
+            total_count:
+              pattern: ^(0|[1-9][0-9]*)$
+              type: string
+          required:
+            - page
+            - total_count
+          type: object
         has_more: false
         included:
           $ref: "#/components/schemas/CanonicalTaskIncluded"
@@ -48969,6 +48985,16 @@ paths:
             minLength: 4
             pattern: ^[A-Za-z][A-Za-z0-9]{1,7}-[1-9][0-9]{0,18}$
             type: string
+        - description: |
+            Numbered window of 20 active Tasks on one civil due_on date. Requires state=active, order=priority_updated_at, consistency=checked, and limit=20. Only project_id and assignee_actor_ids may further filter the window. Incompatible with cursor. Requests beyond the last current page resolve to the last page, or page 1 if empty.
+          in: query
+          name: due_page
+          required: false
+          schema:
+            format: int32
+            maximum: 2147483647
+            minimum: 1
+            type: integer
         - in: query
           name: due_on
           required: false
