@@ -30,6 +30,18 @@ These limits apply to the current public reference. Protocols such as
 [MCP](../mcp/task-queries) retain their own cursor fields and termination rules. Do not translate
 their responses into the product REST envelope.
 
+## Tasks due on a date <Badge type="warning" text="Upcoming" />
+
+To read a numbered window from the Workspace Tasks collection, pass `due_on` as a civil
+date, plus `due_page`, `state=active`, `order=priority_updated_at`, `consistency=checked`
+and `limit=20`. Repeat `project_id` or `assignee_actor_ids` to narrow the results.
+
+The response contains up to 20 Tasks and a `due_window` with the current `page` and the
+exact decimal string `total_count`. Request a page directly with `due_page`. Each response
+uses the current collection and access, so results can change between requests. If the
+requested page exceeds the current total, the response returns the last available page,
+or page 1 when the collection is empty.
+
 ## Continue the same query
 
 Copy a cursor unchanged from the preceding response. Keep the same credential, Workspace,

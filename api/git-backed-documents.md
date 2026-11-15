@@ -47,17 +47,21 @@ Pausing or disconnecting stops repository writes but deletes nothing. The mirror
 Comments, access controls, Tasks, full revision history, collaboration data and secrets, so it's not
 a backup.
 
-## HTTP API
+## HTTP API <Badge type="warning" text="Upcoming" />
 
-The connection is at `/api/v1/workspaces/{workspace_id}/knowledge-repository`, with operations for
-import, sync, run history and conflict listing and resolution. The
-[OpenAPI document](/openapi.yaml) has the schemas. MCP doesn't expose Git sync management, but
-Document and Knowledge retrieval works there as usual.
+The [upcoming API reference](./reference/operations/getknowledgerepository) covers repository
+configuration, import, sync history and conflict resolution.
 
-Submitting the same active connection again is safe. State changes use the repository revision, and
-sync and conflict operations recheck the Document revision and Git head. Mutations aren't replayed by
-idempotency key, so if a response is lost, read the repository, run history or conflict list before
-retrying.
+Before connecting, pausing, resuming or disconnecting, read the repository and send its exact
+`ETag` in `If-Match` along with an `Idempotency-Key`. After a stale condition, reread the
+repository and reconcile the change. If the response was lost, recover the original request with
+the same key and condition under current authority.
+
+Import, sync and conflict resolution return `202` on acceptance. Follow `Location` and honor
+`Retry-After` to check the Operation. For conflict resolution, copy both observed heads from the
+conflict into the request. If either side changed, refresh the conflict before making a new decision.
+
+MCP supports Document and Knowledge retrieval. Manage Git synchronization in Assign settings.
 
 Limits: 2,000 eligible files, 20 MiB total and 1 MiB per file when reading a repository, and 20 MiB of
 Documents and frontmatter per sync.

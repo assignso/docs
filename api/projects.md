@@ -22,14 +22,11 @@ Public status pages use a separate anonymous share protocol.
 The canonical collection accepts an exact Project URL segment:
 `GET /api/v1/workspaces/{workspace_id}/projects?path=my-project`.
 Use a scoped bearer credential as described in [Authentication](./authentication).
-The segment must contain 1–63 lowercase ASCII letters, digits or hyphens and
-start and end with a letter or digit. This selector grants no access.
-
-The response uses `data` and nullable `next_cursor`. A missing or inaccessible
-Project produces an empty authorized page. Archived Projects are excluded unless
+See [Workspace Projects](./reference/operations/listworkspaceprojects) for valid path values
+and response fields. A missing or inaccessible Project produces an empty authorized page.
+Archived Projects are excluded unless
 `include_archived=true`. Supplying both `code` and `path` requires the same Project
 to match both. Use the returned Project ID for subsequent reads; paths can change.
-See the [OpenAPI document](/openapi.yaml) for the complete collection contract.
 
 For PHP SDK query booleans, select the existing string format before making calls:
 
@@ -88,12 +85,15 @@ Content-Type: application/json
 {"name": "Assign", "key": "ASSIGN"}
 ```
 
-Returns `201` with the Project, using the Workspace's workflow and creation defaults. Save its
-immutable ID before proceeding. The response is a command observation; read the current Project
-item before acquiring a tag for another mutation. `key` is the ticket prefix, `^[A-Z][A-Z0-9]{1,7}$`, unique in the Workspace and
-permanent. A used key returns `409 project_key_taken`. `path` is generated from the name; build UI
-links from the returned value. After a lost response, keep the same key and exact body for
-recovery; a new key can create another Project. A key collision never updates the existing one.
+[Create a Project](./reference/operations/createproject) returns `201` with the Project and its
+Workspace defaults. Save its immutable ID and read the current Project item to obtain a tag for
+the next mutation. The permanent Project key prefixes Task codes. Use the returned path for
+links to the Project.
+
+If the server returns `409 project_key_taken`, choose an unused Project key and submit the
+corrected create with a new idempotency key. After a lost response, first recover the original
+request with its saved idempotency key and exact body. Save the recovered Project ID for any
+later edit or cleanup.
 
 ### Update
 
@@ -107,9 +107,8 @@ Content-Type: application/json
 {"name": "Assign Core"}
 ```
 
-Send exactly one of `name`, `path`, `description`, `url`, `visual_identity`, `owner_actor_id`,
-`project_state_id`, `visibility` or `show_cancelled_column`, or both `start_on` and `target_on`. A
-stale `If-Match` returns `412`; a missing condition returns `428`. `key` never changes. Preserve
+[Update a Project](./reference/operations/renameproject) lists the editable fields and which
+can be sent together. A stale `If-Match` returns `412`. A missing condition returns `428`. Preserve
 the proposed value, reread the current Project and reconcile before a new edit. After an
 interrupted write, recover the original key, body and tag before choosing another intent.
 
@@ -120,10 +119,11 @@ property bounds and accepted values rather than sending a copied read object.
 
 ### Archive and reorder
 
-`POST /api/v1/projects/{project_id}/archive` with the current Project item `If-Match` and an
-`Idempotency-Key` archives it. This is different from deleting a Document or trashing a Task.
-For example cleanup, review the saved ID and archive only a Project the workflow created. Do not
-archive an existing Project merely because a later step failed.
+For example cleanup, confirm the saved ID came from your own create. Read the Project, review its
+current state and [archive it](./reference/operations/archiveproject) with its item tag and a new
+idempotency key. Success is `204`. If a later step failed while you were using an existing
+Project, leave that Project available to its users. After a lost archive response, recover with
+the original tag and key. If the tag is stale, reread and review before making a new request.
 
 Reorder with neighbour anchors. The order is shared by the whole Workspace and the server owns the
 rank:
@@ -187,8 +187,9 @@ Content-Type: application/json
 ```
 
 `PATCH` and `DELETE /api/v1/projects/{project_id}/members/{actor_id}` with `If-Match` change or
-remove a member. The owner stays a manager until ownership is transferred, and these operations never
-change Workspace membership. Someone invited to the Workspace has no Project access until a manager
+remove a member. Use the target member row's `item_validator.etag` and preserve its encoding. The
+owner stays a manager until ownership is transferred, and these operations preserve Workspace
+membership. Someone invited to the Workspace has no Project access until a manager
 adds them.
 
 Switch access with `{"visibility": "private"}` in a Project update. Project responses include
@@ -226,11 +227,10 @@ for a Task create or move. Get `project_id` from Workspace Projects. The expecte
 with the schema shown in the reference. Continue with the returned cursor instead of assuming
 the first page is the complete workflow.
 
-`project_id` is `null` for a Workspace-wide Status. `category` is the visual grouping (`backlog`,
-`todo`, `in_progress`, `in_review`, `done`). `status_type` is the lifecycle meaning: `backlog`,
-`unstarted`, `started`, `completed` or `cancelled`. Completed and cancelled resolve Tasks whatever
-the label. `marks_task_resolved` is derived. Lists omit archived Statuses, but one can still be read
-by ID so an old Task keeps its label.
+A Status can belong to one Project or apply across the Workspace. Its visual grouping and
+lifecycle meaning are independent. Completed and cancelled Statuses resolve Tasks whatever
+their label. Lists omit archived Statuses, but you can still read one by ID when an older Task
+uses it.
 
 ### Create
 
@@ -243,7 +243,9 @@ Content-Type: application/json
 {"label": "Ready for review", "category": "in_review", "status_type": "started", "color": "#7C3AED", "position": "5"}
 ```
 
-Returns `201` with the Status and its `ETag`. It needs work-write access.
+The [Status creation reference](./reference/operations/createprojectstatus) returns `201` with the
+Status and its `ETag`. Use a bearer credential with current Project management authority. Omit
+`status_type` to use the category default. Read the current Status before a later conditional edit.
 
 ### Update, archive, restore and reorder
 
@@ -289,7 +291,8 @@ Content-Type: application/json
 ```
 
 Each Status must be active and apply to the Project, in the `in_progress`, `in_review` and `done`
-categories respectively. Turning review off keeps the review selection. A stale ETag returns
+categories respectively. When review is optional, send a review Status ID to keep the selection or
+`null` to clear it. A stale ETag returns
 `412 precondition_failed`; read the current policy, retain the intended choices and reconcile
 before a new request. An invalid Status returns `422 project_completion_policy_invalid`. After
 an unknown outcome, recover the original policy request key and exact body before another edit.

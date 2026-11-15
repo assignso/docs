@@ -232,7 +232,8 @@ cleanup. The downloads contain application source and locked dependency manifest
 an app requires its matching unreleased SDK artifact; that artifact is excluded from the
 downloads. The SDK packages and API behavior retain the availability labels above.
 
-Supply the credential from step 1 as the app's `ASSIGN_API_TOKEN`, the Workspace ID from step 2
-as `ASSIGN_WORKSPACE_ID`, and the approved Project ID from step 5 as `ASSIGN_PROJECT_ID`.
-Use the API origin for that credential's environment. An optional `ASSIGN_STATUS_ID` comes from
-[listProjectStatuses](/api/reference/operations/listprojectstatuses) for the selected Project.
+Use the write-capable credential from step 5 as `ASSIGN_API_TOKEN` and its HTTPS origin as
+`ASSIGN_API_ORIGIN`. Set `ASSIGN_WORKSPACE_ID` to the Workspace ID from step 2 and
+`ASSIGN_PROJECT_ID` to the approved Project ID from step 5. To select a Status, set
+`ASSIGN_STATUS_ID` from [listProjectStatuses](/api/reference/operations/listprojectstatuses)
+for that Project. See the download's README to recover an interrupted run.

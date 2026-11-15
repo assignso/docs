@@ -9,8 +9,12 @@ existing integration until its migration is announced.
 
 `GET /api/v1/workspaces/{workspace_id}/search` searches Projects, Tasks, Documents,
 Comments and active People in one Workspace. Supply a Workspace-scoped bearer
-credential with read permission. Browser cookies do not authenticate this product
-route.
+credential with read permission and current access to the resources you want to
+find. Browser cookies do not authenticate this route.
+
+[Search Workspace content](/api/reference/operations/searchworkspace) has the complete
+request and response examples. Get your `workspace_id` from
+[Workspace settings](/api/account#copy-workspace-id).
 
 ## Request
 
@@ -19,7 +23,7 @@ route.
 | Parameter | Effect |
 | --- | --- |
 | `limit`, `cursor` | Page size 1–50 (default 20) and the cursor from the previous page. Keep the same credential, Workspace, query, filters and page size. |
-| `project_id` | Limit results to one Project. |
+| `project_id` | Limit results to one Project. If you cannot access the Project, Search returns an empty page. |
 | `resource_type` | `project`, `task`, `document`, `comment` or `person`. People show their Workspace role as `subtitle`, never email. |
 | `include_archived` | `true` includes archived Projects, Tasks, Documents and Comments. Excluded by default. |
 
@@ -54,11 +58,11 @@ Response excerpt showing the page envelope and selected display fields:
 
 `project_id` is `null` for a Project. Results are bounded and have no score or exact total.
 
-Follow a non-null `next_cursor` until `has_more` is false. Each page is authorized
-again. A changed credential, membership, Workspace content/visibility checkpoint
-or contract can invalidate continuation. On `400 invalid_cursor`, discard the
-cursor and restart with the same intended search. Old signed cursors cannot
-resume the updated contract.
+Follow every non-null `next_cursor`, even after a short or empty page. A null
+cursor ends pagination. Each page is authorized again. A changed credential,
+membership, Workspace content/visibility checkpoint or contract can invalidate
+continuation. On `400 invalid_cursor`, discard the cursor and restart with the
+same intended search. Old signed cursors cannot resume the updated contract.
 
 Ranking prefers exact IDs and titles, then title prefixes, full-text relevance, typo-tolerant matches
 and recency. Documents and Comments also match their text, and People match display names. Snippets

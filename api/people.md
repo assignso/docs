@@ -1,35 +1,46 @@
 ---
-description: Read a Workspace member's public profile and activity.
+description: Read a Workspace member's profile, picture and visible activity.
 ---
 
 # People
 
-People profiles are Workspace-scoped. Any member who can see a member can open their profile. It shows
-the title, bio and status they chose to publish, and never their email, phone or other account
-settings.
+<Badge type="warning" text="Awaiting deployment" />
+
+Use a [supported bearer credential](./authentication) with current Workspace access and permission
+to view the active member. Profile and picture reads require `people:read` or general read. Activity
+reads require `activity:read` or general read.
+
+For `401`, renew your credential. For `404`, check the Workspace, the person's identifier and your
+current access. Hidden, inactive and unavailable members also return `404`.
 
 ## Read a profile
 
-```http
-GET /api/v1/workspaces/{workspace_id}/people/{username}
-```
+Use [Get a person's profile](./reference/operations/getworkspacepersonprofile) with the member's
+`username` from [List Workspace members](./reference/operations/listworkspacemembers).
+Current and historical usernames resolve to the same account. Legacy links can use a User UUIDv7.
 
-The response has the display name, current username, Workspace role, active status, a Workspace
-`actor_id`, an `is_you` flag and the optional `title`, `bio` and `profile_status` (each `null` if
-unset). It also has `profile_picture_url`, `avatar_initials` (`null` derives them from the name) and
-`avatar_color`. Use the actor ID as `assignee_actor_id` in [Task lists](./tasks#list) to show their
-work.
+Use the returned `actor_id` as `assignee_actor_id` in [Task lists](./tasks#list). The optional
+`title`, `bio` and `profile_status` are `null` when unset. The profile omits private account
+information such as email and phone.
 
-The picture URL is an Assign route,
-`/api/v1/workspaces/{workspace_id}/people/{user_id}/profile-picture/content`. It rechecks membership
-and redirects to a short-lived URL, or returns `404` if unavailable.
+## Read a profile picture
 
-Usernames are globally unique, lowercase, 3–30 characters. They can change, but every claimed handle
-keeps resolving to the same account. Legacy UUID references still resolve and the web app replaces
-them with the current username. A username never grants access.
+For an uploaded picture, request the profile's Assign `profile_picture_url` or supply its
+`user_id` to [Get a profile picture](./reference/operations/getworkspacepersonprofilepicture).
+The Assign response is a bodyless `302` with a short-lived `Location` and
+`Cache-Control: private, no-store`. Follow `Location` without the Assign credential. If the URL
+expires, request a fresh redirect from Assign.
+
+If the profile supplies an external HTTPS image URL, request it without the Assign credential.
+When no picture is available, use the avatar fields. If `avatar_initials` is `null`, derive the
+initials from the display name.
 
 ## Read activity
 
-`GET /api/v1/workspaces/{workspace_id}/people/{username}/activity?limit=50` returns a cursor-paginated
-feed with the same redaction and access rules as [Activity](./activity). An inactive or invisible
-person returns `404`.
+Use [List a person's visible Activity](./reference/operations/listworkspacepersonactivity) with
+the member's `username`. The page contains human-readable [Activity](./activity) that you have
+permission to see. Each response contains `data` and `next_cursor`.
+
+Keep the same credential, Workspace, username and page size while following `next_cursor`. Continue
+after short or empty pages when a cursor is present. If Assign returns `400 invalid_cursor`, restart
+from the first page without a cursor.
