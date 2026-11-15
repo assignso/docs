@@ -40,19 +40,21 @@ responsible for its access and offboarding. Store the one-time secret in the ser
 manager and supply it as `ASSIGN_TOKEN`. An MCP service credential cannot substitute for it.
 
 A registered confidential application with an authorized service-account binding can instead
-use the [client-credentials flow](/api/oauth#run-as-a-service-account). Save the response's
-`access_token` as `ASSIGN_TOKEN`; use `expires_in` to replace it before expiry. This grant has
-no refresh token. If your Workspace has no supported service-account setup, wait for that
-feature before running unattended work.
+use the [client-credentials flow](/api/oauth#run-as-a-service-account). Request `tasks:read`
+within the binding's approved scopes. Save the response's `access_token` as `ASSIGN_TOKEN`;
+use `expires_in` to replace it before expiry. This grant has no refresh token. If your Workspace
+has no supported service-account setup, wait for that feature before running unattended work.
 
 ### Application acting for a person
 
-Complete [product OAuth registration and discovery](/api/oauth#register-and-discover), then the
-[Authorization Code and PKCE flow](/api/oauth#obtain-delegated-access) for the selected Workspace
-and `tasks:read`. Your application needs its registered client ID and redirect URI before it
-can start. Save the returned `access_token` as `ASSIGN_TOKEN` and retain the refresh token
-securely for [renewal](/api/oauth#renew-delegated-access). A client secret, authorization code,
-refresh token or MCP token is not the bearer token for a Task request.
+Complete [product OAuth registration and discovery](/api/oauth#register-and-discover) and
+[copy the Workspace ID](#2-set-the-workspace-id) before starting OAuth. Use your registered
+client ID and redirect URI to start the
+[Authorization Code and PKCE flow](/api/oauth#obtain-delegated-access). The person approves
+your application, the selected Workspace and `tasks:read` in Assign.
+After exchanging the code, save the returned `access_token` as `ASSIGN_TOKEN` and store the
+refresh token securely for [renewal](/api/oauth#renew-delegated-access). A client secret,
+authorization code, refresh token or MCP token is not the bearer token for a Task request.
 
 ## 2. Set the Workspace ID
 
