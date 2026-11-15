@@ -5,7 +5,9 @@ description: Choose a product credential, obtain your Workspace ID, and read one
 # Make your first API request <Badge type="warning" text="Awaiting deployment" />
 
 Read at most one Task from a Workspace you can access. The rewritten v1 flow is awaiting
-deployment. Check [availability](/api/conventions#availability) before using it.
+deployment. Use these requests only in an environment that serves the rewritten `/api/v1`.
+Check [availability](/api/conventions#availability) before using `https://api.assign.so`.
+For an authorized preview, use the HTTPS API origin supplied for that environment.
 
 For a script you run yourself, start with a [personal token](#personal-script). You'll copy your
 [Workspace ID](#2-set-the-workspace-id), send a [request with curl](#http), and check the
@@ -71,13 +73,16 @@ All variants use [listWorkspaceTasks](/api/reference/operations/listworkspacetas
 `GET /api/v1/workspaces/{workspace_id}/tasks?limit=1`. Run one variant once. Do not enable
 verbose HTTP logging or print the authorization header when troubleshooting.
 
+For every variant, set `ASSIGN_API_ORIGIN` to the API origin for your credential's environment,
+without a trailing slash or `/api/v1`.
+
 ### HTTP
 
-With `curl` installed and both variables supplied from the setup above:
+With `curl` installed, supply the credential, Workspace ID and API origin from the setup above.
 
 ```sh
 curl --include --get \
-  "https://api.assign.so/api/v1/workspaces/$ASSIGN_WORKSPACE_ID/tasks" \
+  "$ASSIGN_API_ORIGIN/api/v1/workspaces/$ASSIGN_WORKSPACE_ID/tasks" \
   --data-urlencode "limit=1" \
   -H "Authorization: Bearer $ASSIGN_TOKEN" \
   -H "Accept: application/json"
@@ -85,13 +90,9 @@ curl --include --get \
 
 ### TypeScript <Badge type="warning" text="Upcoming" />
 
-This example targets `@assignso/sdk` **1.0.0-rc.9** and Node.js 18 or newer. That package version
-is not currently available from the public npm registry. Use HTTP until a package supporting
-this operation is available; an older installed version may expose a different contract.
-
-In a Node.js TypeScript project with the supported SDK installed, save this as `first-read.ts`
-and compile it with your project's TypeScript configuration. The SDK's `basePath` is the origin;
-the generated method adds `/api/v1`.
+`@assignso/sdk` for the rewrite is unpublished. With an authorized matching SDK installed,
+use Node.js 18 or newer. Save this as `first-read.ts` and compile it with your project's
+TypeScript configuration and Node.js types. The SDK adds `/api/v1` to `ASSIGN_API_ORIGIN`.
 
 ```ts
 import { Configuration, ResponseError, TasksApi } from '@assignso/sdk';
@@ -99,10 +100,11 @@ import { Configuration, ResponseError, TasksApi } from '@assignso/sdk';
 async function main() {
   const token = process.env.ASSIGN_TOKEN;
   const workspaceId = process.env.ASSIGN_WORKSPACE_ID;
-  if (!token || !workspaceId) throw new Error('Set ASSIGN_TOKEN and ASSIGN_WORKSPACE_ID');
+  const origin = process.env.ASSIGN_API_ORIGIN;
+  if (!token || !workspaceId || !origin) throw new Error('Supply the token, Workspace ID and API origin.');
 
   const api = new TasksApi(new Configuration({
-    basePath: 'https://api.assign.so',
+    basePath: origin,
     accessToken: token,
   }));
   const response = await api.listWorkspaceTasksRaw({ workspaceId, limit: 1 });
@@ -120,11 +122,10 @@ main().catch((error: unknown) => {
 
 ### PHP <Badge type="warning" text="Upcoming" />
 
-The PHP SDK is not yet published on Packagist. Use HTTP until a supported package is available.
-This example uses the generated `Assign\Sdk` public interface for the rewritten v1 contract,
-PHP 8.1 or newer and a Composer project with the SDK installed. Save it as `first-read.php`
-beside the project's `vendor/` directory and run `php first-read.php` after supplying the same
-two environment variables.
+`assignso/php-sdk` for the rewrite is unpublished. With an authorized matching SDK installed,
+use PHP 8.1 through 8.x with `curl`, `json` and `mbstring` enabled, and Composer 2. Save this
+as `first-read.php` beside the project's `vendor/` directory and supply the three variables
+from the setup above. The SDK adds `/api/v1` to `ASSIGN_API_ORIGIN`.
 
 ```php
 <?php
@@ -137,12 +138,12 @@ use Assign\Sdk\ProductClient;
 
 $token = getenv('ASSIGN_TOKEN');
 $workspaceId = getenv('ASSIGN_WORKSPACE_ID');
-if (!$token || !$workspaceId) {
-    fwrite(STDERR, "Set ASSIGN_TOKEN and ASSIGN_WORKSPACE_ID\n");
+$origin = getenv('ASSIGN_API_ORIGIN');
+if (!$token || !$workspaceId || !$origin) {
+    fwrite(STDERR, "Supply the token, Workspace ID and API origin.\n");
     exit(1);
 }
 
-$origin = 'https://api.assign.so';
 $config = (new Configuration())->setHost($origin);
 $client = ProductClient::create(static fn(): string => $token, $origin);
 $api = new TasksApi($client, $config);
@@ -225,15 +226,33 @@ archive example work through Assign when you finish; do not modify unrelated Tas
 
 ### Run the complete workflow
 
-Download the [TypeScript Task app source](/examples/task-workflow/typescript.zip) or
-[PHP Task app source](/examples/task-workflow/php.zip). Each app reads a bounded Task page,
-creates and edits its own Task, recovers from a stale validator, and trashes that Task during
-cleanup. The downloads contain application source and locked dependency manifests. Running
-an app requires its matching unreleased SDK artifact; that artifact is excluded from the
-downloads. The SDK packages and API behavior retain the availability labels above.
+#### SDK and API prerequisites
 
-Use the write-capable credential from step 5 as `ASSIGN_API_TOKEN` and its HTTPS origin as
-`ASSIGN_API_ORIGIN`. Set `ASSIGN_WORKSPACE_ID` to the Workspace ID from step 2 and
-`ASSIGN_PROJECT_ID` to the approved Project ID from step 5. To select a Status, set
-`ASSIGN_STATUS_ID` from [listProjectStatuses](/api/reference/operations/listprojectstatuses)
-for that Project. See the download's README to recover an interrupted run.
+The [example manifest](/examples/task-workflow/manifest.json) identifies each exact SDK
+version and the OpenAPI document it targets. Both apps use the rewritten `/api/v1` and
+require an API environment serving that contract. The SDK packages remain unpublished.
+
+- [TypeScript source ZIP](/examples/task-workflow/typescript.zip) requires Node.js 18 or
+  newer, npm and the matching SDK tarball under `vendor/`.
+- [PHP source ZIP](/examples/task-workflow/php.zip) requires PHP 8.1 through 8.x with
+  `curl`, `json`, `mbstring` and `zip`, Composer 2, the locked third-party dependencies
+  and the matching SDK archive under `vendor-sdk/`.
+
+Each ZIP includes its app, setup instructions and lockfile. The SDK artifact is separate.
+Obtain the exact artifact specified by the lock from its maintainer through an authorized
+channel before installing the download. If you already have authorized SDK source for the
+same contract, follow
+`examples/task-workflow/README.md` in that checkout to build and install the prepared app.
+That procedure records the freshly built package in a staged lock.
+
+#### Configure the app
+
+Use the write-capable credential from step 5 as `ASSIGN_API_TOKEN`. Supply
+`ASSIGN_API_ORIGIN` and `ASSIGN_WORKSPACE_ID` from the setup above and
+`ASSIGN_PROJECT_ID` from step 5. To choose a Status, set `ASSIGN_STATUS_ID` from
+[listProjectStatuses](/api/reference/operations/listprojectstatuses) for that Project.
+Leave it unset to use the Project's creation default.
+
+The app reads a bounded Task page, creates and edits its own Task, recovers from a stale
+validator and trashes that Task during cleanup. Follow the app README for commands and
+interrupted-run recovery.

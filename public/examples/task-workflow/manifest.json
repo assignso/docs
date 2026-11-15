@@ -8,11 +8,11 @@
       "document_sha256": "ce85223bc381cf2067f68588a27c685b0596a8836c600798e0e434123d8d8889",
       "files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
-        "PROVENANCE.json": "259ab91bca14865729d04048b3171ffe438f6b6c7fec039dce28f7d7ea8259f6",
-        "README.md": "d328217a971bf04814112ec639f8cb0e2ff6949118e953934ecea119ea3b30fa",
+        "PROVENANCE.json": "f978a51421c76c0f3f01e91c79a97474c1873d3c9b737cb7d446c7d459e9665d",
+        "README.md": "669cd2f89b24aa58af1764f402f1b16d9f60412591eeae833dfa0f383ccd0cc8",
         "composer.json": "f4fbf2cd10726691a8c73616f669063eb059861f52ec7482f9e88111a87c9924",
-        "composer.lock": "8fe1373bdb8a02563c769edaf8c3b82dd9379bf8ff8c6adef066ca2febd40e8f",
-        "main.php": "3d0c43be5f67a8176eac3d143513296fadcff7870bd95703245e2b1922b262d3"
+        "composer.lock": "cec0796d052185cf996c4951488f750c330e12b46e42a9f047956354b89ed815",
+        "main.php": "ea65dc9051edf775f17be933c270cc0a569cd97563bc4136834992f72a1fcd11"
       },
       "recipe": "task-workflow",
       "schema": "assign.docs-example-source.v1",
@@ -22,13 +22,13 @@
         "name": "assignso/php-sdk",
         "version": "1.0.0-rc.9"
       },
-      "sha256": "d77e7ebd13161aba8add548c9c0a7482ef1a522db223797ef2888b5d196255c8",
-      "size": 38068,
+      "sha256": "db47679c69cfe2b48ba158eb29bd2d525b1205f268907b64a29034430478fab9",
+      "size": 39655,
       "source_files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
         "composer.json": "f4fbf2cd10726691a8c73616f669063eb059861f52ec7482f9e88111a87c9924",
-        "composer.lock": "8fe1373bdb8a02563c769edaf8c3b82dd9379bf8ff8c6adef066ca2febd40e8f",
-        "main.php": "3d0c43be5f67a8176eac3d143513296fadcff7870bd95703245e2b1922b262d3"
+        "composer.lock": "cec0796d052185cf996c4951488f750c330e12b46e42a9f047956354b89ed815",
+        "main.php": "ea65dc9051edf775f17be933c270cc0a569cd97563bc4136834992f72a1fcd11"
       }
     },
     "typescript": {
@@ -39,10 +39,10 @@
       "document_sha256": "ce85223bc381cf2067f68588a27c685b0596a8836c600798e0e434123d8d8889",
       "files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
-        "PROVENANCE.json": "004ca536f78815aefdcfcfff455a91d6ff1a6a5dc16c83a3607489226b0b5695",
-        "README.md": "0351c1dbe81eb29126b19e25aba816a09c464b90ad91afae8fa1d45d4fb100b5",
-        "main.mjs": "9ead859d24d2b1a6285b1a246d7d548557774d56cb931e3f65a18811f1ad081b",
-        "package-lock.json": "c13a44360aa5827dc367ee85fc486d0f795c75b3b8994c9089512134033f58c6",
+        "PROVENANCE.json": "bc86b85b9f738b0707822803282d5c88e9457fbbe49e93b36e6ac4f80a5a3814",
+        "README.md": "e5427d9098ff8b82ff9b101e761ea6e7124041b50d7ba30ebac235391e723b9c",
+        "main.mjs": "1daf4e2abb74b681f9085c4c2f1eb7a4a3af0656579e7b0e87af64d2d105c45f",
+        "package-lock.json": "66a9a96fdcc26f3b0efb39485e5bb1b281a60048eef0a03bfa474f223aa20e2d",
         "package.json": "dce707b841e16c2dbbf88f81e76668f6a5a54dbb737ed0b83b40f2925cac8e88"
       },
       "recipe": "task-workflow",
@@ -53,12 +53,12 @@
         "name": "@assignso/sdk",
         "version": "1.0.0-rc.9"
       },
-      "sha256": "319adab5f44f41d2967a6a74a730c830873942c57f09ae85a97a9e0e36ff199e",
-      "size": 11075,
+      "sha256": "d1b8b33ef94e53260b0b9e50b51d6ad987b3e11b3afc3bb7d797f761825920f7",
+      "size": 12372,
       "source_files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
-        "main.mjs": "9ead859d24d2b1a6285b1a246d7d548557774d56cb931e3f65a18811f1ad081b",
-        "package-lock.json": "c13a44360aa5827dc367ee85fc486d0f795c75b3b8994c9089512134033f58c6",
+        "main.mjs": "1daf4e2abb74b681f9085c4c2f1eb7a4a3af0656579e7b0e87af64d2d105c45f",
+        "package-lock.json": "66a9a96fdcc26f3b0efb39485e5bb1b281a60048eef0a03bfa474f223aa20e2d",
         "package.json": "dce707b841e16c2dbbf88f81e76668f6a5a54dbb737ed0b83b40f2925cac8e88"
       }
     }

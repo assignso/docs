@@ -75,10 +75,11 @@ capabilities, not by comparing server versions.
 
 Choose an available SDK release that identifies the contract you intend to use. Regenerate
 or replace clients built for an earlier schema even when the URL still starts with `/api/v1`.
-The [Task workflow source downloads](./quickstart#run-the-complete-workflow) pin the exact
-TypeScript and PHP SDK artifacts used by the examples. Those artifacts are unreleased and
-provided separately. Use the tutorial's [HTTP request](./quickstart#http) if you don't have a
-matching SDK artifact.
+The TypeScript and PHP SDKs for the rewrite are unpublished. The
+[Task workflow setup](./quickstart#run-the-complete-workflow) links to the exact source
+download and SDK identities. Each download needs its locked SDK artifact separately.
+You can use the tutorial's [HTTP request](./quickstart#http) with an authorized API
+environment that serves the rewritten contract.
 
 ## Update an integration <Badge type="warning" text="Awaiting deployment" />
 

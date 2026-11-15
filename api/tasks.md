@@ -162,14 +162,10 @@ needs correction or renewed authority, not an automatic retry loop.
 
 ### SDK workflow examples
 
-- [Download the TypeScript Task app source](/examples/task-workflow/typescript.zip)
-- [Download the PHP Task app source](/examples/task-workflow/php.zip)
-
-Both apps demonstrate stale-edit recovery and clean up the Task they create. Each download
-includes setup instructions and locked dependencies. Running an app requires obtaining its
-matching unreleased SDK artifact separately. Follow the
-[first-request setup](./quickstart#run-the-complete-workflow) to obtain the credential,
-Workspace ID, Project ID and optional Status ID.
+Follow the [Task workflow setup](./quickstart#run-the-complete-workflow) to choose a
+TypeScript or PHP source download, obtain its exact SDK artifact separately, and configure
+the API origin, credential and IDs. Both apps demonstrate stale-edit recovery and trash
+the Task they create.
 
 ## Update
 

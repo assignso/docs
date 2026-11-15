@@ -91,6 +91,9 @@ class ExampleDownloadsTests(unittest.TestCase):
                         self.assertEqual(archive.read(name), content)
                     readme = archive.read("README.md").decode()
                     self.assertIn("unreleased and is not included", readme)
+                    artifact = module.source_contract(language, source_files(language), sdk(language))
+                    self.assertIn(f"`{artifact}`", readme)
+                    self.assertIn(PIN["contract_version"], readme)
                     self.assertNotIn("github.com/assignso", readme)
 
     def test_public_guard_rejects_extra_archive_entries_even_if_outer_hash_is_updated(self):
@@ -159,6 +162,13 @@ class ExampleDownloadsTests(unittest.TestCase):
             for language, entry in receipt["sources"].items():
                 self.assertNotIn(entry["revision"].encode(), outputs["manifest.json"])
                 self.assertNotIn(b"b" * 40, outputs[f"{language}.zip"])
+            base = workspace / "typescript-sdk"
+            (base / "README.md").write_text("# Updated SDK setup")
+            subprocess.run(["git", "-C", str(base), "add", "README.md"], check=True, env=git_env, capture_output=True)
+            subprocess.run(["git", "-C", str(base), "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false",
+                            "-c", "user.name=Prepared fixture", "-c", "user.email=fixture@example.invalid",
+                            "commit", "--quiet", "-m", "Update setup"], check=True, env=git_env, capture_output=True)
+            self.assertEqual(module.source_exports(workspace, context, proof_path), (outputs, receipt))
             destination, output = workspace / "private/source.json", workspace / "exports"
             command = ["python3", "-B", str(SCRIPT), "write", "--workspace", str(workspace), "--contract-directory", str(contract_directory),
                        "--workflow-proof", str(proof_path), "--output", str(output), "--private-receipt", str(destination)]

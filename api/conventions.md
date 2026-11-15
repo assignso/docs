@@ -95,6 +95,10 @@ follow the documented status resource to success before following its result lin
 An operation's presence in a guide or contract does not establish deployment. Pages marked
 upcoming or awaiting deployment describe accepted behavior that is not yet available.
 
+The product origin is `https://api.assign.so`. In an authorized preview environment,
+use its supplied origin and confirm it serves the rewritten `/api/v1`. SDK publication
+has a separate release schedule. See [SDK and client releases](./versioning#sdk-and-client-releases).
+
 Two deployment notes:
 
 - Attachment operations need object storage, and files report `scan_state: not_scanned` until malware
