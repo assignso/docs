@@ -24869,7 +24869,14 @@ paths:
         - Integrations
   /api/v1/label-definitions/{label_id}:
     get:
-      description: Read the current definition of an active or archived label. Use a product bearer credential with read scope and access to the Workspace and, for a Project-local label, its Project. Unknown or inaccessible IDs return 404. Send no body or query parameters. The 200 response includes complete metadata with a decimal-string revision and an opaque ETag for the selected identity or gzip representation. A matching If-None-Match can return 304 after access checks. Keep the exact item ETag and encoding for a later edit or archive.
+      description: |-
+        Read the current definition of an active or archived label.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace read access and Project read access for a Project-local label. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Omit query parameters. The `200` response includes complete metadata, a decimal-string revision and an opaque ETag for the selected identity or gzip representation. A matching `If-None-Match` can return `304` after access checks. Keep the exact item ETag and encoding for a later edit or archive.
+
+        **Recovery.** For `404 not_found`, verify the identifier using a catalog visible to your credential. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: getLabelDefinition
       parameters:
         - in: path
@@ -24977,7 +24984,14 @@ paths:
       tags:
         - Labels
     patch:
-      description: Rename, recolor or restore a label. Use a product bearer credential with write scope and current Workspace labels:manage for a Workspace label or Project labels:manage for a Project-local label. Send up to 16 KiB of identity-coded JSON with at least one field and no query parameters. Omitted name and color stay unchanged. Use archived=false to restore the same ID, optionally with presentation changes in the same request. Use the archive operation to archive a label. A 200 returns complete updated metadata and its ETag. Send one Idempotency-Key and pass the strong ETag from getLabelDefinition unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Rename, recolor or restore a label.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace `labels:manage` permission for a Workspace label or Project `labels:manage` permission for a Project-local label. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send up to 16 KiB of identity-coded JSON with at least one field and no query parameters. Omitted name and color stay unchanged. Set `archived=false` to restore the same ID, optionally with presentation changes. Use the archive operation to archive a label. A `200` returns complete metadata and its ETag. Send one `Idempotency-Key` and the strong item ETag from the definition read unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the current definition, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original response. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 conflict` with reason `label_name_conflict`, choose an available name before retrying the edit or restore. For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 16 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, correct the indicated field or send at least one supported change. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: updateLabelDefinition
       parameters:
         - in: path
@@ -25086,7 +25100,14 @@ paths:
         - Labels
   /api/v1/label-definitions/{label_id}/archive:
     post:
-      description: Archive a label so it cannot receive new assignments. Existing assignments and historical display are retained. Use a product bearer credential with write scope and current Workspace labels:manage for a Workspace label or Project labels:manage for a Project-local label. Send no body or query parameters. Success returns 204. To restore the same label later, read it again and send archived=false to updateLabelDefinition. Send one Idempotency-Key and pass the strong ETag from getLabelDefinition unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Archive a label so it cannot receive new assignments.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace `labels:manage` permission for a Workspace label or Project `labels:manage` permission for a Project-local label. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Existing assignments and historical display are retained. Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Omit query parameters. Success returns `204`. To restore the label later, read it again and send `archived=false` to the update operation. Send one `Idempotency-Key` and the strong item ETag from the definition read unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the current definition, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original `204`. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `422 validation_failed`, remove unsupported query fields. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: archiveLabelDefinition
       parameters:
         - in: path
@@ -28416,7 +28437,14 @@ paths:
         - Integrations
   /api/v1/projects/{project_id}/label-definitions:
     get:
-      description: List definitions created for Tasks in this Project. Use a product bearer credential with read scope and current Workspace and Project read access. Set include_archived=true to include archived definitions. The 200 response contains complete metadata in data and a nullable next_cursor. Use getLabelDefinition to obtain the item ETag for an edit or archive. Send no body. The default limit is 50 and the maximum is 100. Continue with next_cursor until it is null, keeping the same scope, filters, limit, credential and encoding. For 409 catalog_changed, discard the partial traversal and restart at the first page. A matching collection If-None-Match can return 304 after access checks.
+      description: |-
+        List Task label definitions created in a Project.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace and Project read access. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Pass `include_archived=true` to include archived definitions. The `200` response includes complete definitions in `data` and a nullable `next_cursor`. The default limit is 50 and the maximum is 100. Continue with `next_cursor` until it is null. Keep the same scope, filters, limit, credential and encoding. A matching `If-None-Match` can return `304` after access checks. Read an individual definition to obtain its edit or archive ETag.
+
+        **Recovery.** For `409 conflict` with reason `catalog_changed`, discard the partial traversal and restart from page one. For `422 validation_failed`, correct the indicated selector, limit or cursor before retrying. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: listProjectLabelDefinitions
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -28515,7 +28543,14 @@ paths:
       tags:
         - Labels
     post:
-      description: Create a Task label in the path Project. Use a product bearer credential with write scope and current Project labels:manage authority. Send up to 16 KiB of identity-coded JSON with name, color and purpose=task. Scope defaults to project. Omit query parameters and conditional headers. A 201 returns the new label's complete metadata, ETag and Location. A conflicting name returns 409. Send one Idempotency-Key. If the outcome is unknown, recover the original 201, Location and body with the same key and equivalent normalized input under current management authority. Reusing the key for a different intent returns 409.
+      description: |-
+        Create a Task label in a Project.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Project `labels:manage` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send up to 16 KiB of identity-coded JSON with a name, color and `purpose=task`. Scope defaults to `project`. Omit query parameters and conditional headers. The `201` response includes complete metadata, an ETag and a Location. Send one `Idempotency-Key`. If the outcome is unknown, use the same key and equivalent normalized input under current management authority to recover the original `201`, Location and body.
+
+        **Recovery.** For `409 conflict` with reason `label_name_conflict`, choose an available name in the same catalog. For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 16 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, correct the indicated field and use Task purpose with Project scope. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: createProjectLabelDefinition
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -28611,7 +28646,14 @@ paths:
         - Labels
   /api/v1/projects/{project_id}/label-overrides:
     get:
-      description: Read effective names and colors for Workspace Task labels in this Project. Use a product bearer credential with read scope and current Workspace and Project read access. Rows are ordered by definition name and ID. An inherited row has override=null and inherited=true. An archived definition with a retained override remains listed so the override can be cleared. Each row has its own decimal-string revision and item_validator, including the exact ETag and encoding to use for set or clear. Send no body. The default limit is 50 and the maximum is 100. Continue with next_cursor until it is null, keeping the same scope, filters, limit, credential and encoding. For 409 catalog_changed, discard the partial traversal and restart at the first page. A matching collection If-None-Match can return 304 after access checks.
+      description: |-
+        List the effective names and colors of Workspace Task labels in a Project.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace and Project read access. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. The `200` rows are ordered by definition name and ID. An inherited row has `override=null` and `inherited=true`. An archived definition stays listed when it has a retained override you can clear. Use each row’s decimal-string revision to track changes and its exact `item_validator.etag` and encoding to set or clear the override. The default limit is 50 and the maximum is 100. Continue with `next_cursor` until it is null. Keep the same scope, filters, limit, credential and encoding. A matching `If-None-Match` can return `304` after access checks.
+
+        **Recovery.** For `409 conflict` with reason `catalog_changed`, discard the partial traversal and restart from page one. For `422 validation_failed`, correct the indicated selector, limit or cursor before retrying. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: listProjectTaskLabelOverrides
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -28718,7 +28760,14 @@ paths:
         - Labels
   /api/v1/projects/{project_id}/label-overrides/{label_id}:
     delete:
-      description: Restore the latest Workspace name and color for a Task label in this Project. Use a product bearer credential with write scope and current Project labels:manage authority. Send no request body. Clearing an absent override leaves the current state intact. You can clear a retained override even after its definition is archived. The label ID and assignments stay the same. Success returns 204. Send one Idempotency-Key and pass the matching row's strong item_validator.etag from listProjectTaskLabelOverrides unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Restore the latest Workspace name and color for a Task label in a Project.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Project `labels:manage` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Clearing an absent override leaves the current state intact. You can clear a retained override after the definition is archived. The label ID and assignments stay the same. Success returns `204`. Send one `Idempotency-Key` and the strong row `item_validator.etag` from the Project override list unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the matching row again, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original `204`. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `422 validation_failed`, use a Workspace Task label and remove unsupported query fields. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: clearProjectTaskLabelOverride
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -28800,7 +28849,14 @@ paths:
       tags:
         - Labels
     put:
-      description: Set the name and color shown in this Project for a Workspace Task label. Use a product bearer credential with write scope and current Project labels:manage authority. Send both name and color as up to 16 KiB of identity-coded JSON. The Workspace definition and assignments stay the same. The 200 response contains the complete override state and its ETag. Repeating the current presentation leaves the item revision unchanged. Send one Idempotency-Key and pass the matching row's strong item_validator.etag from listProjectTaskLabelOverrides unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Set the name and color shown in a Project for a Workspace Task label.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Project `labels:manage` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send both name and color as up to 16 KiB of identity-coded JSON. The Workspace definition and assignments stay the same. The `200` response contains the complete override state and its ETag. Repeating the current presentation keeps the revision. Send one `Idempotency-Key` and the strong row `item_validator.etag` from the Project override list unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the matching row again, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original override response. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 conflict` with reason `label_name_conflict`, choose an available name for the Project presentation. For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 16 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, use an eligible Workspace Task label and correct the indicated presentation field. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: setProjectTaskLabelOverride
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -44490,7 +44546,14 @@ paths:
         - Documents
   /api/v1/workspaces/{workspace_id}/label-definitions:
     get:
-      description: List Workspace label definitions with a product bearer credential that has read scope and current Workspace access. Optionally filter by purpose (task, project or document) and set include_archived=true to include archived definitions. The 200 response contains complete definitions in data and a nullable next_cursor. Use getLabelDefinition to obtain the item ETag for an edit or archive. Send no body. The default limit is 50 and the maximum is 100. Continue with next_cursor until it is null, keeping the same scope, filters, limit, credential and encoding. For 409 catalog_changed, discard the partial traversal and restart at the first page. A matching collection If-None-Match can return 304 after access checks.
+      description: |-
+        List label definitions in a Workspace.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace read access. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Filter by `purpose` (task, project or document) or pass `include_archived=true` to include archived labels. The `200` response includes complete definitions in `data` and a nullable `next_cursor`. The default limit is 50 and the maximum is 100. Continue with `next_cursor` until it is null. Keep the same scope, filters, limit, credential and encoding. A matching `If-None-Match` can return `304` after access checks. Read an individual definition to obtain its edit or archive ETag.
+
+        **Recovery.** For `409 conflict` with reason `catalog_changed`, discard the partial traversal and restart from page one. For `422 validation_failed`, correct the indicated selector, limit or cursor before retrying. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: listWorkspaceLabelDefinitions
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -44611,7 +44674,14 @@ paths:
       tags:
         - Labels
     post:
-      description: Create a label in the path Workspace. Use a product bearer credential with write scope and current Workspace labels:manage authority. Send up to 16 KiB of identity-coded JSON with name, color and purpose (task, project or document). Scope defaults to workspace. Omit query parameters and conditional headers. A 201 returns the new label's complete metadata, ETag and Location. A conflicting name returns 409. Send one Idempotency-Key. If the outcome is unknown, recover the original 201, Location and body with the same key and equivalent normalized input under current management authority. Reusing the key for a different intent returns 409.
+      description: |-
+        Create a label in a Workspace.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace `labels:manage` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send up to 16 KiB of identity-coded JSON with a name, color and Task, Project or Document purpose. Scope defaults to `workspace`. Omit query parameters and conditional headers. The `201` response includes complete metadata, an ETag and a Location. Send one `Idempotency-Key`. If the outcome is unknown, use the same key and equivalent normalized input under current management authority to recover the original `201`, Location and body.
+
+        **Recovery.** For `409 conflict` with reason `label_name_conflict`, choose an available name in the same catalog. For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 16 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, correct the indicated name, color, purpose or scope. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: createWorkspaceLabelDefinition
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -47793,8 +47863,8 @@ paths:
         bounded and stripped of control characters; results never expose a raw
         engine score or exact total. Archived resources are excluded unless
         explicitly included; trashed, purged, and deleted resources remain excluded.
-        Work is rate-limited and query-time bounded; overload returns a
-        retryable `503 search_unavailable` with `Retry-After`.
+        Search is rate-limited and has a query timeout. For a temporary failure,
+        follow the recovery guidance for the `503` response.
         The page uses data, next_cursor and has_more. Follow every non-null cursor
         with the same normalized query, filters and page size. Cursors are confidential
         and bound to the current credential, membership, projection, contract epochs
@@ -47803,8 +47873,8 @@ paths:
         restart from the first page. Old signed cursors cannot resume this contract.
         Only JSON with identity or gzip encoding is supported. Media/encoding refusal
         precedes Search data reads. Responses use no-store and vary by Accept and
-        Accept-Encoding. Complete logical and encoded bodies retain the shared finite
-        response limit; oversized pages fail without partial results or a cursor.
+        Accept-Encoding. The logical and encoded response bodies each have a 256 KiB
+        limit. An oversized page fails without partial results or a cursor.
       operationId: searchWorkspace
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -47864,7 +47934,7 @@ paths:
             Content-Length:
               description: Exact negotiated complete-body length in encoded bytes. No partial results or continuation are published after response construction failure.
               schema:
-                maximum: 12648448
+                maximum: 262144
                 minimum: 1
                 type: integer
             Vary:
@@ -47892,7 +47962,29 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
-          $ref: "#/components/responses/MaintenanceUnavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Search timed out or is temporarily unavailable (search_unavailable), response capacity is exhausted (service_overloaded), or maintenance has taken the service offline (maintenance_offline). Honor Retry-After when present.
+          headers:
+            Assign-API-Version:
+              $ref: "#/components/headers/AssignAPIVersion"
+            Assign-Request-ID:
+              $ref: "#/components/headers/AssignRequestID"
+            Assign-Server-Version:
+              $ref: "#/components/headers/AssignServerVersion"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
+            Retry-After:
+              description: Delay in seconds before retrying, when supplied.
+              schema:
+                minimum: 0
+                type: integer
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            X-Request-ID:
+              $ref: "#/components/headers/AssignRequestID"
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
@@ -51031,7 +51123,14 @@ paths:
         - Tasks
   /api/v1/{target_kind}/{target_id}/labels:
     get:
-      description: Read all label IDs assigned to one Task, Project or Document. Use a product bearer credential with read scope and current access to the Workspace, target and any containing Project. Send no body or query parameters. The 200 response contains the target identity, assignment revision as a decimal string, and up to 20 sorted IDs, with an empty array when there are no assignments. A matching If-None-Match can return 304 after access checks. Keep this response's ETag and encoding to replace the set.
+      description: |-
+        Read the complete set of label IDs assigned to one Task, Project or Document.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current read access to the target and any containing Project. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Omit query parameters. The `200` response includes the target identity, a decimal-string assignment revision and up to 20 sorted IDs. An unlabelled target returns an empty array. A matching `If-None-Match` can return `304` after access checks. Keep the assignment-set ETag and encoding to replace the set.
+
+        **Recovery.** For `404 not_found`, check target access and the ID. For `422 validation_failed`, use `task`, `project` or `document` as the target kind and omit unsupported query fields. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: listTargetLabelAssignments
       parameters:
         - in: path
@@ -51148,7 +51247,14 @@ paths:
       tags:
         - Labels
     put:
-      description: Replace the complete label set on one Task, Project or Document, preserving its other fields. Use a product bearer credential with write scope, current permission to update the target and labels:assign authority. Send up to 32 KiB of identity-coded JSON with label_ids containing at most 20 unique, active IDs eligible for this target. Match the label purpose to the target kind and use Project-local Task labels only in their Project. Send an empty array to clear all assignments. An unchanged set keeps its revision. Success returns 204. Send one Idempotency-Key and pass the assignment-set ETag from listTargetLabelAssignments unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Replace the complete label set on one Task, Project or Document, preserving its other fields.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current permission to update the target and `labels:assign` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send up to 32 KiB of identity-coded JSON with up to 20 unique, active `label_ids` eligible for the target. Match label purpose to target kind and use Project-local Task labels only in their own Project. Send an empty list to clear all assignments. An unchanged set keeps its revision. Success returns `204`. Send one `Idempotency-Key` and the strong assignment-set ETag from the target label read unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the latest assignment set, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original `204`. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 32 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, correct invalid or ineligible IDs and keep the set to at most 20 labels. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: replaceTargetLabels
       parameters:
         - in: path
