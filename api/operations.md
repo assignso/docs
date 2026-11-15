@@ -48,7 +48,7 @@ Content-Type: application/json
   "progress": null,
   "created_at": "2026-01-01T12:00:00Z",
   "updated_at": "2026-01-01T12:00:00Z",
-  "expires_at": "2026-01-02T12:00:00Z"
+  "expires_at": "2026-01-08T12:00:00Z"
 }
 ```
 
@@ -84,7 +84,7 @@ An illustrative active response is:
   "progress": null,
   "created_at": "2026-01-01T12:00:00Z",
   "updated_at": "2026-01-01T12:00:02Z",
-  "expires_at": "2026-01-02T12:00:00Z"
+  "expires_at": "2026-01-08T12:00:00Z"
 }
 ```
 
@@ -103,12 +103,12 @@ policy. Recovering operation status and retaining the source resource are separa
 | `cancelled` | Cancellation completed | Stop polling and review the source workflow's effects. |
 
 A cancellation request can remain active; only the terminal result establishes cancellation.
-For nonterminal reads, honor `Retry-After: 2` as a minimum delay. Stop after a finite number of
-attempts or an elapsed-time deadline, retaining the operation ID for a later explicit read.
+For nonterminal reads, honor `Retry-After: 2` as a minimum delay. Keep one status request in flight. Add jittered backoff above the minimum delay, and stop after
+30 attempts or 60 seconds, whichever comes first. Keep the operation ID for a later read.
 Terminal responses omit `Retry-After`.
 
 For the same job, a later status read can return `200 OK` with `outcome: "succeeded"`.
-The response body points to the completed Agent run.
+The response body points to the Agent run’s outputs.
 
 ```json
 {
@@ -117,11 +117,11 @@ The response body points to the completed Agent run.
   "state": "succeeded",
   "created_at": "2026-01-01T12:00:00Z",
   "updated_at": "2026-01-01T12:00:09Z",
-  "expires_at": "2026-01-02T12:00:00Z",
+  "expires_at": "2026-01-08T12:00:09Z",
   "result": {
     "kind": "authorized-resource",
-    "operation_id": "getWorkspaceAgentRun",
-    "href": "/api/v1/workspaces/0198ac5e-f9b7-7000-8000-000000000002/agents/0198ac5e-f9b7-7000-8000-000000000003/runs/0198ac5e-f9b7-7000-8000-000000000001",
+    "operation_id": "listWorkspaceAgentRunOutputs",
+    "href": "/api/v1/workspaces/0198ac5e-f9b7-7000-8000-000000000002/agents/0198ac5e-f9b7-7000-8000-000000000003/runs/0198ac5e-f9b7-7000-8000-000000000001/outputs",
     "media_type": "application/json"
   }
 }
@@ -135,7 +135,7 @@ download capability.
 
 ## Request cancellation <Badge type="warning" text="Awaiting deployment" /> {#request-cancellation}
 
-For the Agent job above, use a personal or delegated bearer credential with `agents:write`
+For the Agent job above, use a personal API token or CLI grant with `agents:write`
 and current permission to run and read the Agent. Use the operation ID from the job you
 initiated. Set `ASSIGN_TOKEN` to that credential, replace the example operation ID with
 yours, and set `IDEMPOTENCY_KEY` to a fresh key. Keep the key with the operation ID.

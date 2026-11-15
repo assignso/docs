@@ -306,7 +306,9 @@ assign operation cancel <operation-id> --idempotency-key <cancellation-key>
 `show` reads the current compact status once. `wait` polls until a terminal result, its caller
 deadline or 30 status attempts. Its timeout defaults to 60 seconds and must be greater than
 zero and at most 60 seconds. Failed or cancelled Operations make `wait` exit with a nonzero
-status; the compact result remains on stdout.
+status; the compact result remains on stdout. If the source requires reconciliation,
+recovery stops and reports the original Operation ID. Inspect the source outcome before
+continuing.
 
 `cancel` requests best-effort cancellation. Retain the cancellation key and reuse it for the
 same cancellation request. A `cancel_requested` status means the source has not yet
