@@ -1,5 +1,5 @@
 ---
-description: Choose a product credential, obtain your Workspace ID, and read one bounded Task page with HTTP, TypeScript or PHP.
+description: Choose a product credential, obtain your Workspace ID, read one Task page with HTTP, TypeScript or PHP, and create a Task where authorized.
 ---
 
 # Make your first API request <Badge type="warning" text="Awaiting deployment" />
@@ -215,16 +215,75 @@ In the retained token form, select both **Read Assign data** and **Create and ch
 data**, then review the issued scopes. Those controls grant more than Task access. Product
 OAuth applications request the explicit scopes described above.
 
-Set `ASSIGN_PROJECT_ID` from a returned Task's `project_id` only after confirming the Project
-is suitable. If the page is empty or you need another Project, request `projects:read` and
-use [listWorkspaceProjects](/api/reference/operations/listworkspaceprojects) in the same Workspace
-to select an accessible Project's immutable `id`. A Project name or key cannot replace it.
+### Find the Project and optional Status
 
-Follow the [create/read/update Task recipe](/api/tasks#create), beginning
-with [createTask](/api/reference/operations/createtask). It explains the request body, one stable
-idempotency key per creation intent, the expected `201`, interrupted-response recovery and
-verification using the returned Task ID. Check the result before creating again. Remove or
-archive example work through Assign when you finish; do not modify unrelated Tasks.
+Set `ASSIGN_PROJECT_ID` to a returned Task's `project_id` if it belongs to the approved
+Project. Otherwise, use a credential with `projects:read` and set `ASSIGN_PROJECT_KEY` to the
+approved Project's key. Look it up with [listWorkspaceProjects](/api/reference/operations/listworkspaceprojects).
+
+```sh
+curl --fail-with-body --silent --show-error --get \
+  --header "Authorization: Bearer ${ASSIGN_TOKEN}" \
+  --header 'Accept: application/json' \
+  --data-urlencode "code=${ASSIGN_PROJECT_KEY}" \
+  --data-urlencode 'limit=1' \
+  "${ASSIGN_API_ORIGIN}/api/v1/workspaces/${ASSIGN_WORKSPACE_ID}/projects"
+```
+
+Expect `200`. Copy the approved Project's `id` from `data` into `ASSIGN_PROJECT_ID`. If
+the response has a `next_cursor`, follow it with the same selectors and credential.
+If no visible Project matches, check the key, Workspace and access before continuing.
+
+To select an explicit Status, use the credential with `projects:read` to call
+[listProjectStatuses](/api/reference/operations/listprojectstatuses) for that Project.
+
+```sh
+curl --fail-with-body --silent --show-error \
+  --header "Authorization: Bearer ${ASSIGN_TOKEN}" \
+  --header 'Accept: application/json' \
+  "${ASSIGN_API_ORIGIN}/api/v1/projects/${ASSIGN_PROJECT_ID}/statuses?limit=10"
+```
+
+Expect `200`. Copy the chosen Status's `id` from `data` into `ASSIGN_STATUS_ID`.
+If needed, follow [pagination](/api/pagination) until you find the Status or
+`next_cursor` is null. Skip this lookup to use the creation default.
+
+### Create and verify one Task
+
+Set `ASSIGN_TOKEN` to the write-capable credential from step 5. Set
+`ASSIGN_CREATE_KEY` to a new unique key for this creation, such as a UUID from
+`uuidgen`. Save the key and the exact JSON body before sending the request so you can
+recover if the response is lost. The example uses the default Status. To choose one
+explicitly, add `status_id` to the JSON body with the value of `ASSIGN_STATUS_ID` before
+saving and sending it.
+
+```sh
+curl --fail-with-body --silent --show-error \
+  --header "Authorization: Bearer ${ASSIGN_TOKEN}" \
+  --header "Idempotency-Key: ${ASSIGN_CREATE_KEY}" \
+  --header 'Content-Type: application/json' \
+  --header 'Accept: application/json' \
+  --data-binary '{"title":"Review onboarding example","priority":"low"}' \
+  "${ASSIGN_API_ORIGIN}/api/v1/projects/${ASSIGN_PROJECT_ID}/tasks"
+```
+
+[createTask](/api/reference/operations/createtask) returns `201` with the created Task.
+Copy its `id` into `ASSIGN_TASK_ID`, then confirm that the
+[getTask](/api/reference/operations/gettask) response is `200` and has the same Task ID,
+Project ID and title.
+
+```sh
+curl --fail-with-body --silent --show-error \
+  --header "Authorization: Bearer ${ASSIGN_TOKEN}" \
+  --header 'Accept: application/json' \
+  "${ASSIGN_API_ORIGIN}/api/v1/tasks/${ASSIGN_TASK_ID}"
+```
+
+If the create response is lost, follow [uncertain-outcome recovery](/api/writes#recover-an-unknown-outcome)
+using the original key and exact body. A fresh key can create a second Task. If the
+API rejects the create, check access or correct the input as described in the
+[Task recipe](/api/tasks#create). Remove or archive your example Task through Assign
+when you finish.
 
 ### Run the complete workflow
 
