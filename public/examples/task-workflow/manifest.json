@@ -5,13 +5,13 @@
       "contract_release": null,
       "contract_state": "approved-authoring",
       "contract_version": "1.0.0-rc.10",
-      "document_sha256": "0707fa029e28626066f63eb9e23b5933485b752642ff42d747201ce6e7ab3681",
+      "document_sha256": "ce85223bc381cf2067f68588a27c685b0596a8836c600798e0e434123d8d8889",
       "files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
-        "PROVENANCE.json": "764a36c590a06a5aa47802d32822d6289c49c9ef0e6494fb8108d3d5a9f2c70b",
+        "PROVENANCE.json": "259ab91bca14865729d04048b3171ffe438f6b6c7fec039dce28f7d7ea8259f6",
         "README.md": "d328217a971bf04814112ec639f8cb0e2ff6949118e953934ecea119ea3b30fa",
         "composer.json": "f4fbf2cd10726691a8c73616f669063eb059861f52ec7482f9e88111a87c9924",
-        "composer.lock": "98a839ba3248ebdb6b5d402494cfd979b2629e9ed125e9b60128cd83612ce3ae",
+        "composer.lock": "8fe1373bdb8a02563c769edaf8c3b82dd9379bf8ff8c6adef066ca2febd40e8f",
         "main.php": "3d0c43be5f67a8176eac3d143513296fadcff7870bd95703245e2b1922b262d3"
       },
       "recipe": "task-workflow",
@@ -22,12 +22,12 @@
         "name": "assignso/php-sdk",
         "version": "1.0.0-rc.9"
       },
-      "sha256": "9548849361d564a58323de5531f0e7e63b2fc503d2cd5968d58ee197534d2704",
+      "sha256": "d77e7ebd13161aba8add548c9c0a7482ef1a522db223797ef2888b5d196255c8",
       "size": 38068,
       "source_files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
         "composer.json": "f4fbf2cd10726691a8c73616f669063eb059861f52ec7482f9e88111a87c9924",
-        "composer.lock": "98a839ba3248ebdb6b5d402494cfd979b2629e9ed125e9b60128cd83612ce3ae",
+        "composer.lock": "8fe1373bdb8a02563c769edaf8c3b82dd9379bf8ff8c6adef066ca2febd40e8f",
         "main.php": "3d0c43be5f67a8176eac3d143513296fadcff7870bd95703245e2b1922b262d3"
       }
     },
@@ -36,13 +36,13 @@
       "contract_release": null,
       "contract_state": "approved-authoring",
       "contract_version": "1.0.0-rc.10",
-      "document_sha256": "0707fa029e28626066f63eb9e23b5933485b752642ff42d747201ce6e7ab3681",
+      "document_sha256": "ce85223bc381cf2067f68588a27c685b0596a8836c600798e0e434123d8d8889",
       "files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
-        "PROVENANCE.json": "d13a68c3a28ebf95611ec7f2b5b52e2b4e71769e5b50e27947658641833f84ef",
+        "PROVENANCE.json": "004ca536f78815aefdcfcfff455a91d6ff1a6a5dc16c83a3607489226b0b5695",
         "README.md": "0351c1dbe81eb29126b19e25aba816a09c464b90ad91afae8fa1d45d4fb100b5",
         "main.mjs": "9ead859d24d2b1a6285b1a246d7d548557774d56cb931e3f65a18811f1ad081b",
-        "package-lock.json": "613c6b7979e3957bd7825ee3963f51c094549e3be735d0aee5253a8a9ef99060",
+        "package-lock.json": "c13a44360aa5827dc367ee85fc486d0f795c75b3b8994c9089512134033f58c6",
         "package.json": "dce707b841e16c2dbbf88f81e76668f6a5a54dbb737ed0b83b40f2925cac8e88"
       },
       "recipe": "task-workflow",
@@ -53,12 +53,12 @@
         "name": "@assignso/sdk",
         "version": "1.0.0-rc.9"
       },
-      "sha256": "367e1866d92144647e9c77fca494485adc9233be273a66890791be71b471915f",
+      "sha256": "319adab5f44f41d2967a6a74a730c830873942c57f09ae85a97a9e0e36ff199e",
       "size": 11075,
       "source_files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
         "main.mjs": "9ead859d24d2b1a6285b1a246d7d548557774d56cb931e3f65a18811f1ad081b",
-        "package-lock.json": "613c6b7979e3957bd7825ee3963f51c094549e3be735d0aee5253a8a9ef99060",
+        "package-lock.json": "c13a44360aa5827dc367ee85fc486d0f795c75b3b8994c9089512134033f58c6",
         "package.json": "dce707b841e16c2dbbf88f81e76668f6a5a54dbb737ed0b83b40f2925cac8e88"
       }
     }
