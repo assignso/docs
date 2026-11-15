@@ -66,9 +66,10 @@ the example sends once and does not automatically retry. Never derive `etag` fro
 PATCH uses the operation's partial-object JSON schema, not JSON Merge Patch. Omission preserves
 a value, an explicit `null` clears a nullable field, and arrays replace only where declared
 writable. For example, `{"due_on":null}` clears the due date, while omitting `due_on` preserves
-it. A null title is invalid. An empty `{}` fails `422`; a valid nonempty patch that changes
-nothing returns the current representation without advancing its revision or emitting another
-change. Read-only and unknown write fields are rejected.
+it. A null title is invalid and an empty `{}` fails `422`. If the Task already has no due
+date, the example sends an explicit clear and returns the current Task with `200`.
+With a current condition and a fresh key, this no-op leaves the revision unchanged
+and emits no change. Read-only and unknown write fields are rejected.
 
 ## Recover a failed condition
 
@@ -104,10 +105,11 @@ after access is revoked or a receipt is no longer recoverable. If you cannot est
 outcome, stop and use the request ID for support; do not infer failure from an absent item on
 one collection page.
 
-Key requirements, scope and retention are operation-specific. The public keyed operations use
-an opaque client-generated `Idempotency-Key` of 16–200 characters. Preserve it with the original
-request through recovery. This is not a global promise of unlimited retention or exactly-once
-delivery for all operations.
+Key requirements, length, scope and retention are operation-specific. For example,
+[Task updates](./reference/operations/updatetask) accept a 16–200 character key and
+[timesheet exports](./reference/operations/createtimesheetexport) accept 1–200 characters.
+Preserve your client-generated key and original request through the operation's
+documented recovery window.
 
 ## Bound retries
 
