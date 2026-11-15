@@ -6,13 +6,16 @@ description: Manage Workspace and Project label definitions, assign labels to wo
 
 Labels are defined per Workspace or per Project and assigned to Tasks, Projects and Documents.
 The v1 operations in the [Labels reference](/api/reference/labels) are awaiting deployment.
-Use a [product bearer credential](./authentication) with read or write scope for the operation
-and current access to the Workspace and resource.
+Use a [product bearer credential](./authentication) with `labels:read` for reads or
+`labels:write` for writes. Existing grants with `assign:read` or `assign:write` still
+admit the corresponding operations. The credential also needs current access to the
+Workspace and resource.
 
 Workspace owners and admins can create, edit, archive and restore Workspace labels.
 Project managers, the Project owner and Workspace owners and admins can manage
 Project-local labels and overrides. These permissions also apply when recovering
-a write response. Assigning existing labels requires label assignment permission and permission to update the target.
+a write response. Assigning existing labels requires `labels:assign` and permission
+to update the target.
 
 | Operation | Route |
 | --- | --- |
@@ -28,7 +31,7 @@ a write response. Assigning existing labels requires label assignment permission
 - Definition and override lists accept `limit` (1–100, default 50). Pass each non-null
   `next_cursor` as `cursor` with the same scope, filters, limit, credential and encoding,
   even after a short or empty page. A null cursor ends the traversal. For
-  `409 catalog_changed`, discard the partial traversal and start at page one.
+  `409 conflict` with reason `catalog_changed`, discard the partial traversal and start at page one.
 - To edit or archive a definition, read its exact item `ETag` from
   [the definition read](/api/reference/operations/getlabeldefinition). Archiving retains existing assignments
   and history. A conditional `PATCH` with `{"archived": false}` restores the same label.
@@ -41,6 +44,20 @@ a write response. Assigning existing labels requires label assignment permission
   Workspace presentation, including when the definition is archived and the override is retained.
 - For conditional writes, keep the validator's encoding and quotes. Save the original request
   and `Idempotency-Key` so you can [recover an unknown outcome](./writes#recover-an-unknown-outcome).
+
+## Recover a label write
+
+- If replacing Task labels returns `403 forbidden` with an `insufficient_scope` challenge,
+  obtain a grant with `labels:write`. If the credential already has the scope, check
+  permission to update that Task and assign labels before retrying.
+- If an override edit returns `412 precondition_failed`, read the matching Project override
+  row again. Reconcile your changes with its current values, then submit a new request
+  with its item validator and a new key.
+- If the connection drops during label creation, repeat the original intent with the
+  original key to recover the `201` and Location. If the response calls for reconciliation,
+  check the current catalog before issuing another command.
+
+See [Errors and recovery](./errors) for the shared Problem Details format.
 
 ## Read one label <Badge type="warning" text="Awaiting deployment" />
 
