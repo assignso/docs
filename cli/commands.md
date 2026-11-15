@@ -26,7 +26,7 @@ has not been released yet; it may be absent from that binary.
 | [`project`](#project) | List, select and inspect Projects, their Tasks and Documents |
 | [`document`](#document) | List, read and open Documents |
 | [`discuss`](#discuss) | Open Discuss in the terminal |
-| [`operation show`, `operation wait`, `operation cancel`](#operation-recovery) | Inspect or cancel an existing hosted Operation |
+| [`operation`](#operation-recovery) | Inspect or cancel an existing Operation, read terminal ChangeSet outcomes and prepare a selective retry |
 | [`mcp setup codex`](#mcp) | Configure Assign MCP in Codex |
 | [`update`](#update) | Check for and install CLI updates |
 | [`doctor`](#doctor) | Run redacted local diagnostics |
@@ -301,6 +301,9 @@ Use the Operation ID returned by the original command:
 assign operation show <operation-id>
 assign operation wait <operation-id> --timeout 60s
 assign operation cancel <operation-id> --idempotency-key <cancellation-key>
+assign operation change-set-result <operation-id> --workspace <workspace-id>
+assign operation change-set-retry <operation-id> --workspace <workspace-id> \
+  --idempotency-key <retry-proposal-key> < retry.json
 ```
 
 `show` reads the current compact status once. `wait` polls until a terminal result, its caller
@@ -317,6 +320,19 @@ acknowledged cancellation.
 Keep the same `--host` and Operation ID when recovering status. A timeout, missing result or
 expired recovery window does not authorize submitting the original work again with a new key.
 The CLI displays result references without fetching them automatically.
+
+For a ChangeSet Operation, run `change-set-result` with the original Workspace ID and
+credential. It reads the ordered outcomes from a terminal Operation, including items that
+committed before a failure or cancellation. Use the returned item IDs to prepare a fresh
+review for eligible items. See [ChangeSet recovery](../api/work-capabilities#receipts-and-recovery).
+
+`change-set-retry` submits only a new review proposal. Supply a canonical
+[`createChangeSet` request](/api/reference/operations/createchangeset) in `retry.json`.
+Use `mode: per_item`, the original `retry_operation_id`, the ChangeSet `id` and its exact
+decimal-string `expected_version`. Include only the eligible `client_item_id` values you
+want to retry, with current resource revisions. Keep the same JSON and proposal key if
+the response is uncertain. The initiating person must review the new version in Assign
+before a separate apply.
 
 ### mcp
 
