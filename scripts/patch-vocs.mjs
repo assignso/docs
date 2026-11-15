@@ -9,6 +9,66 @@ if (version !== "2.10.3") throw new Error(`Review Vocs compatibility fixes befor
 
 const patches = [
   {
+    file: "dist/internal/openapi/parser.js",
+    before: "import * as OpenRpc from './openrpc.js';",
+    after: "import * as OpenRpc from './openrpc.js';\nimport { rememberSchemaName } from '../../../../../scripts/response-schema-markdown.mjs';",
+  },
+  {
+    file: "dist/internal/openapi/parser.js",
+    before: "    const { schema } = dereference(specification);",
+    after: "    const { schema } = dereference(specification, { onDereference: rememberSchemaName });",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "import { unwrapSingleVariant } from './union.js';",
+    after: "import { unwrapSingleVariant } from './union.js';\nimport { responseSelection, responseVariantLines } from '../../../../../scripts/response-schema-markdown.mjs';",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "lines.push(...responseLines(response));",
+    after: "lines.push(...responseLines(response, operation));",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "function responseLines(response) {",
+    after: "function responseLines(response, operation) {",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "    const media = response.content[0];\n    if (media?.schema) {\n        const props = schemaLines(media.schema, 0);",
+    after: "    for (const media of response.content) {\n        if (!media.schema) continue;\n        const props = schemaLines(media.schema, 0, true);",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "            lines.push(...props, '');\n        }\n    }\n    return lines;",
+    after: "            const selection = responseSelection(operation, response, media);\n            if (selection) lines.push(selection, '');\n            lines.push(...props, '');\n        }\n    }\n    return lines;",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "function schemaLines(rawSchema, depth) {",
+    after: "function schemaLines(rawSchema, depth, response = false, indentDepth = depth) {",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "    const schema = unwrapSingleVariant(rawSchema) ?? rawSchema;\n    const target = schema['type'] === 'array' ? schema['items'] : schema;",
+    after: "    if (response) {\n        const variants = responseVariantLines(rawSchema, depth, indentDepth, schemaLines, typeLabel, maxDepth);\n        if (variants.length) return variants;\n    }\n    const schema = response ? rawSchema : unwrapSingleVariant(rawSchema) ?? rawSchema;\n    const target = schema['type'] === 'array' ? schema['items'] : schema;",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "    const indent = '  '.repeat(depth);",
+    after: "    const indent = '  '.repeat(indentDepth);",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "        const property = unwrapSingleVariant(rawProperty) ?? rawProperty;",
+    after: "        const property = response ? rawProperty : unwrapSingleVariant(rawProperty) ?? rawProperty;",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "        lines.push(...schemaLines(property, depth + 1));",
+    after: "        lines.push(...schemaLines(property, depth + 1, response, indentDepth + 1));",
+  },
+  {
     "file": "dist/internal/openapi/parser.js",
     "before": "        example: value?.example,",
     "after": "        example: value?.example ?? Object.values(value?.examples ?? {}).find((example) => example && Object.hasOwn(example, 'value'))?.value,"
@@ -94,4 +154,4 @@ for (const { file, before, after, previous } of patches) {
   if (source.split(from).length !== 2) throw new Error(`Vocs compatibility patch no longer matches ${file}`)
   writeFileSync(target, source.replace(from, after))
 }
-console.log("Applied Vocs 2.10.3 static route, OpenAPI mount, public search ID, bearer example and header synchronization fixes")
+console.log("Applied Vocs 2.10.3 static route, OpenAPI mount, public search ID, bearer examples, response schemas and header synchronization fixes")

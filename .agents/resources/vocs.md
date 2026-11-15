@@ -157,6 +157,11 @@ Validate bodies, media types, parameters and required headers against the approv
 The parser hook supplies explicit success bodies for their declared status, retaining existing
 authored Activity examples. Preserve the command-result versus canonical-read numeric types;
 examples must not silently coerce either shape. These bodies are illustrative, never observed API results.
+The pinned parser and Markdown patches retain component names through dereferencing and render
+response `oneOf` and `anyOf` branches with their own required fields, including null alternatives.
+Nested field rendering uses Vocs' existing depth limit. Postbuild reuses these sections in operation
+downloads and `llms-full.txt`.
+
 Vocs 2.10.3 omits response examples from its native Markdown. Postbuild uses the same pinned parser
 and response sampler to add successful JSON bodies and explicit bodyless statuses to resource and
 operation downloads, then updates the agent bundle. Validate those bodies against their response
