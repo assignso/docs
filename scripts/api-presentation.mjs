@@ -50,7 +50,7 @@ const projectGuides = {
 
 const taskGuides = {
   archiveTask: ["Archive, trash and restore", "/api/tasks#archive-trash-and-restore"],
-  attachTaskAttachment: ["Upload and attach a file", "/api/attachments#api-upload-workflow-upcoming"],
+  attachTaskAttachment: ["Upload and attach a file", "/api/attachments#api-upload-workflow"],
   completeTask: ["Choose a Task Status", "/api/projects#statuses"],
   createTask: ["Create a Task", "/api/tasks#create"],
   createTaskRelation: ["Task relations", "/api/tasks#relations"],

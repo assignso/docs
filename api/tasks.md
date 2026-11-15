@@ -197,6 +197,8 @@ The expected result is `200` with the updated Task. Omitted fields retain their 
 clears only a nullable field. An empty patch is invalid. Use the generated reference for the
 writable fields instead of copying the read object into a request.
 
+- `403 insufficient_scope`: this PATCH is denied if sent with a credential that has only
+  `tasks:read`. Use a credential with `tasks:write` and current Project write access.
 - `412 precondition_failed`: another change invalidated the observed version. Read the canonical
   Task again, compare the current title with your intended edit and reconcile explicitly. Use the
   new tag and a new key for a newly agreed edit; do not replace the tag and resubmit blindly.
