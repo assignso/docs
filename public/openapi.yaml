@@ -36030,7 +36030,7 @@ paths:
 
         Use a supported bearer credential with time:read or assign:read and current Workspace access. Each download checks the original Actor and grant, the current feature, access to every included Project and continued eligibility of Task metadata.
 
-        A matching If-None-Match returns a bodyless 304 after access checks. A failed If-Match returns 412. After seven days the result expires with 410. Decide whether to create a new snapshot from a current timesheet observation.
+        A matching If-None-Match returns a bodyless 304 after access checks. If `If-Match` fails (412), confirm this is the intended export URL before retrying without that header. Use the ETag from the successful CSV response for a later conditional request. After seven days the result expires with 410. Decide whether to create a new snapshot from a current timesheet observation.
       operationId: getTimesheetExport
       parameters:
         - example: 019a2b80-0000-7000-8000-000000000007

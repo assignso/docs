@@ -148,6 +148,18 @@ test('response presentation shares only the generic Problem Details body and ret
   assert.match(task, /If the response is lost, keep the original `Idempotency-Key` and exact request/);
 });
 
+test('Timesheet export reference explains recovery from a stale If-Match', async () => {
+  const { document } = loadDocsContract(fileURLToPath(new URL('../public/openapi.yaml', import.meta.url)));
+  const route = '/api/v1/timesheet-exports/{operation_id}/content';
+  const ir = await parseOpenApi({ path: '/api/reference', spec: document });
+  const result = fromIr(ir).flatMap(({ content }) => content.split(/(?=^## )/m))
+    .find(section => section.split('\n').includes(`\`GET ${route}\``));
+  assert.ok(result);
+  assert.match(result, /confirm this is the intended export URL before retrying without that header/);
+  assert.match(result, /ETag from the successful CSV response/);
+  assert.match(result, /After seven days the result expires with 410/);
+});
+
 test('native response samples start with a readable bodyless or CSV success', () => {
   const failures = [{ status: '422', content: [{ mediaType: 'application/problem+json', example: { code: 'validation_failed' } }] }];
   const bodyless = responseSamples({ id: 'clearfixture', responses: [{ status: '204', content: [] }, ...failures] });
