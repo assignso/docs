@@ -6,6 +6,7 @@ import { parse } from 'yaml';
 import { createRequire } from 'node:module';
 import { loadDocsContract } from './authoring-contract.mjs';
 import { parse as parseOpenApi } from '../node_modules/vocs/dist/internal/openapi/parser.js';
+import { responseSamples } from '../node_modules/vocs/dist/internal/openapi/sample.js';
 import { fromIr } from '../node_modules/vocs/dist/internal/openapi/markdown.js';
 import { apiPresentation, loadApiPresentation, operationExampleSetup } from './api-presentation.mjs';
 const fixture = () => JSON.parse(readFileSync(new URL('./fixtures/publication.json', import.meta.url), 'utf8'));
@@ -131,4 +132,30 @@ test('response Markdown keeps null and nested alternatives distinct and bounded'
   assert.match(markdown, /^ {10}- `CountEvent`: When an event supplies a count\.\n {12}- `value` `integer`$/m);
   assert.match(markdown, /^ {10}- `kind` is `"retry"`\n {12}- Required fields are `kind`, `payload`$/m);
   assert.doesNotMatch(markdown, /omittedField|x-assign-private|prepared-private-selector/);
+});
+
+test('response presentation shares only the generic Problem Details body and retains recovery', async () => {
+  const { document } = loadDocsContract(fileURLToPath(new URL('../public/openapi.yaml', import.meta.url)));
+  const ir = await parseOpenApi({ path: '/api/reference', spec: document });
+  const resource = fromIr(ir).find(({ path }) => path === '/api/reference/tasks').content;
+  const task = resource.split(/(?=^## )/m).find(section => section.includes('`POST /api/v1/projects/{project_id}/tasks`'));
+  const responses = task.split(/^### Responses$/m)[1].split(/^### Example request$/m)[0];
+  assert.doesNotMatch(responses, /Human-readable explanation of this occurrence/);
+  assert.match(responses, /\[shared Problem Details fields\]\(\/api\/errors\.md#problem-details-fields\)/);
+  assert.match(responses, /#### `409`/);
+  assert.match(responses, /idempotency_key_conflict/);
+  assert.match(responses, /\x60Location\x60/);
+  assert.match(task, /After an uncertain outcome, retain the original idempotency key/);
+});
+
+test('native response samples start with a readable bodyless or CSV success', () => {
+  const failures = [{ status: '422', content: [{ mediaType: 'application/problem+json', example: { code: 'validation_failed' } }] }];
+  const bodyless = responseSamples({ id: 'clearfixture', responses: [{ status: '204', content: [] }, ...failures] });
+  assert.deepEqual([bodyless[0].status, bodyless[0].code, bodyless[0].linePaths], ['204', 'No response body.', []]);
+  assert.equal(bodyless[1].status, '422');
+  const csv = responseSamples({ id: 'exportfixture', responses: [
+    { status: '200', content: [{ mediaType: 'text/csv', example: 'day,minutes\n2026-01-01,30' }] }, ...failures,
+  ] });
+  assert.deepEqual([csv[0].status, csv[0].lang, csv[0].code], ['200', 'csv', 'day,minutes\n2026-01-01,30']);
+  assert.equal(csv[1].status, '422');
 });

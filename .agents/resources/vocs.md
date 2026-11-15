@@ -162,9 +162,14 @@ response `oneOf` and `anyOf` branches with their own required fields, including 
 Nested field rendering uses Vocs' existing depth limit. Postbuild reuses these sections in operation
 downloads and `llms-full.txt`.
 
-Vocs 2.10.3 omits response examples from its native Markdown. Postbuild uses the same pinned parser
-and response sampler to add successful JSON bodies and explicit bodyless statuses to resource and
-operation downloads, then updates the agent bundle. Validate those bodies against their response
+The native examples precede schema fields in document order. The response sampler adds a
+readable result for successful bodyless, CSV and binary responses without a JSON sample.
+
+Vocs 2.10.3 omits response examples from its native Markdown. Postbuild promotes the request
+and success samples ahead of the fields in resource and operation downloads, then updates the
+agent bundle. Markdown links exact `ProblemDetails` response bodies to the shared error guide.
+Specialized response shapes retain their native rendering, and HTML retains the native schema
+disclosures and field fragments. Validate those bodies against their response
 schemas and compare them with the native HTML client payload; that comparison is not browser QA.
 Do not synthesize every optional field or query value: mutually exclusive content modes, opaque
 continuations and Activity selectors need a deliberately chosen request. Postbuild rejects missing

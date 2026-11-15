@@ -53,11 +53,13 @@ for (const group of new Set(referenceOperations.map((operation) => operation.gro
     assert.ok(index >= 0, `Missing Markdown operation: ${operation.id}`)
     if (!sections[index].includes(`<a id="${operation.id}">`))
       sections[index] = sections[index].replace(/^(## [^\n]*\n)/, `$1\n<a id="${operation.id}"></a>\n`)
+    if (operation.upcoming)
+      sections[index] = sections[index].replace(/^(## [^\n]*\n)/, "$1\n> **Upcoming:** This contract is not yet deployed.\n")
     const setup = operationExampleSetup(operation, true)
     const model = models.get(operation.id)
     assert.ok(model, `Missing native model: ${operation.id}`)
     const requests = codeSamples(model, referenceModel.servers[0]?.url).map((sample) => `\`\`\`${sample.lang}\n${sample.code.trim()}\n\`\`\``)
-    const responses = responseSamples(model).filter((sample) => /^2/.test(sample.status)).map((sample) =>
+    const responses = responseSamples(model).filter((sample) => /^2/.test(sample.status) && sample.lang === "json").map((sample) =>
       `Illustrative HTTP \`${sample.status}\` response:\n\n\`\`\`json\n${sample.code}\n\`\`\``)
     for (const response of model.responses.filter((response) => /^2/.test(response.status))) {
       for (const media of response.content.filter((media) => media.mediaType !== "application/json")) {
@@ -72,7 +74,20 @@ for (const group of new Set(referenceOperations.map((operation) => operation.gro
     assert.ok(requests.length && responses.length, `Missing examples: ${operation.id}`)
     const requestStart = sections[index].indexOf("\n### Example request\n")
     assert.ok(requestStart >= 0, `Missing native request section: ${operation.id}`)
-    sections[index] = `${sections[index].slice(0, requestStart).trimEnd()}\n\n### Example request\n\n${setup}${requests.join("\n\n")}\n\n### Example response\n\n${responses.join("\n\n")}\n\n`
+    const details = sections[index].slice(0, requestStart).trimEnd()
+    // Use the native description as the boundary so headings in operation
+    // prose cannot be mistaken for generated parameter or response sections.
+    const description = model.description?.trim()
+    const method = `\`${operation.method} ${operation.path}\``
+    const introStart = details.indexOf(method)
+    assert.ok(introStart >= 0)
+    const descriptionStart = description ? details.indexOf(description, introStart + method.length) : -1
+    if (description) assert.ok(descriptionStart >= 0, `Missing native description: ${operation.id}`)
+    const introEnd = description ? descriptionStart + description.length : introStart + method.length
+    const detailsStart = details.indexOf("\n### ", introEnd)
+    assert.ok(detailsStart >= 0, `Missing native detail sections: ${operation.id}`)
+    const intro = details.slice(0, detailsStart).trimEnd()
+    sections[index] = `${intro}\n\n${setup}### Example request\n\n${requests.join("\n\n")}\n\n### Example response\n\n${responses.join("\n\n")}\n\n${details.slice(detailsStart).trim()}\n\n`
   }
   const content = sections.join("").trim()
   assert.ok(full.includes(original), `Agent bundle is missing resource ${group}`)
@@ -89,7 +104,7 @@ for (const operation of referenceOperations) {
   const sections = resource.split(/(?=^## )/m)
   const target = sections.find((section) => section.split("\n").includes(`\`${operation.method} ${operation.path}\``))
   assert.ok(target, `No native Markdown for ${operation.method} ${operation.path}`)
-  const content = `# ${operation.title}\n\n${operation.upcoming ? '> **Upcoming:** This contract is not yet deployed.\n\n' : ''}${target.replace(/^## [^\n]*\n+/, "").trim()}\n\n${operationGuideLinks(operation, true)}\n`
+  const content = `# ${operation.title}\n\n${target.replace(/^## [^\n]*\n+/, "").trim()}\n\n${operationGuideLinks(operation, true)}\n`
   if (original === content.trim()) continue
   assert.ok(full.includes(original), `Agent bundle is missing endpoint ${operation.id}`)
   full = full.replace(original, content.trim())

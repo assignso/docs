@@ -1692,6 +1692,17 @@ const successBodies = {
   listtargetlabelassignments: { workspace_id: workspace, target_kind: "task", target_id: taskId, project_id: projectId, revision: "1", label_ids: [workspaceLabelId] },
 }
 
+// Vocs samples JSON by default. Supply a readable successful result when the
+// operation's successful status has no JSON representation.
+export function nonJsonSuccessSample(response) {
+  if (!/^2/.test(response.status)) return
+  if (response.content.length === 0) return { lang: "text", code: "No response body." }
+  const media = response.content[0]
+  if (typeof media.example === "string")
+    return { lang: media.mediaType === "text/csv" ? "csv" : "text", code: media.example }
+  return { lang: "text", code: `Response body: ${media.mediaType}` }
+}
+
 export function applyResponseExamples(operation) {
   const body = successBodies[operation.id]
   const presented = { ...operation, summary: operationTitle(operation, `${operation.method} ${operation.path}`) }

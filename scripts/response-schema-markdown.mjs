@@ -1,9 +1,25 @@
 // Scalar removes $ref during parsing. Keep names out of the serialized IR and schema.
 const schemaNames = new WeakMap()
+const problemDetailsShapes = new Set()
 
 export function rememberSchemaName({ schema, ref }) {
   const match = /^#\/components\/schemas\/([^/]+)$/.exec(ref)
   if (match && !schemaNames.has(schema)) schemaNames.set(schema, match[1])
+  if (match?.[1] === "ProblemDetails") problemDetailsShapes.add(JSON.stringify(schema))
+}
+
+const problemDetailsFragment = "#problem-details-fields"
+export const problemDetailsPath = `/api/errors${problemDetailsFragment}`
+
+export function usesSharedProblemDetails(media) {
+  // Response aliases can dereference to a separate copy of the same schema.
+  return media.mediaType === "application/problem+json" &&
+    (schemaNames.get(media.schema) === "ProblemDetails" || problemDetailsShapes.has(JSON.stringify(media.schema)))
+}
+
+export function sharedProblemDetailsLines(media) {
+  if (usesSharedProblemDetails(media))
+    return [`See [shared Problem Details fields](/api/errors.md${problemDetailsFragment}).`]
 }
 
 export function responseSelection(operation, response, media) {

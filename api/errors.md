@@ -6,6 +6,8 @@ description: Interpret Assign Problem Details, recover from validation and condi
 
 ## Product errors <Badge type="warning" text="Awaiting deployment" />
 
+<a id="problem-details-fields"></a>
+
 Product REST errors use `application/problem+json` and `Cache-Control: no-store`. Branch on
 `code` or `type`. The optional `reason` refines a domain refusal; `detail` is a safe explanation,
 not a stable discriminator. Preserve unknown extension fields. OAuth, MCP, webhooks and other
@@ -26,8 +28,13 @@ This illustrative `412` response means a conditional write did not meet its requ
 }
 ```
 
-`instance` identifies this occurrence. It is not the request URL. Keep `request_id` and the
-`Assign-Request-ID` response header for support; `X-Request-ID` is its correlation alias.
+Every Problem Details body includes `type`, `title`, `status`, `detail`, `instance`, `code`,
+`request_id` and `retryable`. Use the HTTP status and the operation's recovery instructions
+before retrying, even when `retryable` is true. The optional `details` object carries
+operation-specific string values.
+
+`instance` is an opaque identifier for this occurrence. Keep `request_id` and the
+`Assign-Request-ID` response header for support. `X-Request-ID` is its correlation alias.
 Field errors can include `errors` entries with a JSON Pointer or parameter, a code and a safe
 message. Use them to correct the specific input. A gateway may return a non-JSON error:
 inspect the status and content type before parsing and preserve the correlation headers.
