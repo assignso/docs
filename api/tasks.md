@@ -162,10 +162,11 @@ needs correction or renewed authority, not an automatic retry loop.
 
 ### SDK workflow examples
 
-Follow the [Task workflow setup](./quickstart#run-the-complete-workflow) to choose a
-TypeScript or PHP source download, obtain its exact SDK artifact separately, and configure
-the API origin, credential and IDs. Both apps demonstrate stale-edit recovery and trash
-the Task they create.
+Download the [TypeScript source ZIP](/examples/task-workflow/typescript.zip) or the
+[PHP source ZIP](/examples/task-workflow/php.zip). Follow the
+[Task workflow setup](./quickstart#run-the-complete-workflow) to obtain the matching SDK
+artifact separately and configure the API origin, credential and IDs. Both apps demonstrate
+stale-edit recovery and trash the Task they create.
 
 ## Update
 
