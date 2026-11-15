@@ -7,16 +7,17 @@ import { root } from "./prepare-pages.mjs"
 import { methods, isInternal } from "./public-contract.mjs"
 import { loadDocsContract } from "./authoring-contract.mjs"
 import { execFileSync } from "node:child_process"
-import { loadApiPresentation, operationExampleSetup, operationGuideLinks } from "./api-presentation.mjs"
+import { loadApiPresentation, operationGuideLinks } from "./api-presentation.mjs"
 import { docsOrigin, imageEntry } from "./api-og.mjs"
 import { developerNavigation, compatibilityPages } from "./api-navigation.mjs"
 import { verifyApiImages } from "./render-api-og.mjs"
 import { operationExamples } from "./operation-examples.mjs"
-import { auditStaticPublication, pageRoute, publicPageSources } from "./publication-audit.mjs"
+import { auditStaticPublication, auditVersionedReferenceLinks, pageRoute, publicPageSources } from "./publication-audit.mjs"
 import { errorCatalog } from "./error-catalog.mjs"
 import { checkMetadataReference, metadataFiles } from "./protocol-metadata.mjs"
 import { parse as parseOpenApi } from "../node_modules/vocs/dist/internal/openapi/parser.js"
-import { codeSamples, responseSamples } from "../node_modules/vocs/dist/internal/openapi/sample.js"
+import { renderGroup } from "../node_modules/vocs/dist/internal/openapi/markdown.js"
+import { renderReferenceMarkdown } from "./reference-markdown.mjs"
 
 const output = join(root, "dist/public")
 console.log(`Verified ${checkBuiltBranding(root, output)} public branding downloads against their maintained digests`)
@@ -43,55 +44,22 @@ let full = readFileSync(join(output, "llms-full.txt"), "utf8")
 const { operations: referenceOperations } = loadApiPresentation(root)
 assert.deepEqual(Object.keys(operationExamples).sort(), referenceOperations.map(({ id }) => id).sort(), "Request examples must match the public operation set")
 const referenceModel = await parseOpenApi({ path: "/api/reference", spec: loadDocsContract(join(root, "public/openapi.yaml")).document })
-const models = new Map(referenceModel.groups.flatMap((group) => group.operations).map((operation) => [operation.id, operation]))
-for (const group of new Set(referenceOperations.map((operation) => operation.group))) {
-  const page = join(markdown, `api/reference/${group}.md`)
+const operationsById = new Map(referenceOperations.map((operation) => [operation.id, operation]))
+const endpointMarkdown = new Map()
+for (const group of referenceModel.groups) {
+  const groupName = operationsById.get(group.operations[0]?.id)?.group
+  assert.ok(groupName, `Unexpected native Markdown group: ${group.id}`)
+  const page = join(markdown, `api/reference/${groupName}.md`)
   const original = readFileSync(page, "utf8").trim()
-  const sections = original.split(/(?=^## )/m)
-  for (const operation of referenceOperations.filter((operation) => operation.group === group)) {
-    const index = sections.findIndex((section) => section.split("\n").includes(`\`${operation.method} ${operation.path}\``))
-    assert.ok(index >= 0, `Missing Markdown operation: ${operation.id}`)
-    if (!sections[index].includes(`<a id="${operation.id}">`))
-      sections[index] = sections[index].replace(/^(## [^\n]*\n)/, `$1\n<a id="${operation.id}"></a>\n`)
-    if (operation.upcoming)
-      sections[index] = sections[index].replace(/^(## [^\n]*\n)/, "$1\n> **Upcoming:** This contract is not yet deployed.\n")
-    const setup = operationExampleSetup(operation, true)
-    const model = models.get(operation.id)
-    assert.ok(model, `Missing native model: ${operation.id}`)
-    const requests = codeSamples(model, referenceModel.servers[0]?.url).map((sample) => `\`\`\`${sample.lang}\n${sample.code.trim()}\n\`\`\``)
-    const responses = responseSamples(model).filter((sample) => /^2/.test(sample.status) && sample.lang === "json").map((sample) =>
-      `Illustrative HTTP \`${sample.status}\` response:\n\n\`\`\`json\n${sample.code}\n\`\`\``)
-    for (const response of model.responses.filter((response) => /^2/.test(response.status))) {
-      for (const media of response.content.filter((media) => media.mediaType !== "application/json")) {
-        if (media.mediaType === "text/csv" && typeof media.example === "string")
-          responses.push(`Illustrative HTTP \`${response.status}\` response (\`text/csv\`):\n\n\`\`\`csv\n${media.example}\`\`\``)
-        else if (media.schema?.type === "string" && media.schema.format === "binary")
-          responses.push(`HTTP \`${response.status}\` returns a binary \`${media.mediaType}\` body.`)
-      }
-    }
-    for (const response of model.responses.filter((response) => /^2/.test(response.status) && response.content.length === 0))
-      responses.push(`HTTP \`${response.status}\` with no response body.`)
-    assert.ok(requests.length && responses.length, `Missing examples: ${operation.id}`)
-    const requestStart = sections[index].indexOf("\n### Example request\n")
-    assert.ok(requestStart >= 0, `Missing native request section: ${operation.id}`)
-    const details = sections[index].slice(0, requestStart).trimEnd()
-    // Use the native description as the boundary so headings in operation
-    // prose cannot be mistaken for generated parameter or response sections.
-    const description = model.description?.trim()
-    const method = `\`${operation.method} ${operation.path}\``
-    const introStart = details.indexOf(method)
-    assert.ok(introStart >= 0)
-    const descriptionStart = description ? details.indexOf(description, introStart + method.length) : -1
-    if (description) assert.ok(descriptionStart >= 0, `Missing native description: ${operation.id}`)
-    const introEnd = description ? descriptionStart + description.length : introStart + method.length
-    const detailsStart = details.indexOf("\n### ", introEnd)
-    assert.ok(detailsStart >= 0, `Missing native detail sections: ${operation.id}`)
-    const intro = details.slice(0, detailsStart).trimEnd()
-    sections[index] = `${intro}\n\n${setup}### Example request\n\n${requests.join("\n\n")}\n\n### Example response\n\n${responses.join("\n\n")}\n\n${details.slice(detailsStart).trim()}\n\n`
+  assert.ok(original === renderGroup(referenceModel, group).trim(), `Built resource differs from native Markdown: ${groupName}`)
+  const { resource: content, sections } = renderReferenceMarkdown(referenceModel, group, operationsById)
+  for (const [id, { endpoint }] of sections) {
+    assert.equal(operationsById.get(id).group, groupName, `Unexpected resource for operation: ${id}`)
+    assert.ok(!endpointMarkdown.has(id), `Duplicate native Markdown operation: ${id}`)
+    endpointMarkdown.set(id, endpoint)
   }
-  const content = sections.join("").trim()
-  assert.ok(full.includes(original), `Agent bundle is missing resource ${group}`)
-  full = full.replace(original, content)
+  assert.ok(full.includes(original), `Agent bundle is missing resource ${groupName}`)
+  full = full.replace(original, () => content)
   writeFileSync(page, `${content}\n`)
 }
 for (const operation of referenceOperations) {
@@ -100,14 +68,12 @@ for (const operation of referenceOperations) {
   assert.doesNotMatch(html, /No matching operation found|No OpenAPI spec is configured/)
   const page = join(markdown, `api/reference/operations/${operation.id}.md`)
   const original = readFileSync(page, "utf8").trim()
-  const resource = readFileSync(join(markdown, `api/reference/${operation.group}.md`), "utf8")
-  const sections = resource.split(/(?=^## )/m)
-  const target = sections.find((section) => section.split("\n").includes(`\`${operation.method} ${operation.path}\``))
-  assert.ok(target, `No native Markdown for ${operation.method} ${operation.path}`)
-  const content = `# ${operation.title}\n\n${target.replace(/^## [^\n]*\n+/, "").trim()}\n\n${operationGuideLinks(operation, true)}\n`
+  const endpoint = endpointMarkdown.get(operation.id)
+  assert.ok(endpoint, `No native Markdown for ${operation.method} ${operation.path}`)
+  const content = `${endpoint}\n\n${operationGuideLinks(operation, true)}\n`
   if (original === content.trim()) continue
   assert.ok(full.includes(original), `Agent bundle is missing endpoint ${operation.id}`)
-  full = full.replace(original, content.trim())
+  full = full.replace(original, () => content.trim())
   writeFileSync(page, content)
 }
 writeFileSync(join(output, "llms-full.txt"), full)
@@ -192,6 +158,11 @@ writeFileSync(join(output, "llms.txt"), index)
 assert.match(index, /\/api\/reference\/tasks/)
 assert.doesNotMatch(index, /AGENTS\.md|README\.md|\.agents\/|\.vocs-src/)
 const { document: spec, authoring } = loadDocsContract(join(output, "openapi.yaml"))
+const versionedLinks = auditVersionedReferenceLinks(output, referenceOperations, [
+  "/api/reference/operations/listworkspacetasks",
+  "/api/reference/operations/gettask",
+])
+console.log(`Resolved ${versionedLinks} versioning-guide links to matching v1 HTML and Markdown operations`)
 const pageCounts = auditStaticPublication(output, [
   ...publicPageSources(root).map(pageRoute),
   ...new Set(referenceOperations.map(({ group }) => `/api/reference/${group}`)),

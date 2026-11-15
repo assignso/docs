@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import { createRequire } from 'node:module';
+import { renderReferenceMarkdown } from './reference-markdown.mjs';
 import { loadDocsContract } from './authoring-contract.mjs';
 import { parse as parseOpenApi } from '../node_modules/vocs/dist/internal/openapi/parser.js';
 import { responseSamples } from '../node_modules/vocs/dist/internal/openapi/sample.js';
@@ -170,4 +171,31 @@ test('native response samples start with a readable bodyless or CSV success', ()
   ] });
   assert.deepEqual([csv[0].status, csv[0].lang, csv[0].code], ['200', 'csv', 'day,minutes\n2026-01-01,30']);
   assert.equal(csv[1].status, '422');
+});
+
+test('operation extraction keeps authored headings and matches the approved v1 response', async () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const { document } = loadDocsContract(`${root}public/openapi.yaml`);
+  const ir = await parseOpenApi({ path: '/api/reference', spec: document });
+  const { operations } = loadApiPresentation(root);
+  const operationsById = new Map(operations.map(operation => [operation.id, operation]));
+  const group = ir.groups.find(group => group.operations.some(({ id }) => id === 'gettask'));
+  const description = 'Read a Task.\n\n## Conditions\n\n' +
+    '`GET /api/v1/workspaces/{workspace_id}/tasks`\n\n' +
+    '### Example request\n\nResolve the Task ID before reading.';
+  const fixture = {
+    ...group,
+    operations: group.operations.map(model => model.id === 'gettask' ? { ...model, description } : model),
+  };
+  const { resource, sections } = renderReferenceMarkdown(ir, fixture, operationsById);
+  assert.equal(sections.size, group.operations.length);
+  const { endpoint } = sections.get('gettask');
+  assert.match(endpoint, /^`GET \/api\/v1\/tasks\/\{task_id\}`$/m);
+  assert.ok(endpoint.includes(description));
+  assert.match(endpoint, /Illustrative HTTP `200` response/);
+  assert.match(endpoint, /Exactly one of[\s\S]*`Task`[\s\S]*`CanonicalTask`/);
+  assert.ok(endpoint.indexOf('Illustrative HTTP') < endpoint.indexOf('### Responses'));
+  assert.match(endpoint, /<a id="gettask"><\/a>/);
+  assert.match(endpoint, /> \*\*Upcoming:\*\* This contract is not yet deployed\./);
+  assert.ok(resource.includes(sections.get('gettask').resource));
 });

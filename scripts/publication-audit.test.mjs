@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import test from "node:test"
-import { auditStaticPublication, pageRoute, privateWireReferences, publicPageSources, publicSections } from "./publication-audit.mjs"
+import { auditStaticPublication, auditVersionedReferenceLinks, pageRoute, privateWireReferences, publicPageSources, publicSections } from "./publication-audit.mjs"
 
 const registry = () => ({ operations: Object.fromEntries([
   ["listExamples", "GET", "/api/v1/examples", "product-reference"],
@@ -93,4 +93,33 @@ for (const [name, mutate, error] of [
 ]) test(`publication rejects ${name}`, () => staticFixture((root, put) => {
   mutate(root, put)
   assert.throws(() => auditStaticPublication(root, expected), error)
+}))
+
+const link = "/api/reference/operations/getexample"
+const operation = { id: "getexample", link, method: "GET", path: "/api/v1/examples", upcoming: true }
+const reference = '<h2 data-v-openapi-operation-title="true" id="getexample">Read example</h2>' +
+  '<span>GET</span><code data-v-openapi-endpoint-path="true">/api/v1/examples</code>' +
+  '<p><strong>Upcoming:</strong> This contract is not yet deployed.</p>'
+const versionedDownload = '<a id="getexample"></a>\n\n`GET /api/v1/examples`\n\n' +
+  '> **Upcoming:** This contract is not yet deployed.\n'
+
+test("versioning links resolve from HTML and Markdown to the approved v1 operation", () => fixture((root, put) => {
+  put("api/versioning/index.html", '<a href="./reference/operations/getexample#getexample">Read example</a>')
+  put("api/versioning.md", `[Read example](${link}.md#getexample)`)
+  put(`${link.slice(1)}/index.html`, reference)
+  put(`${link.slice(1)}.md`, versionedDownload)
+  const audit = () => auditVersionedReferenceLinks(root, [operation], [`${link}#getexample`])
+  assert.equal(audit(), 1)
+
+  put(`${link.slice(1)}.md`, versionedDownload.replace("/api/v1/", "/api/v2/"))
+  assert.throws(audit, /Wrong Markdown method or versioned path/)
+  put(`${link.slice(1)}.md`, versionedDownload.replace('<a id="getexample"></a>', ''))
+  assert.throws(audit, /Missing Markdown fragment/)
+  put(`${link.slice(1)}.md`, versionedDownload.replace(/^> .*$/m, ''))
+  assert.throws(audit, /Wrong Markdown availability/)
+  put(`${link.slice(1)}.md`, versionedDownload)
+  put(`${link.slice(1)}/index.html`, reference.replace("GET</span>", "POST</span>"))
+  assert.throws(audit, /Wrong HTML method or versioned path/)
+  put("api/versioning.md", `[Read example](${link}.md#stale)`)
+  assert.throws(audit, /reference links differ/)
 }))

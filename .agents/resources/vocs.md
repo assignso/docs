@@ -72,7 +72,9 @@ staged as site content. `styles/root.css` owns the self-hosted Geist fonts and A
 directories and maintenance Markdown are excluded even inside a content section. Postbuild compares
 that inventory, generated errors and approved reference routes with every HTML page, Markdown twin,
 readable download and agent index entry. Extra stale pages, missing mirrors and maintenance output
-fail the build. Keep this check separate from release availability and private-source approval.
+fail the build. Postbuild also follows the versioning guide’s operation links in HTML and Markdown
+and checks the linked method, v1 path, availability and any fragment against the approved contract.
+Keep this check separate from release availability and private-source approval.
 
 The local source check uses the sibling canonical registry to reject known first-party/internal
 request examples, including abbreviated path suffixes. It requires that private source and reports
@@ -139,7 +141,8 @@ and staged endpoint pages both reload the contract. Do not hand-edit `.vocs-src`
 
 Native operation embeds have no Markdown hook. The output plugin provides a reference link;
 `postbuild` replaces each endpoint Markdown download and its `llms-full.txt` entry with the
-complete operation section from Vocs' generated resource Markdown. Development Markdown links
+complete operation section from Vocs' resource renderer. Extract each operation by its parsed
+identity so headings and examples inside the description remain intact. Development Markdown links
 to the full resource reference; published endpoint Markdown contains the schema and examples.
 
 `api-presentation.mjs` also supplies concise action labels and related-guide links for operation
