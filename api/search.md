@@ -70,7 +70,9 @@ are plain text of up to 240 characters, centered on a match where possible. The 
 the background, and Search withholds rows whose source is no longer available.
 
 Rate limits return `429`. Query timeout or temporary Search unavailability returns
-`503 search_unavailable`. Wait for the `Retry-After` delay before retrying.
+`503 search_unavailable`. Search can also return `503 service_overloaded` when
+response capacity is unavailable or `503 maintenance_offline` during maintenance.
+Wait for the `Retry-After` delay when the response includes it.
 
 ## Search in the native app <Badge type="warning" text="Upcoming" />
 
