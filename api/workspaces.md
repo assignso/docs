@@ -265,8 +265,14 @@ GET /api/v1/workspaces/{workspace_id}/work?view=today&limit=50
 
 `view` is `assigned`, `overdue`, `today`, `upcoming` or `completed`. Due dates are dates, evaluated
 in the timezone returned in the response. Completed Tasks stay in `completed` for 14 days. The
-response has `items`, `next_cursor`, `has_more`, `as_of_date` and `timezone`. Default page size is
-50, maximum 100.
+response has `data`, `included`, `next_cursor`, `total_count`, `as_of_date` and `timezone`.
+Default page size is 50, maximum 100.
+
+### Project names and Status order <Badge type="warning" text="Awaiting deployment" />
+
+`included.work_display` provides `project_names` and `status_positions` keyed by the
+IDs on the returned Task rows. Compare Status positions as exact decimal integers.
+If the object or an entry is absent, treat that display value as unavailable.
 
 ## Errors
 
