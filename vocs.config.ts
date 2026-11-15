@@ -10,7 +10,7 @@ const getStarted = [
     text: "Get started",
     items: [
       { text: "Introduction", link: "/get-started/" },
-      { text: "Quickstart", link: "/get-started/quickstart" },
+      { text: "Create your first Project", link: "/get-started/quickstart" },
       { text: "Core concepts", link: "/get-started/concepts" },
     ],
   },

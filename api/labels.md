@@ -9,6 +9,11 @@ The rewritten v1 operations below are awaiting deployment. Public integrations u
 [bearer credentials](./authentication), with current visibility and Workspace authorization
 checks on every call. Follow the [API conventions](./conventions).
 
+Workspace owners and admins can create, edit, archive and restore Workspace labels.
+Project managers, the Project owner and Workspace owners and admins can manage
+Project-local labels and overrides. These permissions also apply when recovering
+a write response. Members can assign existing labels to items they can update.
+
 | Operation | Route |
 | --- | --- |
 | List, create Workspace labels | `GET`, `POST /api/v1/workspaces/{workspace_id}/label-definitions` |

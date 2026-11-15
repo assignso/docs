@@ -4,26 +4,30 @@ description: The Assign HTTP API, covering base URL, authentication options, con
 
 # API overview
 
-Assign's public API is JSON over HTTPS. Every product operation lives under one versioned base
-path:
+Use the HTTP API to connect Assign to your scripts and integrations. The rewritten v1 contract
+is awaiting deployment. Check the operation's [availability](/api/conventions#availability)
+before use.
 
-```text
-https://api.assign.so/api/v1
-```
+- [Make your first API request](/api/quickstart) to set up a credential and read one Task page.
+- [Find an operation](#find-an-operation-by-task) by workflow or browse the [reference](/api/reference/).
+- [Recover from a failed request](/api/errors) using the status, error code and request ID.
 
-Supported integrations use the operations in the [public reference](./reference/). Each
-operation states its availability and access requirements. [Product OAuth](./oauth) and
-[MCP](../mcp/) have separate protocol guides and credential audiences.
+Assign's public API uses JSON over HTTPS. The product REST base URL is
+`https://api.assign.so/api/v1`.
+
+Supported integrations use the operations in the [public reference](/api/reference/). Each
+operation states its availability and access requirements. [Product OAuth](/api/oauth) and
+[MCP](/mcp/) have separate protocol guides and credential audiences.
 
 ## Authentication
 
 Use a personal API token for a script, an owned product service account for unattended
 Workspace work, or product OAuth for a registered application. Each operation documents its
 admitted credentials and scopes. Your current Workspace and Project permissions still apply.
-[MCP credentials](../mcp/security) have their own audience and cannot authenticate product REST.
+[MCP credentials](/mcp/security) have their own audience and cannot authenticate product REST.
 
-Start with [Make your first API request](./quickstart) for credential setup, the Workspace ID
-and the same bounded Task read with HTTP, TypeScript or PHP. The [authentication guide](./authentication)
+Start with [Make your first API request](/api/quickstart) for credential setup, the Workspace ID
+and the same bounded Task read with HTTP, TypeScript or PHP. The [authentication guide](/api/authentication)
 covers credential selection, expiry, rotation and recovery. The rewritten v1 flow is awaiting
 deployment; check its availability before use. Assign applications manage their own sign-in.
 
@@ -40,36 +44,49 @@ deployment; check its availability before use. Assign applications manage their 
 - **Isolation.** A resource outside your Workspace returns `404`, the same as a resource that
   doesn't exist.
 
-Read [Conventions](./conventions) before you build an integration. The rewritten v1 rules are
-awaiting deployment. [Pagination](./pagination), [writes and retries](./writes), and
-[errors and recovery](./errors) cover continuation and failure handling.
+Read [Conventions](/api/conventions) before you build an integration. The rewritten v1 rules are
+awaiting deployment. [Pagination](/api/pagination), [writes and retries](/api/writes), and
+[errors and recovery](/api/errors) cover continuation and failure handling.
+
+## Find an operation by task
+
+| I want to | Operations | Guide |
+| --- | --- | --- |
+| Find a Project | [List Workspace Projects](/api/reference/operations/listworkspaceprojects) | [Projects and Statuses](/api/projects) |
+| List or read Tasks | [List Workspace Tasks](/api/reference/operations/listworkspacetasks), [Read a Task](/api/reference/operations/gettask) | [List and filter Tasks](/api/tasks#list) |
+| Create or edit a Task | [Create a Task](/api/reference/operations/createtask), [Update a Task](/api/reference/operations/updatetask) | [Create a Task](/api/tasks#create), [Edit a Task safely](/api/writes#make-an-edit) |
+| Add a Comment or relate Tasks | [Create a Comment](/api/reference/operations/createcomment), [Create a Task relation](/api/reference/operations/createtaskrelation) | [Tasks](/api/tasks) |
+| Configure a Project workflow | [List Project Statuses](/api/reference/operations/listprojectstatuses), [Create a Project Status](/api/reference/operations/createprojectstatus) | [Task Statuses](/api/projects#statuses) |
+| Manage labels or invitations | [List Workspace labels](/api/reference/operations/listworkspacelabeldefinitions), [Create a Workspace invitation](/api/reference/operations/createworkspaceinvitation) | [Labels](/api/labels), [Workspaces](/api/workspaces) |
+| Find work or log time | [Search a Workspace](/api/reference/operations/searchworkspace), [Create a Task time entry](/api/reference/operations/createtasktimeentry) | [Search](/api/search), [Time tracking](/guides/time-tracking#api) |
+| Receive Task events | [Create a webhook endpoint](/api/reference/operations/createwebhookendpoint) | [Receive Task webhooks](/api/webhooks) |
 
 ## Resources
 
 <div class="resource-grid">
 
-- [**Workspaces**](./workspaces): roles, settings, members and invitations
-- [**Projects**](./projects): Projects, Statuses, members and Milestones
-- [**Tasks**](./tasks): create, update, move, relate and comment
-- [**Documents**](./documents): collaborative content, history and Markdown
-- [**Attachments**](./attachments): direct-to-storage uploads
-- [**Search**](./search): Workspace-scoped content search
-- [**Current work**](./current-work): your in-progress Task across Workspaces
-- [**Inbox**](./inbox): notifications and preferences
-- [**Activity**](./activity): Task, Project, person and Workspace history
-- [**People**](./people): member profiles
-- [**Integrations**](./integrations): providers, installations and Rich Entities
-- [**Knowledge**](./knowledge): evidence-backed Workspace Knowledge
-- [**Discuss**](./discuss): private AI conversation
-- [**Agents**](./agents): hired and custom Agents
-- [**Git-backed Documents**](./git-backed-documents): sync Documents with a repository
+- [**Workspaces**](/api/workspaces): roles, settings, members and invitations
+- [**Projects**](/api/projects): Projects, Statuses, members and Milestones
+- [**Tasks**](/api/tasks): create, update, move, relate and comment
+- [**Documents**](/api/documents): collaborative content, history and Markdown
+- [**Attachments**](/api/attachments): direct-to-storage uploads
+- [**Search**](/api/search): Workspace-scoped content search
+- [**Current work**](/api/current-work): your in-progress Task across Workspaces
+- [**Inbox**](/api/inbox): notifications and preferences
+- [**Activity**](/api/activity): Task, Project, person and Workspace history
+- [**People**](/api/people): member profiles
+- [**Integrations**](/api/integrations): providers, installations and Rich Entities
+- [**Knowledge**](/api/knowledge): evidence-backed Workspace Knowledge
+- [**Discuss**](/api/discuss): private AI conversation
+- [**Agents**](/api/agents): hired and custom Agents
+- [**Git-backed Documents**](/api/git-backed-documents): sync Documents with a repository
 
 </div>
 
 ## Using Assign
 
-Use [Account settings](./account) to manage your profile and credentials in the application.
-[Application realtime](./realtime) describes upcoming live updates and interruption recovery.
+Use [Account settings](/api/account) to manage your profile and credentials in the application.
+[Application realtime](/api/realtime) describes upcoming live updates and interruption recovery.
 The application manages its sign-in and live connection.
 
 ## API reference
@@ -81,7 +98,7 @@ not yet deployed.
 ## OpenAPI and SDKs
 
 The public contract is an [OpenAPI 3.1 document](/openapi.yaml). It is the authoritative source for
-request and response schemas, and the [endpoint index](./endpoints) lists every operation in it.
+request and response schemas, and the [endpoint index](/api/endpoints) lists every operation in it.
 Import it into an API client or use it to generate your own client.
 
 Official SDK authoring sources are generated from the same approved public contract. A generated
@@ -92,9 +109,9 @@ source package does not establish that a matching package has been released:
 | TypeScript | `@assignso/sdk` (matching contract not yet released) |
 | PHP | `assignso/php-sdk` (matching contract not yet released) |
 
-Use the [first-request tutorial](./quickstart#3-read-one-task-page) for the current source examples
+Use the [first-request tutorial](/api/quickstart#3-read-one-task-page) for the current source examples
 and availability. SDKs release on their own schedule. See
-[Versioning](./versioning#sdk-and-client-releases).
+[Versioning](/api/versioning#sdk-and-client-releases).
 
 ## Page totals <Badge type="warning" text="Awaiting deployment" />
 
