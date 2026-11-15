@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 
-export const publicSections = ["get-started", "guides", "cli", "mcp", "api"]
+export const publicSections = ["get-started", "guides", "cli", "mcp", "api", "branding"]
 const maintenance = /^(?:AGENTS|CLAUDE|README)\.md$/
 
 export function publicPageSources(root) {

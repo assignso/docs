@@ -30,6 +30,16 @@ const getStarted = [
   },
 ]
 
+const branding = [{
+  text: "Branding",
+  items: [
+    { text: "Overview and downloads", link: "/branding" },
+    { text: "Logos and spacing", link: "/branding/logos" },
+    { text: "Color and typography", link: "/branding/color-and-type" },
+    { text: "Usage and accessibility", link: "/branding/usage" },
+  ],
+}]
+
 const cli = [
   {
     text: "Assign CLI",
@@ -86,6 +96,7 @@ export default defineConfig({
     { text: "CLI", link: "/cli" },
     { text: "MCP", link: "/mcp" },
     { text: "API reference", link: "/api/reference", match: "/api" },
+    { text: "Branding", link: "/branding" },
     { text: "Assign", link: "https://assign.so", external: true },
   ],
   sidebar: {
@@ -94,6 +105,7 @@ export default defineConfig({
     "/guides": getStarted,
     "/cli": cli,
     "/mcp": mcp,
+    "/branding": branding,
     "/api": developerNavigation,
     // Vocs 2.10 normalizes this key for matching, then prefers its longer length
     // over the auto-generated mount key. Preserve native routes with our resource nav.

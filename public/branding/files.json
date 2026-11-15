@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "files": {
+    "branding/color-and-type.md": "31a9e904bc6d7705b7e87bc204ee860c3d2b31bef18790dc73af368e3e8f1b87",
+    "branding/index.md": "85b46f37c77e07848ad87a9fe076321cecfb894db0404585b0275af3309c65d6",
+    "branding/logos.md": "23c3fc8aabae53a678d8a75b289eb90873915c6f4fe32bc0a08a52a35536c98e",
+    "branding/usage.md": "8c0b8b06638ed408fce92a5459301eb242d89e1f4d034549bdb3a01c30153817",
+    "public/branding/assign-mark-black-512.png": "29abff4ce2e6b7fd3ba9518f4c5e9d8900b4392efde8c73a3e6f7015ba8f9694",
+    "public/branding/assign-mark-black.svg": "18129015e3238c20f4760b591930ca1916ad56eeee8de54969ae9da144ec2976",
+    "public/branding/assign-mark-oil-512.png": "2643a19490a424904964efa87d2d76734709106919933d78cda3dcbec0ed15f8",
+    "public/branding/assign-mark-oil.svg": "2843288879e4de0f470058282dadaae89bc34c0c18f2f824aab013f3a2c799a2",
+    "public/branding/assign-mark-white-512.png": "c9009e0694e9bb1fa01f2a7a0cd71ce6e7d6b2eadabcb54532387c621a6c7b3e",
+    "public/branding/assign-mark-white.svg": "db0a3ff1d5393107403a895b3d612993fb0214a728c623d636929d1bba8cef7e",
+    "public/branding/colors.json": "d6eb36010052b107dd779f1e5a6628011ee200d514be7a4f3c820df4e97a2121",
+    "public/branding/favicon-dark.svg": "f06640bc6ac45e96e401a5ddd5a612c525d15cf37321aa7fb59d7948f6e59efa",
+    "public/branding/favicon-light.svg": "0cc15c4798316b0b3bcde2d5e2148b25fabff7c65750d0633de9606c4554537f",
+    "public/branding/favicon.svg": "9519bca5266649e05862c5ab7b791852966beee2ec08777ea806785d6c6120a7"
+  }
+}

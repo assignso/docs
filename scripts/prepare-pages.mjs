@@ -1,3 +1,4 @@
+import { checkBranding } from "./branding.mjs"
 // Keep the existing public Markdown paths authoritative; stage only site content for Vocs.
 import { existsSync, readdirSync, readFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
@@ -51,6 +52,7 @@ function copyPage(relative) {
 }
 
 export function preparePages() {
+  checkBranding(root)
   expected = new Set()
   errors = errorCatalog(loadDocsContract(join(root, "public/openapi.yaml")).document)
   for (const source of publicPageSources(root)) copyPage(source)
@@ -67,7 +69,9 @@ export function preparePages() {
   writeGenerated(join(pages, "_root.css"), readFileSync(join(root, "styles/root.css")))
   // Vocs 2.10's dead-link checker resolves downloads against pages, not public/.
   // These are not page routes; the served downloads remain in public/.
-  const downloads = ["openapi.yaml", ...metadataFiles,
+  const brandDownloads = Object.keys(JSON.parse(readFileSync(join(root, "public/branding/files.json"), "utf8")).files)
+    .filter(path => path.startsWith("public/")).map(path => path.slice("public/".length))
+  const downloads = ["openapi.yaml", ...metadataFiles, ...brandDownloads,
     ...["manifest.json", "typescript.zip", "php.zip"].map(file => `examples/task-workflow/${file}`)]
   for (const file of downloads)
     writeGenerated(join(pages, file), readFileSync(join(root, "public", file)))

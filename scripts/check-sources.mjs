@@ -19,6 +19,15 @@ const sourceEnvironment = sourceCheckEnvironment(workspace)
 const problems = []
 
 try {
+  const pin = JSON.parse(readFileSync(join(workspace, "architecture/frontend/branding-docs-source.json"), "utf8"))
+  if (!/^[a-f0-9]{40}$/.test(pin.revision)) throw new Error("Exact branding revision required")
+  execFileSync("python3", [join(workspace, "branding/scripts/export-docs.py"), "--docs", root, "--check", "--revision", pin.revision], { stdio: "pipe" })
+  console.log("Checked public branding against its exact canonical source")
+} catch (error) {
+  problems.push(`Branding source check failed: ${error.message.split("\n")[0]}`)
+}
+
+try {
   const approval = sourceEnvironment.ASSIGN_DOCS_METADATA_PRIVATE_PROVENANCE
   if (!approval) throw new Error("Private anonymous metadata approval path is required")
   const report = checkMetadataSource(join(root, "public"), workspace, resolve(approval))

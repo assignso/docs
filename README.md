@@ -45,6 +45,7 @@ and the Pages upload check still require a released contract manifest.
 | `cli/` | Install, authentication, command reference, Discuss, MCP setup and scripting |
 | `mcp/` | MCP overview, client setup, tool catalog, previews, security and troubleshooting |
 | `api/` | API overview, conventions, versioning, authentication and resource guides |
+| `branding/`, `public/branding/` | Reviewed brand guidelines and logo/favicon downloads; committed source mirrors |
 | `api/endpoints.md`, `public/openapi.yaml` | Generated endpoint index and the published OpenAPI document; don't edit by hand |
 | `vocs.config.ts`, `styles/` | Vocs navigation, OpenAPI mounting and the Assign theme |
 | `.agents/resources/vocs.md` | Vocs maintenance guidance and official references |
@@ -53,7 +54,7 @@ and the Pages upload check still require a released contract manifest.
 
 ## Keeping the docs current
 
-The CLI, MCP and API reference pages mirror a source of truth elsewhere, and
+The branding guidelines, CLI, MCP and API reference pages mirror a source of truth elsewhere, and
 [AGENTS.md](AGENTS.md) describes which source owns each page. Before merging a change that
 touches one of those sources, update the matching page and run:
 

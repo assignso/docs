@@ -1,5 +1,6 @@
 // GitHub Pages has no content-negotiation middleware: publish readable Markdown URLs.
 import assert from "node:assert/strict"
+import { checkBuiltBranding } from "./branding.mjs"
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { root } from "./prepare-pages.mjs"
@@ -18,6 +19,7 @@ import { parse as parseOpenApi } from "../node_modules/vocs/dist/internal/openap
 import { codeSamples, responseSamples } from "../node_modules/vocs/dist/internal/openapi/sample.js"
 
 const output = join(root, "dist/public")
+console.log(`Verified ${checkBuiltBranding(root, output)} public branding downloads against their maintained digests`)
 checkMetadataReference(output)
 for (const file of metadataFiles)
   assert.deepEqual(readFileSync(join(output, file)), readFileSync(join(root, "public", file)),

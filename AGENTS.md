@@ -22,6 +22,7 @@ Apply the [workspace rules](../architecture/operations/workspace-agent-rules.md)
 | `mcp/*.md` | `architecture/api/mcp.md` and the MCP roadmap | Update with every exposed MCP capability |
 | `cli/commands.md` | `assign-cli/internal/cli` (cobra commands, flags, aliases, exit codes) | Update tables; `npm run check:sources` |
 | `cli/*.md` | `assign-cli` README and release notes | Update with each CLI release |
+| `branding/*.md`, `public/branding/` | Canonical reviewed public projection in the branding source repository | Export only the admitted files; `npm run check:sources` checks the private pin; `npm test` verifies public digests without private sources |
 | `guides/*.md` | `assign-web` behavior and `architecture/frontend/` | Update with user-visible UI changes |
 
 ## Vocs maintenance
@@ -66,3 +67,5 @@ npm run check:sources   # local only; needs the sibling Assign checkouts
 npm test                # offline contract publication checks
 npm run check           # markdownlint + Markdown audit + production build
 ```
+
+For the branding section, use root-relative `/branding` page links: Vocs normalizes the section index without a trailing slash, so sibling links such as `./logos` resolve outside that section. Keep ordinary download paths rooted under `/branding/`.
