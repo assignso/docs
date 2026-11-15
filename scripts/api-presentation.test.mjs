@@ -145,7 +145,7 @@ test('response presentation shares only the generic Problem Details body and ret
   assert.match(responses, /#### `409`/);
   assert.match(responses, /idempotency_key_conflict/);
   assert.match(responses, /\x60Location\x60/);
-  assert.match(task, /After an uncertain outcome, retain the original idempotency key/);
+  assert.match(task, /If the response is lost, keep the original `Idempotency-Key` and exact request/);
 });
 
 test('native response samples start with a readable bodyless or CSV success', () => {

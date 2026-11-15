@@ -47934,8 +47934,8 @@ paths:
         bounded and stripped of control characters; results never expose a raw
         engine score or exact total. Archived resources are excluded unless
         explicitly included; trashed, purged, and deleted resources remain excluded.
-        Work is rate-limited and query-time bounded; overload returns a
-        retryable `503 search_unavailable` with `Retry-After`.
+        Search is rate-limited and has a query timeout. For a temporary failure,
+        follow the recovery guidance for the `503` response.
         The page uses data, next_cursor and has_more. Follow every non-null cursor
         with the same normalized query, filters and page size. Cursors are confidential
         and bound to the current credential, membership, projection, contract epochs
@@ -47944,8 +47944,8 @@ paths:
         restart from the first page. Old signed cursors cannot resume this contract.
         Only JSON with identity or gzip encoding is supported. Media/encoding refusal
         precedes Search data reads. Responses use no-store and vary by Accept and
-        Accept-Encoding. Complete logical and encoded bodies retain the shared finite
-        response limit; oversized pages fail without partial results or a cursor.
+        Accept-Encoding. The logical and encoded response bodies each have a 256 KiB
+        limit. An oversized page fails without partial results or a cursor.
       operationId: searchWorkspace
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -48005,7 +48005,7 @@ paths:
             Content-Length:
               description: Exact negotiated complete-body length in encoded bytes. No partial results or continuation are published after response construction failure.
               schema:
-                maximum: 12648448
+                maximum: 262144
                 minimum: 1
                 type: integer
             Vary:
@@ -48033,7 +48033,29 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
-          $ref: "#/components/responses/MaintenanceUnavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Search timed out or is temporarily unavailable (search_unavailable), response capacity is exhausted (service_overloaded), or maintenance has taken the service offline (maintenance_offline). Honor Retry-After when present.
+          headers:
+            Assign-API-Version:
+              $ref: "#/components/headers/AssignAPIVersion"
+            Assign-Request-ID:
+              $ref: "#/components/headers/AssignRequestID"
+            Assign-Server-Version:
+              $ref: "#/components/headers/AssignServerVersion"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
+            Retry-After:
+              description: Delay in seconds before retrying, when supplied.
+              schema:
+                minimum: 0
+                type: integer
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            X-Request-ID:
+              $ref: "#/components/headers/AssignRequestID"
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
