@@ -27,7 +27,7 @@ original decision.
   separate thread.
 - While a response is queued or running, focus **Stop** and activate it to cancel. Completed actions
   and receipts stay completed and are never shown as rolled back.
-- Sessions created before `assign:discuss` existed need one `assign login`. A personal token used as
-  `ASSIGN_TOKEN` must include `assign:discuss`. Workspace plan and permission checks still apply.
+- Run `assign login` to acquire terminal Discuss access. If `ASSIGN_TOKEN` is set, unset it for this
+  command so the CLI can use your interactive sign-in. Workspace plan and permission checks still apply.
 
 See [Discuss](../api/discuss) for what you can ask.

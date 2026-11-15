@@ -95,6 +95,22 @@ assign search "<query>"
 
 Searches Tasks and Documents in the credential's Workspace.
 
+### Continue a list <Badge type="warning" text="Upcoming" /> {#continue-a-list}
+
+My Work, search, Workspace memberships, Projects and Documents read one page at a time.
+When another page is available, stderr prints the cursor. Pass it back with `--cursor`
+on the same command and keep its arguments and filters. Standard output contains the
+result rows.
+
+```sh
+assign --cursor "<cursor>"
+assign search "release notes" --cursor "<cursor>"
+assign workspace list --cursor "<cursor>"
+assign project list --cursor "<cursor>"
+assign project documents PRO --cursor "<cursor>"
+assign document list --project PRO --cursor "<cursor>"
+```
+
 ### Task workflow
 
 ```sh
