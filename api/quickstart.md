@@ -127,7 +127,8 @@ main().catch((error: unknown) => {
 `assignso/php-sdk` for the rewrite is unpublished. With an authorized matching SDK installed,
 use PHP 8.1 through 8.x with `curl`, `json` and `mbstring` enabled, and Composer 2. Save this
 as `first-read.php` beside the project's `vendor/` directory and supply the three variables
-from the setup above. The SDK adds `/api/v1` to `ASSIGN_API_ORIGIN`.
+from the setup above. The default SDK client sends the configured bearer token
+and adds `/api/v1` to `ASSIGN_API_ORIGIN`.
 
 ```php
 <?php
@@ -136,7 +137,6 @@ require __DIR__ . '/vendor/autoload.php';
 use Assign\Sdk\Api\TasksApi;
 use Assign\Sdk\ApiException;
 use Assign\Sdk\Configuration;
-use Assign\Sdk\ProductClient;
 
 $token = getenv('ASSIGN_TOKEN');
 $workspaceId = getenv('ASSIGN_WORKSPACE_ID');
@@ -146,9 +146,8 @@ if (!$token || !$workspaceId || !$origin) {
     exit(1);
 }
 
-$config = (new Configuration())->setHost($origin);
-$client = ProductClient::create(static fn(): string => $token, $origin);
-$api = new TasksApi($client, $config);
+$config = (new Configuration())->setHost($origin)->setAccessToken($token);
+$api = new TasksApi(null, $config);
 try {
     [$page, $status] = $api->listWorkspaceTasksWithHttpInfo(
         workspace_id: $workspaceId,
