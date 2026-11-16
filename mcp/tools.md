@@ -355,7 +355,8 @@ Other Task rules:
   ID. It uses the Project's one completing Status and returns `completion_confirmed: true`, or an error
   if it couldn't confirm. If several Statuses count as completed, it returns `completion_target_required`
   with the choices; call again with `target_status_id`. `lifecycle_definition_list` shows which
-  Statuses count as completed.
+  Statuses count as completed. If the Task moves to another Project, read it again to get its
+  current Project and revision before sending a new completion request.
 - `task_lifecycle_set` accepts `archive`, `trash` or `restore` with the current revision. It never
   purges.
 - Subscription states are `following`, `muted` and `unfollowed`. Subscribing doesn't grant access.
