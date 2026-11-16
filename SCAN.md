@@ -15,7 +15,11 @@ dependencies:
 maintain:
   - path: .
     manager: npm
-    update: npm update <package> --package-lock-only --ignore-scripts
+    update:
+      - npm update <package> --package-lock-only --ignore-scripts
+    sources:
+      - https://github.com/npm/cli/releases
+      - https://docs.npmjs.com/cli/v11/commands/npm-update/
 ---
 
 # Dependency watch
