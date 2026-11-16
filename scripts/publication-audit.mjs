@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
+import { auditPublicationFiles } from "./audit-publication-files.mjs"
 
 export const publicSections = ["get-started", "guides", "cli", "mcp", "api", "branding"]
 const maintenance = /^(?:AGENTS|CLAUDE|README)\.md$/
@@ -75,6 +76,7 @@ function filesBelow(root, relative = "") {
 export function auditStaticPublication(output, expectedRoutes) {
   assert.equal(new Set(expectedRoutes).size, expectedRoutes.length, "Duplicate canonical page route")
   const expected = [...expectedRoutes].sort(), files = filesBelow(output)
+  auditPublicationFiles(output, files, { staticOutput: true })
   for (const file of files) assert.ok(!file.split("/").some((part) => part.startsWith(".") || maintenance.test(part)),
     `Maintenance artifact entered public output: ${file}`)
   const html = files.filter((file) => /(?:^|\/)index\.html$/.test(file))

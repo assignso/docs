@@ -17,7 +17,7 @@
     "postinstall": "node scripts/patch-vocs.mjs",
     "postbuild": "node scripts/publish-static.mjs",
     "test:publication": "node --test scripts/public-contract.test.mjs scripts/api-presentation.test.mjs scripts/api-og.test.mjs scripts/publication-audit.test.mjs",
-    "prepack": "node scripts/validate-public-release.mjs"
+    "prepack": "node scripts/validate-public-release.mjs && node scripts/audit-publication-files.mjs --package"
   },
   "devDependencies": {
     "@fontsource-variable/geist": "5.3.0",

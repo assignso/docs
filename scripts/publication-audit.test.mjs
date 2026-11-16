@@ -89,6 +89,12 @@ for (const [name, mutate, error] of [
   ["changed download", (root, put) => put("api/example.md", "Old"), /download differs/],
   ["incomplete agent body", (root, put) => put("llms-full.txt", "# Home\n"), /lacks complete Markdown/],
   ["missing agent entry", (root, put) => put("llms.txt", "[Home](/index.md)\n"), /Agent index differs/],
+  ["private source receipt", (root, put) => put("export.json", '{"schema":"assign.docs-private-source-export.v1"}'), /Private source record/],
+  ["unreviewed bundle", (root, put) => put("extra.zip", "archive"), /Unexpected archive or source map/],
+  ["private configuration", (root, put) => put("nested/.env", "PLACEHOLDER=value"), /Private configuration/],
+  ["extra contract download", (root, put) => put("old-contract.yaml", "openapi: 3.1.1"), /Unexpected OpenAPI download/],
+  ["extra compact contract", (root, put) => put("public/openapi.json", '{"openapi":"3.1.1"}'), /Unexpected OpenAPI download/],
+  ["source map", (root, put) => put("assets/private.js.map", "{}"), /Unexpected archive or source map/],
   ["maintenance artifact", (root, put) => put("README.md", "Private maintenance"), /Maintenance artifact/],
 ]) test(`publication rejects ${name}`, () => staticFixture((root, put) => {
   mutate(root, put)

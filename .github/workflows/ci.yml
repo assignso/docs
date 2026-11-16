@@ -30,6 +30,8 @@ jobs:
       - run: npm audit --audit-level=high
       - name: Verify public references and examples without private sources
         run: |
+          node scripts/audit-publication-files.mjs
+          node scripts/check-public-export.mjs
           node scripts/protocol-metadata.mjs
           python3 scripts/export-example-sources.py check-public
       - run: npm test

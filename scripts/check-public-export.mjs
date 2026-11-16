@@ -1,27 +1,53 @@
-// Public CI needs only committed safe exports, never a sibling private checkout.
+// Public CI needs only committed safe exports.
+import assert from "node:assert/strict"
 import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+import { isDeepStrictEqual } from "node:util"
 import { parse } from "yaml"
+import { endpointIndex } from "./endpoint-index.mjs"
 import { exportDigest, validateAuthoringExport } from "./public-export.mjs"
-import { methods, publicContract } from "./public-contract.mjs"
+import { publicContract } from "./public-contract.mjs"
 
-export function checkPublicExport(directory) {
-  const document = parse(readFileSync(resolve(directory, "openapi.yaml"), "utf8"))
-  if (document["x-assign-release-manifest"]) {
-    const released = publicContract(document)
-    if (existsSync(resolve(directory, "openapi-provenance.json"))) throw new Error("Remove stale authoring pin before released publication")
-    const graph = structuredClone(released)
-    delete graph["x-assign-release-manifest"]
-    return { state: "released", release: released["x-assign-release-manifest"].release,
-      contract_version: released.info.version, document_sha256: exportDigest(graph),
-      operations: Object.values(released.paths).flatMap((item) => Object.keys(item).filter((method) => methods.includes(method))).length }
-  }
-  const pin = JSON.parse(readFileSync(resolve(directory, "openapi-provenance.json"), "utf8"))
-  validateAuthoringExport(document, pin)
-  return { state: pin.state, operations: pin.operations.length, document_sha256: pin.document_sha256, contract_version: pin.contract_version }
+export function validateReleasedExport(document) {
+  const projected = publicContract(document)
+  assert.ok(isDeepStrictEqual(document, projected), "Released download differs from its approved public projection")
+  return projected["x-assign-release-manifest"]
 }
+
+export function checkPublicExport(directory, { indexPath } = {}) {
+  const document = parse(readFileSync(resolve(directory, "openapi.yaml"), "utf8"))
+  const pinPath = resolve(directory, "openapi-provenance.json")
+  const authoring = !document["x-assign-release-manifest"]
+  let pin
+  if (authoring) {
+    pin = JSON.parse(readFileSync(pinPath, "utf8"))
+    validateAuthoringExport(document, pin)
+  } else {
+    assert.ok(!existsSync(pinPath), "Remove stale authoring pin before released publication")
+    const manifest = validateReleasedExport(document)
+    const { ["x-assign-release-manifest"]: _, ...graph } = document
+    pin = {
+      state: manifest.state, release: manifest.release, operations: manifest.operations,
+      contract_version: document.info.version, document_sha256: exportDigest(graph),
+    }
+  }
+  if (indexPath) {
+    assert.ok(readFileSync(indexPath, "utf8") === endpointIndex(document, authoring).markdown,
+      "Generated endpoint index is stale")
+  }
+  return {
+    state: pin.state, ...(pin.release ? { release: pin.release } : {}), operations: pin.operations.length,
+    document_sha256: pin.document_sha256, contract_version: pin.contract_version,
+  }
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  try { console.log(JSON.stringify(checkPublicExport(process.argv[2] ?? fileURLToPath(new URL("../public", import.meta.url))))) }
-  catch (error) { console.error(error.message); process.exitCode = 1 }
+  const directory = process.argv[2]
+  const root = fileURLToPath(new URL("..", import.meta.url))
+  try {
+    console.log(JSON.stringify(directory
+      ? checkPublicExport(directory)
+      : checkPublicExport(resolve(root, "public"), { indexPath: resolve(root, "api/endpoints.md") })))
+  } catch (error) { console.error(error.message); process.exitCode = 1 }
 }
