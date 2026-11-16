@@ -12,6 +12,10 @@ dependencies:
     url: https://nodejs.org/en/about/previous-releases
   - name: resvg-js
     url: https://github.com/yisibl/resvg-js/releases
+maintain:
+  - path: .
+    manager: npm
+    update: npm update <package> --package-lock-only --ignore-scripts
 ---
 
 # Dependency watch
