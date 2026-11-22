@@ -52,6 +52,8 @@ inspect the status and content type before parsing and preserve the correlation 
 
 ## Rate limits and availability
 
+Request allowances apply to the scope reported by `Assign-Limit`. Deployment settings can change the allowance, and a request can count toward more than one scope. Use the response headers to guide retry timing.
+
 `Assign-Limit` is versioned Assign metadata, separate from draft standard `RateLimit` headers.
 Its kind, scope, policy and unit describe the applicable budget. Optional `limit` and `remaining`
 are window units; `cost` is this request's required units and `reset` is Unix seconds. Unknown
