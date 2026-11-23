@@ -8,6 +8,10 @@ vite = "https://github.com/vitejs/vite/releases"
 nodejs = "https://nodejs.org/en/about/previous-releases"
 resvg-js = "https://github.com/yisibl/resvg-js/releases"
 
+[watch]
+managed = ["vocs", "waku", "react", "vite", "resvg-js"]
+external = ["nodejs"]
+
 [maintain]
 manager = "npm"
 command = "npm update <package> --package-lock-only --ignore-scripts"
