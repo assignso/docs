@@ -128,11 +128,12 @@ A completed run can still have provider usage pending, so its final charge may n
 Insufficient credits produce a visible blocked or skipped run without blocking normal collaboration.
 
 `POST /api/v1/workspaces/{workspace_id}/agents/{agent_id}/runs/{run_id}/cancel` with
-`Idempotency-Key` and an empty body requests cancellation of a queued, running or approval-waiting
+`Idempotency-Key` and the JSON body `{}` requests cancellation of a queued, running or approval-waiting
 run. Current Agent-run authority and the initiator-or-manager
 restriction apply. Started work can remain cancellation-requested until it acknowledges completion.
-Repeating the command observes the retained cancellation or terminal outcome under current access.
-Cancellation does not undo committed actions; read status before treating it as complete.
+If the response is lost, send the same request with its original `Idempotency-Key`. The API checks
+current access before returning the original cancellation receipt. Read the run for its current state.
+Previously committed actions remain in effect.
 
 ## Actions and outputs
 
@@ -144,11 +145,11 @@ rechecks current access and applies the reviewed change to the reviewed revision
 changed, the decision expired, or the Agent was quarantined or removed, it won't run. Outputs are
 comments, reports or notifications attributed to the automated actor, Agent, run and version.
 
-An output without a target has an empty `target_id` string. Its `content` is the recorded output;
-read the action status to confirm a proposed change took effect.
+An output without a target has an empty `target_id` string. Its `content` is the recorded output.
 
-A suggestion is not a completed change. If an acknowledgment is uncertain, check the original run or
-action status before starting another. Rewording the request can create a different action.
+Read the action status to check the current outcome. To recover a lost decision response, send the
+same decision, `expected_revision`, reason and original `Idempotency-Key` for the same approval.
+A new decision requires the current pending approval revision.
 
 ## Limits and availability
 
