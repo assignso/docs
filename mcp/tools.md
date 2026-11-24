@@ -144,6 +144,12 @@ Keep the connection, Workspace, Projects, filters and page size unchanged when p
 `next_cursor` as `cursor`. On `invalid_cursor` or stale coverage, restart without a cursor.
 Only complete checked coverage proves the filtered collection.
 
+For Milestone membership, resolve the code with `milestone_resolve` and use the returned
+Project and Milestone UUIDs as `project_id` and `milestone_id` in `task_list`. Pass
+`consistency: checked`, `state: all` and `include_archived: false` to include completed and
+cancelled members while excluding archived Tasks. With granular scopes, the two reads
+require `assign:milestones:read` and `assign:tasks:read`. Broad `assign:read` covers both.
+
 `task_context_get` returns at most 20 comment excerpts and 10 direct related Task previews.
 Check its coverage, truncation and more flags; related Task comments are not included.
 Use `task_comment_list` and `task_relation_list` for complete history. Their cursors require
