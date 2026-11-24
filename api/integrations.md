@@ -36,6 +36,12 @@ authorized a behavior can also be valid; it is separate from the shared installa
 Keep provider credentials private. Displayed health reports the last stored state, so it may lag
 behind a provider outage or recovery.
 
+## Resource and identity identifiers <Badge type="warning" text="Upcoming" />
+
+Pass the ID returned by the installation resource list when you create a Project binding.
+Pass the ID returned by the personal integration identity list when you disconnect that identity.
+Keep the IDs as opaque strings and preserve their exact spelling.
+
 ## Who can do what
 
 Owners and admins install, reconnect and remove Workspace authority, discover resources, bind

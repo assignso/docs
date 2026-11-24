@@ -304,7 +304,7 @@ Guide: [Workspaces](./workspaces)
 | --- | --- | --- |
 | `GET /api/v1/lifecycle-behaviors` | List supported lifecycle behaviors | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}` | Read a Workspace | Bearer |
-| `PATCH /api/v1/workspaces/{workspace_id}` | Rename, change the URL, or restore a Workspace | Bearer |
+| `PATCH /api/v1/workspaces/{workspace_id}` | Rename a Workspace or change its URL | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/activity` | Read Workspace Activity | Bearer |
 | `GET /api/v1/workspaces/{workspace_id}/ai-access-policy` | Get the Workspace AI access policy | Bearer |
 | `PUT /api/v1/workspaces/{workspace_id}/ai-access-policy` | Update the Workspace AI access policy | Bearer |

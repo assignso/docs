@@ -5,10 +5,10 @@
       "contract_release": null,
       "contract_state": "approved-authoring",
       "contract_version": "1.0.0-rc.10",
-      "document_sha256": "5255717a3e629862894596b1d510877a4b03ae0cd7dae4d126c364f05fce60fc",
+      "document_sha256": "92619cbaaf6da51849d082ec1c5249c0c540f1e84ed8ad906030cebe37eeb7ba",
       "files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
-        "PROVENANCE.json": "93c47d7a47b9599e3333158139505f321ee00779026c4e44230829859277b936",
+        "PROVENANCE.json": "e75cbb2435cb8ddbc04d6e2b03b591530a70debff2630a7f6c2c79778ac64292",
         "README.md": "d328217a971bf04814112ec639f8cb0e2ff6949118e953934ecea119ea3b30fa",
         "composer.json": "f4fbf2cd10726691a8c73616f669063eb059861f52ec7482f9e88111a87c9924",
         "composer.lock": "8fe1373bdb8a02563c769edaf8c3b82dd9379bf8ff8c6adef066ca2febd40e8f",
@@ -22,7 +22,7 @@
         "name": "assignso/php-sdk",
         "version": "1.0.0-rc.9"
       },
-      "sha256": "4edb6bc0444d58baef131720d59e515af961e91788de9cc5df7907126c47e91e",
+      "sha256": "f63100fa23d7e3f13c84cf3fabf1b84ea09849a98568cccee38ff9d58d8516d3",
       "size": 38068,
       "source_files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
@@ -36,10 +36,10 @@
       "contract_release": null,
       "contract_state": "approved-authoring",
       "contract_version": "1.0.0-rc.10",
-      "document_sha256": "5255717a3e629862894596b1d510877a4b03ae0cd7dae4d126c364f05fce60fc",
+      "document_sha256": "92619cbaaf6da51849d082ec1c5249c0c540f1e84ed8ad906030cebe37eeb7ba",
       "files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
-        "PROVENANCE.json": "bd071f19e65597fd2be3f4fbf5ee8040e1a4c1c779784474ecc20bd3a992a847",
+        "PROVENANCE.json": "68e128769299979f0ab190be2fefc07c2a276747f79c3f522cf864607109be36",
         "README.md": "0351c1dbe81eb29126b19e25aba816a09c464b90ad91afae8fa1d45d4fb100b5",
         "main.mjs": "9ead859d24d2b1a6285b1a246d7d548557774d56cb931e3f65a18811f1ad081b",
         "package-lock.json": "c13a44360aa5827dc367ee85fc486d0f795c75b3b8994c9089512134033f58c6",
@@ -53,7 +53,7 @@
         "name": "@assignso/sdk",
         "version": "1.0.0-rc.9"
       },
-      "sha256": "bd1c31791301ef326404317fe44f3bf8fe45a25e3d52cf69e6795aa50c801a0f",
+      "sha256": "1455d5afa8abbbf2da6ed2433a8abb7696ec537800e01607d3cc5f9ba7cda4d8",
       "size": 11075,
       "source_files": {
         ".env.example": "1eddf34774bc0e214ef6645b3f4a0ca7ba102c362bf477577238f4d5cd021e5d",
