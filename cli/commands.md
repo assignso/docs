@@ -116,6 +116,17 @@ encoded as a numeric HTTP tag. A stale observation fails with exit code `5` inst
 a newer change. The optional
 `--idempotency-key` retains retry identity; see [Retries](./scripting#retries). The same actions are available as `assign task <action>`.
 
+### Start a Task branch <Badge type="warning" text="Upcoming" />
+
+```sh
+assign task branch-suggestion <TASK-CODE>
+assign task start <TASK-CODE> --revision <n> --branch
+```
+
+Sign in with the Assign CLI and run branch start from a clean Git worktree on an existing branch. Its `origin` must match a repository connected to the Task's Project. The Project's **Task branch template** controls the suggestion and defaults to `assign/<task-code>-<sanitized-title>`.
+
+Branch start starts the Task, creates and switches to the local branch, then records the association in Assign. If a step fails after the Task starts, run the exact retry command printed by the CLI in the same worktree with the same sign-in. Keep the branch and the local Git metadata while recovering. Branch start performs no fetch, pull or push.
+
 ### Task reads <Badge type="warning" text="Upcoming" /> {#task-reads}
 
 ```sh
