@@ -132,6 +132,21 @@ encoded as a numeric HTTP tag. A stale observation fails with exit code `5` inst
 a newer change. The optional
 `--idempotency-key` retains retry identity; see [Retries](./scripting#retries). The same actions are available as `assign task <action>`.
 
+### Start a Task on its Git branch <Badge type="warning" text="Upcoming" /> {#task-git-branch}
+
+Use `branch-suggestion` to read the branch name for a Task. To start the Task and
+create its branch, run `start --branch` from a clean checkout of the connected
+repository. Use the Task revision from `task show`.
+
+```sh
+assign task branch-suggestion PRO-123
+assign task start PRO-123 --revision 7 --branch
+```
+
+After creating and switching to the branch, the CLI records the association in
+Assign. If the command stops partway through, use the exact retry command it
+prints to finish the same operation.
+
 ### Task reads <Badge type="warning" text="Upcoming" /> {#task-reads}
 
 ```sh

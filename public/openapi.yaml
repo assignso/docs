@@ -4283,7 +4283,7 @@ components:
           minLength: 1
           type: string
         id:
-          $ref: "#/components/schemas/Identifier"
+          $ref: "#/components/schemas/StoredIntegrationId"
         installation_id:
           $ref: "#/components/schemas/Identifier"
         resource_type:
@@ -4532,7 +4532,7 @@ components:
         project_id:
           $ref: "#/components/schemas/Identifier"
         resource_id:
-          $ref: "#/components/schemas/Identifier"
+          $ref: "#/components/schemas/StoredIntegrationId"
         revision:
           maxLength: 19
           pattern: ^[1-9][0-9]*$
@@ -4568,7 +4568,7 @@ components:
         project_id:
           $ref: "#/components/schemas/Identifier"
         resource_id:
-          $ref: "#/components/schemas/Identifier"
+          $ref: "#/components/schemas/StoredIntegrationId"
         revision:
           maxLength: 19
           pattern: ^[1-9][0-9]*$
@@ -5598,7 +5598,7 @@ components:
           minLength: 1
           type: string
         id:
-          $ref: "#/components/schemas/Identifier"
+          $ref: "#/components/schemas/StoredIntegrationId"
         identity_status:
           description: Lifecycle of the passive provider identity; collection reads exclude disconnected history while the disconnect response returns its terminal state.
           enum:
@@ -6100,12 +6100,7 @@ components:
                 minLength: 1
                 type: string
               resource_id:
-                description: Opaque Assign-owned UUIDv7 identifier. Clients must not derive meaning from it.
-                examples:
-                  - 0198ac5e-f9b7-7000-8000-000000000001
-                format: uuid
-                pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
-                type: string
+                $ref: "#/components/schemas/StoredIntegrationId"
               resource_status:
                 enum:
                   - active
@@ -19431,6 +19426,11 @@ components:
         - used_bytes
         - per_object_limit_bytes
       type: object
+    StoredIntegrationId:
+      description: Opaque Assign identifier for a discovered provider resource or an integration identity. Use the identifier returned by the read.
+      format: uuid
+      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[47][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+      type: string
     Task:
       additionalProperties: false
       properties:
@@ -19860,6 +19860,91 @@ components:
         - 2026-08-15T12:00:00Z
       format: date-time
       type: string
+    TypedAttachment:
+      additionalProperties: false
+      description: Opt-in attachment metadata. Legacy application/json responses use Attachment.
+      properties:
+        content_length:
+          minimum: 0
+          type: integer
+        content_type:
+          description: Server-detected from the object's leading bytes, not client-declared.
+          maxLength: 255
+          type: string
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+        created_by_actor_id:
+          $ref: "#/components/schemas/Identifier"
+        deleted_at:
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        filename:
+          $ref: "#/components/schemas/AttachmentFilename"
+        id:
+          $ref: "#/components/schemas/Identifier"
+        kind:
+          enum:
+            - file
+            - url
+          type: string
+        scan_state:
+          $ref: "#/components/schemas/AttachmentScanState"
+        url:
+          description: HTTP(S) link attachment. No stored bytes or download; omitted for files.
+          format: uri
+          maxLength: 2048
+          type: string
+        workspace_id:
+          $ref: "#/components/schemas/Identifier"
+      required:
+        - kind
+        - id
+        - workspace_id
+        - filename
+        - content_length
+        - content_type
+        - scan_state
+        - created_by_actor_id
+        - created_at
+      type: object
+    TypedAttachmentPage:
+      additionalProperties: false
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/TypedAttachment"
+          maxItems: 100
+          type: array
+        next_cursor:
+          maxLength: 4096
+          type:
+            - string
+            - "null"
+      required:
+        - data
+        - next_cursor
+      type: object
+    TypedTaskAttachmentPage:
+      additionalProperties: false
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/TypedAttachment"
+          maxItems: 100
+          type: array
+        has_more:
+          type: boolean
+        next_cursor:
+          maxLength: 4096
+          type:
+            - string
+            - "null"
+      required:
+        - data
+        - next_cursor
+        - has_more
+      type: object
     UnauthenticatedProblem:
       allOf:
         - $ref: "#/components/schemas/ProblemDetails"
@@ -20839,6 +20924,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Attachment"
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedAttachment"
           description: The attachment metadata.
           headers:
             Cache-Control:
@@ -21815,6 +21903,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CanonicalAttachmentPage"
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedAttachmentPage"
           description: Document attachments.
           headers:
             Assign-Next-Cursor:
@@ -25719,7 +25810,7 @@ paths:
           name: identity_id
           required: true
           schema:
-            $ref: "#/components/schemas/Identifier"
+            $ref: "#/components/schemas/StoredIntegrationId"
         - description: Retain the original key, exact target and body after an unknown outcome. Recovery reauthorizes the current caller and never dispatches another effect.
           in: header
           name: Idempotency-Key
@@ -27642,6 +27733,9 @@ paths:
                   - data
                   - next_cursor
                 type: object
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedAttachmentPage"
           description: Project attachments
           headers:
             Assign-Next-Cursor:
@@ -28318,12 +28412,7 @@ paths:
               additionalProperties: false
               properties:
                 resource_id:
-                  description: Opaque Assign-owned UUIDv7 identifier. Clients must not derive meaning from it.
-                  examples:
-                    - 0198ac5e-f9b7-7000-8000-000000000001
-                  format: uuid
-                  pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
-                  type: string
+                  $ref: "#/components/schemas/StoredIntegrationId"
               required:
                 - resource_id
               type: object
@@ -30087,6 +30176,9 @@ paths:
                   - data
                   - next_cursor
                 type: object
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedAttachmentPage"
           description: Project Task attachments
           headers:
             Assign-Next-Cursor:
@@ -32361,6 +32453,9 @@ paths:
                   - next_cursor
                   - has_more
                 type: object
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedTaskAttachmentPage"
           description: Task attachments
           headers: {}
         "304":
