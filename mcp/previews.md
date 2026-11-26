@@ -6,10 +6,11 @@ description: View Task previews and use text, links and structured MCP results.
 
 ## Task previews <Badge type="warning" text="Awaiting deployment" />
 
-The next deployment enables a compact single-Task preview for `task_get` in clients
-that support MCP Apps. It shows the Task's code, title and available properties,
-including labels. Choose **Open in Assign** to visit its Task page.
-Descriptions, Comments and related Tasks remain available through tool results.
+In clients that support MCP Apps, `task_get` will show a compact preview with the
+Task's code, title and available properties, including labels. In clients that offer
+expansion, choose **Open details** or the client's expand control to see the formatted
+description, recent Comments and related Tasks in a full-size view.
+Choose **Open in Assign** to edit the Task or see its full history.
 
 Task lists use text, links and structured results without an interactive preview.
 
@@ -17,6 +18,15 @@ Project and Document previews remain paused. Legacy Task previews are unavailabl
 Reconnect after deployment to refresh your client's tool catalog. Clients without
 interactive previews can use the text, links and structured results from the same tools.
 Permissions and tool operations stay the same.
+
+## Task panel <Badge type="warning" text="Awaiting deployment" />
+
+If your conversation has an **Assign Task** tab available, open it and paste a
+Task link from Assign. Choose **Open Task** to see the full-size details beside the
+conversation. Select **Open another Task** to switch Tasks.
+
+The panel uses the same access as your Assign connection. If a Task is unavailable,
+check the link and confirm you can open it in Assign.
 
 ## Task context <Badge type="warning" text="Awaiting deployment" />
 

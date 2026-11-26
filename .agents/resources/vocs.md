@@ -72,7 +72,9 @@ staged as site content. `styles/root.css` owns the self-hosted Geist fonts and A
 directories and maintenance Markdown are excluded even inside a content section. Postbuild compares
 that inventory, generated errors and approved reference routes with every HTML page, Markdown twin,
 readable download and agent index entry. Extra stale pages, missing mirrors and maintenance output
-fail the build. Keep this check separate from release availability and private-source approval.
+fail the build. Postbuild also follows the versioning guide’s operation links in HTML and Markdown
+and checks the linked method, v1 path, availability and any fragment against the approved contract.
+Keep this check separate from release availability and private-source approval.
 
 The local source check uses the sibling canonical registry to reject known first-party/internal
 request examples, including abbreviated path suffixes. It requires that private source and reports
@@ -139,7 +141,8 @@ and staged endpoint pages both reload the contract. Do not hand-edit `.vocs-src`
 
 Native operation embeds have no Markdown hook. The output plugin provides a reference link;
 `postbuild` replaces each endpoint Markdown download and its `llms-full.txt` entry with the
-complete operation section from Vocs' generated resource Markdown. Development Markdown links
+complete operation section from Vocs' resource renderer. Extract each operation by its parsed
+identity so headings and examples inside the description remain intact. Development Markdown links
 to the full resource reference; published endpoint Markdown contains the schema and examples.
 
 `api-presentation.mjs` also supplies concise action labels and related-guide links for operation
@@ -157,9 +160,19 @@ Validate bodies, media types, parameters and required headers against the approv
 The parser hook supplies explicit success bodies for their declared status, retaining existing
 authored Activity examples. Preserve the command-result versus canonical-read numeric types;
 examples must not silently coerce either shape. These bodies are illustrative, never observed API results.
-Vocs 2.10.3 omits response examples from its native Markdown. Postbuild uses the same pinned parser
-and response sampler to add successful JSON bodies and explicit bodyless statuses to resource and
-operation downloads, then updates the agent bundle. Validate those bodies against their response
+The pinned parser and Markdown patches retain component names through dereferencing and render
+response `oneOf` and `anyOf` branches with their own required fields, including null alternatives.
+Nested field rendering uses Vocs' existing depth limit. Postbuild reuses these sections in operation
+downloads and `llms-full.txt`.
+
+The native examples precede schema fields in document order. The response sampler adds a
+readable result for successful bodyless, CSV and binary responses without a JSON sample.
+
+Vocs 2.10.3 omits response examples from its native Markdown. Postbuild promotes the request
+and success samples ahead of the fields in resource and operation downloads, then updates the
+agent bundle. Markdown links exact `ProblemDetails` response bodies to the shared error guide.
+Specialized response shapes retain their native rendering, and HTML retains the native schema
+disclosures and field fragments. Validate those bodies against their response
 schemas and compare them with the native HTML client payload; that comparison is not browser QA.
 Do not synthesize every optional field or query value: mutually exclusive content modes, opaque
 continuations and Activity selectors need a deliberately chosen request. Postbuild rejects missing

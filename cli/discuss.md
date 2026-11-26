@@ -17,13 +17,17 @@ references and tool activity. Unknown parts get a compact fallback rather than r
 composer to answer a clarification or approval, and use `/undo <action-group-id>` to request a reversal.
 Press Escape or Ctrl+C to leave.
 
+**Upcoming.** Sign in with `assign login` to use the updated terminal Discuss client. If the terminal
+cannot confirm a clarification or approval, press Ctrl+R in the same terminal session to check the
+original decision.
+
 - Responses stream in and recover from routine reconnects without starting another conversation.
 - Task cards and receipts print exact URLs, which recheck your web access when opened.
 - Assign is the only source of messages and changes. The client runs no local model and keeps no
   separate thread.
 - While a response is queued or running, focus **Stop** and activate it to cancel. Completed actions
   and receipts stay completed and are never shown as rolled back.
-- Sessions created before `assign:discuss` existed need one `assign login`. A personal token used as
-  `ASSIGN_TOKEN` must include `assign:discuss`. Workspace plan and permission checks still apply.
+- Run `assign login` to acquire terminal Discuss access. If `ASSIGN_TOKEN` is set, unset it for this
+  command so the CLI can use your interactive sign-in. Workspace plan and permission checks still apply.
 
 See [Discuss](../api/discuss) for what you can ask.

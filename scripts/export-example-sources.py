@@ -49,6 +49,7 @@ def source_contract(language, files, sdk):
         require(lock["packages"][""]["dependencies"][SDK_NAMES[language]] == dependency and
                 lock["packages"]["node_modules/@assignso/sdk"]["version"] == version and
                 lock["packages"]["node_modules/@assignso/sdk"].get("resolved", dependency) == dependency, "SDK lock version or locator differs")
+        artifact = dependency.removeprefix("file:")
     else:
         package = json.loads(files["composer.json"])
         lock = json.loads(files["composer.lock"])
@@ -57,36 +58,41 @@ def source_contract(language, files, sdk):
         require(len(matches) == 1 and matches[0]["version"] == version, "SDK lock version differs")
         require(re.fullmatch(r"vendor-sdk/[A-Za-z0-9._-]+\.zip", matches[0]["dist"]["url"]) and
                 not matches[0]["dist"].get("reference") and "source" not in matches[0], "SDK lock must use the local artifact")
+        artifact = matches[0]["dist"]["url"]
     token_lines = [line for line in files[".env.example"].decode().splitlines() if line.startswith("ASSIGN_API_TOKEN=")]
     require(token_lines == ["ASSIGN_API_TOKEN=replace-with-your-bearer-token"], "Example environment must contain only a placeholder token")
+    return artifact
 
 
-def consumer_readme(language, sdk):
-    dependency = ("the SDK's declared Node.js 18 or newer and the matching SDK tarball at the file path in package.json. This source download does not qualify every supported Node.js version."
-                  if language == "typescript" else
-                  "PHP 8.1 or newer with the extensions required by composer.lock, Composer, and the matching SDK archive in vendor-sdk.")
+def consumer_readme(language, provenance, artifact):
+    sdk = provenance["sdk"]
+    dependency = ("Node.js 18 or newer and npm." if language == "typescript" else
+                  "PHP 8.1 through 8.x with curl, json, mbstring and zip, Composer 2, and access to the locked third-party dependencies.")
     commands = ("npm ci --ignore-scripts\nnode main.mjs --remote" if language == "typescript" else
                 "composer install --no-plugins --no-scripts\nphp main.php --remote")
     return f"""# Task workflow example source
 
 The matching {sdk['name']} {sdk['version']} SDK is unreleased and is not included.
-This download contains inspectable example source and dependency locks. It is not
-a standalone installable application or a promise of registry availability.
+This ZIP contains the app source and lockfile for the rewritten /api/v1,
+OpenAPI document {provenance['contract_version']}. That API rewrite is awaiting deployment.
 
-The main program and dependency files are unchanged approved app source. The
-export record identifies their exact bytes and approved contract digest. SDK
-binaries, private build preparation and private qualification receipts are omitted.
+You need {dependency}
+Obtain the exact SDK artifact from its maintainer through an authorized channel.
+Place it at `{artifact}` relative to the extracted app directory and use the
+supplied lockfile. If you already have authorized SDK source for this contract,
+follow `examples/task-workflow/README.md` in that checkout to prepare the app
+with a staged lock for the local build.
 
-With an authorized matching SDK artifact, prerequisites are {dependency}
-Use that exact artifact and the supplied lockfile. Do not update dependencies to
-substitute an older SDK. No private repository access is supplied by this download.
+Follow the Task workflow setup to obtain the variables listed in `.env.example`.
+Set `ASSIGN_API_ORIGIN` to the HTTPS origin serving this contract for your
+credential's environment. Supply the product bearer token with tasks:read and
+tasks:write as `ASSIGN_API_TOKEN` through your secret manager. Set
+`ASSIGN_WORKSPACE_ID` to the immutable Workspace ID authorized by the token and
+`ASSIGN_PROJECT_ID` to the ID of an accessible Project approved for example changes.
+Use an eligible Status ID from that Project's Status list for `ASSIGN_STATUS_ID`
+or leave it unset to use the creation default.
 
-Supply the variables listed in .env.example through your secret manager and process
-environment. Use the HTTPS API origin for the credential's environment, its bound
-Workspace ID, and a Project approved for example changes. ASSIGN_STATUS_ID, when
-used, comes from the selected Project's Status list. Never commit or log secrets.
-
-After the matching artifact is available and configured, the commands are:
+Run the following commands from the extracted app directory after supplying the artifact and variables.
 
 ```sh
 {commands}
@@ -100,15 +106,14 @@ exclusive private recovery record, .task-workflow-recovery.json by default.
 ASSIGN_WORKFLOW_RECOVERY_FILE selects another writable private path. Keep this
 record out of source control and logs. A lost response or missing Task ID leaves
 the outcome unknown and retains the original method, target, body and key.
-An existing record blocks a new create; resolve its original outcome under current
+An existing record blocks a new create. Resolve its original outcome under current
 access before deliberately removing or archiving it. The app removes its record
 only after confirmed cleanup of its own Task. Do not change the saved key or body
-to escape an unknown outcome. The SDK remains unreleased; local execution does not
-establish deployment or release qualification.
+to escape an unknown outcome.
 
-Setup: https://docs.assign.so/api/quickstart
-Task recipe: https://docs.assign.so/api/tasks
-Write recovery: https://docs.assign.so/api/writes
+- [Task workflow setup](https://docs.assign.so/api/quickstart#run-the-complete-workflow)
+- [Task recipe](https://docs.assign.so/api/tasks)
+- [Write recovery](https://docs.assign.so/api/writes)
 """.encode()
 
 
@@ -117,13 +122,13 @@ def archive(language, files, sdk, contract):
     for name, content in files.items():
         require(len(content) <= 1024 * 1024 and b"\0" not in content, "Invalid or oversized source file")
         content.decode("utf-8")
-    source_contract(language, files, sdk)
+    artifact = source_contract(language, files, sdk)
     public = {"schema": "assign.docs-example-source.v1", "recipe": "task-workflow",
               "sdk": sdk, "contract_version": contract["contract_version"],
               "contract_state": contract["state"], "contract_release": contract.get("release"),
               "document_sha256": contract["document_sha256"],
               "source_files": {name: digest(content) for name, content in files.items()}}
-    contents = {**files, "README.md": consumer_readme(language, sdk), "PROVENANCE.json": canonical(public)}
+    contents = {**files, "README.md": consumer_readme(language, public, artifact), "PROVENANCE.json": canonical(public)}
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_STORED, allowZip64=False) as output:
         for name, content in sorted(contents.items()):
@@ -163,9 +168,9 @@ def public_check(directory, pin):
                 require(digest(zipped.read(info)) == entry["files"][info.filename], "Archived source differs")
             provenance = json.loads(zipped.read("PROVENANCE.json"))
             require(provenance == {key: entry[key] for key in ("schema", "recipe", "sdk", "contract_version", "contract_state", "contract_release", "document_sha256", "source_files")}, "Archived provenance differs")
-            require(zipped.read("README.md") == consumer_readme(language, entry["sdk"]), "Consumer instructions differ")
             require(all(entry["files"][name] == value for name, value in entry["source_files"].items()), "Source identities differ")
-            source_contract(language, {name: zipped.read(name) for name in SOURCES[language][1]}, entry["sdk"])
+            artifact = source_contract(language, {name: zipped.read(name) for name in SOURCES[language][1]}, entry["sdk"])
+            require(zipped.read("README.md") == consumer_readme(language, provenance, artifact), "Consumer instructions differ")
     return manifest
 
 
@@ -207,7 +212,8 @@ def source_exports(workspace, pin, workflow_proof, main_compatibility=None):
                     re.fullmatch(r"[a-f0-9]{64}", reviewed["negative_receipt_sha256"]), "Main compatibility binding differs")
             require(not check_path.is_symlink() and digest(check_path.read_bytes()) == reviewed["test_sha256"], "Affected check source differs from review")
         sdk = {"name": SDK_NAMES[language], "version": metadata["sdk"]["version"], "language": language, "availability": "unreleased-authoring"}
-        revision = git(["rev-parse", "HEAD"])
+        # Bind the exported inputs so SDK documentation-only commits preserve the receipt.
+        revision = git(["log", "-1", "--format=%H", "HEAD", "--", *tracked])
         private_ids = [revision, metadata["contract"].get("revision", "")]
         for content in files.values():
             require(not any(value and value.encode() in content for value in private_ids), "Private source identity entered an example file")

@@ -52,6 +52,7 @@ Before you implement or change a Task, read every Comment and relation page that
 | --- | --- | --- |
 | `task_list` | Read | List Tasks in a Project or across the Workspace, with filters and checked coverage |
 | `task_get` | Read | Get one Task by UUID or visible code, with Comment and relation previews |
+| `task_panel_open` | Read | Open the [Task panel](./previews#task-panel) or load one Task from its link (awaiting deployment) |
 | `task_context_get` | Read | Get bounded Task context: the Task, up to 20 Comment excerpts and 10 direct relations |
 | `task_create` | Write | Create a Task |
 | `task_update` | Write | Partially update Task fields |
@@ -361,7 +362,8 @@ Other Task rules:
   ID. It uses the Project's one completing Status and returns `completion_confirmed: true`, or an error
   if it couldn't confirm. If several Statuses count as completed, it returns `completion_target_required`
   with the choices; call again with `target_status_id`. `lifecycle_definition_list` shows which
-  Statuses count as completed.
+  Statuses count as completed. If the Task moves to another Project, read it again to get its
+  current Project and revision before sending a new completion request.
 - `task_lifecycle_set` accepts `archive`, `trash` or `restore` with the current revision. It never
   purges.
 - Subscription states are `following`, `muted` and `unfollowed`. Subscribing doesn't grant access.

@@ -1,11 +1,13 @@
 ---
-description: Choose a product credential, obtain your Workspace ID, and read one bounded Task page with HTTP, TypeScript or PHP.
+description: Choose a product credential, obtain your Workspace ID, read one Task page with HTTP, TypeScript or PHP, and create a Task where authorized.
 ---
 
 # Make your first API request <Badge type="warning" text="Awaiting deployment" />
 
 Read at most one Task from a Workspace you can access. The rewritten v1 flow is awaiting
-deployment. Check [availability](/api/conventions#availability) before using it.
+deployment. Use these requests only in an environment that serves the rewritten `/api/v1`.
+Check [availability](/api/conventions#availability) before using `https://api.assign.so`.
+For an authorized preview, use the HTTPS API origin supplied for that environment.
 
 For a script you run yourself, start with a [personal token](#personal-script). You'll copy your
 [Workspace ID](#2-set-the-workspace-id), send a [request with curl](#http), and check the
@@ -38,19 +40,21 @@ responsible for its access and offboarding. Store the one-time secret in the ser
 manager and supply it as `ASSIGN_TOKEN`. An MCP service credential cannot substitute for it.
 
 A registered confidential application with an authorized service-account binding can instead
-use the [client-credentials flow](/api/oauth#run-as-a-service-account). Save the response's
-`access_token` as `ASSIGN_TOKEN`; use `expires_in` to replace it before expiry. This grant has
-no refresh token. If your Workspace has no supported service-account setup, wait for that
-feature before running unattended work.
+use the [client-credentials flow](/api/oauth#run-as-a-service-account). Request `tasks:read`
+within the binding's approved scopes. Save the response's `access_token` as `ASSIGN_TOKEN`;
+use `expires_in` to replace it before expiry. This grant has no refresh token. If your Workspace
+has no supported service-account setup, wait for that feature before running unattended work.
 
 ### Application acting for a person
 
-Complete [product OAuth registration and discovery](/api/oauth#register-and-discover), then the
-[Authorization Code and PKCE flow](/api/oauth#obtain-delegated-access) for the selected Workspace
-and `tasks:read`. Your application needs its registered client ID and redirect URI before it
-can start. Save the returned `access_token` as `ASSIGN_TOKEN` and retain the refresh token
-securely for [renewal](/api/oauth#renew-delegated-access). A client secret, authorization code,
-refresh token or MCP token is not the bearer token for a Task request.
+Complete [product OAuth registration and discovery](/api/oauth#register-and-discover) and
+[copy the Workspace ID](#2-set-the-workspace-id) before starting OAuth. Use your registered
+client ID and redirect URI to start the
+[Authorization Code and PKCE flow](/api/oauth#obtain-delegated-access). The person approves
+your application, the selected Workspace and `tasks:read` in Assign.
+After exchanging the code, save the returned `access_token` as `ASSIGN_TOKEN` and store the
+refresh token securely for [renewal](/api/oauth#renew-delegated-access). A client secret,
+authorization code, refresh token or MCP token is not the bearer token for a Task request.
 
 ## 2. Set the Workspace ID
 
@@ -71,13 +75,16 @@ All variants use [listWorkspaceTasks](/api/reference/operations/listworkspacetas
 `GET /api/v1/workspaces/{workspace_id}/tasks?limit=1`. Run one variant once. Do not enable
 verbose HTTP logging or print the authorization header when troubleshooting.
 
+For every variant, set `ASSIGN_API_ORIGIN` to the API origin for your credential's environment,
+without a trailing slash or `/api/v1`.
+
 ### HTTP
 
-With `curl` installed and both variables supplied from the setup above:
+With `curl` installed, supply the credential, Workspace ID and API origin from the setup above.
 
 ```sh
 curl --include --get \
-  "https://api.assign.so/api/v1/workspaces/$ASSIGN_WORKSPACE_ID/tasks" \
+  "$ASSIGN_API_ORIGIN/api/v1/workspaces/$ASSIGN_WORKSPACE_ID/tasks" \
   --data-urlencode "limit=1" \
   -H "Authorization: Bearer $ASSIGN_TOKEN" \
   -H "Accept: application/json"
@@ -85,13 +92,9 @@ curl --include --get \
 
 ### TypeScript <Badge type="warning" text="Upcoming" />
 
-This example targets `@assignso/sdk` **1.0.0-rc.9** and Node.js 18 or newer. That package version
-is not currently available from the public npm registry. Use HTTP until a package supporting
-this operation is available; an older installed version may expose a different contract.
-
-In a Node.js TypeScript project with the supported SDK installed, save this as `first-read.ts`
-and compile it with your project's TypeScript configuration. The SDK's `basePath` is the origin;
-the generated method adds `/api/v1`.
+`@assignso/sdk` for the rewrite is unpublished. With an authorized matching SDK installed,
+use Node.js 18 or newer. Save this as `first-read.ts` and compile it with your project's
+TypeScript configuration and Node.js types. The SDK adds `/api/v1` to `ASSIGN_API_ORIGIN`.
 
 ```ts
 import { Configuration, ResponseError, TasksApi } from '@assignso/sdk';
@@ -99,10 +102,11 @@ import { Configuration, ResponseError, TasksApi } from '@assignso/sdk';
 async function main() {
   const token = process.env.ASSIGN_TOKEN;
   const workspaceId = process.env.ASSIGN_WORKSPACE_ID;
-  if (!token || !workspaceId) throw new Error('Set ASSIGN_TOKEN and ASSIGN_WORKSPACE_ID');
+  const origin = process.env.ASSIGN_API_ORIGIN;
+  if (!token || !workspaceId || !origin) throw new Error('Supply the token, Workspace ID and API origin.');
 
   const api = new TasksApi(new Configuration({
-    basePath: 'https://api.assign.so',
+    basePath: origin,
     accessToken: token,
   }));
   const response = await api.listWorkspaceTasksRaw({ workspaceId, limit: 1 });
@@ -120,11 +124,11 @@ main().catch((error: unknown) => {
 
 ### PHP <Badge type="warning" text="Upcoming" />
 
-The PHP SDK is not yet published on Packagist. Use HTTP until a supported package is available.
-This example uses the generated `Assign\Sdk` public interface for the rewritten v1 contract,
-PHP 8.1 or newer and a Composer project with the SDK installed. Save it as `first-read.php`
-beside the project's `vendor/` directory and run `php first-read.php` after supplying the same
-two environment variables.
+`assignso/php-sdk` for the rewrite is unpublished. With an authorized matching SDK installed,
+use PHP 8.1 through 8.x with `curl`, `json` and `mbstring` enabled, and Composer 2. Save this
+as `first-read.php` beside the project's `vendor/` directory and supply the three variables
+from the setup above. The default SDK client sends the configured bearer token
+and adds `/api/v1` to `ASSIGN_API_ORIGIN`.
 
 ```php
 <?php
@@ -133,19 +137,17 @@ require __DIR__ . '/vendor/autoload.php';
 use Assign\Sdk\Api\TasksApi;
 use Assign\Sdk\ApiException;
 use Assign\Sdk\Configuration;
-use Assign\Sdk\ProductClient;
 
 $token = getenv('ASSIGN_TOKEN');
 $workspaceId = getenv('ASSIGN_WORKSPACE_ID');
-if (!$token || !$workspaceId) {
-    fwrite(STDERR, "Set ASSIGN_TOKEN and ASSIGN_WORKSPACE_ID\n");
+$origin = getenv('ASSIGN_API_ORIGIN');
+if (!$token || !$workspaceId || !$origin) {
+    fwrite(STDERR, "Supply the token, Workspace ID and API origin.\n");
     exit(1);
 }
 
-$origin = 'https://api.assign.so';
-$config = (new Configuration())->setHost($origin);
-$client = ProductClient::create(static fn(): string => $token, $origin);
-$api = new TasksApi($client, $config);
+$config = (new Configuration())->setHost($origin)->setAccessToken($token);
+$api = new TasksApi(null, $config);
 try {
     [$page, $status] = $api->listWorkspaceTasksWithHttpInfo(
         workspace_id: $workspaceId,
@@ -212,27 +214,105 @@ In the retained token form, select both **Read Assign data** and **Create and ch
 data**, then review the issued scopes. Those controls grant more than Task access. Product
 OAuth applications request the explicit scopes described above.
 
-Set `ASSIGN_PROJECT_ID` from a returned Task's `project_id` only after confirming the Project
-is suitable. If the page is empty or you need another Project, request `projects:read` and
-use [listWorkspaceProjects](/api/reference/operations/listworkspaceprojects) in the same Workspace
-to select an accessible Project's immutable `id`. A Project name or key cannot replace it.
+### Find the Project and optional Status
 
-Follow the [create/read/update Task recipe](/api/tasks#create), beginning
-with [createTask](/api/reference/operations/createtask). It explains the request body, one stable
-idempotency key per creation intent, the expected `201`, interrupted-response recovery and
-verification using the returned Task ID. Check the result before creating again. Remove or
-archive example work through Assign when you finish; do not modify unrelated Tasks.
+Set `ASSIGN_PROJECT_ID` to a returned Task's `project_id` if it belongs to the approved
+Project. Otherwise, use a credential with `projects:read` and set `ASSIGN_PROJECT_KEY` to the
+approved Project's key. Look it up with [listWorkspaceProjects](/api/reference/operations/listworkspaceprojects).
+
+```sh
+curl --fail-with-body --silent --show-error --get \
+  --header "Authorization: Bearer ${ASSIGN_TOKEN}" \
+  --header 'Accept: application/json' \
+  --data-urlencode "code=${ASSIGN_PROJECT_KEY}" \
+  --data-urlencode 'limit=1' \
+  "${ASSIGN_API_ORIGIN}/api/v1/workspaces/${ASSIGN_WORKSPACE_ID}/projects"
+```
+
+Expect `200`. Copy the approved Project's `id` from `data` into `ASSIGN_PROJECT_ID`. If
+the response has a `next_cursor`, follow it with the same selectors and credential.
+If no visible Project matches, check the key, Workspace and access before continuing.
+
+To select an explicit Status, use the credential with `projects:read` to call
+[listProjectStatuses](/api/reference/operations/listprojectstatuses) for that Project.
+
+```sh
+curl --fail-with-body --silent --show-error \
+  --header "Authorization: Bearer ${ASSIGN_TOKEN}" \
+  --header 'Accept: application/json' \
+  "${ASSIGN_API_ORIGIN}/api/v1/projects/${ASSIGN_PROJECT_ID}/statuses?limit=10"
+```
+
+Expect `200`. Copy the chosen Status's `id` from `data` into `ASSIGN_STATUS_ID`.
+If needed, follow [pagination](/api/pagination) until you find the Status or
+`next_cursor` is null. Skip this lookup to use the creation default.
+
+### Create and verify one Task
+
+Set `ASSIGN_TOKEN` to the write-capable credential from step 5. Set
+`ASSIGN_CREATE_KEY` to a new unique key for this creation, such as a UUID from
+`uuidgen`. Save the key and the exact JSON body before sending the request so you can
+recover if the response is lost. The example uses the default Status. To choose one
+explicitly, add `status_id` to the JSON body with the value of `ASSIGN_STATUS_ID` before
+saving and sending it.
+
+```sh
+curl --fail-with-body --silent --show-error \
+  --header "Authorization: Bearer ${ASSIGN_TOKEN}" \
+  --header "Idempotency-Key: ${ASSIGN_CREATE_KEY}" \
+  --header 'Content-Type: application/json' \
+  --header 'Accept: application/json' \
+  --data-binary '{"title":"Review onboarding example","priority":"low"}' \
+  "${ASSIGN_API_ORIGIN}/api/v1/projects/${ASSIGN_PROJECT_ID}/tasks"
+```
+
+[createTask](/api/reference/operations/createtask) returns `201` with the created Task.
+Copy its `id` into `ASSIGN_TASK_ID`, then confirm that the
+[getTask](/api/reference/operations/gettask) response is `200` and has the same Task ID,
+Project ID and title.
+
+```sh
+curl --fail-with-body --silent --show-error \
+  --header "Authorization: Bearer ${ASSIGN_TOKEN}" \
+  --header 'Accept: application/json' \
+  "${ASSIGN_API_ORIGIN}/api/v1/tasks/${ASSIGN_TASK_ID}"
+```
+
+If the create response is lost, follow [uncertain-outcome recovery](/api/writes#recover-an-unknown-outcome)
+using the original key and exact body. A fresh key can create a second Task. If the
+API rejects the create, check access or correct the input as described in the
+[Task recipe](/api/tasks#create). Remove or archive your example Task through Assign
+when you finish.
 
 ### Run the complete workflow
 
-Download the [TypeScript Task app source](/examples/task-workflow/typescript.zip) or
-[PHP Task app source](/examples/task-workflow/php.zip). Each app reads a bounded Task page,
-creates and edits its own Task, recovers from a stale validator, and trashes that Task during
-cleanup. The downloads contain application source and locked dependency manifests. Running
-an app requires its matching unreleased SDK artifact; that artifact is excluded from the
-downloads. The SDK packages and API behavior retain the availability labels above.
+#### SDK and API prerequisites
 
-Supply the credential from step 1 as the app's `ASSIGN_API_TOKEN`, the Workspace ID from step 2
-as `ASSIGN_WORKSPACE_ID`, and the approved Project ID from step 5 as `ASSIGN_PROJECT_ID`.
-Use the API origin for that credential's environment. An optional `ASSIGN_STATUS_ID` comes from
-[listProjectStatuses](/api/reference/operations/listprojectstatuses) for the selected Project.
+The [example manifest](/examples/task-workflow/manifest.json) identifies each exact SDK
+version and the OpenAPI document it targets. Both apps use the rewritten `/api/v1` and
+require an API environment serving that contract. The SDK packages remain unpublished.
+
+- [TypeScript source ZIP](/examples/task-workflow/typescript.zip) requires Node.js 18 or
+  newer, npm and the matching SDK tarball under `vendor/`.
+- [PHP source ZIP](/examples/task-workflow/php.zip) requires PHP 8.1 through 8.x with
+  `curl`, `json`, `mbstring` and `zip`, Composer 2, the locked third-party dependencies
+  and the matching SDK archive under `vendor-sdk/`.
+
+Each ZIP includes its app, setup instructions and lockfile. The SDK artifact is separate.
+Obtain the exact artifact specified by the lock from its maintainer through an authorized
+channel before installing the download. If you already have authorized SDK source for the
+same contract, follow
+`examples/task-workflow/README.md` in that checkout to build and install the prepared app.
+That procedure records the freshly built package in a staged lock.
+
+#### Configure the app
+
+Use the write-capable credential from step 5 as `ASSIGN_API_TOKEN`. Supply
+`ASSIGN_API_ORIGIN` and `ASSIGN_WORKSPACE_ID` from the setup above and
+`ASSIGN_PROJECT_ID` from step 5. To choose a Status, set `ASSIGN_STATUS_ID` from
+[listProjectStatuses](/api/reference/operations/listprojectstatuses) for that Project.
+Leave it unset to use the Project's creation default.
+
+The app reads a bounded Task page, creates and edits its own Task, recovers from a stale
+validator and trashes that Task during cleanup. Follow the app README for commands and
+interrupted-run recovery.

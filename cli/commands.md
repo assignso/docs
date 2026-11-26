@@ -26,7 +26,7 @@ has not been released yet; it may be absent from that binary.
 | [`project`](#project) | List, select and inspect Projects, their Tasks and Documents |
 | [`document`](#document) | List, read and open Documents |
 | [`discuss`](#discuss) | Open Discuss in the terminal |
-| [`operation show`, `operation wait`, `operation cancel`](#operation-recovery) | Inspect or cancel an existing hosted Operation |
+| [`operation`](#operation-recovery) | Inspect or cancel an existing Operation, read terminal ChangeSet outcomes and prepare a selective retry |
 | [`mcp setup codex`](#mcp) | Configure Assign MCP in Codex |
 | [`update`](#update) | Check for and install CLI updates |
 | [`doctor`](#doctor) | Run redacted local diagnostics |
@@ -95,6 +95,22 @@ assign search "<query>"
 
 Searches Tasks and Documents in the credential's Workspace.
 
+### Continue a list <Badge type="warning" text="Upcoming" /> {#continue-a-list}
+
+My Work, search, Workspace memberships, Projects and Documents read one page at a time.
+When another page is available, stderr prints the cursor. Pass it back with `--cursor`
+on the same command and keep its arguments and filters. Standard output contains the
+result rows.
+
+```sh
+assign --cursor "<cursor>"
+assign search "release notes" --cursor "<cursor>"
+assign workspace list --cursor "<cursor>"
+assign project list --cursor "<cursor>"
+assign project documents PRO --cursor "<cursor>"
+assign document list --project PRO --cursor "<cursor>"
+```
+
 ### Task workflow
 
 ```sh
@@ -116,11 +132,15 @@ encoded as a numeric HTTP tag. A stale observation fails with exit code `5` inst
 a newer change. The optional
 `--idempotency-key` retains retry identity; see [Retries](./scripting#retries). The same actions are available as `assign task <action>`.
 
-### Start a Task branch <Badge type="warning" text="Upcoming" />
+### Start a Task on its Git branch <Badge type="warning" text="Upcoming" /> {#task-git-branch}
+
+Use `branch-suggestion` to read the branch name for a Task. To start the Task and
+create its branch, run `start --branch` from a clean checkout of the connected
+repository. Use the Task revision from `task show`.
 
 ```sh
-assign task branch-suggestion <TASK-CODE>
-assign task start <TASK-CODE> --revision <n> --branch
+assign task branch-suggestion PRO-123
+assign task start PRO-123 --revision 7 --branch
 ```
 
 Sign in with the Assign CLI and run branch start from a clean Git worktree on an existing branch. Its `origin` must match a repository connected to the Task's Project. The Project's **Task branch template** controls the suggestion and defaults to `assign/<task-code>-<sanitized-title>`.
@@ -312,12 +332,17 @@ Use the Operation ID returned by the original command:
 assign operation show <operation-id>
 assign operation wait <operation-id> --timeout 60s
 assign operation cancel <operation-id> --idempotency-key <cancellation-key>
+assign operation change-set-result <operation-id> --workspace <workspace-id>
+assign operation change-set-retry <operation-id> --workspace <workspace-id> \
+  --idempotency-key <retry-proposal-key> < retry.json
 ```
 
 `show` reads the current compact status once. `wait` polls until a terminal result, its caller
 deadline or 30 status attempts. Its timeout defaults to 60 seconds and must be greater than
 zero and at most 60 seconds. Failed or cancelled Operations make `wait` exit with a nonzero
-status; the compact result remains on stdout.
+status; the compact result remains on stdout. If the source requires reconciliation,
+recovery stops and reports the original Operation ID. Inspect the source outcome before
+continuing.
 
 `cancel` requests best-effort cancellation. Retain the cancellation key and reuse it for the
 same cancellation request. A `cancel_requested` status means the source has not yet
@@ -326,6 +351,19 @@ acknowledged cancellation.
 Keep the same `--host` and Operation ID when recovering status. A timeout, missing result or
 expired recovery window does not authorize submitting the original work again with a new key.
 The CLI displays result references without fetching them automatically.
+
+For a ChangeSet Operation, run `change-set-result` with the original Workspace ID and
+credential. It reads the ordered outcomes from a terminal Operation, including items that
+committed before a failure or cancellation. Use the returned item IDs to prepare a fresh
+review for eligible items. See [ChangeSet recovery](../api/work-capabilities#receipts-and-recovery).
+
+`change-set-retry` submits only a new review proposal. Supply a canonical
+[`createChangeSet` request](/api/reference/operations/createchangeset) in `retry.json`.
+Use `mode: per_item`, the original `retry_operation_id`, the ChangeSet `id` and its exact
+decimal-string `expected_version`. Include only the eligible `client_item_id` values you
+want to retry, with current resource revisions. Keep the same JSON and proposal key if
+the response is uncertain. The initiating person must review the new version in Assign
+before a separate apply.
 
 ### mcp
 

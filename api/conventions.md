@@ -44,10 +44,14 @@ For [Comments](./reference/operations/getcomment), `format=markdown` adds `body_
 the JSON representation. The response remains JSON. The format name alone does not imply a
 `text/markdown` response.
 
-The selected representation and its content encoding have distinct strong validators. Keep
-the same selectors and encoding between the read and conditional write. A collection tag, a
-detail projection tag or a tag for another resource cannot authorize an item update. Never
-construct a tag from `revision` or a Task number.
+Strong validators identify the selected representation and its encoding. Use the
+representation and encoding named by the write operation, and send only selectors
+that operation accepts. For a Task update, use `view=canonical` on the read and copy
+its tag into the write's `If-Match` header. The write has no `view` selector. A collection
+tag, a noncanonical detail tag or a tag for another resource cannot authorize an item update.
+Some lists return a separate `item_validator.etag` on each writable row. Use that value
+only when the write reference names it as the source. Never construct a tag from
+`revision` or a Task number.
 
 ## Cache and conditional reads
 
@@ -62,24 +66,38 @@ ETags identify exact representations, including their contract version and encod
 
 ## CSV pages and complete exports
 
-The current public reference does not expose a CSV collection or complete-export operation.
-Do not add `format=csv` to an operation that only documents JSON.
+[Read your timesheet](./reference/operations/getmytimesheet) with `from`, `to` and
+`format=csv`, and allow `text/csv` in `Accept`. Use a supported bearer credential with
+`time:read` or `assign:read` and current Workspace access. Each `200` returns one bounded
+page. Copy each nonempty `Assign-Next-Cursor` value into the next request's `cursor` and
+keep the dates, limit, format and credential unchanged. An empty header ends traversal.
+If the report changes and returns `409`, restart from the first page.
 
-Where a future operation explicitly supports paginated CSV, each response is one bounded page.
-Copy each nonempty `Assign-Next-Cursor` value into the next request using the same query and
-format. An empty header marks the final CSV page. Saving one CSV page is not a complete export. Preserve
-the supplied filename and escaping when opening a CSV in a spreadsheet.
+For a complete snapshot of the authorized date range, first read the JSON timesheet and
+keep its opaque `report_revision`. [Create an export](./reference/operations/createtimesheetexport)
+using the same dates, that revision, `format: "csv"` in the JSON body and an
+`Idempotency-Key`. The export is bounded to 366 days, 800 rows and 12 MiB. For a range
+that exceeds the export bounds, choose a smaller range and read it again before exporting.
 
-A complete export needs a separately documented export workflow. A `202 Accepted` and its
-`Location` identify accepted work, not a completed file. Follow the job to its documented
-terminal state and obtain the authorized download only on success. Download capabilities can
-expire; use the documented recovery flow instead of saving a capability as a permanent URL.
-No public export-job URL or polling interval is promised by these conventions.
+This export returns `202 Accepted` with an Operation already in `succeeded` state.
+Use `Location` to [read its status](./reference/operations/getoperation) and
+`result.href` to [download the CSV](./reference/operations/gettimesheetexport) with your
+bearer credential. Downloads recheck access and expire after seven days. For `409` with
+`time_report_changed`, reread the JSON timesheet before requesting a new snapshot. For
+`410` after expiry, decide whether to create a new snapshot from a current observation.
+If the create response is lost, recover by sending the exact original request and key.
+
+Other operations define their own export workflow. When a `202` returns pending work,
+follow the documented status resource to success before following its result link.
 
 ## Availability
 
 An operation's presence in a guide or contract does not establish deployment. Pages marked
 upcoming or awaiting deployment describe accepted behavior that is not yet available.
+
+The product origin is `https://api.assign.so`. In an authorized preview environment,
+use its supplied origin and confirm it serves the rewritten `/api/v1`. SDK publication
+has a separate release schedule. See [SDK and client releases](./versioning#sdk-and-client-releases).
 
 Two deployment notes:
 

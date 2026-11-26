@@ -6,7 +6,7 @@ description: Result sets, saved views, ChangeSets, Document drafts, evidence col
 
 These capabilities support the upcoming Discuss update. Availability depends on your server release.
 They let a person or assistant capture a set of work, propose changes to it and apply them only after
-review, with a receipt for every write. The [OpenAPI document](/openapi.yaml) defines the exact
+review, with receipts for committed changes. The [OpenAPI document](/openapi.yaml) defines the exact
 fields and errors.
 
 ## Concepts
@@ -21,9 +21,9 @@ fields and errors.
   omit them. Include each Task's current revision, and a Status's current revision when setting one.
 - **Document draft.** Keeps the base and draft content and changes nothing until its reviewed
   application succeeds.
-- **Receipt.** Every write returns an `operation_id`.
+- **Receipt.** Identifies a committed operation and records its historical outcome.
 
-Compound changes, Task creations and Document applications need the initiating person's review. Review
+The initiating person reviews the ChangeSet in Assign. Review
 an exact version and digest, then approve or reject that digest. Editing a proposal creates a new
 version and voids approval. Approval lasts 24 hours, and proposals, result sets and drafts expire
 after 30 days. Applying rechecks current permissions and revisions.
@@ -40,15 +40,33 @@ The following routes describe the upcoming resource contract. Use the
 | Saved views | `POST` or `GET /api/v1/workspaces/{workspace_id}/task-saved-views`; `PATCH` or `DELETE /api/v1/workspaces/{workspace_id}/task-saved-views/{view_id}` |
 | Document drafts | `POST /api/v1/workspaces/{workspace_id}/document-patches`; `GET /api/v1/workspaces/{workspace_id}/document-patches/{id}?version=<version>` |
 | ChangeSets | `POST /api/v1/workspaces/{workspace_id}/change-sets`; `GET /api/v1/workspaces/{workspace_id}/change-sets/{id}?version=<version>`; `POST /api/v1/workspaces/{workspace_id}/change-sets/{change_set_id}/apply` |
+| ChangeSet outcomes | After a per-item apply returns `202`, poll its Operation until terminal, then call `GET /api/v1/workspaces/{workspace_id}/change-set-operations/{operation_id}/result`. |
 | Operation receipts | `GET /api/v1/workspaces/{workspace_id}/operation-receipts/{id}`; `POST /api/v1/workspaces/{workspace_id}/operation-receipts/undo` |
 | Member lookup | `GET /api/v1/workspaces/{workspace_id}/members/resolve?query=<query>` returns permitted candidates for an ambiguous name. |
 | Task context | `GET /api/v1/tasks/{task_id}/context` returns bounded canonical Comments and direct related Tasks. |
 | Evidence collections | See [Evidence collections](#evidence-collections). |
 
-Task result sets and selections return a summary and an `items_url`. Read that same resource's
-`view=items` for one bounded page, using its opaque cursor rather than a hydration alias or offset.
-The default page has 50 entries and the maximum is 100. Keep exact decimal versions as strings.
-Saved view edits and deletion require the returned `item_validator` in `If-Match`.
+### Task result sets and selections
+
+[Capture a result set](./reference/operations/createtaskresultset) and check its coverage before
+treating the query as complete. [Read the captured version](./reference/operations/gettaskresultset)
+and follow its `items_url` to find Task IDs for
+[a selection](./reference/operations/createtaskselection).
+
+A result-set or [selection summary](./reference/operations/gettaskselection) points to the same
+resource's `view=items`. Follow `items.next_cursor` until it is null. Pages default to 50 entries
+and allow up to 100. Keep the result-set version as an exact decimal string. Each page checks
+your current access to Task previews.
+
+### Personal saved views
+
+[Save a Task query](./reference/operations/createtasksavedview) using an unrestricted human
+Workspace credential. Opening the view runs the query with current access. For
+[edits](./reference/operations/updatetasksavedview) or
+[deletion](./reference/operations/deletetasksavedview), first
+[list your views](./reference/operations/listtasksavedviews) and send the target's
+`item_validator.etag` unchanged in `If-Match`. If the condition is stale, read the view again
+and reconcile your intended change.
 
 Keep an `Idempotency-Key` for writes and follow the operation's conditions. Review a ChangeSet in
 Assign against its exact version and digest before applying it. Review is the initiating person's
@@ -56,11 +74,19 @@ action; an integration cannot supply its own approval.
 
 ## Receipts and recovery
 
-Keep the `operation_id` and the original idempotency key. If a response is lost, resolve the receipt
-before sending another write. A missing receipt doesn't prove an in-flight operation failed. Partial
-groups keep individual outcomes, and targets you lose access to may become unavailable. A supported
-receipt can be undone only while the affected fields still match the original result, so Undo never
-overwrites someone's later edit.
+Keep the original command, idempotency key and credential family, plus the `operation_id` when
+the response supplies one. Read the original receipt under current access before sending another
+write. If you lose the response before saving the ID, use the operation's [write recovery
+instructions](./writes#recover-an-unknown-outcome). A missing receipt leaves the original outcome
+uncertain.
+
+Per-item ChangeSets retain committed effects. Read the terminal result to identify the items that
+can be retried. Use their original `client_item_id` values and fresh resource observations in a new
+review version. If access changes, individual outcomes can become unavailable.
+
+The initiating human can undo a reversible receipt with current write access while the affected
+fields still match the committed result. The response returns a separate receipt for the inverse
+operation.
 
 ## Evidence collections
 

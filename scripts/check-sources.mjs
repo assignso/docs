@@ -8,6 +8,8 @@
 import { execFileSync } from "node:child_process"
 import { readFileSync, readdirSync, existsSync } from "node:fs"
 import { resolve, dirname, join } from "node:path"
+import { parse } from "yaml"
+import { methods } from "./public-contract.mjs"
 import { fileURLToPath } from "node:url"
 import { publicPageSources, privateWireReferences } from "./publication-audit.mjs"
 import { checkMetadataSource } from "./protocol-metadata.mjs"
@@ -50,7 +52,21 @@ try {
 const publicationRegistry = join(workspace, "assign-core/contracts/api/metadata/canonical-registry.json")
 try {
   const pages = publicPageSources(root).map((file) => ({ file, content: readFileSync(join(root, file), "utf8") }))
-  const { privateReferences, unresolved } = privateWireReferences(pages, JSON.parse(readFileSync(publicationRegistry, "utf8")))
+  const registry = JSON.parse(readFileSync(publicationRegistry, "utf8"))
+  const { privateReferences, unresolved } = privateWireReferences(pages, registry)
+  const publicOperations = new Set(Object.values(registry.operations)
+    .filter(({ publication }) => publication.value === "product-reference")
+    .map(({ method, path, operation_id }) => `${method} ${path} ${operation_id}`))
+  const document = parse(readFileSync(join(root, "public/openapi.yaml"), "utf8"))
+  let checked = 0
+  for (const [path, item] of Object.entries(document.paths)) {
+    for (const method of methods.filter((name) => Object.hasOwn(item, name))) {
+      const identity = `${method.toUpperCase()} ${path} ${item[method].operationId}`
+      if (!publicOperations.has(identity)) problems.push(`Docs export lacks canonical product admission: ${identity}`)
+      checked++
+    }
+  }
+  console.log(`Checked ${checked} exported operations against canonical product admission`)
   for (const reference of privateReferences)
     problems.push(`${reference.file}:${reference.line} documents a private request (${reference.operationIds.join(", ")}); use supported UI guidance`)
   console.log(`Checked ${pages.length} authored pages against canonical publication decisions; ${privateReferences.length} private request references`)
@@ -116,7 +132,7 @@ if (existsSync(cliDir)) {
   console.warn(`skip CLI: ${cliDir} not found`)
 }
 
-const openapi = join(workspace, "openapi-spec/openapi.yaml")
+const openapi = resolve(sourceEnvironment.ASSIGN_OPENAPI ?? join(workspace, "openapi-spec/openapi.yaml"))
 if (existsSync(openapi)) {
   try {
     execFileSync(process.execPath, [join(root, "scripts/generate-api-endpoints.mjs"), openapi, "--check"], { stdio: "pipe", env: sourceEnvironment })
@@ -125,7 +141,7 @@ if (existsSync(openapi)) {
     problems.push(`OpenAPI source check failed: ${detail ?? error.message.split("\n")[0]}`)
   }
 } else {
-  console.warn(`skip API: ${openapi} not found`)
+  problems.push(`Required canonical OpenAPI source missing: ${openapi}`)
 }
 
 if (problems.length) {

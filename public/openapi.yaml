@@ -19860,6 +19860,91 @@ components:
         - 2026-08-15T12:00:00Z
       format: date-time
       type: string
+    TypedAttachment:
+      additionalProperties: false
+      description: Opt-in attachment metadata. Legacy application/json responses use Attachment.
+      properties:
+        content_length:
+          minimum: 0
+          type: integer
+        content_type:
+          description: Server-detected from the object's leading bytes, not client-declared.
+          maxLength: 255
+          type: string
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+        created_by_actor_id:
+          $ref: "#/components/schemas/Identifier"
+        deleted_at:
+          oneOf:
+            - $ref: "#/components/schemas/Timestamp"
+            - type: "null"
+        filename:
+          $ref: "#/components/schemas/AttachmentFilename"
+        id:
+          $ref: "#/components/schemas/Identifier"
+        kind:
+          enum:
+            - file
+            - url
+          type: string
+        scan_state:
+          $ref: "#/components/schemas/AttachmentScanState"
+        url:
+          description: HTTP(S) link attachment. No stored bytes or download; omitted for files.
+          format: uri
+          maxLength: 2048
+          type: string
+        workspace_id:
+          $ref: "#/components/schemas/Identifier"
+      required:
+        - kind
+        - id
+        - workspace_id
+        - filename
+        - content_length
+        - content_type
+        - scan_state
+        - created_by_actor_id
+        - created_at
+      type: object
+    TypedAttachmentPage:
+      additionalProperties: false
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/TypedAttachment"
+          maxItems: 100
+          type: array
+        next_cursor:
+          maxLength: 4096
+          type:
+            - string
+            - "null"
+      required:
+        - data
+        - next_cursor
+      type: object
+    TypedTaskAttachmentPage:
+      additionalProperties: false
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/TypedAttachment"
+          maxItems: 100
+          type: array
+        has_more:
+          type: boolean
+        next_cursor:
+          maxLength: 4096
+          type:
+            - string
+            - "null"
+      required:
+        - data
+        - next_cursor
+        - has_more
+      type: object
     UnauthenticatedProblem:
       allOf:
         - $ref: "#/components/schemas/ProblemDetails"
@@ -20839,6 +20924,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Attachment"
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedAttachment"
           description: The attachment metadata.
           headers:
             Cache-Control:
@@ -21815,6 +21903,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CanonicalAttachmentPage"
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedAttachmentPage"
           description: Document attachments.
           headers:
             Assign-Next-Cursor:
@@ -24869,7 +24960,14 @@ paths:
         - Integrations
   /api/v1/label-definitions/{label_id}:
     get:
-      description: Read the current definition of an active or archived label. Use a product bearer credential with read scope and access to the Workspace and, for a Project-local label, its Project. Unknown or inaccessible IDs return 404. Send no body or query parameters. The 200 response includes complete metadata with a decimal-string revision and an opaque ETag for the selected identity or gzip representation. A matching If-None-Match can return 304 after access checks. Keep the exact item ETag and encoding for a later edit or archive.
+      description: |-
+        Read the current definition of an active or archived label.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace read access and Project read access for a Project-local label. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Omit query parameters. The `200` response includes complete metadata, a decimal-string revision and an opaque ETag for the selected identity or gzip representation. A matching `If-None-Match` can return `304` after access checks. Keep the exact item ETag and encoding for a later edit or archive.
+
+        **Recovery.** For `404 not_found`, verify the identifier using a catalog visible to your credential. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: getLabelDefinition
       parameters:
         - in: path
@@ -24977,7 +25075,14 @@ paths:
       tags:
         - Labels
     patch:
-      description: Rename, recolor or restore a label. Use a product bearer credential with write scope and current Workspace labels:manage for a Workspace label or Project labels:manage for a Project-local label. Send up to 16 KiB of identity-coded JSON with at least one field and no query parameters. Omitted name and color stay unchanged. Use archived=false to restore the same ID, optionally with presentation changes in the same request. Use the archive operation to archive a label. A 200 returns complete updated metadata and its ETag. Send one Idempotency-Key and pass the strong ETag from getLabelDefinition unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Rename, recolor or restore a label.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace `labels:manage` permission for a Workspace label or Project `labels:manage` permission for a Project-local label. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send up to 16 KiB of identity-coded JSON with at least one field and no query parameters. Omitted name and color stay unchanged. Set `archived=false` to restore the same ID, optionally with presentation changes. Use the archive operation to archive a label. A `200` returns complete metadata and its ETag. Send one `Idempotency-Key` and the strong item ETag from the definition read unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the current definition, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original response. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 conflict` with reason `label_name_conflict`, choose an available name before retrying the edit or restore. For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 16 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, correct the indicated field or send at least one supported change. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: updateLabelDefinition
       parameters:
         - in: path
@@ -25086,7 +25191,14 @@ paths:
         - Labels
   /api/v1/label-definitions/{label_id}/archive:
     post:
-      description: Archive a label so it cannot receive new assignments. Existing assignments and historical display are retained. Use a product bearer credential with write scope and current Workspace labels:manage for a Workspace label or Project labels:manage for a Project-local label. Send no body or query parameters. Success returns 204. To restore the same label later, read it again and send archived=false to updateLabelDefinition. Send one Idempotency-Key and pass the strong ETag from getLabelDefinition unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Archive a label so it cannot receive new assignments.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace `labels:manage` permission for a Workspace label or Project `labels:manage` permission for a Project-local label. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Existing assignments and historical display are retained. Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Omit query parameters. Success returns `204`. To restore the label later, read it again and send `archived=false` to the update operation. Send one `Idempotency-Key` and the strong item ETag from the definition read unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the current definition, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original `204`. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `422 validation_failed`, remove unsupported query fields. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: archiveLabelDefinition
       parameters:
         - in: path
@@ -27621,6 +27733,9 @@ paths:
                   - data
                   - next_cursor
                 type: object
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedAttachmentPage"
           description: Project attachments
           headers:
             Assign-Next-Cursor:
@@ -28411,7 +28526,14 @@ paths:
         - Integrations
   /api/v1/projects/{project_id}/label-definitions:
     get:
-      description: List definitions created for Tasks in this Project. Use a product bearer credential with read scope and current Workspace and Project read access. Set include_archived=true to include archived definitions. The 200 response contains complete metadata in data and a nullable next_cursor. Use getLabelDefinition to obtain the item ETag for an edit or archive. Send no body. The default limit is 50 and the maximum is 100. Continue with next_cursor until it is null, keeping the same scope, filters, limit, credential and encoding. For 409 catalog_changed, discard the partial traversal and restart at the first page. A matching collection If-None-Match can return 304 after access checks.
+      description: |-
+        List Task label definitions created in a Project.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace and Project read access. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Pass `include_archived=true` to include archived definitions. The `200` response includes complete definitions in `data` and a nullable `next_cursor`. The default limit is 50 and the maximum is 100. Continue with `next_cursor` until it is null. Keep the same scope, filters, limit, credential and encoding. A matching `If-None-Match` can return `304` after access checks. Read an individual definition to obtain its edit or archive ETag.
+
+        **Recovery.** For `409 conflict` with reason `catalog_changed`, discard the partial traversal and restart from page one. For `422 validation_failed`, correct the indicated selector, limit or cursor before retrying. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: listProjectLabelDefinitions
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -28510,7 +28632,14 @@ paths:
       tags:
         - Labels
     post:
-      description: Create a Task label in the path Project. Use a product bearer credential with write scope and current Project labels:manage authority. Send up to 16 KiB of identity-coded JSON with name, color and purpose=task. Scope defaults to project. Omit query parameters and conditional headers. A 201 returns the new label's complete metadata, ETag and Location. A conflicting name returns 409. Send one Idempotency-Key. If the outcome is unknown, recover the original 201, Location and body with the same key and equivalent normalized input under current management authority. Reusing the key for a different intent returns 409.
+      description: |-
+        Create a Task label in a Project.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Project `labels:manage` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send up to 16 KiB of identity-coded JSON with a name, color and `purpose=task`. Scope defaults to `project`. Omit query parameters and conditional headers. The `201` response includes complete metadata, an ETag and a Location. Send one `Idempotency-Key`. If the outcome is unknown, use the same key and equivalent normalized input under current management authority to recover the original `201`, Location and body.
+
+        **Recovery.** For `409 conflict` with reason `label_name_conflict`, choose an available name in the same catalog. For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 16 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, correct the indicated field and use Task purpose with Project scope. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: createProjectLabelDefinition
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -28606,7 +28735,14 @@ paths:
         - Labels
   /api/v1/projects/{project_id}/label-overrides:
     get:
-      description: Read effective names and colors for Workspace Task labels in this Project. Use a product bearer credential with read scope and current Workspace and Project read access. Rows are ordered by definition name and ID. An inherited row has override=null and inherited=true. An archived definition with a retained override remains listed so the override can be cleared. Each row has its own decimal-string revision and item_validator, including the exact ETag and encoding to use for set or clear. Send no body. The default limit is 50 and the maximum is 100. Continue with next_cursor until it is null, keeping the same scope, filters, limit, credential and encoding. For 409 catalog_changed, discard the partial traversal and restart at the first page. A matching collection If-None-Match can return 304 after access checks.
+      description: |-
+        List the effective names and colors of Workspace Task labels in a Project.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace and Project read access. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. The `200` rows are ordered by definition name and ID. An inherited row has `override=null` and `inherited=true`. An archived definition stays listed when it has a retained override you can clear. Use each row’s decimal-string revision to track changes and its exact `item_validator.etag` and encoding to set or clear the override. The default limit is 50 and the maximum is 100. Continue with `next_cursor` until it is null. Keep the same scope, filters, limit, credential and encoding. A matching `If-None-Match` can return `304` after access checks.
+
+        **Recovery.** For `409 conflict` with reason `catalog_changed`, discard the partial traversal and restart from page one. For `422 validation_failed`, correct the indicated selector, limit or cursor before retrying. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: listProjectTaskLabelOverrides
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -28713,7 +28849,14 @@ paths:
         - Labels
   /api/v1/projects/{project_id}/label-overrides/{label_id}:
     delete:
-      description: Restore the latest Workspace name and color for a Task label in this Project. Use a product bearer credential with write scope and current Project labels:manage authority. Send no request body. Clearing an absent override leaves the current state intact. You can clear a retained override even after its definition is archived. The label ID and assignments stay the same. Success returns 204. Send one Idempotency-Key and pass the matching row's strong item_validator.etag from listProjectTaskLabelOverrides unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Restore the latest Workspace name and color for a Task label in a Project.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Project `labels:manage` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Clearing an absent override leaves the current state intact. You can clear a retained override after the definition is archived. The label ID and assignments stay the same. Success returns `204`. Send one `Idempotency-Key` and the strong row `item_validator.etag` from the Project override list unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the matching row again, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original `204`. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `422 validation_failed`, use a Workspace Task label and remove unsupported query fields. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: clearProjectTaskLabelOverride
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -28795,7 +28938,14 @@ paths:
       tags:
         - Labels
     put:
-      description: Set the name and color shown in this Project for a Workspace Task label. Use a product bearer credential with write scope and current Project labels:manage authority. Send both name and color as up to 16 KiB of identity-coded JSON. The Workspace definition and assignments stay the same. The 200 response contains the complete override state and its ETag. Repeating the current presentation leaves the item revision unchanged. Send one Idempotency-Key and pass the matching row's strong item_validator.etag from listProjectTaskLabelOverrides unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Set the name and color shown in a Project for a Workspace Task label.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Project `labels:manage` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send both name and color as up to 16 KiB of identity-coded JSON. The Workspace definition and assignments stay the same. The `200` response contains the complete override state and its ETag. Repeating the current presentation keeps the revision. Send one `Idempotency-Key` and the strong row `item_validator.etag` from the Project override list unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the matching row again, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original override response. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 conflict` with reason `label_name_conflict`, choose an available name for the Project presentation. For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 16 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, use an eligible Workspace Task label and correct the indicated presentation field. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: setProjectTaskLabelOverride
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -30026,6 +30176,9 @@ paths:
                   - data
                   - next_cursor
                 type: object
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedAttachmentPage"
           description: Project Task attachments
           headers:
             Assign-Next-Cursor:
@@ -30107,9 +30260,11 @@ paths:
   /api/v1/projects/{project_id}/tasks:
     post:
       description: |-
-        Create a complete Task in a Project and return the created Task. Assign allocates its Project number atomically. Current Workspace and Project authority is required; defaults, assignment, content schema, dates and Milestone rules apply in the same transaction. Request JSON allows 2 MiB of canonical description plus 8 KiB of scalar/envelope overhead; content node, nesting, mention and attachment limits apply independently. Identity and gzip responses preserve complete content.
+        Create a Task in a Project and return the complete Task with its assigned Project number. Use the response's `Location` to read the created Task. Project defaults, assignment, dates, Milestone and content rules apply together. The request allows up to 2 MiB of canonical description plus 8 KiB of envelope and scalar fields. Content depth, nodes, mentions and attachment limits apply independently.
 
-        After an uncertain outcome, retain the original idempotency key and the exact complete request. Recovery checks that the original result and authorization grant are recognized and that the key and request intent are unchanged. Current credential, Project and created-Task access are required before returning the original result, without repeating effects. Changed intent or an unrecognized original result or authorization grant returns a conflict. A fresh response ETag identifies the receipt, not the Task; recovery withholds response and item validators. Read the current authorized canonical Task before a conditional edit.
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The principal needs current Workspace and destination Project write access. Recovery also requires current access to the created Task. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. For `409 parent_not_accepting_tasks`, choose a Project that currently accepts Tasks. For `409 document_schema_version_unsupported`, use a supported description schema version. For `413 request_too_large`, reduce the input to the documented size limit. For `415 unsupported_media_type`, send the supported JSON media type and request encoding. For `422 invalid_field`, correct the indicated field, such as an invalid Markdown description or unsupported assignment value. The fresh ETag identifies the receipt. Read the Task at its current authorized URL to obtain its canonical write validator. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: createTask
       parameters:
         - $ref: "#/components/parameters/ProjectId"
@@ -30166,7 +30321,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           $ref: "#/components/responses/DocumentSchemaUnsupported"
         "410":
@@ -30180,25 +30335,25 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `413 request_too_large`, reduce the input to the documented size limit.
         "415":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `415 unsupported_media_type`, send the supported JSON media type and request encoding.
         "422":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `422 invalid_field`, correct the indicated field, such as an invalid Markdown description or unsupported assignment value.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -31314,11 +31469,11 @@ paths:
   /api/v1/tasks/{task_id}:
     delete:
       description: |-
-        Move a Task to trash and return its canonical state, including `trashed_at` and `purge_after`. You can restore it during the 30-day retention period. The caller needs current Workspace and Project mutation authority and access to the Task. Send `Idempotency-Key` without a query or body.
+        Move a Task to Trash and return its updated state, including `trashed_at` and `purge_after`. You can restore the Task during the 30-day retention period. Send `Idempotency-Key` with no body or query.
 
-        Send the opaque ETag from a current canonical Task read in `If-Match`. A missing condition returns 428, a malformed or weak condition returns 400, and a stale or invalid observation returns 412.
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
 
-        The fresh receipt ETag and the Task item validator identify different representations. After a lost response, retain the original key and exact request, including its condition. Under current authority, an exact match can recover the original outcome without another change. A changed intent or an unrecognized original result or grant returns 409. Recovery omits both validators. Read the current canonical Task before another conditional write.
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `410 task_purged`, the Task is permanently unavailable. Refresh any stored reference. For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `415 unsupported_media_type`, omit request content and use identity request encoding. If an extra field causes `400 invalid_request`, omit the query and body. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: trashTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -31357,37 +31512,37 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: If an extra field causes `400 invalid_request`, omit the query and body.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action.
         "410":
           content:
             application/problem+json:
@@ -31399,43 +31554,43 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting.
         "413":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items.
         "415":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `415 unsupported_media_type`, omit request content and use identity request encoding.
         "422":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A request field or combination violates the operation's constraints. Correct the reported field or state before retrying.
         "428":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "503":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The service could not complete the request. Check Retry-After and follow the operation's recovery instructions.
         default:
           content:
             application/problem+json:
@@ -31449,9 +31604,11 @@ paths:
         - Tasks
     get:
       description: |-
-        Read a complete Task with current access. Use `view=canonical` to get the Task fields owned by its revision and the opaque ETag for a conditional write. The default `detail` view adds display fields that can change independently.
+        Read the complete Task. Use `view=canonical` for the Task's revision-owned fields and the opaque validator for conditional writes. The default `detail` view includes display fields that can change independently. Identity and gzip have separate ETags. A matching `If-None-Match` can return 304 after access and representation checks. Responses are private and use `no-store`.
 
-        A strong `If-Match` that differs from the selected representation returns 412. `If-None-Match` can return 304 without a body after the server verifies current access and the representation. Identity and gzip have separate ETags. Responses are private and use `no-store`.
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:read`. The credential's principal needs current Workspace and Project read access and must be able to read the Task. Existing grants with the legacy `assign:read` scope are also accepted. Use `tasks:read` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** For `412 precondition_failed`, refresh the selected view and encoding before sending a new condition. For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `415 unsupported_media_type`, omit request content and use identity request encoding. For `422 invalid_field`, remove unknown query fields. An invalid `view` value returns 400. Use `canonical` or `detail`. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: getTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -31532,7 +31689,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           $ref: "#/components/responses/NotFound"
         "406":
@@ -31546,7 +31703,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The operation encountered a conflict. Use the Problem Details code to determine whether current state must be refreshed or a command reconciled before retrying.
         "412":
           content:
             application/problem+json:
@@ -31558,25 +31715,25 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items.
         "415":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `415 unsupported_media_type`, omit request content and use identity request encoding.
         "422":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `422 invalid_field`, remove unknown query fields.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -31590,9 +31747,11 @@ paths:
         - Tasks
     patch:
       description: |-
-        Update the permitted fields of a Task atomically and return the updated Task. First read this Task with view=canonical, then forward its exact opaque strong identity or gzip ETag in If-Match. Missing conditions return 428; malformed or weak conditions return 400; stale, foreign, numeric or wildcard conditions return 412. Omitted fields preserve the current Task; explicit nullable fields clear only their declared values. Current credential, Workspace and Project authority, the conditional merge and Task revision comparison, reversible effects and the original result commit together.
+        Update Task fields together and return the updated Task. Omitted fields keep their current values. Explicit null clears only fields that accept it. The encoded PATCH request is limited to 8 KiB and content bounds apply independently.
 
-        After an uncertain outcome, retain the original idempotency key, body and condition. Recovery checks that the original result and authorization grant are recognized and that the key and request intent are unchanged. Under current Task authority, recovery returns the original committed result before checking the original condition, without repeating effects. Changed intent or an unrecognized original result or authorization grant returns a conflict. Historical recovery withholds response and item validators. Read the current authorized state before another conditional edit. Identity and gzip responses preserve complete content. Encoded PATCH request JSON retains its 8 KiB limit; content constraints apply independently.
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `409 document_schema_version_unsupported`, use a supported description schema version. For `409 collaboration_format_unsupported`, read the current description and use a supported editing workflow. For `413 request_too_large`, reduce the input to the documented size limit. For `415 unsupported_media_type`, send the supported JSON media type and request encoding. For `422 invalid_field`, correct the indicated field before submitting the corrected change. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: updateTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -31651,7 +31810,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           $ref: "#/components/responses/Conflict"
         "410":
@@ -31671,13 +31830,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `413 request_too_large`, reduce the input to the documented size limit.
         "415":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `415 unsupported_media_type`, send the supported JSON media type and request encoding.
         "422":
           description: The requested Project move would violate a Task relation invariant.
         "428":
@@ -31691,7 +31850,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -31705,7 +31864,12 @@ paths:
         - Tasks
   /api/v1/tasks/{task_id}/activity:
     get:
-      description: "Returns the Task's own history plus associated comment and Task relation events, newest first. It shares the Workspace Activity retention, redaction, current-access filtering, grouping, and safe projection rules, and it additionally includes ordinary property changes (such as a title correction) that the Workspace feed omits. Personal following and muting changes and ordinary reactions are not included. Private-Project access is re-evaluated for every request. Canonical bounded continuation: complete data/next_cursor, no total-history count, raw candidate cursor before grouping/privacy filtering. Maximum100 candidates and262144-byte complete response; a short or empty visible page may still continue. Each request rechecks current source and access before conditional reuse. Only limit1–100 and one opaque cursor (maximum4096 bytes) are accepted. Identity/gzip validators and private/no-store are representation-bound."
+      description: |-
+        List the Task's activity, including Task changes and associated comment and relation events, newest first. The feed omits private events the caller cannot see, personal follow and mute changes, and ordinary reactions. Pages examine at most 100 candidates and return at most 256 KiB. A short or empty page may still have a cursor. Identity and gzip validators apply to their own representations.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:read`. The credential's principal needs current Workspace and Project read access and must be able to read the Task. Existing grants with the legacy `assign:read` scope are also accepted. Use `tasks:read` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Follow `next_cursor` with the same credential and query settings until it is null. For `400 invalid_cursor`, restart without the cursor. A matching validator can return 304 after current access is checked. For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `415 unsupported_media_type`, omit request content and use identity request encoding. For `422 invalid_field`, use a limit from 1 through 100 and only the supported query fields. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: listTaskActivity
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -31793,7 +31957,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           $ref: "#/components/responses/NotFound"
         "406":
@@ -31805,7 +31969,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The selected representation does not match the supplied condition. Read its current representation before sending a new condition.
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -31817,7 +31981,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
         default:
@@ -31830,11 +31994,11 @@ paths:
   /api/v1/tasks/{task_id}/archive:
     post:
       description: |-
-        Archive a Task and return its updated canonical state. A state change can also return a reversible command handle. The caller needs current Workspace and Project write authority and access to the Task. Send a bodyless request with `Idempotency-Key`.
+        Archive a Task and return its updated state. A state change can also return a reversible command handle. Send `Idempotency-Key` with no body or query.
 
-        Send the opaque ETag from a current canonical Task read in `If-Match`. A missing condition returns 428, a malformed or weak condition returns 400, and a stale or invalid observation returns 412.
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
 
-        After a lost response, retain the original key and exact request, including its condition. Under current authority, an exact match can recover the original outcome without another change. A changed intent or an unrecognized original result or grant returns 409. Recovery omits both validators. Read the current canonical Task before another conditional write.
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `410 task_purged`, the Task is permanently unavailable. Refresh any stored reference. For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `415 unsupported_media_type`, omit request content and use identity request encoding. If an extra field causes `400 invalid_request`, omit the query and body. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: archiveTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -31899,7 +32063,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -32137,7 +32301,12 @@ paths:
         - Tasks
   /api/v1/tasks/{task_id}/attachments:
     get:
-      description: Returns the newest 100 linked files. Optional attachment_id values select up to 100 exact linked targets regardless of age; deleted, unlinked and private Discuss files are omitted after parent authorization. Current product credential, Workspace, Project and Task permissions are checked for each request. Browser cookies cannot authenticate this product route. Confidential opaque continuation binds the exact credential, parent, selection, page size, order and current visibility; an invalid or changed binding requires a restart. Preserve full legal rows and every field; return fewer complete rows within byte bounds with truthful next_cursor and has_more. No offset, nested truncation, silent first-page cap or automatic crawl. Explicit exploded attachment_id lookup accepts1–100 IDs, without limit or cursor; otherwise traverse the canonical attachment keyset. Attachment metadata pages are bounded to262144 bytes, retaining all metadata and truthful continuation.
+      description: |-
+        List visible attachment metadata for a Task, newest first. Use repeated `attachment_id` parameters to look up 1–100 exact linked IDs regardless of age, without a limit or cursor. Deleted or unlinked files and private Discuss files are omitted. Pages hold up to 100 complete rows within 256 KiB and may return fewer; check `has_more` and `next_cursor`.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:read`. The credential's principal needs current Workspace and Project read access and must be able to read the Task. File visibility is checked separately. Existing grants with the legacy `assign:read` scope are also accepted. Use `tasks:read` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Follow `next_cursor` with the same credential and query settings until it is null. For `400 invalid_cursor`, restart without the cursor. A matching validator can return 304 after current access is checked. For `422 invalid_field`, use either a page query or exact attachment IDs, without mixing the two forms. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: listTaskAttachments
       parameters:
         - in: path
@@ -32284,6 +32453,9 @@ paths:
                   - next_cursor
                   - has_more
                 type: object
+            application/vnd.assign.attachment.v2+json:
+              schema:
+                $ref: "#/components/schemas/TypedTaskAttachmentPage"
           description: Task attachments
           headers: {}
         "304":
@@ -32293,79 +32465,79 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `400 invalid_cursor`, restart without the cursor.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The operation encountered a conflict. Use the Problem Details code to determine whether current state must be refreshed or a command reconciled before retrying.
         "412":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The selected representation does not match the supplied condition. Read its current representation before sending a new condition.
         "422":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `422 invalid_field`, use either a page query or exact attachment IDs, without mixing the two forms.
         "428":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "500":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: An internal error interrupted the request. Record the request ID for support.
         "503":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The service could not complete the request. Check Retry-After and follow the operation's recovery instructions.
         "504":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The operation exceeded its time budget. Follow the operation's recovery instructions before retrying.
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
@@ -32374,7 +32546,12 @@ paths:
       tags:
         - Tasks
     post:
-      description: Create a clean Task attachment association only after checking current credential, Workspace, Project, Task and file permissions, including before original-key recovery. Require one Idempotency-Key; no query or conditional headers. Existing natural-key association conflicts409 instead of upserting. Recover the original safe result only under current permissions and a compatible retained receipt tied to the same verified credential family as the original command; unknown lineage fails closed. An uncertain response never authorizes automatic replay. Full Attachment metadata is returned; no secret or access capability is stored in the receipt. Recovery rechecks current authorization.
+      description: |-
+        Attach a completed upload or an HTTP(S) link to a Task and return the attachment metadata. Supply one `Idempotency-Key`. Send no query or conditional headers.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. The Task must be active and an uploaded file must be available to the caller and cleared for linking. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. For `409 attachment_link_exists`, list the Task attachments and use the existing association. For `422 attachment_unavailable`, check the upload's status and file access before trying to link it. For `422 invalid_field`, correct the attachment source or other indicated field. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: attachTaskAttachment
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -32397,79 +32574,79 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The request syntax, headers or identifiers are invalid. Correct the reported input before retrying.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. For `409 attachment_link_exists`, list the Task attachments and use the existing association.
         "412":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The selected representation does not match the supplied condition. Read its current representation before sending a new condition.
         "422":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `422 attachment_unavailable`, check the upload's status and file access before trying to link it. For `422 invalid_field`, correct the attachment source or other indicated field.
         "428":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "500":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: An internal error interrupted the request. Record the request ID for support.
         "503":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The service could not complete the request. Check Retry-After and follow the operation's recovery instructions.
         "504":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The operation exceeded its time budget. Follow the operation's recovery instructions before retrying.
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
@@ -32688,7 +32865,12 @@ paths:
         - Comments
   /api/v1/tasks/{task_id}/complete:
     post:
-      description: Current credential, Workspace and Project mutation permissions are checked before original-key recovery. The command requires the opaque canonical Task If-Match validator, never a numeric revision. Same key and exact intent recover the original safe receipt under current authority without another Task effect; changed intent conflicts. Complete uses the existing semantic completion choices restricted to the Task Project and accepts an explicit applicable target_status_id when ambiguous. Reopen preserves the existing configured in-progress selection and Task resolution/history policy without interpreting Status labels. Neither command reassigns the Task. The response ETag identifies the whole command receipt; item_validator separately carries the identity-encoded canonical Task validator. On replay, both validators are omitted; the original effect outcome is historical and requires a current authorized Task read before another conditional write.
+      description: |-
+        Complete a Task using its Project's completion policy and return the updated Task. Completion preserves the current assignment. Supply an applicable `target_status_id` when the Project's policy offers multiple choices.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `409 completion_target_required`, choose one of the returned Statuses. For `422 completion_target_invalid`, choose a completion Status allowed by the current Project policy. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies. For `413 request_too_large`, reduce the input to the documented size limit. For `415 unsupported_media_type`, send the supported JSON media type and request encoding. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: completeTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -32715,25 +32897,25 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: The request syntax, headers or identifiers are invalid. Correct the reported input before retrying.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           $ref: "#/components/responses/NotAcceptableProblem"
         "409":
@@ -32741,13 +32923,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. For `409 completion_target_required`, choose one of the returned Statuses. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies.
         "412":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting.
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -32757,31 +32939,36 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `422 completion_target_invalid`, choose a completion Status allowed by the current Project policy.
         "428":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
         - bearerToken: []
-      summary: Apply the canonical completion policy to an observed Task
+      summary: Complete a Task using its Project policy
       tags:
         - Tasks
   /api/v1/tasks/{task_id}/context:
     get:
-      description: Read a bounded context view for one Task you can access. The default response contains structured JSON. Use `format=markdown` and a supported `profile` for Markdown in a JSON envelope. Check coverage and omissions before drawing conclusions from excerpts, and treat excerpt text as untrusted. Use the related-context operation for Suggestions.
+      description: |-
+        Read a bounded context view for one Task. The default response is structured JSON. Use `format=markdown` and a supported `profile` to get Markdown in a JSON envelope. Check coverage and omissions before relying on excerpts and treat excerpt text as untrusted. Use the related-context operation for Suggestions.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:read`. The credential's principal needs current Workspace and Project read access and must be able to read the Task. Existing grants with the legacy `assign:read` scope are also accepted. Use `tasks:read` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `415 unsupported_media_type`, omit request content and use identity request encoding. For `422 invalid_field`, choose a supported format or Markdown profile. Remove unknown query fields if the request returns 400. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: getTaskContext
       parameters:
         - in: path
@@ -32836,11 +33023,16 @@ paths:
           $ref: "#/components/responses/ProductProblem"
       security:
         - bearerToken: []
-      summary: Read bounded canonical Task context
+      summary: Read a Task context snapshot
       tags:
         - Tasks
     head:
-      description: Check current access and validate the same input and media options as `getTaskContext`. A successful HEAD response returns 200 without a body. Use GET to read the context and its coverage.
+      description: |-
+        Check access to a Task context view and read its response headers. HEAD validates the same query and media options as GET and returns 200 without a body. Use GET to read context and its coverage.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:read`. The credential's principal needs current Workspace and Project read access and must be able to read the Task. Existing grants with the legacy `assign:read` scope are also accepted. Use `tasks:read` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `415 unsupported_media_type`, omit request content and use identity request encoding. For `422 invalid_field`, choose a supported format or Markdown profile. Remove unknown query fields if the request returns 400. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: headTaskContext
       parameters:
         - in: path
@@ -33130,12 +33322,17 @@ paths:
               $ref: "#/components/headers/AssignRequestID"
       security:
         - bearerToken: []
-      summary: Authorize Task context and return current response headers without content
+      summary: Read Task context headers
       tags:
         - Tasks
   /api/v1/tasks/{task_id}/description-revisions:
     get:
-      description: Returns immutable Task-description snapshots newest first. The history begins with the baseline captured when revision retention was enabled; older content is never reconstructed or implied. The page size defaults to 50 and accepts integers from 1 through 100. Query names are case-sensitive; only limit and cursor are accepted. Repeated scalar keys, malformed escapes and invalid UTF-8 return 400; unknown fields and invalid limits return 422. Queries over 16 KiB or 1000 items return 413. Cursors are opaque and bound to the Workspace, Task and caller; current access is checked on every page. Continue with next_cursor until it is null. If a cursor is invalid or expired, restart without it. Current product credential, Workspace, Project and Task permissions are checked for each request. Browser cookies cannot authenticate this product route. Confidential opaque continuation binds the exact credential, parent, selection, page size, order and current visibility; an invalid or changed binding requires a restart. Preserve full legal rows and every field; return fewer complete rows within byte bounds with truthful next_cursor and has_more. No offset, nested truncation, silent first-page cap or automatic crawl. Complete rich document and text history pages are bounded to12632064 logical bytes, reducing whole rows as needed; a document is never replaced by a preview.
+      description: |-
+        List immutable description snapshots, newest first, starting with the baseline captured when retention began. Earlier revisions are unavailable. The default page size is 50 and the allowed range is 1–100. Pages return complete rich descriptions and text; the response byte limit can reduce the number of rows.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:read`. The credential's principal needs current Workspace and Project read access and must be able to read the Task. Existing grants with the legacy `assign:read` scope are also accepted. Use `tasks:read` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Follow `next_cursor` with the same credential and query settings until it is null. For `400 invalid_cursor`, restart without the cursor. A matching validator can return 304 after current access is checked. For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `422 invalid_field`, use only `limit` and `cursor` with a limit in the supported range. Repeated scalar parameters, invalid escapes and invalid UTF-8 return 400. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: listTaskDescriptionRevisions
       parameters:
         - in: path
@@ -33322,43 +33519,43 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `400 invalid_cursor`, restart without the cursor.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The operation encountered a conflict. Use the Problem Details code to determine whether current state must be refreshed or a command reconciled before retrying.
         "412":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The selected representation does not match the supplied condition. Read its current representation before sending a new condition.
         "413":
           content:
             application/problem+json:
@@ -33370,37 +33567,37 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `422 invalid_field`, use only `limit` and `cursor` with a limit in the supported range.
         "428":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "500":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: An internal error interrupted the request. Record the request ID for support.
         "503":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The service could not complete the request. Check Retry-After and follow the operation's recovery instructions.
         "504":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The operation exceeded its time budget. Follow the operation's recovery instructions before retrying.
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
@@ -33410,7 +33607,12 @@ paths:
         - Tasks
   /api/v1/tasks/{task_id}/description-revisions/{revision}/restore:
     post:
-      description: Copies one retained description snapshot into a new Task revision. The source snapshot remains immutable, and `If-Match` prevents a restore from overwriting a newer Task change. Current credential and resource permissions are checked before original-key recovery and evaluation of the opaque getTask If-Match validator. Missing condition428; malformed/weak400; foreign, stale, wildcard or numeric condition412. Exact same-key intent recovers its original safe receipt before a new condition is evaluated; a changed intent is409. Recovery preserves the original change and verified grant; unknown historical authorization requires reconciliation. Fresh ETag identifies the receipt; item_validator identifies the canonical Task with identity encoding. Replay omits both historical validators; read current getTask before another conditional write. No automatic dispatch after an uncertain outcome.
+      description: |-
+        Copy a retained description into the current Task and record a new revision when content changes. The selected historical revision remains intact. The response includes the resulting Task revision. Send no body or query. Read the current Task to see its complete state.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `409 document_schema_version_unsupported`, use a supported description schema version. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies. If the requested revision returns `404 not_found`, list the current retained history and check access before choosing a revision. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: restoreTaskDescriptionRevision
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -33438,79 +33640,79 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The request syntax, headers or identifiers are invalid. Correct the reported input before retrying.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `404 not_found` can also mean the resource is inaccessible. If the requested revision returns `404 not_found`, list the current retained history and check access before choosing a revision.
         "406":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. For `409 document_schema_version_unsupported`, use a supported description schema version. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies.
         "412":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting.
         "422":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A request field or combination violates the operation's constraints. Correct the reported field or state before retrying.
         "428":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "500":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: An internal error interrupted the request. Record the request ID for support.
         "503":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The service could not complete the request. Check Retry-After and follow the operation's recovery instructions.
         "504":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The operation exceeded its time budget. Follow the operation's recovery instructions before retrying.
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
@@ -33520,7 +33722,12 @@ paths:
         - Tasks
   /api/v1/tasks/{task_id}/duplicate:
     post:
-      description: Creates a new independent Task from an active source Task. Title, description, and priority are always copied. Callers explicitly choose whether to copy the current assignee, due date, milestone, labels, attachment links, and the active subtask tree. Comments, Activity, notification history, assignment periods, time entries, subscriptions, and integration execution history are never copied. Cross-Project duplication maps Statuses by semantic category unless an explicit destination Status is supplied, keeps Workspace labels, maps Project labels by normalized name, and reports optional resources that cannot be copied in `issues`. Milestones remain Project-local. The command copies at most 25 active descendants and 100 clean attachment links per copied Task; it never duplicates stored attachment objects or storage quota. `If-Match` protects the source revision, and retries with the same idempotency key replay the original result. Current credential and resource permissions are checked before original-key recovery and evaluation of the opaque getTask If-Match validator. Missing condition428; malformed/weak400; foreign, stale, wildcard or numeric condition412. Exact same-key intent recovers its original safe receipt before a new condition is evaluated; a changed intent is409. Recovery preserves the original change and verified grant; unknown historical authorization requires reconciliation. Fresh ETag identifies the receipt; item_validator identifies the canonical Task with identity encoding. Replay omits both historical validators; read current getTask before another conditional write. No automatic dispatch after an uncertain outcome. Source Project read and destination Project write permissions stay distinct. All copy flags are required; copied counts, issue attribution and full copied content remain with the existing duplication command.
+      description: |-
+        Duplicate an active Task into a new, independent Task. Title, description and priority always carry over. Set all copy flags to choose whether to copy assignee, due date, Milestone, labels, attachment links and active subtasks. Comments, Activity, assignment and notification history, time entries, subscriptions and integration history stay on the source. Across Projects, Statuses map by semantic category unless you choose a destination Status. Workspace labels carry over and Project labels map by normalized name. Milestones stay in their Project. The copy is limited to 25 active descendants and 100 clean attachment links per Task. File contents are shared. Review `issues` and the copy counts for optional resources that were skipped.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The principal needs current Workspace write access, read access to the source Task and its Project, and write access to the destination Project. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies. For `410 task_purged`, the Task is permanently unavailable. Refresh any stored reference. For `409 duplicate_project_unavailable`, choose a destination Project that accepts Tasks. For `422 duplicate_status_incompatible`, choose an applicable destination Status. For `422 duplicate_subtask_limit` or `422 duplicate_attachment_limit`, reduce the source selection by disabling the corresponding copy option. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: duplicateTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -33547,37 +33754,37 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The request syntax, headers or identifiers are invalid. Correct the reported input before retrying.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies. For `409 duplicate_project_unavailable`, choose a destination Project that accepts Tasks.
         "410":
           description: The source Task has been purged.
         "412":
@@ -33585,43 +33792,43 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting.
         "422":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `422 duplicate_status_incompatible`, choose an applicable destination Status. For `422 duplicate_subtask_limit` or `422 duplicate_attachment_limit`, reduce the source selection by disabling the corresponding copy option.
         "428":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "500":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: An internal error interrupted the request. Record the request ID for support.
         "503":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The service could not complete the request. Check Retry-After and follow the operation's recovery instructions.
         "504":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The operation exceeded its time budget. Follow the operation's recovery instructions before retrying.
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
@@ -33631,7 +33838,12 @@ paths:
         - Tasks
   /api/v1/tasks/{task_id}/move:
     post:
-      description: Current credential, Workspace and Project mutation permissions are checked before original-key recovery, the opaque Task If-Match condition and the command. Missing428, malformed/weak400, stale/foreign/numeric/wildcard412. Same-key exact intent recovers the safe original receipt under current authority before conditions; changed intent409. Unknown historical receipt lineage/version requires reconciliation and never authorizes another effect. A fresh ETag identifies the receipt; item_validator is the identity-encoded canonical Task observation. Replay omits both validators; read the current authorized Task before another conditional write. Move atomically selects the applicable Status and allocates rank between optional Task anchors. status_id is required; numeric expected_revision is rejected. Missing anchors conflict without returning an unvalidated current Task body.
+      description: |-
+        Move a Task to the requested Status and place it relative to optional Task anchors. Status and order change together. Supply `status_id` and use anchors that still belong in the destination order.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `409 anchor_not_found`, refresh the destination ordering and choose current anchors. For `422 task_has_relations`, resolve the relations that prevent the requested move before retrying. For `410 task_purged`, the Task is permanently unavailable. Refresh any stored reference. For `413 request_too_large`, reduce the input to the documented size limit. For `415 unsupported_media_type`, send the supported JSON media type and request encoding. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: moveTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -33692,37 +33904,37 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The request syntax, headers or identifiers are invalid. Correct the reported input before retrying.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. For `409 anchor_not_found`, refresh the destination ordering and choose current anchors.
         "410":
           content:
             application/problem+json:
@@ -33734,43 +33946,43 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting.
         "413":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `413 request_too_large`, reduce the input to the documented size limit.
         "415":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `415 unsupported_media_type`, send the supported JSON media type and request encoding.
         "422":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `422 task_has_relations`, resolve the relations that prevent the requested move before retrying.
         "428":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "503":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The service could not complete the request. Check Retry-After and follow the operation's recovery instructions.
         default:
           content:
             application/problem+json:
@@ -33779,7 +33991,7 @@ paths:
           description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
       security:
         - bearerToken: []
-      summary: Move an observed Task within its workflow
+      summary: Move a Task to a Status and position
       tags:
         - Tasks
   /api/v1/tasks/{task_id}/participants:
@@ -34203,7 +34415,12 @@ paths:
         - Tasks
   /api/v1/tasks/{task_id}/reopen:
     post:
-      description: Current credential, Workspace and Project mutation permissions are checked before original-key recovery. The command requires the opaque canonical Task If-Match validator, never a numeric revision. Same key and exact intent recover the original safe receipt under current authority without another Task effect; changed intent conflicts. Complete uses the existing semantic completion choices restricted to the Task Project and accepts an explicit applicable target_status_id when ambiguous. Reopen preserves the existing configured in-progress selection and Task resolution/history policy without interpreting Status labels. Neither command reassigns the Task. The response ETag identifies the whole command receipt; item_validator separately carries the identity-encoded canonical Task validator. On replay, both validators are omitted; the original effect outcome is historical and requires a current authorized Task read before another conditional write.
+      description: |-
+        Reopen a Task in its Project's configured in-progress Status and return the updated Task. Reopening preserves the current assignment and records the resolution change. Send no query or body.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `409 workflow_status_unavailable`, review the Project's configured workflow before retrying. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies. For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `415 unsupported_media_type`, omit request content and use identity request encoding. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: reopenTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -34224,25 +34441,25 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: The request syntax, headers or identifiers are invalid. Correct the reported input before retrying.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           $ref: "#/components/responses/NotAcceptableProblem"
         "409":
@@ -34250,13 +34467,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. For `409 workflow_status_unavailable`, review the Project's configured workflow before retrying. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies.
         "412":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting.
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -34266,25 +34483,30 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
         - bearerToken: []
-      summary: Reopen an observed Task
+      summary: Reopen a Task
       tags:
         - Tasks
   /api/v1/tasks/{task_id}/restore:
     post:
-      description: Current credential, Workspace and Project mutation permissions are checked before original-key recovery, the opaque Task If-Match condition and the command. Missing428, malformed/weak400, stale/foreign/numeric/wildcard412. Same-key exact intent recovers the safe original receipt under current authority before conditions; changed intent409. Unknown historical receipt lineage/version requires reconciliation and never authorizes another effect. A fresh ETag identifies the receipt; item_validator is the identity-encoded canonical Task observation. Replay omits both validators; read the current authorized Task before another conditional write. Restore preserves the existing lifecycle, assignment, Work and reversible-command effects, including its already-active no-op behavior; the opaque condition is still required. No query fields or request body are accepted.
+      description: |-
+        Restore an archived or trashed Task and return its current state. Restore preserves the existing assignment and Work history and can return a reversible command handle. Restoring an already-active Task makes no change and still requires the current condition. Send no query or body.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `410 task_purged`, the Task is permanently unavailable. Refresh any stored reference. For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `415 unsupported_media_type`, omit request content and use identity request encoding. If an extra field causes `400 invalid_request`, omit the query and body. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: restoreTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -34323,37 +34545,37 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: If an extra field causes `400 invalid_request`, omit the query and body.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The requested response media type or encoding is unavailable. Request a supported response representation.
         "409":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action.
         "410":
           content:
             application/problem+json:
@@ -34365,43 +34587,43 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting.
         "413":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items.
         "415":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `415 unsupported_media_type`, omit request content and use identity request encoding.
         "422":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: A request field or combination violates the operation's constraints. Correct the reported field or state before retrying.
         "428":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "503":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
+          description: The service could not complete the request. Check Retry-After and follow the operation's recovery instructions.
         default:
           content:
             application/problem+json:
@@ -34410,7 +34632,7 @@ paths:
           description: Current permissions, input, condition, original-key recovery or request-capacity check failed.
       security:
         - bearerToken: []
-      summary: Restore an observed Task
+      summary: Restore an archived or trashed Task
       tags:
         - Tasks
   /api/v1/tasks/{task_id}/rich-entities:
@@ -34574,7 +34796,12 @@ paths:
         - Integrations
   /api/v1/tasks/{task_id}/start:
     post:
-      description: Current credential, Workspace and Project mutation permissions are checked before original-key recovery. Requires the opaque canonical Task If-Match validator; missing428, malformed/weak400 and stale/foreign/numeric/wildcard412. Reject all query fields and request bodies. The start transition selects the configured in-progress Status, assigns the caller and preserves assignment periods, Task history, Work, subscription and notification effects. reassigned reports whether a different current assignment was closed. Same key and exact intent recover the original safe receipt under current authority before conditions without another effect; changed intent conflicts. Unknown original authorization or an incompatible retained result returns 409 operation_reconciliation_required without another mutation or an obsolete CLI response. Recover through an independently authorized canonical Task read; current state alone does not prove the original command outcome. A fresh response ETag identifies the whole receipt, while item_validator is the identity-encoded canonical Task validator. Replay omits both validators and requires a current authorized read before another write.
+      description: |-
+        Move a Task to its Project's configured in-progress Status, assign it to the caller and return the updated Task. Assign records changes to assignment, Work and Task history, along with applicable notifications. Check `reassigned` to see whether a different assignment ended. Send no query or body.
+
+        **Access.** Send a personal API token or delegated product OAuth access token with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. The caller must be an active Workspace member with a user identity that can receive a Task assignment. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** Use the opaque strong ETag from a current canonical Task read in `If-Match`. A missing condition returns 428 and a malformed or weak condition returns 400. For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting. If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. A fresh response ETag identifies the receipt. The item validator identifies the canonical Task. Recovery omits both validators. Read the current canonical Task before another conditional write. For `409 workflow_status_unavailable`, review the Project's configured workflow before retrying. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies. For `410 task_purged`, the Task is permanently unavailable. Refresh any stored reference. For `413 request_too_large`, reduce the query to at most 16 KiB and 1,000 items. For `415 unsupported_media_type`, omit request content and use identity request encoding. For `400 invalid_request` caused by an unassignable caller, use an authorized active user credential. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: startTask
       parameters:
         - $ref: "#/components/parameters/TaskId"
@@ -34614,25 +34841,25 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `400 invalid_request` caused by an unassignable caller, use an authorized active user credential.
         "401":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: The bearer credential is missing or invalid. Supply a valid product credential for this Workspace.
         "403":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: A `403 insufficient_scope` requires a credential with the required grant.
         "404":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: A `404 not_found` can also mean the resource is inaccessible.
         "406":
           $ref: "#/components/responses/NotAcceptableProblem"
         "409":
@@ -34640,7 +34867,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. For `409 workflow_status_unavailable`, review the Project's configured workflow before retrying. For `409 task_inactive`, check the Task lifecycle and restore it if the intended action still applies.
         "410":
           content:
             application/problem+json:
@@ -34652,7 +34879,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `412 precondition_failed`, read the current canonical Task and reconsider the write before resubmitting.
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -34662,20 +34889,20 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: The required precondition or idempotency header is missing. Supply the header required by this operation.
         "429":
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-          description: Current authorization, validation, conflict or admission failure
+          description: For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget.
         "503":
           $ref: "#/components/responses/MaintenanceUnavailable"
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
         - bearerToken: []
-      summary: Start and assign an observed Task
+      summary: Start a Task and assign it to the caller
       tags:
         - Tasks
   /api/v1/tasks/{task_id}/subscribers:
@@ -35898,7 +36125,7 @@ paths:
 
         Use a supported bearer credential with time:read or assign:read and current Workspace access. Each download checks the original Actor and grant, the current feature, access to every included Project and continued eligibility of Task metadata.
 
-        A matching If-None-Match returns a bodyless 304 after access checks. A failed If-Match returns 412. After seven days the result expires with 410. Decide whether to create a new snapshot from a current timesheet observation.
+        A matching If-None-Match returns a bodyless 304 after access checks. If `If-Match` fails (412), confirm this is the intended export URL before retrying without that header. Use the ETag from the successful CSV response for a later conditional request. After seven days the result expires with 410. Decide whether to create a new snapshot from a current timesheet observation.
       operationId: getTimesheetExport
       parameters:
         - example: 019a2b80-0000-7000-8000-000000000007
@@ -44485,7 +44712,14 @@ paths:
         - Documents
   /api/v1/workspaces/{workspace_id}/label-definitions:
     get:
-      description: List Workspace label definitions with a product bearer credential that has read scope and current Workspace access. Optionally filter by purpose (task, project or document) and set include_archived=true to include archived definitions. The 200 response contains complete definitions in data and a nullable next_cursor. Use getLabelDefinition to obtain the item ETag for an edit or archive. Send no body. The default limit is 50 and the maximum is 100. Continue with next_cursor until it is null, keeping the same scope, filters, limit, credential and encoding. For 409 catalog_changed, discard the partial traversal and restart at the first page. A matching collection If-None-Match can return 304 after access checks.
+      description: |-
+        List label definitions in a Workspace.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace read access. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Filter by `purpose` (task, project or document) or pass `include_archived=true` to include archived labels. The `200` response includes complete definitions in `data` and a nullable `next_cursor`. The default limit is 50 and the maximum is 100. Continue with `next_cursor` until it is null. Keep the same scope, filters, limit, credential and encoding. A matching `If-None-Match` can return `304` after access checks. Read an individual definition to obtain its edit or archive ETag.
+
+        **Recovery.** For `409 conflict` with reason `catalog_changed`, discard the partial traversal and restart from page one. For `422 validation_failed`, correct the indicated selector, limit or cursor before retrying. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: listWorkspaceLabelDefinitions
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -44606,7 +44840,14 @@ paths:
       tags:
         - Labels
     post:
-      description: Create a label in the path Workspace. Use a product bearer credential with write scope and current Workspace labels:manage authority. Send up to 16 KiB of identity-coded JSON with name, color and purpose (task, project or document). Scope defaults to workspace. Omit query parameters and conditional headers. A 201 returns the new label's complete metadata, ETag and Location. A conflicting name returns 409. Send one Idempotency-Key. If the outcome is unknown, recover the original 201, Location and body with the same key and equivalent normalized input under current management authority. Reusing the key for a different intent returns 409.
+      description: |-
+        Create a label in a Workspace.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current Workspace `labels:manage` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send up to 16 KiB of identity-coded JSON with a name, color and Task, Project or Document purpose. Scope defaults to `workspace`. Omit query parameters and conditional headers. The `201` response includes complete metadata, an ETag and a Location. Send one `Idempotency-Key`. If the outcome is unknown, use the same key and equivalent normalized input under current management authority to recover the original `201`, Location and body.
+
+        **Recovery.** For `409 conflict` with reason `label_name_conflict`, choose an available name in the same catalog. For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 16 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, correct the indicated name, color, purpose or scope. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: createWorkspaceLabelDefinition
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -47788,8 +48029,8 @@ paths:
         bounded and stripped of control characters; results never expose a raw
         engine score or exact total. Archived resources are excluded unless
         explicitly included; trashed, purged, and deleted resources remain excluded.
-        Work is rate-limited and query-time bounded; overload returns a
-        retryable `503 search_unavailable` with `Retry-After`.
+        Search is rate-limited and has a query timeout. For a temporary failure,
+        follow the recovery guidance for the `503` response.
         The page uses data, next_cursor and has_more. Follow every non-null cursor
         with the same normalized query, filters and page size. Cursors are confidential
         and bound to the current credential, membership, projection, contract epochs
@@ -47798,8 +48039,8 @@ paths:
         restart from the first page. Old signed cursors cannot resume this contract.
         Only JSON with identity or gzip encoding is supported. Media/encoding refusal
         precedes Search data reads. Responses use no-store and vary by Accept and
-        Accept-Encoding. Complete logical and encoded bodies retain the shared finite
-        response limit; oversized pages fail without partial results or a cursor.
+        Accept-Encoding. The logical and encoded response bodies each have a 256 KiB
+        limit. An oversized page fails without partial results or a cursor.
       operationId: searchWorkspace
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -47859,7 +48100,7 @@ paths:
             Content-Length:
               description: Exact negotiated complete-body length in encoded bytes. No partial results or continuation are published after response construction failure.
               schema:
-                maximum: 12648448
+                maximum: 262144
                 minimum: 1
                 type: integer
             Vary:
@@ -47887,7 +48128,29 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
-          $ref: "#/components/responses/MaintenanceUnavailable"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Search timed out or is temporarily unavailable (search_unavailable), response capacity is exhausted (service_overloaded), or maintenance has taken the service offline (maintenance_offline). Honor Retry-After when present.
+          headers:
+            Assign-API-Version:
+              $ref: "#/components/headers/AssignAPIVersion"
+            Assign-Request-ID:
+              $ref: "#/components/headers/AssignRequestID"
+            Assign-Server-Version:
+              $ref: "#/components/headers/AssignServerVersion"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControlNoStore"
+            Retry-After:
+              description: Delay in seconds before retrying, when supplied.
+              schema:
+                minimum: 0
+                type: integer
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            X-Request-ID:
+              $ref: "#/components/headers/AssignRequestID"
         default:
           $ref: "#/components/responses/ProductProblem"
       security:
@@ -49190,7 +49453,12 @@ paths:
         - Tasks
   /api/v1/workspaces/{workspace_id}/tasks/{task_id}/related-context:
     get:
-      description: Confirmed Task/Document rows require both a live authorized canonical link and durable confirmation provenance. Existing Core outcomes are primary; authorized Knowledge history supplements older outcomes. Manual links alone never establish confirmation. Knowledge lookup loss omits unavailable historical candidates but does not erase locally proven confirmations; unresolved access/link state fails closed. Link removal hides the row; relinking may expose its retained prior confirmation. Returns a permission-filtered, read-only projection. Globally unconfigured, disabled, unentitled, unacknowledged, empty-scope, and out-of-scope Knowledge conditions use the empty state; unavailable is reserved for genuine retrieval/currentness failures after eligibility. Neither state blocks the owning Task workflow. Indexed subjects may discover Documents through shared distinctive title terms without a cross-domain link generation. Inferred suggestions explain their shared terms and never create or change canonical Task relations. Requires the current product bearer credential, granted scopes and operation-specific permission and proof checks.
+      description: |-
+        Read permission-filtered Suggestions for a Task. Confirmed Task and Document links appear when the link still exists and prior confirmation can be verified. Manual links alone do not count as confirmations. Unavailable historical lookup can omit older confirmations while current, verified confirmations remain visible. Removing a link hides its confirmation. Relinking can make it visible again. Inferred suggestions can use distinctive shared title terms and explain their matches. Reading suggestions leaves Task relations unchanged. An empty result can mean Suggestions are out of scope or the Workspace lacks eligibility. The unavailable state indicates retrieval or freshness problems after eligibility.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:read`. The credential's principal needs current Workspace and Project read access and must be able to read the Task. The Task and its Project must be active. Each finding requires current access to its subject. Existing grants with the legacy `assign:read` scope are also accepted. Use `tasks:read` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** For `409 suggestion_conflict`, refresh Suggestions because the finding changed. If the response reports unavailable, continue the Task workflow and refresh Suggestions later. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: getTaskRelatedContext
       parameters:
         - description: Opt in to read-only indexed code references from repositories bound to this Task Project. Uses deterministic Cognee identifier matching, not semantic model ranking. Code references have no feedback entity ID; open their revision-pinned GitHub URL to review them. Defaults to false for compatibility.
@@ -49240,12 +49508,17 @@ paths:
           $ref: "#/components/responses/ProductProblem"
       security:
         - bearerToken: []
-      summary: Read bounded Workspace Knowledge context related to a Task
+      summary: Read Suggestions related to a Task
       tags:
         - Tasks
   /api/v1/workspaces/{workspace_id}/tasks/{task_id}/suggestion-feedback:
     post:
-      description: A durable Core outcome is committed with the local link and original receipt; Knowledge synchronization is separate and no client-selected provenance is accepted. Same-state retries reauthorize without repeating effects; opposite outcomes conflict. Removing a link prevents an old confirmation receipt from recreating it. Historical Knowledge provenance remains read-only supplementary evidence, not a new write authority. Confirming a Task finding creates a canonical `relates` relation; confirming a Document links it. Confirming a commit finding adds the verified commit to Linked development after rechecking the current Task, comment and repository binding. Commit outcomes persist in Core; Task and Document outcomes also relay to Workspace Knowledge. Confirming is idempotent and discarding suppresses the finding for this Task. Requires the current product bearer credential, granted scopes and operation-specific permission and proof checks. Replies include synchronization (pending, complete or not_required). A durable confirmation can be pending; discarded is accepted only after Knowledge acknowledgement. Same-state replay reauthorizes the current source and subject without repeating local effects. Original-key recovery requires a compatible retained result and the same verified credential family as the original command. An unknown or incompatible retained result requires reconciliation using current authorized Suggestions; never resubmit it as a fresh command. Recovery rechecks current authorization.
+      description: |-
+        Confirm or discard one current Suggestions finding. Confirming a Task creates a `relates` relation. Confirming a Document links it. Confirming a commit adds it to Linked development after the Task, comment and repository binding are rechecked. The confirmation and local link are recorded together. Task and Document outcomes also synchronize with Workspace Knowledge. A confirmation may report `pending`; discarding succeeds after Knowledge acknowledges it. Discarding suppresses the finding for this Task. Repeating the same outcome checks current access without repeating effects. Removing a confirmed link prevents an old receipt from recreating it.
+
+        **Access.** Send a personal API token, product service-account credential or product OAuth access token (delegated or client credentials) with `tasks:write`. The credential's principal needs current Workspace and Project write access for this Task. The Task and its Project must be active. The caller must still have access to the finding's subject and satisfy the checks for the requested link. Existing grants with the legacy `assign:write` scope are also accepted. Use `tasks:write` for new grants. A `403 insufficient_scope` requires a credential with the required grant. A `404 not_found` can also mean the resource is inaccessible. Check the identifier and current access before retrying.
+
+        **Recovery.** If the response is lost, keep the original `Idempotency-Key` and exact request, including any condition. With current access, an exact retry can recover the original result without repeating the change. For `409 idempotency_key_conflict`, check the original request because the key is bound to different intent. For `409 operation_reconciliation_required`, read the current authorized resource and reconcile the outcome before taking further action. Reconcile against current authorized Suggestions. For `409 suggestion_conflict`, refresh Suggestions before choosing another outcome. For `422 invalid_field`, correct the finding or requested outcome using the current Suggestions response. For `403 access_denied`, have the Workspace or Project owner verify the caller's authority before attempting the action again. For `429 rate_limited`, wait for `Retry-After` before retrying within your retry budget. [Problem Details](/api/errors#problem-details-fields) explains the error response format.
       operationId: submitTaskSuggestionFeedback
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
@@ -51026,7 +51299,14 @@ paths:
         - Tasks
   /api/v1/{target_kind}/{target_id}/labels:
     get:
-      description: Read all label IDs assigned to one Task, Project or Document. Use a product bearer credential with read scope and current access to the Workspace, target and any containing Project. Send no body or query parameters. The 200 response contains the target identity, assignment revision as a decimal string, and up to 20 sorted IDs, with an empty array when there are no assignments. A matching If-None-Match can return 304 after access checks. Keep this response's ETag and encoding to replace the set.
+      description: |-
+        Read the complete set of label IDs assigned to one Task, Project or Document.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:read` scope on a new credential. Existing grants with `assign:read` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current read access to the target and any containing Project. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send no request body. For `415 unsupported_media_type`, remove unsupported request content coding. Omit query parameters. The `200` response includes the target identity, a decimal-string assignment revision and up to 20 sorted IDs. An unlabelled target returns an empty array. A matching `If-None-Match` can return `304` after access checks. Keep the assignment-set ETag and encoding to replace the set.
+
+        **Recovery.** For `404 not_found`, check target access and the ID. For `422 validation_failed`, use `task`, `project` or `document` as the target kind and omit unsupported query fields. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline before retrying the read. For `503 service_unavailable`, wait for `Retry-After` before retrying.
       operationId: listTargetLabelAssignments
       parameters:
         - in: path
@@ -51143,7 +51423,14 @@ paths:
       tags:
         - Labels
     put:
-      description: Replace the complete label set on one Task, Project or Document, preserving its other fields. Use a product bearer credential with write scope, current permission to update the target and labels:assign authority. Send up to 32 KiB of identity-coded JSON with label_ids containing at most 20 unique, active IDs eligible for this target. Match the label purpose to the target kind and use Project-local Task labels only in their Project. Send an empty array to clear all assignments. An unchanged set keeps its revision. Success returns 204. Send one Idempotency-Key and pass the assignment-set ETag from listTargetLabelAssignments unchanged in If-Match with the same representation encoding. Missing If-Match returns 428, malformed or weak validators return 400, and stale validators return 412. After an unknown outcome, recover the original response with the same key and request under current authority. Recovery precedes the condition check and does not repeat the change. A different intent with the same key returns 409. For a new edit after 412, read the current state, reconcile the change and use a new key.
+      description: |-
+        Replace the complete label set on one Task, Project or Document, preserving its other fields.
+
+        **Access.** Use a personal API token, product OAuth token, product service-account credential, or product OAuth client-credentials token. Use the `labels:write` scope on a new credential. Existing grants with `assign:write` also qualify, including managed Assign developer-client grants. The credential must belong to the current Workspace and have current permission to update the target and `labels:assign` permission. Service credentials depend on their active Workspace owner or admin and the service account’s own access to the resource. For `401 unauthenticated`, check the credential’s expiry and product API audience before sending it again. For `403 forbidden` with the `insufficient_scope` bearer challenge, obtain a grant with the required scope. For a resource permission denial, ask a Workspace admin or Project manager to review the required permission before retrying.
+
+        Send up to 32 KiB of identity-coded JSON with up to 20 unique, active `label_ids` eligible for the target. Match label purpose to target kind and use Project-local Task labels only in their own Project. Send an empty list to clear all assignments. An unchanged set keeps its revision. Success returns `204`. Send one `Idempotency-Key` and the strong assignment-set ETag from the target label read unchanged in `If-Match`, with its original representation encoding. For `428 precondition_required`, supply the validator. For `400 malformed_request` on a malformed or weak validator, copy the exact strong ETag. For `412 precondition_failed`, read the latest assignment set, reconcile the intended change and use a new key for the new request. If the outcome is unknown, resend the original request, key, condition and encoding under current authority to recover the original `204`. Recovery checks the retained result before comparing the current validator and does not repeat the change.
+
+        **Recovery.** For `409 idempotency_key_conflict`, reuse the original request with its original key or use a new key for a genuinely new command. If `409 conflict` reports that the retained result or credential grant requires reconciliation, read current state and verify the outcome before taking another action. For `413 content_too_large`, reduce the request to 32 KiB or less. For `415 unsupported_media_type`, send `application/json` with identity content coding. For `422 validation_failed`, correct invalid or ineligible IDs and keep the set to at most 20 labels. If you exceed the request rate limit, `429 rate_limited` tells you to wait for `Retry-After` within your retry deadline. For `503 service_unavailable`, also wait for `Retry-After`. Keep the original request and key when retrying the same command.
       operationId: replaceTargetLabels
       parameters:
         - in: path

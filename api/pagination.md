@@ -26,9 +26,35 @@ on silent clamping. Malformed query syntax returns `400`; semantic field violati
 | Activity group children | 25 / 25 | [Children](./reference/operations/listactivitygroupchildren) |
 | Reference options, per requested type | 10 / 20 | [Reference options](./reference/operations/listworkspacereferenceoptions); candidates have no cursor or total |
 
-These limits apply to the current public reference. Protocols such as
-[MCP](../mcp/task-queries) retain their own cursor fields and termination rules. Do not translate
-their responses into the product REST envelope.
+Other approved operations override the shared bounds:
+
+| Collection | Default / maximum |
+| --- | --- |
+| [Document attachments](./reference/operations/listdocumentattachments), [Project time breakdown](./reference/operations/listprojecttimebreakdown) | 100 / 100 |
+| [Integration resources](./reference/operations/listintegrationresources), [personal integration identities](./reference/operations/listpersonalintegrationidentities) | 20 / 100 |
+| [Project integration bindings](./reference/operations/listprojectintegrationbindings), [Workspace integration installations](./reference/operations/listworkspaceintegrationinstallations), [Task rich entities](./reference/operations/listtaskrichentities) | 20 / 100 |
+| [Current Work candidates](./reference/operations/listcurrentworkcandidates) | 25 / 25 |
+| [Lifecycle definitions](./reference/operations/listlifecycledefinitions) | 20 / 20 |
+| [Workspace webhook endpoints](./reference/operations/listworkspacewebhookendpoints) | 50 / 50 |
+| [Time entries](./reference/operations/listworkspacetimeentries) | 50 for a Task timeline or 100 for a captured-Project page / 100 |
+
+Retained protocols use their own bounds and continuation rules. For example, MCP
+[`task_list`](../mcp/task-queries#filtered-task-queries) uses `next_cursor` with
+`coverage`. Its checked scan is bounded to ten pages or 1,000 rows. Narrow the query
+if the scan limit prevents completion. CSV timesheet pages use the
+[`Assign-Next-Cursor` header](./conventions#csv-pages-and-complete-exports).
+
+## Tasks due on a date <Badge type="warning" text="Upcoming" />
+
+To read a numbered window from the Workspace Tasks collection, pass `due_on` as a civil
+date, plus `due_page`, `state=active`, `order=priority_updated_at`, `consistency=checked`
+and `limit=20`. Repeat `project_id` or `assignee_actor_ids` to narrow the results.
+
+The response contains up to 20 Tasks and a `due_window` with the current `page` and the
+exact decimal string `total_count`. Request a page directly with `due_page`. Each response
+uses the current collection and access, so results can change between requests. If the
+requested page exceeds the current total, the response returns the last available page,
+or page 1 when the collection is empty.
 
 ## Continue the same query
 
@@ -129,8 +155,10 @@ authorized baseline for that scope. See the
 
 ## Project group metadata <Badge type="warning" text="Upcoming" />
 
-Request Project group headers separately using the projection operation's optional `group_limit` or `group_cursor`. Use the returned scope and `next_cursor` for continuation while `has_more` is true. Group pages contain at most100 headers; counts and positions are decimal strings, which preserve values beyond JavaScript's safe integer range.
+Request Project group headers separately using the projection operation's optional `group_limit` or `group_cursor`. Use the returned scope and `next_cursor` for continuation while `has_more` is true. Once you request group metadata, the page size defaults to 100 headers and is capped
+at 100. Counts and positions are decimal strings, which preserve values beyond
+JavaScript's safe integer range.
 
 A `project_groups` result contains group IDs and matching counts, with empty `row_ids` and `window_state=not_loaded`. Fetch the admitted Task projection separately for actual rows and actions. A completed group window does not mean Task rows are loaded. An unassigned group can have a null ID.
 
-Keep the original scope with its cursor. If the source changes, a409 response requires refreshing the scope rather than continuing an old group cursor. The existing scope lifetime and authorization still apply. See `CanonicalProjectionProjectGroups` in the [OpenAPI document](/openapi.yaml).
+Keep the original scope with its cursor. If the source changes, a `409` response requires refreshing the scope rather than continuing an old group cursor. The existing scope lifetime and authorization still apply. See `CanonicalProjectionProjectGroups` in the [OpenAPI document](/openapi.yaml).

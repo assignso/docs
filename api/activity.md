@@ -90,7 +90,7 @@ edits without returning the text.
 
 For Workspace activity, pass `day=2026-09-18&time_zone=Europe%2FBudapest` to read that calendar day.
 Supply both parameters. The timezone determines midnight boundaries, including daylight-saving changes.
-Follow `next_cursor` with the same parameters until `has_more` is false. A cursor from another day
+Follow `next_cursor` with the same parameters until it is `null`. A cursor from another day
 or timezone interval is invalid. The existing 90-day retention limit still applies.
 
 The Day page retrieves the selected day's activity automatically. Its date follows your Account
@@ -98,18 +98,16 @@ timezone, and an empty result appears only after retrieval completes.
 
 ## Grouped reads — Upcoming
 
-The next grouped Activity contract adds two companion reads:
-
-- `GET /api/v1/workspaces/{workspace_id}/activity/groups`
-- `GET /api/v1/workspaces/{workspace_id}/activity/groups/{group_id}/children`
-
-The event-shaped reads above use the canonical `data` and `next_cursor` envelope. Grouped reads use
-`assign.activity.groups.v1` and `assign.activity.children.v1` envelopes and are not yet released.
+Use [Read authorized daily Activity groups](./reference/operations/listactivitygroups) to list
+groups, then [Expand an authorized Activity group](./reference/operations/listactivitygroupchildren)
+to read its contributing events. Both HTTP responses put the results in `data` and identify the
+page format through `schema` (`assign.activity.groups.v1` or `assign.activity.children.v1`).
 
 Supply `scope=workspace`, `account`, `person`, `project` or `task`. Person, Project and Task
 scopes require `resource_id`; Workspace and Account scopes omit it. Account scope selects the
-current human account. Each request needs a human product bearer credential and current resource
-permissions.
+current human account. Use a product bearer credential with `activity:read` or the applicable
+legacy read grant. Each request checks current Workspace membership and resource access.
+Project-limited credentials can select an allowed Project or a readable Task within it.
 
 Choose `day=YYYY-MM-DD`, or a paired inclusive `from_day` and exclusive `before_day` range of at most
 90 days. `time_zone` accepts an IANA timezone; omitting it uses the effective account/Workspace
@@ -119,8 +117,12 @@ and allow 1–25 children. `include_previews` defaults to true.
 
 Counts report their accuracy explicitly. Previews describe currently readable resources;
 unknown historical facts and history before the retained 90 days remain unknown. A snapshot does
-not grant access. Continue with `next_cursor` and the same selectors. Expansion also requires the
-parent's `group_revision` and `snapshot`. Refresh the root after `activity_cursor_stale`; refresh
-the parent after `activity_group_stale`. Retry `activity_read_budget_exceeded` manually.
+not grant access. Continue until `next_cursor` is null, even after a short page. Keep the
+credential and selectors. You can change `limit` within the allowed range.
 
-See the [endpoint reference](./endpoints) for the upcoming request and response schemas.
+To expand a group, copy its `id` into the path, its `revision` into `group_revision`, and the
+list page's `snapshot` into the query. Keep the list's scope, resource, date, time zone, filters
+and preview settings. If the group list returns `activity_cursor_stale`, discard the cursor and
+restart the list. If expansion returns `activity_cursor_stale` or `activity_group_stale`, refresh
+the list and start at the first child page if the group still appears. After `activity_read_budget_exceeded`,
+treat the result as incomplete and retry manually with a bounded page.

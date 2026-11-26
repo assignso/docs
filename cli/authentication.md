@@ -36,6 +36,12 @@ assign
 command-line arguments and are sent only to `https://api.assign.so`. Use `--host` only with an HTTPS
 Assign API origin. `assign doctor` reports which credential source is in use, never its value.
 
+**Upcoming.** With `ASSIGN_TOKEN`, commands such as My Work, Search and Project or
+Document reads use the Workspace bound to the token. Commands that display Workspace
+details, load a saved Project selection or print browser links also need Workspace
+read access. Use interactive sign-in to list memberships, switch Workspaces or open
+terminal Discuss.
+
 ## Sign out
 
 `assign logout` revokes the interactive sign-in and removes the local credential. It doesn't revoke an

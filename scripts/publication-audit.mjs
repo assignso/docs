@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
+import { auditPublicationFiles } from "./audit-publication-files.mjs"
 
 export const publicSections = ["get-started", "guides", "cli", "mcp", "api", "branding"]
 const maintenance = /^(?:AGENTS|CLAUDE|README)\.md$/
@@ -75,6 +76,7 @@ function filesBelow(root, relative = "") {
 export function auditStaticPublication(output, expectedRoutes) {
   assert.equal(new Set(expectedRoutes).size, expectedRoutes.length, "Duplicate canonical page route")
   const expected = [...expectedRoutes].sort(), files = filesBelow(output)
+  auditPublicationFiles(output, files, { staticOutput: true })
   for (const file of files) assert.ok(!file.split("/").some((part) => part.startsWith(".") || maintenance.test(part)),
     `Maintenance artifact entered public output: ${file}`)
   const html = files.filter((file) => /(?:^|\/)index\.html$/.test(file))
@@ -97,4 +99,38 @@ export function auditStaticPublication(output, expectedRoutes) {
   }).sort()
   assert.deepEqual(indexRoutes, expected, "Agent index differs from the canonical publication inventory")
   return { pages: expected.length, html: html.length, markdown: markdownFiles.length, downloads: markdownFiles.length, agentEntries: indexRoutes.length }
+}
+
+export function auditVersionedReferenceLinks(output, operations, expectedLinks) {
+  const guide = new URL("https://docs.assign.so/api/versioning")
+  const targets = new Map(operations.map((operation) => [operation.link, operation]))
+  const html = readFileSync(join(output, "api/versioning/index.html"), "utf8")
+  const markdown = readFileSync(join(output, "api/versioning.md"), "utf8")
+  const referenceLinks = (links) => new Set([...links].map(([, link]) => new URL(link, guide))
+    .filter((url) => url.origin === guide.origin && url.pathname.startsWith("/api/reference/operations/"))
+    .map((url) => url.pathname.replace(/\.md$/, "") + url.hash))
+  const htmlLinks = referenceLinks(html.matchAll(/<a\b[^>]*\shref="([^"]+)"/g))
+  const markdownLinks = referenceLinks(markdown.matchAll(/\]\(([^)\s]+)\)/g))
+  assert.deepEqual(markdownLinks, htmlLinks, "Versioning guide reference links differ between HTML and Markdown")
+  for (const link of expectedLinks)
+    assert.ok(htmlLinks.has(link), `Versioning guide is missing reference: ${link}`)
+  for (const link of htmlLinks) {
+    const [route, fragment] = link.split("#")
+    const operation = targets.get(route)
+    assert.ok(operation?.path.startsWith("/api/v1/"), `Versioning guide points outside the approved v1 reference: ${link}`)
+    const endpoint = readFileSync(join(output, route, "index.html"), "utf8")
+    const download = readFileSync(join(output, `${route}.md`), "utf8")
+    assert.ok(endpoint.includes(`data-v-openapi-operation-title="true" id="${operation.id}"`), `Wrong HTML operation: ${link}`)
+    assert.ok(endpoint.includes(`>${operation.method}</span><code data-v-openapi-endpoint-path="true">${operation.path}</code>`),
+      `Wrong HTML method or versioned path: ${link}`)
+    assert.ok(download.split("\n").includes(`\`${operation.method} ${operation.path}\``), `Wrong Markdown method or versioned path: ${link}`)
+    assert.equal(endpoint.includes("This contract is not yet deployed."), operation.upcoming, `Wrong HTML availability: ${link}`)
+    assert.equal(download.split("\n").includes("> **Upcoming:** This contract is not yet deployed."), operation.upcoming,
+      `Wrong Markdown availability: ${link}`)
+    if (fragment) {
+      assert.ok(endpoint.includes(`id="${fragment}"`), `Missing HTML fragment: ${link}`)
+      assert.ok(download.includes(`<a id="${fragment}"></a>`), `Missing Markdown fragment: ${link}`)
+    }
+  }
+  return htmlLinks.size
 }

@@ -30,7 +30,9 @@ ASSIGN_DOCS_AUTHORING_APPROVAL=/path/to/approval.json npm run check:sources
 ```
 
 The approval must match both the contract digest and its independent expected document.
-The same setting works with `npm run dev` and `npm run generate:api`. Generated operation
+The same approval works with `npm run dev`. To regenerate, also supply
+`ASSIGN_DOCS_SOURCE_REVISION` for the canonical commit and
+`ASSIGN_DOCS_PRIVATE_PROVENANCE` for the receipt stored outside Docs. Generated operation
 pages and share images carry the Upcoming label. Keep approval records outside the public
 repository. Local authoring output does not establish released availability; package validation
 and the Pages upload check still require a released contract manifest.
@@ -65,8 +67,12 @@ npm run check
 ```
 
 `check:sources` needs the sibling Assign workspace checkouts, so it runs locally rather than in
-public CI. It checks generated files without rewriting them. The OpenAPI download excludes
-private operations, their unused components and local development servers.
+public CI. It checks generated files and the source receipt without rewriting them. For a
+released export, use the approved `ASSIGN_PUBLIC_RELEASE_MANIFEST` in place of the authoring
+approval and a receipt path for that release.
+
+Run `node scripts/check-public-export.mjs` to verify the downloadable OpenAPI and
+endpoint index with only the Docs checkout.
 
 Vocs builds Markdown downloads plus `/llms.txt` and `/llms-full.txt` for agent readers.
 The site uses keyword search. Builds skip embeddings and require no AI credentials.

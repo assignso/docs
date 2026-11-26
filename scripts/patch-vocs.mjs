@@ -7,7 +7,101 @@ const directory = join(root, "node_modules/vocs")
 const { version } = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"))
 if (version !== "2.10.3") throw new Error(`Review Vocs compatibility fixes before upgrading from 2.10.3 to ${version}`)
 
+const operationSamples = "samples.length > 0 && (_jsx(\"div\", { \"data-v-openapi-operation-aside\": true, children: _jsx(CodeSample, { samples: samples, responses: responses, anchors: anchors, action: _jsx(TestRequestButton, { method: operation.method, path: operation.path, example: operation.rpcExample }) }) }))"
+
 const patches = [
+  {
+    file: "dist/react/internal/openapi/Operation.js",
+    before: "operation.description })] }), _jsxs(\"div\", { \"data-v-openapi-operation-body\"",
+    after: `operation.description })] }), ${operationSamples}, _jsxs("div", { "data-v-openapi-operation-body"`,
+  },
+  {
+    file: "dist/react/internal/openapi/Operation.js",
+    before: `, ${operationSamples}] }));`,
+    after: "] })); /* Assign: samples precede schema fields in document order. */",
+  },
+  {
+    file: "dist/react/internal/openapi/Operation.js",
+    before: "import * as Markdown from '../../../internal/markdown.js';",
+    after: "import * as Markdown from '../../../internal/markdown.js';\nimport { problemDetailsPath } from '../../../../../../scripts/response-schema-markdown.mjs';",
+  },
+  {
+    file: "dist/react/internal/openapi/Operation.js",
+    before: 'title: "Responses", children: _jsx("div", { "data-v-openapi-responses": true, children: operation.responses.map',
+    after: 'title: "Responses", children: _jsx("div", { "data-v-openapi-responses": true, children: [operation.responses.some((response) => response.content.some((media) => media.mediaType === "application/problem+json")) && _jsx(Prose, { markdown: "[Shared Problem Details fields](" + problemDetailsPath + ")" }), ...operation.responses.map',
+  },
+  {
+    file: "dist/react/internal/openapi/Operation.js",
+    before: '}, response.status))) }) }))]',
+    after: '}, response.status)))] }) }))]',
+  },
+  {
+    file: "dist/internal/openapi/sample.js",
+    before: "        if (!media)\n            continue;\n        const idBase = mediaIdBase(responseIdBase",
+    after: "        if (!media) {\n            const sample = nonJsonSuccessSample(response);\n            if (sample) samples.push({ status: response.status, description: response.description, linePaths: [], ...sample });\n            continue;\n        }\n        const idBase = mediaIdBase(responseIdBase",
+  },
+  {
+    file: "dist/internal/openapi/parser.js",
+    before: "import * as OpenRpc from './openrpc.js';",
+    after: "import * as OpenRpc from './openrpc.js';\nimport { rememberSchemaName } from '../../../../../scripts/response-schema-markdown.mjs';",
+  },
+  {
+    file: "dist/internal/openapi/parser.js",
+    before: "    const { schema } = dereference(specification);",
+    after: "    const { schema } = dereference(specification, { onDereference: rememberSchemaName });",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "import { unwrapSingleVariant } from './union.js';",
+    previous: "import { unwrapSingleVariant } from './union.js';\nimport { responseSelection, responseVariantLines } from '../../../../../scripts/response-schema-markdown.mjs';",
+    after: "import { unwrapSingleVariant } from './union.js';\nimport { responseSelection, responseVariantLines, sharedProblemDetailsLines } from '../../../../../scripts/response-schema-markdown.mjs';",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "lines.push(...responseLines(response));",
+    after: "lines.push(...responseLines(response, operation));",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "function responseLines(response) {",
+    after: "function responseLines(response, operation) {",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "    const media = response.content[0];\n    if (media?.schema) {\n        const props = schemaLines(media.schema, 0);",
+    previous: "    for (const media of response.content) {\n        if (!media.schema) continue;\n        const props = schemaLines(media.schema, 0, true);",
+    after: "    for (const media of response.content) {\n        if (!media.schema) continue;\n        const props = sharedProblemDetailsLines(media) ?? schemaLines(media.schema, 0, true);",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "            lines.push(...props, '');\n        }\n    }\n    return lines;",
+    after: "            const selection = responseSelection(operation, response, media);\n            if (selection) lines.push(selection, '');\n            lines.push(...props, '');\n        }\n    }\n    return lines;",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "function schemaLines(rawSchema, depth) {",
+    after: "function schemaLines(rawSchema, depth, response = false, indentDepth = depth) {",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "    const schema = unwrapSingleVariant(rawSchema) ?? rawSchema;\n    const target = schema['type'] === 'array' ? schema['items'] : schema;",
+    after: "    if (response) {\n        const variants = responseVariantLines(rawSchema, depth, indentDepth, schemaLines, typeLabel, maxDepth);\n        if (variants.length) return variants;\n    }\n    const schema = response ? rawSchema : unwrapSingleVariant(rawSchema) ?? rawSchema;\n    const target = schema['type'] === 'array' ? schema['items'] : schema;",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "    const indent = '  '.repeat(depth);",
+    after: "    const indent = '  '.repeat(indentDepth);",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "        const property = unwrapSingleVariant(rawProperty) ?? rawProperty;",
+    after: "        const property = response ? rawProperty : unwrapSingleVariant(rawProperty) ?? rawProperty;",
+  },
+  {
+    file: "dist/internal/openapi/markdown.js",
+    before: "        lines.push(...schemaLines(property, depth + 1));",
+    after: "        lines.push(...schemaLines(property, depth + 1, response, indentDepth + 1));",
+  },
   {
     "file": "dist/internal/openapi/parser.js",
     "before": "        example: value?.example,",
@@ -33,7 +127,8 @@ const patches = [
   {
     "file": "dist/internal/openapi/sample.js",
     "before": "import { snippetz } from '@scalar/snippetz';",
-    "after": "import { snippetz } from '@scalar/snippetz';\nimport { applyRequestExample, environmentSample } from '../../../../../scripts/operation-examples.mjs';"
+    "previous": "import { snippetz } from '@scalar/snippetz';\nimport { applyRequestExample, environmentSample } from '../../../../../scripts/operation-examples.mjs';",
+    "after": "import { snippetz } from '@scalar/snippetz';\nimport { applyRequestExample, environmentSample, nonJsonSuccessSample } from '../../../../../scripts/operation-examples.mjs';"
   },
   {
     "file": "dist/internal/openapi/sample.js",
@@ -91,7 +186,7 @@ for (const { file, before, after, previous } of patches) {
   const source = readFileSync(target, "utf8")
   if (source.includes(after)) continue
   const from = previous && source.includes(previous) ? previous : before
-  if (source.split(from).length !== 2) throw new Error(`Vocs compatibility patch no longer matches ${file}`)
+  if (source.split(from).length !== 2) throw new Error(`Vocs compatibility patch no longer matches ${file}: ${before.split("\n")[0]}`)
   writeFileSync(target, source.replace(from, after))
 }
-console.log("Applied Vocs 2.10.3 static route, OpenAPI mount, public search ID, bearer example and header synchronization fixes")
+console.log("Applied Vocs 2.10.3 static route, OpenAPI mount, public search ID, bearer examples, response schemas and header synchronization fixes")

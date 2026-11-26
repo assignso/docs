@@ -27,18 +27,10 @@ rows are only part of the collection.
 
 ## Build an integration
 
-The Assign application manages its live connection. For an external integration, use the
-operations and credentials described in the [public API reference](./reference/) and
-[authentication guide](./authentication). Those pages identify the supported integration surface
-and its availability.
-
-Read collections with [bounded pagination](./pagination). Keep the returned continuation opaque
-and follow it until the operation reports that no next page remains. An interrupted connection
-does not make a partial list complete.
-
-For customer event delivery, use [Task webhooks](./webhooks), with signature verification,
-deduplication and explicit gap recovery. For accepted background work, use the workflow's
-[operation status](./operations). These interfaces have their own authorization and recovery.
+Use the [public API reference](./reference/) and [authentication guide](./authentication)
+to read resources from an integration. To receive Task events at your own HTTPS endpoint,
+see [Task webhooks](./webhooks). To check accepted background work, use its
+[operation status](./operations).
 
 ## Recover from an interruption
 
