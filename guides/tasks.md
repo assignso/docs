@@ -79,6 +79,11 @@ Workspace's storage. Images and files can also go into the description. See
 column. Archiving and trashing can be undone, and a Task is never permanently deleted from these
 menus.
 
+### Open Task actions on iPhone and iPad <Badge type="warning" text="Upcoming" />
+
+In Home or Work, touch and hold a Task that has an ellipsis beside it, then choose
+**Task actions**. You can also tap the ellipsis. Tap the Task itself to open its details.
+
 ## Share a Task
 
 - **Copy task link** copies the Task's permanent URL.
